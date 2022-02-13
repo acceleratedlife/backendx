@@ -1,0 +1,3269 @@
+openapi: 3.0.0
+info:
+  contact:
+    email: you@your-company.com
+  description: This is a simple API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: AL
+  version: 1.0.1
+servers:
+- description: SwaggerHub API Auto Mocking
+  url: https://accelerated-life-demo.herokuapp.com/api
+tags:
+- description: Operations available to SysAdmin
+  name: SysAdmin
+- description: Operations available to SchoolAdmin
+  name: SchoolAdmin
+- description: Operations available to Teacher
+  name: Teacher
+- description: Operations available to Student
+  name: Student
+- description: Operations available to Unregistered
+  name: Unregistered
+- description: Operations available to SchoolAdmin, Teacher and student
+  name: AllSchool
+- description: all users above have access
+  name: All
+- description: all users that work at school
+  name: Staff
+paths:
+  /schools:
+    get:
+      description: |
+        By passing in a zipcode you can find all school with that zipcode in ascending order
+      operationId: searchSchools
+      parameters:
+      - description: pass the zip to be searched
+        explode: true
+        in: query
+        name: zip
+        required: true
+        schema:
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseSchools'
+          description: schools matching criteria
+        "400":
+          description: That is not a zip code
+        "404":
+          description: No schools found
+      summary: searches schools
+      tags:
+      - SysAdmin
+  /schools/school:
+    delete:
+      description: delete a school
+      operationId: deleteSchool
+      parameters:
+      - description: pass the _id to be deleted
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          description: School Deleted
+        "400":
+          description: School cannot be edited with that data
+      summary: delete school
+      tags:
+      - SysAdmin
+    get:
+      description: |
+        By passing in a _id you can find a school
+      operationId: searchSchool
+      parameters:
+      - description: pass the _id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/School'
+                type: array
+          description: school matching criteria
+        "404":
+          description: No school found
+      summary: searches for a school
+      tags:
+      - All
+    post:
+      description: creates a new school
+      operationId: makeSchool
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/schools_school_body_1'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+          description: school record is made
+        "400":
+          description: School cannot be made with that data
+      summary: make a new school
+      tags:
+      - SysAdmin
+    put:
+      description: edit a school
+      operationId: editSchool
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/schools_school_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/School'
+                type: array
+          description: school record is made
+        "400":
+          description: School cannot be edited with that data
+      summary: edit school
+      tags:
+      - SysAdmin
+  /accounts/account:
+    delete:
+      description: delete an account
+      operationId: deleteAccount
+      parameters:
+      - description: pass the _id to be deleted
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          description: Account Deleted
+        "400":
+          description: Account cannot be edited with that data
+      summary: delete school
+      tags:
+      - SysAdmin
+    get:
+      description: By passing in a _id you can find an Account
+      operationId: searchAccount
+      parameters:
+      - description: pass the _id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Account'
+                type: array
+          description: account matching criteria
+        "404":
+          description: No account found
+      summary: searches for a account
+      tags:
+      - All
+    post:
+      description: make an account
+      operationId: makeAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/accounts_account_body_1'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Account'
+                type: array
+          description: school record is made
+        "400":
+          description: Account cannot be edited with that data
+      summary: make account
+      tags:
+      - SysAdmin
+    put:
+      description: edit an account
+      operationId: editAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/accounts_account_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Account'
+                type: array
+          description: school record is made
+        "400":
+          description: Account cannot be edited with that data
+      summary: edit account
+      tags:
+      - SysAdmin
+  /accounts/account/student:
+    get:
+      description: by extracting user id and user school from request the proper account
+        value is returned
+      operationId: searchStudentUbuck
+      parameters:
+      - description: gets the _id from req.user._id
+        explode: false
+        in: header
+        name: user._id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+          description: account matching criteria
+        "404":
+          description: No account found
+      summary: searches accounts for UBuck for this student at this school
+      tags:
+      - Student
+  /accounts/allCrypto:
+    get:
+      description: users user._id to find all crypto accounts for that user that has
+        a value greater than 0. Need to also return extra details that can be found
+        in its ref to the Crypto table. The crypto.usd may have to be updated if it
+        is older than 60 seconds. It should be sorted in decending order.
+      operationId: searchStudentCrypto
+      parameters:
+      - description: gets the _id from req.user._id
+        explode: false
+        in: header
+        name: user._id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Account'
+                type: array
+          description: accounts matching criteria
+        "404":
+          description: No accounts found
+      summary: returns all crypto accounts for specific user
+      tags:
+      - Student
+  /accounts/crypto:
+    get:
+      description: returns the given crypto price, how many are owned and how many
+        ubucks the user has. The crypto record may need to be updated if it is older
+        than 60 seconds
+      operationId: searchCrypto
+      parameters:
+      - description: gets the _id from req.user._id
+        explode: false
+        in: header
+        name: user._id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: get the crypto from name
+        explode: true
+        in: query
+        name: name
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_2'
+          description: information regarding the requested crypto
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_404'
+          description: There is no ${name} crypto
+      summary: returns the given crypto price, how many are owned and how many ubucks
+        the user has.
+      tags:
+      - Student
+  /accounts/all:
+    get:
+      description: users user._id to find all buck accounts for that user. Need to
+        also find its conversion with the school UBuck
+      operationId: searchStudentBuck
+      parameters:
+      - description: gets the _id from req.user._id
+        explode: false
+        in: header
+        name: user._id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_3'
+                type: array
+          description: accounts matching criteria
+        "404":
+          description: No accounts found
+      summary: returns all buck accounts for specific user
+      tags:
+      - All
+  /accounts/exchangeRate:
+    get:
+      description: given sellCurrency and buyCurrency return the exchange and details
+        on each. need to populate path type and model buck in order to get name of
+        buck as it is on the buck record
+      operationId: exchangeRate
+      parameters:
+      - description: the _id of the currency to be sold
+        explode: true
+        in: query
+        name: sellCurrency
+        required: true
+        schema:
+          type: string
+        style: form
+      - description: the _id of the currency to be bought
+        explode: true
+        in: query
+        name: buyCurrency
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_4'
+                type: array
+          description: accounts with names and conversion details
+        "404":
+          description: No accounts found
+      summary: returns exchange rate between 2 buck accounts
+      tags:
+      - All
+  /auctions/auction:
+    delete:
+      description: delete an auction. If it is of type remove then repay the old winner.
+        If it is of type resolve or other than remove, then just remove the auction.
+      operationId: deleteAuction
+      parameters:
+      - description: pass the _id to be deleted
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_5'
+                type: array
+          description: auctions matching criteria
+        "404":
+          description: Auction not found
+      summary: delete auction
+      tags:
+      - Staff
+    get:
+      description: by passing in a auction ID that auction is returned
+      operationId: searchAuctions
+      parameters:
+      - description: pass the id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Auction'
+                type: array
+          description: auction matching criteria
+        "404":
+          description: No auction found
+      summary: searches auctions
+      tags:
+      - AllSchool
+  /auctions:
+    get:
+      description: a teacher asks for all their auctions. Winner, startdate, enddate,
+        itemNumber, bid, description, visibility is returned. Winner is populated
+        with firstName and lastName and sorted by endDate ascending. Visibility is
+        populated with name and sorted by name ascending.
+      operationId: searchAuctionsTeacher
+      parameters:
+      - description: pass the id to be searched
+        explode: false
+        in: header
+        name: user._id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_5'
+                type: array
+          description: auctions matching criteria
+        "404":
+          description: No auctions found
+      summary: searches auctions
+      tags:
+      - Staff
+    post:
+      description: when a new auction is posted check to see if it visibility belongs
+        to the major groups with its period being 0,9,10,11,12. If it does add those
+        groups to visibility and save the auction. If it does not check visibility
+        == 1 or all the classes of the teacher. If it does then find all the classes
+        of the teacher and add it to the visibility and save. Finally, it is not of
+        any major group and that means that the teacher is auctioning to some of their
+        classes, add those class id's to the visibility and auction. For all situations
+        return all the auctions ownened by the user. With visibility populated with
+        name and sorted by name ascending. With winner populated with firstName and
+        lastName. Make all auctions sorted by endDate ascending.
+      operationId: makeAuction
+      parameters:
+      - description: pass the id to be searched
+        explode: false
+        in: header
+        name: user._id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/auctions_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_5'
+                type: array
+          description: auctions matching criteria
+        "400":
+          description: Auction cannot be made with that data
+      summary: make a new auction
+      tags:
+      - Staff
+  /auctions/student:
+    get:
+      description: given a student id find every class that they are a member of.
+        (Then find every auction that has their class in the visibility and The startDate
+        must be less than or equal to the current date). (or the endDate must be greater
+        than the current date and user._id matches the winner id). On the returned
+        document exclude visibility, createdAt, updatedAt and version. Populate owner
+        with lastName. Populate winner with firstName, lastName and _id. Sort by endDate
+        ascending
+      operationId: searchAuctionsStudent
+      parameters:
+      - description: pass the id to be searched
+        explode: false
+        in: header
+        name: user._id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_6'
+                type: array
+          description: auctions matching criteria
+        "404":
+          description: No auction found
+      summary: searches auctions
+      tags:
+      - Student
+  /auctions/placeBid:
+    put:
+      description: a student places a bid on an auction. This process needs to make
+        sure that the bid happened between the start and end of the auction, create
+        a transaction for the event and repay the person that was just outbid.
+      operationId: auctionBid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/auctions_placeBid_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_6'
+                type: array
+          description: updated auctions that are relevant to the student
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_400'
+          description: your bid is not greater than the current bid or the auction
+            is over, refresh page
+      summary: auction bid
+      tags:
+      - Student
+  /bucks/buck:
+    delete:
+      description: delete a buck. All accounts with that buck should first have value
+        converted to UBucks and then deleted.
+      operationId: deleteBuck
+      parameters:
+      - description: pass the _id to be deleted
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Buck'
+          description: Buck record is edited
+        "404":
+          description: Buck cannot be edited with that data
+      summary: delete buck
+      tags:
+      - SysAdmin
+    get:
+      description: by passing in a buck ID that buck is returned
+      operationId: searchBucks
+      parameters:
+      - description: pass the id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Buck'
+          description: buck matching criteria
+        "404":
+          description: No buck matching that _id
+      summary: searches bucks
+      tags:
+      - All
+    post:
+      description: create a buck
+      operationId: createBuck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/bucks_buck_body_1'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Buck'
+          description: Buck record is created
+        "404":
+          description: Buck cannot be created with that data
+      summary: create buck
+      tags:
+      - SysAdmin
+    put:
+      description: edit a buck
+      operationId: editBuck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/bucks_buck_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Buck'
+          description: Buck record is edited
+        "404":
+          description: Buck cannot be edited with that data
+      summary: edit buck
+      tags:
+      - SysAdmin
+  /bucks:
+    get:
+      description: by passing in a school ID all bucks for that school are returned
+      operationId: searchAllBucks
+      parameters:
+      - description: pass the school _id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Buck'
+                type: array
+          description: bucks matching criteria in alphabetical order decending
+        "404":
+          description: No bucks matching that school _id
+      summary: searches all bucks
+      tags:
+      - Staff
+  /classes/class:
+    delete:
+      description: delete a class
+      operationId: deleteclass
+      parameters:
+      - description: pass the _id to be deleted
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_9'
+          description: School Deleted
+        "404":
+          description: Class cannot be deleted with that data
+      summary: delete class
+      tags:
+      - Staff
+    get:
+      description: By passing in a _id you can find a class. Members should be populated
+        with firstName, lastName, rank, netWorth
+      operationId: searchClass
+      parameters:
+      - description: pass the _id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_7'
+          description: class matching criteria
+        "404":
+          description: No class found
+      summary: searches for a class
+      tags:
+      - All
+    post:
+      description: creates a new class
+      operationId: makeClass
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMakeClass'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMakeClass'
+          description: class record is made. Return all the classes from this owner.
+            Sort classes by period ascending
+        "404":
+          description: Class cannot be made with that data
+      summary: make a new class
+      tags:
+      - Staff
+    put:
+      description: edit a class. return all the classes of the owner. Exclude owner,
+        createdAt, updatedAt and version. Sort by period ascending
+      operationId: editClass
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/classes_class_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_8'
+          description: school record is made
+        "404":
+          description: Class cannot be edited with that data
+      summary: edit class
+      tags:
+      - Staff
+  /classes/class/kick:
+    put:
+      description: The class owner is kicking a class member. Remove the kicked members
+        _id from the class members list
+      operationId: kickClass
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/class_kick_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_10'
+          description: class member has been removed from class
+        "404":
+          description: member cannot be removed with that data
+      summary: Kick member from class
+      tags:
+      - Staff
+  /classes/class/addCode:
+    put:
+      description: When a class owner wants to change the class add code. return the
+        class
+      operationId: addCodeClass
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/class_addCode_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Class'
+          description: class add code has been changed
+        "404":
+          description: class add code cannot be modified with that data
+      summary: change class addCode
+      tags:
+      - AllSchool
+  /classes:
+    get:
+      description: By passing in a user_id you can find classes. Sort by period ascending.
+      operationId: searchClasses
+      parameters:
+      - description: pass the user_id to be searched
+        explode: false
+        in: header
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Class'
+                type: array
+          description: class matching criteria
+        "404":
+          description: No classes found
+      summary: searches for users classes
+      tags:
+      - Staff
+  /classes/member:
+    get:
+      description: By passing in a _id you can find classes. Populate owner with firstName,
+        lastName and _id. Sort by period ascending.
+      operationId: searchMyClasses
+      parameters:
+      - description: pass the _id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_11'
+                type: array
+          description: class matching criteria
+        "404":
+          description: No classes found
+      summary: searches for users classes that the requester is a member of
+      tags:
+      - AllSchool
+  /classes/teachers:
+    get:
+      description: By passing in a _id you can find the teacher class that is owned
+        by the admin. Use the _id to query owner, the name to query My Teachers, the
+        period to query -1. Return _id members and addCode. Populate members with
+        lastName. Sort by lastName ascending
+      operationId: searchAdminTeacherClass
+      parameters:
+      - description: pass the _id to be searched
+        explode: false
+        in: header
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassWithMembers'
+          description: class matching criteria
+        "404":
+          description: No classes found
+      summary: gets the teacher class of an admin and all the teacher that are its
+        members
+      tags:
+      - SchoolAdmin
+  /classes/removeAdmin:
+    put:
+      description: When a student or teacher want to remove themselves from a class.
+        member _id needs to be removed from class member list
+      operationId: removeClass
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/classes_removeAdmin_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_12'
+                type: array
+          description: class add code has been changed
+        "404":
+          description: Cannot remove from class with that data
+      summary: remove self from class
+      tags:
+      - AllSchool
+  /classes/addAdmin:
+    put:
+      description: When a teacher adds themselves to a class. member _id needs to
+        be added to class member list. Make sure the role of this user is the role
+        of a teacher(1). Otherwise it is a student trying to add to the wrong group.
+      operationId: teacherAddClass
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/classes_addAdmin_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_13'
+                type: array
+          description: return classes where this user is a member
+        "404":
+          description: Cannot add to class with that data
+      summary: teacher adding self to class
+      tags:
+      - Teacher
+  /classes/addClass:
+    put:
+      description: When a student adds themselves to a class. member _id needs to
+        be added to class member list. Make sure the role of this user is the role
+        of a student01). Otherwise it is a teacher or admin trying to add to the wrong
+        group. Classes cannot have periods -1, 0, 9, 10, 11, 12 these are reserved
+        by the admin for school wide or teacher classes.
+      operationId: studentAddClass
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/classes_addClass_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200_14'
+                type: array
+          description: return classes where this user is a member
+        "404":
+          description: Cannot add to class with that data
+      summary: student adding self to class
+      tags:
+      - Student
+  /events:
+    get:
+      description: first get all the users that share the same school as the staff.
+        then get all the events that are today or greater and the owner_id is from
+        the list of users found previously
+      operationId: searchEvents
+      parameters:
+      - description: pass the school _id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseEvents'
+          description: events matching criteria in value order decending
+        "404":
+          description: No events matching that school _id
+      summary: returns all of todays events for the users school
+      tags:
+      - Staff
+  /transactions:
+    get:
+      description: By passing in the staffs _id you can find a transactions that they
+        are owner of. Instead of owner_id put object.student firstName lastName from
+        populated field
+      operationId: searchTransactions
+      parameters:
+      - description: pass the staff_id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseTransactions'
+          description: transactions matching criteria
+        "404":
+          description: No transaction found
+      summary: all transactions a teacher is the owner of. Limit 30 sort by createdAt
+        descending
+      tags:
+      - Staff
+  /transactions/transaction:
+    delete:
+      description: delete a transaction
+      operationId: deletetransaction
+      parameters:
+      - description: pass the _id to be deleted
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                example: Transaction deleted
+                type: string
+          description: transaction Deleted
+        "404":
+          description: transaction cannot be deleted with that data
+      summary: delete transaction
+      tags:
+      - SysAdmin
+    get:
+      description: By passing in a _id you can find a transaction.
+      operationId: searchTransaction
+      parameters:
+      - description: pass the _id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: transaction matching criteria
+        "404":
+          description: No transaction found
+      summary: searches for a transaction
+      tags:
+      - SysAdmin
+  /transactions/buckTransactions:
+    get:
+      description: query account kind by Buck and owner by _id. Then query transaction
+        for type of buck and account in accounts from account query. Populate assetID
+        with name, sort by createdAt descending and limit to 25 records.
+      operationId: searchBuckTransaction
+      parameters:
+      - description: pass the _id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_15'
+          description: transaction matching criteria
+        "404":
+          description: No transaction found with that data
+      summary: searches for buck transactions
+      tags:
+      - Student
+  /transactions/cryptoTransactions:
+    get:
+      description: query account kind by Crypto and owner by _id. Then query transaction
+        for type of Crypto and account in accounts from account query. Populate assetID
+        with name, sort by createdAt descending and limit to 25 records.
+      operationId: searchCryptoTransaction
+      parameters:
+      - description: pass the _id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_16'
+          description: transaction matching criteria
+        "404":
+          description: No transaction found with that data
+      summary: searches for Crypto transactions
+      tags:
+      - Student
+  /transactions/payTransaction:
+    post:
+      description: Make a new transaction. Find the associated buck and account. If
+        there is no account then make one. Use algorithm to manage totalCurrency and
+        freeCurrency on the buck(aka central bank). Then manage the change on account
+        value. Accounts could be negative or amount coming in could be negative.
+      operationId: payTransaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/transactions_payTransaction_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_17'
+          description: class record is made. Return all the classes from this owner.
+            Sort classes by period ascending
+        "404":
+          description: transaction cannot be made with that data
+      summary: When a teacher or admin is paying/debting a student with their own
+        bucks
+      tags:
+      - Staff
+  /transactions/payTransactions:
+    post:
+      description: Make a new transaction. Find the associated buck and account. If
+        there is no account then make one. Use algorithm to manage totalCurrency and
+        freeCurrency on the buck(aka central bank). Then manage the change on account
+        value. Accounts could be negative or amount coming in could be negative. Do
+        the above for every student in a class.
+      operationId: payTransactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/transactions_payTransactions_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_17'
+          description: class record is made. Return all the classes from this owner.
+            Sort classes by period ascending
+        "404":
+          description: transactions cannot be made with that data
+      summary: When a teacher or admin is paying/debting an entire class
+      tags:
+      - Staff
+  /transactions/conversionTransaction:
+    post:
+      description: Find school uBuck and the accounts to be converted. Create transactions
+        to and from both accounts. Burnbuck with 1% charge. Use algorithm to manage
+        buck(central bank) and new account values.
+      operationId: buckConvert
+      parameters:
+      - description: pass the _id to be searched
+        explode: false
+        in: header
+        name: user._id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/transactions_conversionTransaction_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_17'
+          description: class record is made. Return all the classes from this owner.
+            Sort classes by period ascending
+        "404":
+          description: transactions cannot be made with that data
+      summary: When a student is converting between 2 bucks
+      tags:
+      - Student
+  /transaction/cryptoTransaction:
+    post:
+      description: Find crypto, uBuck and both accounts. Get latest crypto price and
+        save it to crypto doc. Also add or subtract from total crypto. If there is
+        no account for the crypto then make one. Make transaction, burn buck, central
+        bank and new account balances. Update account basis if buying.
+      operationId: cryptoConvert
+      parameters:
+      - description: pass the _id to be searched
+        explode: false
+        in: header
+        name: user._id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/transaction_cryptoTransaction_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_18'
+          description: return all crypto accounts with value greater than 0 and the
+            most recent transaction
+        "404":
+          description: transactions cannot be made with that data
+      summary: When a student is converting between 2 uBucks and Cryptos
+      tags:
+      - Student
+  /users:
+    get:
+      description: sort by rank ascending
+      operationId: searchStudents
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UserNoHistory'
+                type: array
+          description: students matching criteria
+        "404":
+          description: No users found with that data
+      summary: return all students from a school
+      tags:
+      - All
+  /users/user:
+    delete:
+      description: Delete a user.
+      operationId: deleteUser
+      parameters:
+      - description: pass the email to be deleted. Delete all of their transactions
+          and events. Search classes that the user is a member in and remove them
+          from the member list. Find all of their buck accounts and burn the bucks
+          then delete the account. Find all the crypto accounts, modify the cryptos
+          totalCount then delete the account
+        explode: true
+        in: query
+        name: email
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_19'
+          description: transaction Deleted
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_403'
+          description: Students are trying to delete students
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_404_1'
+          description: There is no user with that email
+      summary: delete user
+      tags:
+      - SysAdmin
+    get:
+      description: return student
+      operationId: searchStudent
+      parameters:
+      - description: pass the _id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: students matching criteria
+        "404":
+          description: No user found with that data
+      summary: return one student
+      tags:
+      - All
+    put:
+      description: edit user fields. If it is password then the password must be salted
+        and hashed. If it is college or career then income needs to be halved and
+        end times need to be saved to the record. Email change means verified is set
+        to false. Request will have new password in the clear. If college true then
+        transaction has to be made representing the cost of college.
+      operationId: userEdit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/users_user_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: return classes where this user is a member
+        "404":
+          description: Cannot update user with that data
+      summary: edit a user
+      tags:
+      - All
+  /users/auth:
+    get:
+      description: return user
+      operationId: AuthUser
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseAuth2'
+          description: students matching criteria
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseAuth4'
+          description: No user found with that data
+      summary: return authenticated user details
+      tags:
+      - All
+  /users/register:
+    post:
+      description: find the class by addCode. If it is a teachers class then it is
+        a student(role:0). Then count how many students and give the user a rank of
+        count + 1. Add the user to the member list of the teachers class. Find the
+        schools uBucks and create a uBuck account for the student. Add the student
+        to the Entire School class(period 0) If it is class period -1 then it is a
+        teacher(role:1). Add the teacher _id to the member list of the class. Create
+        a new buck using the teachers details. If no school is found then it could
+        be an admin(role:2). Confirm that there is a school with an admin addcode
+        that matches. Then create the school uBuck, and a list of classes, Entire
+        School(period:0), Freshman(period:9), Sophomore(period:10), Junion(period:11),
+        Senior(period:12), My Teachers(period:-1). Make the admin the owner of all
+        these things. Reset the school admin code. (legacy backend requires role)
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestRegister'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseRegister2'
+          description: class record is made. Return all the classes from this owner.
+            Sort classes by period ascending
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseRegister4'
+          description: Incorrect registeration information
+      summary: Users register
+      tags:
+      - Unregistered
+  /users/login:
+    post:
+      description: If user email and password are correc tthen generate token. If
+        use is not confirmed then send them an email with confirmation URL
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestLogin'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseLogin2'
+          description: class record is made. Return all the classes from this owner.
+            Sort classes by period ascending
+          headers:
+            Set-Cookie:
+              description: Contains the session cookie named `w_authExp` and `w_auth`.
+                Pass this cookie back in subsequent requests.
+              explode: false
+              schema:
+                $ref: '#/components/schemas/ResponseCookie'
+              style: simple
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseLogin4'
+          description: wrong password
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseLogin4'
+          description: wrong password
+      summary: logging in
+      tags:
+      - All
+  /users/logout:
+    get:
+      description: logout
+      operationId: logout
+      parameters:
+      - description: pass the _id to be searched
+        explode: false
+        in: header
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseRegister2'
+          description: students matching criteria
+        "404":
+          description: No user found with that data
+      summary: logout
+      tags:
+      - All
+  /users/resetPassword:
+    post:
+      description: generate temp password and send it in an email
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/users_resetPassword_body'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_17'
+          description: class record is made. Return all the classes from this owner.
+            Sort classes by period ascending
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_401'
+          description: unconfirmed email
+      summary: reset password
+      tags:
+      - All
+  /users/confirmEmail:
+    get:
+      description: user is authenticated by token and confirmed is changed to true
+      operationId: confirmEmail
+      parameters:
+      - description: pass the token to be searched
+        explode: true
+        in: query
+        name: token
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_17'
+          description: students matching criteria
+        "404":
+          description: No user found with that data
+      summary: confirm email
+      tags:
+      - All
+components:
+  schemas:
+    Account:
+      example:
+        owner_id: 613eab19e58cc511801af657
+        kind: Buck
+        type_id: 613eab19e58cc511801af657
+        _id: 613eab19e58cc511801af657
+        history:
+        - - 0
+          - 0
+        - - 0
+          - 0
+        basis: 1245.7
+        value: 1245.7
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        kind:
+          example: Buck
+          type: string
+        type_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        value:
+          default: 0
+          example: 1245.7
+          type: number
+        basis:
+          example: 1245.7
+          type: number
+        history:
+          items:
+            items:
+              type: integer
+            maxItems: 2
+            minItems: 2
+            type: array
+          type: array
+      required:
+      - _id
+      - basis
+      - history
+      - kind
+      - owner
+      - type
+      - value
+      type: object
+    Auction:
+      example:
+        itemNumber: dkeD56
+        visibility:
+        - 613eab19e58cc511801af657
+        - 613eab19e58cc511801af657
+        endDate: 2000-01-23T04:56:07.000+00:00
+        owner_id: 613eab19e58cc511801af657
+        winner_id: 613eab19e58cc511801af657
+        description: Candy Bar
+        _id: 613eab19e58cc511801af657
+        bid: 4
+        startDate: 2000-01-23T04:56:07.000+00:00
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        winner_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        startDate:
+          format: date-time
+          type: string
+        endDate:
+          format: date-time
+          type: string
+        itemNumber:
+          example: dkeD56
+          type: string
+        bid:
+          default: 0
+          example: 4
+          type: number
+        description:
+          example: Candy Bar
+          type: string
+        visibility:
+          items:
+            example: 613eab19e58cc511801af657
+            type: string
+          type: array
+      required:
+      - EndDate
+      - _id
+      - bid
+      - description
+      - itemNumber
+      - owner
+      - startDate
+      - visibility
+      - winner
+      type: object
+    Buck:
+      example:
+        freeCurrency: 5565
+        school_id: 613eab19e58cc511801af657
+        owner_id: 613eab19e58cc511801af657
+        name: UBuck
+        totalCurrency: 514286.578391947
+        _id: 613eab19e58cc511801af657
+        history:
+        - - 0
+          - 0
+        - - 0
+          - 0
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        school_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        name:
+          example: UBuck
+          type: string
+        totalCurrency:
+          default: 0
+          example: 514286.578391947
+          type: number
+        freeCurrency:
+          default: 0
+          example: 5565
+          type: number
+        history:
+          items:
+            items:
+              type: integer
+            maxItems: 2
+            minItems: 2
+            type: array
+          type: array
+      required:
+      - _id
+      - freeCurrency
+      - history
+      - name
+      - owner
+      - school
+      - totalCurrency
+      type: object
+    Class:
+      example:
+        period: 4
+        owner_id: 613eab19e58cc511801af657
+        members:
+        - 613eab19e58cc511801af657
+        - 613eab19e58cc511801af657
+        name: Math
+        _id: 613eab19e58cc511801af657
+        addCode: Sd45Tb
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        period:
+          example: 4
+          type: integer
+        name:
+          example: Math
+          type: string
+        addCode:
+          example: Sd45Tb
+          type: string
+        members:
+          items:
+            example: 613eab19e58cc511801af657
+            type: string
+          type: array
+      required:
+      - _id
+      - addCode
+      - members
+      - name
+      - owner
+      - period
+      type: object
+    ClassWithMembers:
+      example:
+        period: 4
+        owner_id: 613eab19e58cc511801af657
+        members:
+        - lastName: Leno
+          _id: 613eab19e58cc511801af657
+        - lastName: Leno
+          _id: 613eab19e58cc511801af657
+        name: Math
+        _id: 613eab19e58cc511801af657
+        addCode: Sd45Tb
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        period:
+          example: 4
+          type: integer
+        name:
+          example: Math
+          type: string
+        addCode:
+          example: Sd45Tb
+          type: string
+        members:
+          items:
+            $ref: '#/components/schemas/ClassWithMembers_members'
+          type: array
+      required:
+      - _id
+      - addCode
+      - members
+      - name
+      - owner
+      - period
+      type: object
+    Crypto:
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        name:
+          example: Cardano
+          type: string
+        totalCount:
+          default: 0
+          example: 514.57
+          type: number
+        usd:
+          example: 12.45
+          type: number
+      required:
+      - _id
+      - name
+      - totalCount
+      - usd
+      type: object
+    Event:
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        transaction_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        value:
+          example: 123
+          type: integer
+        description:
+          example: Life Event
+          type: string
+      required:
+      - _id
+      - description
+      - owner
+      - transaction
+      - value
+      type: object
+    School:
+      example:
+        zip: 95338
+        city: Stockton
+        adminAddCode: adc24F
+        name: Edison High School
+        _id: 613eab19e58cc511801af657
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        name:
+          example: Edison High School
+          type: string
+        city:
+          example: Stockton
+          type: string
+        adminAddCode:
+          example: adc24F
+          type: string
+        zip:
+          example: 95338
+          type: integer
+      required:
+      - _id
+      - adminAddCode
+      - city
+      - name
+      - zip
+      type: object
+    ResponseAuth2:
+      example:
+        firstName: Tom
+        lastName: Jones
+        isAuth: true
+        role: 0
+        school_id: 613eab19e58cc511801af657
+        isAdmin: true
+        _id: 613eab19e58cc511801af657
+        email: aa@aa.com
+      properties:
+        email:
+          example: aa@aa.com
+          type: string
+        firstName:
+          example: Tom
+          type: string
+        lastName:
+          example: Jones
+          type: string
+        isAdmin:
+          type: boolean
+        isAuth:
+          type: boolean
+        role:
+          example: 0
+          type: integer
+        school_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      required:
+      - isAdmin
+      - isAuth
+      type: object
+    ResponseAuth4:
+      properties:
+        isAuth:
+          example: false
+          type: boolean
+        error:
+          type: boolean
+      type: object
+    ResponseCookie:
+      properties:
+        w_authExp:
+          type: string
+        w_auth:
+          type: string
+      type: object
+    ResponseEvents:
+      items:
+        $ref: '#/components/schemas/ResponseEvents_inner'
+      type: array
+    ResponseLogin2:
+      example:
+        loginSuccess: true
+        userId: 613eab19e58cc511801af657
+      properties:
+        loginSuccess:
+          example: true
+          type: boolean
+        userId:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    ResponseLogin4:
+      properties:
+        loginSuccess:
+          example: false
+          type: boolean
+        message:
+          example: Auth failed, email not found
+          type: string
+      type: object
+    ResponseMakeClass:
+      items:
+        $ref: '#/components/schemas/ResponseMakeClass_inner'
+      type: array
+    ResponseRegister2:
+      example:
+        success: true
+      properties:
+        success:
+          example: true
+          type: boolean
+      type: object
+    ResponseRegister4:
+      properties:
+        message:
+          example: There is no admin with that add Code
+          type: string
+      type: object
+    ResponseSchools:
+      items:
+        $ref: '#/components/schemas/ResponseSchools_inner'
+      type: array
+    ResponseTransactions:
+      items:
+        $ref: '#/components/schemas/ResponseTransactions_inner'
+      type: array
+    RequestMakeClass:
+      example:
+        period: 4
+        owner_id: 613eab19e58cc511801af657
+        name: Math
+      properties:
+        name:
+          example: Math
+          type: string
+        owner_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        period:
+          example: 4
+          type: integer
+      type: object
+    RequestLogin:
+      example:
+        password: Pa$$w0rd
+        email: ss@ss.com
+      properties:
+        email:
+          example: ss@ss.com
+          format: email
+          type: string
+        password:
+          example: Pa$$w0rd
+          type: string
+      type: object
+    RequestRegister:
+      example:
+        firstName: Tom
+        lastName: Tom
+        password: Pa$$w0rd
+        role: 2
+        addCode: werTY6
+        email: ss@ss.com
+      properties:
+        email:
+          example: ss@ss.com
+          format: email
+          type: string
+        password:
+          example: Pa$$w0rd
+          type: string
+        addCode:
+          example: werTY6
+          type: string
+        firstName:
+          example: Tom
+          type: string
+        lastName:
+          example: Tom
+          type: string
+        role:
+          example: 2
+          type: integer
+      type: object
+    Transaction:
+      example:
+        conversionRatio: 123.45
+        amount: 123.45
+        account_id: 613eab19e58cc511801af657
+        balance: 123.45
+        owner_id: 613eab19e58cc511801af657
+        assetID: 613eab19e58cc511801af657
+        description: Life Event
+        _id: 613eab19e58cc511801af657
+        uBucks: 123.45
+        type: Crypto
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        account_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        balance:
+          example: 123.45
+          type: number
+        description:
+          example: Life Event
+          type: string
+        conversionRatio:
+          example: 123.45
+          type: number
+        amount:
+          example: 123.45
+          type: number
+        uBucks:
+          example: 123.45
+          type: number
+        type:
+          example: Crypto
+          type: string
+        assetID:
+          example: 613eab19e58cc511801af657
+          type: string
+      required:
+      - _id
+      - account
+      - amount
+      - assetID
+      - balance
+      - conversionRatio
+      - description
+      - owner
+      - type
+      - uBucks
+      type: object
+    User:
+      allOf:
+      - $ref: '#/components/schemas/UserNoHistory'
+      example:
+        history:
+        - - 0
+          - 0
+        - - 0
+          - 0
+      properties:
+        history:
+          items:
+            items:
+              type: integer
+            maxItems: 2
+            minItems: 2
+            type: array
+          type: array
+      required:
+      - history
+      type: object
+    UserNoHistory:
+      example:
+        college: false
+        income: 123.45
+        lastName: Welling
+        collegeEnd: 2000-01-23T04:56:07.000+00:00
+        role: 2
+        confirmed: true
+        firstName: Tom
+        school_id: 613eab19e58cc511801af657
+        children: 3
+        netWorth: 123.45
+        rank: 2
+        _id: 613eab19e58cc511801af657
+        email: ss@ss.com
+        transitionEnd: 2000-01-23T04:56:07.000+00:00
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        collegeEnd:
+          format: date-time
+          type: string
+        transitionEnd:
+          format: date-time
+          type: string
+        firstName:
+          example: Tom
+          type: string
+        lastName:
+          example: Welling
+          type: string
+        email:
+          example: ss@ss.com
+          format: email
+          type: string
+        confirmed:
+          default: false
+          example: true
+          type: boolean
+        school_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        college:
+          default: false
+          example: false
+          type: boolean
+        children:
+          default: 0
+          example: 3
+          type: integer
+        income:
+          example: 123.45
+          type: number
+        role:
+          default: 0
+          example: 2
+          type: integer
+        rank:
+          default: 9999
+          example: 2
+          type: integer
+        netWorth:
+          default: 0
+          example: 123.45
+          type: number
+      required:
+      - _id
+      - careerTransition
+      - children
+      - college
+      - confirmed
+      - email
+      - firstName
+      - income
+      - lastName
+      - netWorth
+      - rank
+      - role
+      - school
+      - token
+      - tokenExp
+      type: object
+    schools_school_body:
+      properties:
+        name:
+          example: East High
+          type: string
+        city:
+          example: Dublin
+          type: string
+        zip:
+          example: 94557
+          type: integer
+      type: object
+    schools_school_body_1:
+      properties:
+        name:
+          example: East High
+          type: string
+        city:
+          example: Dublin
+          type: string
+        zip:
+          example: 94557
+          type: integer
+      type: object
+    inline_response_200:
+      example:
+        success: true
+      properties:
+        success:
+          description: True if record was created
+          type: boolean
+      type: object
+    accounts_account_body:
+      properties:
+        _id:
+          example: 614290257145de7a9e40c594
+          type: string
+        owner:
+          example: 614290257145de7a9e40c594
+          type: string
+        kind:
+          example: Buck
+          type: string
+        type:
+          example: 613eab19e58cc511801af657
+          type: string
+        value:
+          example: 123.45
+          type: number
+        basis:
+          example: 123.45
+          type: number
+      type: object
+    accounts_account_body_1:
+      properties:
+        owner:
+          example: 614290257145de7a9e40c594
+          type: string
+        kind:
+          example: Buck
+          type: string
+        type:
+          example: 613eab19e58cc511801af657
+          type: string
+        value:
+          example: 123.45
+          type: number
+        basis:
+          example: 123.45
+          type: number
+      type: object
+    inline_response_200_1:
+      example:
+        value: 123.45
+      properties:
+        value:
+          example: 123.45
+          type: number
+      type: object
+    inline_response_200_2:
+      example:
+        searched: cardano
+        owned: 123.45
+        usd: 123.45
+        UBuck: 123.45
+      properties:
+        searched:
+          example: cardano
+          type: string
+        usd:
+          example: 123.45
+          type: number
+        owned:
+          example: 123.45
+          type: number
+        UBuck:
+          example: 123.45
+          type: number
+      type: object
+    inline_response_404:
+      properties:
+        searchSuccess:
+          example: false
+          type: boolean
+        message:
+          example: There is no + req.query.name + crypto
+          type: string
+        searched:
+          example: cardano
+          type: string
+        usd:
+          example: 0
+          type: integer
+        owned:
+          example: 0
+          type: integer
+        UBuck:
+          example: 123.45
+          type: number
+      type: object
+    inline_response_200_3:
+      example:
+        converion: 123.45
+        bucks: Smith Bucks
+        balance: 123.45
+        type_id: 614290257145de7a9e40c594
+        history:
+        - - 0
+          - 0
+        - - 0
+          - 0
+        _id: 614290257145de7a9e40c594
+      properties:
+        converion:
+          example: 123.45
+          type: number
+        history:
+          items:
+            items:
+              type: integer
+            maxItems: 2
+            minItems: 2
+            type: array
+          type: array
+        bucks:
+          example: Smith Bucks
+          type: string
+        balance:
+          example: 123.45
+          type: number
+        _id:
+          example: 614290257145de7a9e40c594
+          type: string
+        type_id:
+          example: 614290257145de7a9e40c594
+          type: string
+      type: object
+    inline_response_200_4:
+      example:
+        converion: 123.45
+        bucks: Smith Bucks
+        balance: 123.45
+        type_id: 614290257145de7a9e40c594
+        _id: 614290257145de7a9e40c594
+      properties:
+        converion:
+          example: 123.45
+          type: number
+        bucks:
+          example: Smith Bucks
+          type: string
+        balance:
+          example: 123.45
+          type: number
+        _id:
+          example: 614290257145de7a9e40c594
+          type: string
+        type_id:
+          example: 614290257145de7a9e40c594
+          type: string
+      type: object
+    auctionsauction_winner:
+      example:
+        firstName: Tommy
+        lastName: Boy
+      properties:
+        firstName:
+          example: Tommy
+          type: string
+        lastName:
+          example: Boy
+          type: string
+      type: object
+    auctionsauction_visibility:
+      example:
+        name: Entire School
+      properties:
+        name:
+          example: Entire School
+          type: string
+      type: object
+    inline_response_200_5:
+      example:
+        itemNumber: FyW54G
+        winner:
+          firstName: Tommy
+          lastName: Boy
+        visibility:
+        - name: Entire School
+        - name: Entire School
+        endDate: 2000-01-23T04:56:07.000+00:00
+        description: Candy Bar
+        _id: 61be17e2f5691463b0fc972d
+        bid: 123.45
+        startDate: 2000-01-23T04:56:07.000+00:00
+      properties:
+        _id:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+        bid:
+          example: 123.45
+          type: number
+        description:
+          example: Candy Bar
+          type: string
+        endDate:
+          format: date-time
+          type: string
+        startDate:
+          format: date-time
+          type: string
+        itemNumber:
+          example: FyW54G
+          type: string
+        winner:
+          $ref: '#/components/schemas/auctionsauction_winner'
+        visibility:
+          items:
+            $ref: '#/components/schemas/auctionsauction_visibility'
+          type: array
+      type: object
+    auctions_body:
+      properties:
+        bid:
+          example: 123.35
+          type: number
+        description:
+          example: candy
+          type: string
+        endDate:
+          format: date-time
+          type: string
+        startDate:
+          format: date-time
+          type: string
+        owner:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+        visibility:
+          items:
+            example: 613eab19e58cc511801af657
+            type: string
+          type: array
+      type: object
+    auctionsstudent_owner:
+      example:
+        lastName: Boy
+        _id: 61be17e2f5691463b0fc972d
+      properties:
+        _id:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+        lastName:
+          example: Boy
+          type: string
+      type: object
+    auctionsstudent_winner:
+      example:
+        firstName: Tommy
+        lastName: Boy
+        _id: 61be17e2f5691463b0fc972d
+      properties:
+        _id:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+        firstName:
+          example: Tommy
+          type: string
+        lastName:
+          example: Boy
+          type: string
+      type: object
+    inline_response_200_6:
+      example:
+        owner:
+          lastName: Boy
+          _id: 61be17e2f5691463b0fc972d
+        itemNumber: FyW54G
+        winner:
+          firstName: Tommy
+          lastName: Boy
+          _id: 61be17e2f5691463b0fc972d
+        endDate: 2000-01-23T04:56:07.000+00:00
+        description: Candy Bar
+        _id: 61be17e2f5691463b0fc972d
+        bid: 123.45
+        startDate: 2000-01-23T04:56:07.000+00:00
+      properties:
+        _id:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+        bid:
+          example: 123.45
+          type: number
+        description:
+          example: Candy Bar
+          type: string
+        endDate:
+          format: date-time
+          type: string
+        startDate:
+          format: date-time
+          type: string
+        itemNumber:
+          example: FyW54G
+          type: string
+        owner:
+          $ref: '#/components/schemas/auctionsstudent_owner'
+        winner:
+          $ref: '#/components/schemas/auctionsstudent_winner'
+      type: object
+    auctions_placeBid_body:
+      properties:
+        item:
+          example: 24d54dD
+          type: string
+        bid:
+          example: 123.45
+          type: number
+        _id:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+      type: object
+    inline_response_400:
+      properties:
+        error:
+          example: your bid is not greater than the current bid or the auction is
+            over, refresh page
+          type: string
+      type: object
+    bucks_buck_body:
+      properties:
+        name:
+          example: Jane Bucks
+          type: string
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        school:
+          example: 613eab19e58cc511801af657
+          type: string
+        totalCurrency:
+          example: 123.45
+          type: number
+        freeCurrency:
+          example: 123.45
+          type: number
+      type: object
+    bucks_buck_body_1:
+      properties:
+        name:
+          example: UBuck
+          type: string
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        school:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    inline_response_200_7:
+      example:
+        owner: 613eab19e58cc511801af657
+        period: 2
+        members:
+        - firstName: Jay
+          lastName: Leno
+          netWorth: 123.45
+          rank: 42
+        - firstName: Jay
+          lastName: Leno
+          netWorth: 123.45
+          rank: 42
+        name: math
+        addCode: gewF6
+      properties:
+        name:
+          example: math
+          type: string
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        period:
+          example: 2
+          type: integer
+        addCode:
+          example: gewF6
+          type: string
+        members:
+          items:
+            $ref: '#/components/schemas/inline_response_200_7_members'
+          type: array
+      type: object
+    classes_class_body:
+      properties:
+        name:
+          example: Math
+          type: string
+        period:
+          example: 4
+          type: integer
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    inline_response_200_8:
+      example:
+        owner: 613eab19e58cc511801af657
+        period: 2
+        members:
+        - 613eab19e58cc511801af657
+        - 613eab19e58cc511801af657
+        name: Math
+        addCode: Dfer53
+      properties:
+        name:
+          example: Math
+          type: string
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        period:
+          example: 2
+          type: integer
+        addCode:
+          example: Dfer53
+          type: string
+        members:
+          items:
+            example: 613eab19e58cc511801af657
+            type: string
+          type: array
+      type: object
+    inline_response_200_9:
+      example:
+        owner: 613eab19e58cc511801af657
+        period: 4
+        members:
+        - 613eab19e58cc511801af657
+        - 613eab19e58cc511801af657
+        name: Math
+        addCode: 13DFE4
+      properties:
+        name:
+          example: Math
+          type: string
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        period:
+          example: 4
+          type: integer
+        addCode:
+          example: 13DFE4
+          type: string
+        members:
+          items:
+            example: 613eab19e58cc511801af657
+            type: string
+          type: array
+      type: object
+    class_kick_body:
+      properties:
+        kick_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    inline_response_200_10:
+      example:
+        kick_id: 613eab19e58cc511801af657
+      properties:
+        kick_id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    class_addCode_body:
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    classesmember_owner:
+      example:
+        firstName: Jay
+        lastName: Leno
+        _id: 613eab19e58cc511801af657
+      properties:
+        firstName:
+          example: Jay
+          type: string
+        lastName:
+          example: Leno
+          type: string
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    inline_response_200_11:
+      example:
+        owner:
+          firstName: Jay
+          lastName: Leno
+          _id: 613eab19e58cc511801af657
+        period: 4
+        _id: 613eab19e58cc511801af657
+      properties:
+        owner:
+          $ref: '#/components/schemas/classesmember_owner'
+        period:
+          example: 4
+          type: integer
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    classes_removeAdmin_body:
+      properties:
+        kick_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+    inline_response_200_12:
+      example:
+        owner:
+          firstName: Jay
+          lastName: Leno
+          _id: 613eab19e58cc511801af657
+        period: 3
+        _id: 613eab19e58cc511801af657
+      properties:
+        owner:
+          $ref: '#/components/schemas/classesmember_owner'
+        period:
+          example: 3
+          type: integer
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    classes_addAdmin_body:
+      properties:
+        addCode:
+          example: dE42Gp
+          type: string
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+    inline_response_200_13:
+      example:
+        owner:
+          firstName: Jay
+          lastName: Leno
+          _id: 613eab19e58cc511801af657
+        period: 2
+        _id: 613eab19e58cc511801af657
+      properties:
+        owner:
+          $ref: '#/components/schemas/classesmember_owner'
+        period:
+          example: 2
+          type: integer
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    classes_addClass_body:
+      properties:
+        addCode:
+          example: dE42Gp
+          type: string
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+    inline_response_200_14:
+      example:
+        owner:
+          firstName: Jay
+          lastName: Leno
+          _id: 613eab19e58cc511801af657
+        period: 1
+        _id: 613eab19e58cc511801af657
+      properties:
+        owner:
+          $ref: '#/components/schemas/classesmember_owner'
+        period:
+          example: 1
+          type: integer
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    inline_response_200_15:
+      example:
+        owner: 613eab19e58cc511801af657
+        conversionRatio: 123.45
+        amount: 123.45
+        balance: 123.45
+        assetID:
+          name: Jay Bucks
+        description: Life Event
+        uBucks: 123.45
+        type: Buck
+        account: 613eab19e58cc511801af657
+      properties:
+        account:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        balance:
+          example: 123.45
+          type: number
+        description:
+          example: Life Event
+          type: string
+        conversionRatio:
+          example: 123.45
+          type: number
+        amount:
+          example: 123.45
+          type: number
+        uBucks:
+          example: 123.45
+          type: number
+        type:
+          example: Buck
+          type: string
+        assetID:
+          $ref: '#/components/schemas/inline_response_200_15_assetID'
+      type: object
+    inline_response_200_16:
+      example:
+        owner: 613eab19e58cc511801af657
+        conversionRatio: 123.45
+        amount: 123.45
+        balance: 123.45
+        assetID:
+          name: Cardano
+        description: Life Event
+        uBucks: 123.45
+        type: Crypto
+        account: 613eab19e58cc511801af657
+      properties:
+        account:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        balance:
+          example: 123.45
+          type: number
+        description:
+          example: Life Event
+          type: string
+        conversionRatio:
+          example: 123.45
+          type: number
+        amount:
+          example: 123.45
+          type: number
+        uBucks:
+          example: 123.45
+          type: number
+        type:
+          example: Crypto
+          type: string
+        assetID:
+          $ref: '#/components/schemas/inline_response_200_16_assetID'
+      type: object
+    transactions_payTransaction_body:
+      properties:
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        description:
+          example: Life Event
+          type: string
+        amount:
+          example: 123.45
+          type: number
+        student:
+          example: 614290257145de7a9e40c58d
+          type: string
+        kind:
+          example: Sawayn Bucks
+          type: string
+      type: object
+    inline_response_200_17:
+      example:
+        success: true
+      properties:
+        success:
+          example: true
+          type: boolean
+      type: object
+    transactions_payTransactions_body:
+      properties:
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        description:
+          example: Life Event
+          type: string
+        amount:
+          example: 123.45
+          type: number
+        student:
+          example: 614290257145de7a9e40c58d
+          type: string
+        kind:
+          example: Sawayn Bucks
+          type: string
+      type: object
+    transactions_conversionTransaction_body:
+      properties:
+        accountFrom:
+          example: 614290257145de7a9e40c58d
+          type: string
+        accountTo:
+          example: 614290257145de7a9e40c58d
+          type: string
+        amount:
+          example: 123.45
+          type: number
+      type: object
+    transaction_cryptoTransaction_body:
+      properties:
+        name:
+          example: cardano
+          type: string
+        buy:
+          example: 123.45
+          type: number
+        sell:
+          example: 123.45
+          type: number
+      type: object
+    inline_response_200_18:
+      example:
+        accounts:
+        - quantity: 123.45
+          name: vechain
+          currentPrice: 1.255
+          basis: 0.124
+        - quantity: 123.45
+          name: vechain
+          currentPrice: 1.255
+          basis: 0.124
+        transaction:
+          conversionRatio: 123.45
+          owner: 6170a4aff8437c84920b7ff1
+          amount: 123.45
+          balance: 123.45
+          assetID:
+            name: vechain
+            _id: 61c4af57ce0e75f0214cbaaa
+          description: Conversion to this account
+          type: Crypto
+          uBucks: 0.0925
+          account: 61c4af5cce0e75f0214cbab1
+      properties:
+        transaction:
+          $ref: '#/components/schemas/inline_response_200_18_transaction'
+        accounts:
+          items:
+            $ref: '#/components/schemas/inline_response_200_18_accounts'
+          type: array
+      type: object
+    users_user_body:
+      properties:
+        email:
+          example: ss@ss.com
+          format: email
+          type: string
+        firstName:
+          example: Tom
+          type: string
+        lastName:
+          example: Jones
+          type: string
+        password:
+          example: passw0rd
+          type: string
+        college:
+          example: true
+          type: boolean
+        careerTransition:
+          example: true
+          type: boolean
+      type: object
+    inline_response_200_19:
+      example:
+        deleted: true
+      properties:
+        deleted:
+          example: true
+          type: boolean
+      type: object
+    inline_response_403:
+      properties:
+        error:
+          example: access level
+          type: string
+        message:
+          example: Students cannot delete users
+          type: string
+      type: object
+    inline_response_404_1:
+      properties:
+        error:
+          type: string
+        message:
+          example: There is no user with that email
+          type: string
+      type: object
+    users_resetPassword_body:
+      properties:
+        email:
+          example: ss@ss.com
+          format: email
+          type: string
+      type: object
+    inline_response_401:
+      properties:
+        error:
+          type: string
+        message:
+          example: There is no confirmed user with that email
+          type: string
+      type: object
+    ClassWithMembers_members:
+      example:
+        lastName: Leno
+        _id: 613eab19e58cc511801af657
+      properties:
+        lastName:
+          example: Leno
+          type: string
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    ResponseEvents_inner:
+      example:
+        transaction_id: 613eab19e58cc511801af657
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        owner_id:
+          firstName: Jay
+          lastName: Leno
+        description: on time
+        value: 123
+      properties:
+        value:
+          example: 123
+          type: integer
+        createdAt:
+          format: date-time
+          type: string
+        description:
+          example: on time
+          type: string
+        transaction_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner_id:
+          $ref: '#/components/schemas/ResponseEvents_inner_owner_id'
+      type: object
+    ResponseMakeClass_inner:
+      example:
+        owner: 613eab19e58cc511801af657
+        period: 2
+        members:
+        - 613eab19e58cc511801af657
+        - 613eab19e58cc511801af657
+        name: Math
+        _id: 613eab19e58cc511801af657
+        addCode: 45DE5
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+        name:
+          example: Math
+          type: string
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        period:
+          example: 2
+          type: integer
+        addCode:
+          example: 45DE5
+          type: string
+        members:
+          items:
+            example: 613eab19e58cc511801af657
+            type: string
+          type: array
+      type: object
+    ResponseSchools_inner:
+      example:
+        name: East High
+        _id: dlkjdlkjdfslkjdfs93
+      properties:
+        name:
+          example: East High
+          type: string
+        _id:
+          example: dlkjdlkjdfslkjdfs93
+          type: string
+      type: object
+    ResponseTransactions_inner:
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        amount: 123.45
+        student: Jay Leno
+        description: on time
+      properties:
+        amount:
+          example: 123.45
+          type: number
+        createdAt:
+          format: date-time
+          type: string
+        description:
+          example: on time
+          type: string
+        student:
+          example: Jay Leno
+          type: string
+      type: object
+    inline_response_200_7_members:
+      example:
+        firstName: Jay
+        lastName: Leno
+        netWorth: 123.45
+        rank: 42
+      properties:
+        firstName:
+          example: Jay
+          type: string
+        lastName:
+          example: Leno
+          type: string
+        rank:
+          example: 42
+          type: integer
+        netWorth:
+          example: 123.45
+          type: number
+      type: object
+    inline_response_200_15_assetID:
+      example:
+        name: Jay Bucks
+      properties:
+        name:
+          example: Jay Bucks
+          type: string
+      type: object
+    inline_response_200_16_assetID:
+      example:
+        name: Cardano
+      properties:
+        name:
+          example: Cardano
+          type: string
+      type: object
+    inline_response_200_18_transaction_assetID:
+      example:
+        name: vechain
+        _id: 61c4af57ce0e75f0214cbaaa
+      properties:
+        name:
+          example: vechain
+          type: string
+        _id:
+          example: 61c4af57ce0e75f0214cbaaa
+          type: string
+      type: object
+    inline_response_200_18_transaction:
+      example:
+        conversionRatio: 123.45
+        owner: 6170a4aff8437c84920b7ff1
+        amount: 123.45
+        balance: 123.45
+        assetID:
+          name: vechain
+          _id: 61c4af57ce0e75f0214cbaaa
+        description: Conversion to this account
+        type: Crypto
+        uBucks: 0.0925
+        account: 61c4af5cce0e75f0214cbab1
+      properties:
+        account:
+          example: 61c4af5cce0e75f0214cbab1
+          type: string
+        amount:
+          example: 123.45
+          type: number
+        balance:
+          example: 123.45
+          type: number
+        conversionRatio:
+          example: 123.45
+          type: number
+        description:
+          example: Conversion to this account
+          type: string
+        owner:
+          example: 6170a4aff8437c84920b7ff1
+          type: string
+        type:
+          example: Crypto
+          type: string
+        uBucks:
+          example: 0.0925
+          type: number
+        assetID:
+          $ref: '#/components/schemas/inline_response_200_18_transaction_assetID'
+      type: object
+    inline_response_200_18_accounts:
+      example:
+        quantity: 123.45
+        name: vechain
+        currentPrice: 1.255
+        basis: 0.124
+      properties:
+        basis:
+          example: 0.124
+          type: number
+        currentPrice:
+          example: 1.255
+          type: number
+        name:
+          example: vechain
+          type: string
+        quantity:
+          example: 123.45
+          type: number
+      type: object
+    ResponseEvents_inner_owner_id:
+      example:
+        firstName: Jay
+        lastName: Leno
+      properties:
+        firstName:
+          example: Jay
+          type: string
+        lastName:
+          example: Leno
+          type: string
+      type: object
