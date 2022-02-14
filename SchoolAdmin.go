@@ -63,7 +63,7 @@ func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, s2
 			Id:      "",
 			OwnerId: userDetails.Name,
 			Period:  0,
-			Name:    "teachers in school",
+			Name:    "teachers at school",
 			AddCode: addCode,
 			Members: members,
 		}), nil
