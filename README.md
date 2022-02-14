@@ -15,6 +15,7 @@ go tool cover -html=cover.out
 "schools"
     [school-id]
     - name
+    - city
     - zip
     - addCode
     "teachers"

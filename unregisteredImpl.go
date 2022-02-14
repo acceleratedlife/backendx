@@ -21,7 +21,7 @@ func schoolByAddCodeTx(schools *bolt.Bucket, addCode string) (*bolt.Bucket, stri
 			continue
 		}
 
-		addCodeTx := school.Get([]byte("addCode"))
+		addCodeTx := school.Get([]byte(KeyAddCode))
 		if addCodeTx != nil &&
 			string(addCodeTx) == addCode {
 			return school, string(k), nil
@@ -31,7 +31,7 @@ func schoolByAddCodeTx(schools *bolt.Bucket, addCode string) (*bolt.Bucket, stri
 }
 
 func SchoolByIdTx(tx *bolt.Tx, schoolId string) (school *bolt.Bucket, err error) {
-	schools := tx.Bucket([]byte("schools"))
+	schools := tx.Bucket([]byte(KeySchools))
 	if schools == nil {
 		return nil, fmt.Errorf("no schools available")
 	}
@@ -65,7 +65,7 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 				continue
 			}
 
-			addCodeTx := school.Get([]byte("addCode"))
+			addCodeTx := school.Get([]byte(KeyAddCode))
 			if addCodeTx != nil &&
 				string(addCodeTx) == code {
 				role = UserRoleTeacher
@@ -73,7 +73,7 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 				return nil
 			}
 
-			teachers := school.Bucket([]byte("teachers"))
+			teachers := school.Bucket([]byte(KeyTeachers))
 			if teachers == nil {
 				return nil
 			}

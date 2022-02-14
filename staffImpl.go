@@ -57,10 +57,10 @@ func getClassesTx(teacher *bolt.Bucket) []openapi.ResponseMakeClassInner {
 		classBucket := teacher.Bucket(k)
 		iClass := openapi.ResponseMakeClassInner{
 			Id:      string(k),
-			Name:    string(classBucket.Get([]byte("name"))),
+			Name:    string(classBucket.Get([]byte(KeyName))),
 			Owner:   "",
 			Period:  btoi32(classBucket.Get([]byte("period"))),
-			AddCode: string(classBucket.Get([]byte("addCode"))),
+			AddCode: string(classBucket.Get([]byte(KeyAddCode))),
 			Members: make([]string, 0),
 		}
 		classes = append(classes, iClass)
@@ -82,8 +82,8 @@ func getClasses1Tx(teacher *bolt.Bucket, ownerId string) []openapi.Class {
 			Id:      string(k),
 			OwnerId: ownerId,
 			Period:  btoi32(classBucket.Get([]byte("period"))),
-			Name:    string(classBucket.Get([]byte("name"))),
-			AddCode: string(classBucket.Get([]byte("addCode"))),
+			Name:    string(classBucket.Get([]byte(KeyName))),
+			AddCode: string(classBucket.Get([]byte(KeyAddCode))),
 			Members: make([]string, 0),
 		}
 		data = append(data, iClass)
@@ -137,7 +137,7 @@ func addClassDetailsTx(bucket *bolt.Bucket, className string, period int) (class
 		return "", err1
 	}
 
-	err = class.Put([]byte("name"), []byte(className))
+	err = class.Put([]byte(KeyName), []byte(className))
 	if err != nil {
 		return "", err
 	}
@@ -146,6 +146,6 @@ func addClassDetailsTx(bucket *bolt.Bucket, className string, period int) (class
 		return "", err
 	}
 	addCode := RandomString(6)
-	err = class.Put([]byte("addCode"), []byte(addCode))
+	err = class.Put([]byte(KeyAddCode), []byte(addCode))
 	return
 }

@@ -20,6 +20,7 @@ func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, s2
 	}
 
 	members := make([]openapi.ClassWithMembersMembers, 0)
+	addCode := ""
 
 	_ = s.db.View(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
@@ -27,7 +28,12 @@ func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, s2
 			return err
 		}
 
-		teachers := school.Bucket([]byte("teachers"))
+		addCodeB := school.Get([]byte(KeyAddCode))
+		if addCodeB != nil {
+			addCode = string(addCodeB)
+		}
+
+		teachers := school.Bucket([]byte(KeyTeachers))
 
 		if teachers == nil {
 			return nil
@@ -54,11 +60,11 @@ func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, s2
 
 	return openapi.Response(200,
 		openapi.ClassWithMembers{
-			Id:      RandomString(12),
+			Id:      "",
 			OwnerId: userDetails.Name,
 			Period:  0,
-			Name:    "mock class name",
-			AddCode: RandomString(6),
+			Name:    "teachers in school",
+			AddCode: addCode,
 			Members: members,
 		}), nil
 

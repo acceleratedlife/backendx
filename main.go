@@ -39,6 +39,10 @@ const (
 	KeyStudents     = "students"
 	KeyOrders       = "orders"
 	KeyClasses      = "classes"
+	KeyAddCode      = "addCode"
+	KeyName         = "name"
+	KeyCity         = "city"
+	KeyZip          = "zip"
 )
 
 type AppClock struct {

@@ -42,17 +42,22 @@ func FindOrCreateSchool(db *bolt.DB, name string, city string, zip int) (id stri
 			return fmt.Errorf("cannot create bucket for new school: %v", err)
 		}
 
-		err = school.Put([]byte("name"), []byte(name))
+		err = school.Put([]byte(KeyName), []byte(name))
 		if err != nil {
 			return err
 		}
 
-		err = school.Put([]byte("city"), []byte(city))
+		err = school.Put([]byte(KeyCity), []byte(city))
 		if err != nil {
 			return err
 		}
 
-		err = school.Put([]byte("zip"), itob(zip))
+		err = school.Put([]byte(KeyZip), itob(zip))
+		if err != nil {
+			return err
+		}
+
+		err = school.Put([]byte(KeyAddCode), []byte(RandomString(6)))
 		if err != nil {
 			return err
 		}

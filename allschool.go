@@ -54,7 +54,7 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 			if err != nil {
 				return err
 			}
-			err = school.Put([]byte("addCode"), []byte(newCode))
+			err = school.Put([]byte(KeyAddCode), []byte(newCode))
 			if err != nil {
 				return err
 			}
