@@ -36,7 +36,6 @@ func TestSearchAdminTeacherClass(t *testing.T) {
 	_ = decoder.Decode(&data)
 
 	require.Equal(t, admins[0], data.OwnerId)
-	require.Equal(t, "mock class name", data.Name)
 	require.Equal(t, 2, len(data.Members))
 	require.Equal(t, teachers[0], data.Members[0].Id)
 	require.Equal(t, teachers[1], data.Members[1].Id)
