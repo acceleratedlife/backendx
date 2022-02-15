@@ -168,9 +168,10 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 
 	needToAdd := false
 	_ = db.View(func(tx *bolt.Tx) error {
-		student, err := getStudentBucketRoTx(tx, userDetails.Name)
-		if err != nil {
-			return err
+		student, _ := getStudentBucketRoTx(tx, userDetails.Name)
+		if student == nil {
+			needToAdd = true
+			return nil
 		}
 		needToAdd = IsDailyPayNeeded(student, clock)
 		return nil

@@ -69,7 +69,7 @@ func Test(t *testing.T) {
 func TestDailyPayment(t *testing.T) {
 
 	clock := TestClock{}
-	db, dbTearDown := OpenTestDB("")
+	db, dbTearDown := OpenTestDB("-pay")
 	defer dbTearDown()
 	_, _, _, _, students, _ := CreateTestAccounts(db, 2, 2, 2, 3)
 
