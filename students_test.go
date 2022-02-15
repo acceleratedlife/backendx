@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"testing"
+	"time"
 )
 
 func Test_addUbuck2Student(t *testing.T) {
@@ -53,3 +54,44 @@ func Test_addUbuck2Student(t *testing.T) {
 //		})
 //	}
 //}
+
+func Test(t *testing.T) {
+	d := time.Now()
+
+	d = d.Truncate(24 * time.Hour).Add(24 * time.Hour)
+
+	d1 := time.Now().Add(time.Minute).Truncate(24 * time.Hour).Add(24 * time.Hour)
+	t.Log(d)
+
+	require.True(t, d1.Equal(d))
+}
+
+func TestDailyPayment(t *testing.T) {
+
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 2, 2, 2, 3)
+
+	student, _ := getUserInLocalStore(db, students[0])
+
+	r := DailyPayIfNeeded(db, &clock, student)
+
+	require.True(t, r)
+
+	clock.Tick()
+	r = DailyPayIfNeeded(db, &clock, student)
+	require.False(t, r)
+
+	clock.TickOne(24 * time.Hour)
+	r = DailyPayIfNeeded(db, &clock, student)
+	require.True(t, r)
+
+	netWorth := decimal.Zero
+	_ = db.View(func(tx *bolt.Tx) error {
+		netWorth = StudentNetWorthTx(tx, students[0])
+		return nil
+	})
+
+	require.True(t, netWorth.GreaterThan(decimal.NewFromInt(200)))
+}

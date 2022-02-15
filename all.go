@@ -109,7 +109,7 @@ func (a AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResp
 		if err != nil {
 			return err
 		}
-		teachers := school.Bucket([]byte("teachers"))
+		teachers := school.Bucket([]byte(KeyTeachers))
 		if teachers == nil {
 			lgr.Printf("WARN no teachers bucket in school %s", userDetails.SchoolId)
 			return nil
@@ -119,7 +119,7 @@ func (a AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResp
 
 		iterateBuckets(teachers, func(teacher *bolt.Bucket) {
 			iterateBuckets(teacher, func(class *bolt.Bucket) {
-				students := class.Bucket([]byte("students"))
+				students := class.Bucket([]byte(KeyStudents))
 				if students == nil {
 					return
 				}
@@ -132,7 +132,7 @@ func (a AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResp
 			})
 		})
 
-		users := tx.Bucket([]byte("users"))
+		users := tx.Bucket([]byte(KeyUsers))
 
 		for k, _ := range studentsId {
 			studentData := users.Get([]byte(k))

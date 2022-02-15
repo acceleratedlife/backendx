@@ -43,12 +43,17 @@ const (
 	KeyName         = "name"
 	KeyCity         = "city"
 	KeyZip          = "zip"
+	KeyDayPayment   = "dayPayment"
 )
+
+type Clock interface {
+	Now() time.Time
+}
 
 type AppClock struct {
 }
 
-func (AppClock) Now() time.Time {
+func (*AppClock) Now() time.Time {
 	return time.Now()
 }
 

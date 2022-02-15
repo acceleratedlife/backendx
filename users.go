@@ -129,6 +129,9 @@ func getStudentBucketTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 
 	school := schools.Bucket([]byte(userInfo.SchoolId))
 
+	if school == nil {
+		return nil, fmt.Errorf("student not found")
+	}
 	students, err := school.CreateBucketIfNotExists([]byte(KeyStudents))
 	if err != nil {
 		return nil, err
@@ -137,6 +140,34 @@ func getStudentBucketTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	student, err := students.CreateBucketIfNotExists([]byte(userName))
 	if err != nil {
 		return nil, err
+	}
+	return student, nil
+}
+
+func getStudentBucketRoTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
+	userInfo, err := getUserInLocalStoreTx(tx, userName)
+	if err != nil {
+		return nil, err
+	}
+
+	schools := tx.Bucket([]byte(KeySchools))
+	if schools == nil {
+		return nil, fmt.Errorf("schools  does not exist")
+	}
+
+	school := schools.Bucket([]byte(userInfo.SchoolId))
+
+	if school == nil {
+		return nil, fmt.Errorf("student not found")
+	}
+	students := school.Bucket([]byte(KeyStudents))
+	if students == nil {
+		return nil, fmt.Errorf("student not found")
+	}
+
+	student := students.Bucket([]byte(userName))
+	if student == nil {
+		return nil, fmt.Errorf("student not found")
 	}
 	return student, nil
 }

@@ -30,6 +30,7 @@ go tool cover -html=cover.out
         user-id: ''
     "students"
         [userName]
+            dayPayment: datetime
             "accounts"
                 [account-id]
                     - balance: decimal
