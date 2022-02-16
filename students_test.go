@@ -1,11 +1,13 @@
 package main
 
 import (
+	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"testing"
+	"time"
 )
 
 func Test_addUbuck2Student(t *testing.T) {
@@ -19,19 +21,28 @@ func Test_addUbuck2Student(t *testing.T) {
 	require.Equal(t, 24, len(students))
 
 	for _, s := range students {
-		err := addUbuck2Student(db, clock, s, decimal.NewFromInt(1), "daily payment")
+		err := addUbuck2Student(db, &clock, s, decimal.NewFromFloat(1.01), "daily payment")
 		require.Nil(t, err)
 	}
 
 	var balance decimal.Decimal
 
+	var studentNetWo decimal.Decimal
+
 	_ = db.View(func(tx *bolt.Tx) error {
 		cb := tx.Bucket([]byte(KeyCB))
-		ub := cb.Get([]byte(CurrencyUBuck))
-		return balance.UnmarshalText(ub)
+		accounts := cb.Bucket([]byte(KeyAccounts))
+		ub := accounts.Bucket([]byte(CurrencyUBuck))
+		v := ub.Get([]byte(KeyBalance))
+
+		_ = balance.UnmarshalText(v)
+
+		studentNetWo = StudentNetWorthTx(tx, students[0])
+		return nil
 	})
 
-	assert.Equal(t, "24", balance.String())
+	assert.Equal(t, decimal.NewFromFloat(-24.24), balance)
+	assert.Equal(t, 1.01, studentNetWo.InexactFloat64())
 }
 
 //func TestStudentNetWorthTx(t *testing.T) {
@@ -53,3 +64,40 @@ func Test_addUbuck2Student(t *testing.T) {
 //		})
 //	}
 //}
+
+func TestDailyPayment(t *testing.T) {
+
+	lgr.Printf("INFO TestDailyPayment")
+	t.Log("INFO TestDailyPayment")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("-pay")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, _ := getUserInLocalStore(db, students[0])
+
+	r := DailyPayIfNeeded(db, &clock, student)
+
+	require.True(t, r)
+
+	require.Equal(t, 121.32, StudentNetWorth(db, student.Name).InexactFloat64())
+
+	r = DailyPayIfNeeded(db, &clock, student)
+	require.False(t, r)
+
+	clock.Tick()
+	r = DailyPayIfNeeded(db, &clock, student)
+	require.False(t, r)
+
+	clock.TickOne(24 * time.Hour)
+	r = DailyPayIfNeeded(db, &clock, student)
+	require.True(t, r)
+
+	netWorth := decimal.Zero
+	_ = db.View(func(tx *bolt.Tx) error {
+		netWorth = StudentNetWorthTx(tx, students[0])
+		return nil
+	})
+
+	require.True(t, netWorth.GreaterThan(decimal.NewFromInt(200)))
+}

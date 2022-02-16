@@ -30,9 +30,10 @@ go tool cover -html=cover.out
         user-id: ''
     "students"
         [userName]
+            dayPayment: datetime
             "accounts"
                 [account-id]
-                    - balance: decimal
+                - balance: decimal
                     "transactions"
                         datetime: {date-time, account-id, xrate, amount}
     "classes"
@@ -45,14 +46,14 @@ go tool cover -html=cover.out
                 
 "users"
     [userName]: UserInfo
-        "accounts"
-            [account-id]
-                - balance: number
-                "transactions"
-                    datetime: {date-time, account-id, xrate, amount}
+
 "cb"
-  - ubuck: decimal 
-  - teacher-id: issued
+    "accounts"
+        [account-id]  (ubuck/teacher-id)
+        - balance: decimal
+        "transactions"
+            datetime: {date-time, account-id, xrate, amount}
+   
 
 "orders"
   datetime: OrderInfo

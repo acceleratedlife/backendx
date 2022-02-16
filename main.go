@@ -28,6 +28,8 @@ import (
 )
 
 const (
+	OperationDebit  = 1
+	OperationCredit = 2
 	CurrencyUBuck   = "ubuck"
 	KeyCB           = "cb"
 	KeyUsers        = "users"
@@ -43,12 +45,17 @@ const (
 	KeyName         = "name"
 	KeyCity         = "city"
 	KeyZip          = "zip"
+	KeyDayPayment   = "dayPayment"
 )
+
+type Clock interface {
+	Now() time.Time
+}
 
 type AppClock struct {
 }
 
-func (AppClock) Now() time.Time {
+func (*AppClock) Now() time.Time {
 	return time.Now()
 }
 
@@ -79,10 +86,11 @@ func main() {
 }
 
 func createRouter(db *bolt.DB) *mux.Router {
+	clock := &AppClock{}
 	SchoolAdminApiService := NewSchoolAdminServiceImpl(db)
 	SchoolAdminApiController := openapi.NewSchoolAdminApiController(SchoolAdminApiService)
 
-	allService := NewAllApiServiceImpl(db)
+	allService := NewAllApiServiceImpl(db, clock)
 	allController := openapi.NewAllApiController(allService)
 
 	sysAdminApiServiceImpl := NewSysAdminApiServiceImpl(db)

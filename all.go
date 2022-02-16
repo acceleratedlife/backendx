@@ -11,7 +11,8 @@ import (
 )
 
 type AllApiServiceImpl struct {
-	db *bolt.DB
+	db    *bolt.DB
+	clock Clock
 }
 
 func (a *AllApiServiceImpl) Login(ctx context.Context, login openapi.RequestLogin) (openapi.ImplResponse, error) {
@@ -92,7 +93,7 @@ func (a AllApiServiceImpl) SearchStudentBuck(ctx context.Context, s string) (ope
 	panic("implement me")
 }
 
-func (a AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResponse, error) {
+func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResponse, error) {
 
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
@@ -103,13 +104,17 @@ func (a AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResp
 		}), nil
 	}
 
+	if userDetails.Role == UserRoleStudent {
+		DailyPayIfNeeded(a.db, a.clock, userDetails)
+	}
+
 	resp := make([]openapi.UserNoHistory, 0)
 	err = a.db.View(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 		if err != nil {
 			return err
 		}
-		teachers := school.Bucket([]byte("teachers"))
+		teachers := school.Bucket([]byte(KeyTeachers))
 		if teachers == nil {
 			lgr.Printf("WARN no teachers bucket in school %s", userDetails.SchoolId)
 			return nil
@@ -119,7 +124,7 @@ func (a AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResp
 
 		iterateBuckets(teachers, func(teacher *bolt.Bucket) {
 			iterateBuckets(teacher, func(class *bolt.Bucket) {
-				students := class.Bucket([]byte("students"))
+				students := class.Bucket([]byte(KeyStudents))
 				if students == nil {
 					return
 				}
@@ -132,7 +137,7 @@ func (a AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResp
 			})
 		})
 
-		users := tx.Bucket([]byte("users"))
+		users := tx.Bucket([]byte(KeyUsers))
 
 		for k, _ := range studentsId {
 			studentData := users.Get([]byte(k))
@@ -185,8 +190,9 @@ func (a AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUserB
 }
 
 // NewAllApiServiceImpl provides real api
-func NewAllApiServiceImpl(db *bolt.DB) openapi.AllApiServicer {
+func NewAllApiServiceImpl(db *bolt.DB, clock Clock) openapi.AllApiServicer {
 	return &AllApiServiceImpl{
-		db: db,
+		db:    db,
+		clock: clock,
 	}
 }
