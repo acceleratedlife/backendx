@@ -11,7 +11,8 @@ import (
 )
 
 type AllApiServiceImpl struct {
-	db *bolt.DB
+	db    *bolt.DB
+	clock Clock
 }
 
 func (a *AllApiServiceImpl) Login(ctx context.Context, login openapi.RequestLogin) (openapi.ImplResponse, error) {
@@ -92,7 +93,7 @@ func (a AllApiServiceImpl) SearchStudentBuck(ctx context.Context, s string) (ope
 	panic("implement me")
 }
 
-func (a AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResponse, error) {
+func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResponse, error) {
 
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
@@ -101,6 +102,10 @@ func (a AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResp
 			IsAuth: false,
 			Error:  true,
 		}), nil
+	}
+
+	if userDetails.Role == UserRoleStudent {
+		DailyPayIfNeeded(a.db, a.clock, userDetails)
 	}
 
 	resp := make([]openapi.UserNoHistory, 0)
@@ -185,8 +190,9 @@ func (a AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUserB
 }
 
 // NewAllApiServiceImpl provides real api
-func NewAllApiServiceImpl(db *bolt.DB) openapi.AllApiServicer {
+func NewAllApiServiceImpl(db *bolt.DB, clock Clock) openapi.AllApiServicer {
 	return &AllApiServiceImpl{
-		db: db,
+		db:    db,
+		clock: clock,
 	}
 }
