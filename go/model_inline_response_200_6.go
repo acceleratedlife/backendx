@@ -15,6 +15,7 @@ import (
 )
 
 type InlineResponse2006 struct {
+
 	Id string `json:"_id,omitempty"`
 
 	Bid float32 `json:"bid,omitempty"`

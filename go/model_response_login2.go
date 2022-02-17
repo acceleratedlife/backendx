@@ -11,6 +11,7 @@
 package openapi
 
 type ResponseLogin2 struct {
+
 	LoginSuccess bool `json:"loginSuccess,omitempty"`
 
 	UserId string `json:"userId,omitempty"`

@@ -11,6 +11,7 @@
 package openapi
 
 type ResponseAuth4 struct {
+
 	IsAuth bool `json:"isAuth,omitempty"`
 
 	Error bool `json:"error,omitempty"`

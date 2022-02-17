@@ -11,6 +11,7 @@
 package openapi
 
 type ResponseMakeClassInner struct {
+
 	Id string `json:"_id,omitempty"`
 
 	Name string `json:"name,omitempty"`

@@ -1344,7 +1344,7 @@ paths:
         name: _id
         required: true
         schema:
-          type: string
+          $ref: '#/components/schemas/RequestUser'
         style: form
       responses:
         "200":
@@ -1904,6 +1904,7 @@ components:
       required:
       - isAdmin
       - isAuth
+      - role
       type: object
     ResponseAuth4:
       properties:
@@ -1948,6 +1949,12 @@ components:
     ResponseMakeClass:
       items:
         $ref: '#/components/schemas/ResponseMakeClass_inner'
+      required:
+      - _id
+      - addCode
+      - members
+      - name
+      - period
       type: array
     ResponseRegister2:
       example:
@@ -2028,6 +2035,14 @@ components:
         role:
           example: 2
           type: integer
+      type: object
+    RequestUser:
+      properties:
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      required:
+      - _id
       type: object
     Transaction:
       example:

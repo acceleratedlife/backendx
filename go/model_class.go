@@ -11,6 +11,7 @@
 package openapi
 
 type Class struct {
+
 	Id string `json:"_id"`
 
 	OwnerId string `json:"owner_id,omitempty"`
@@ -27,9 +28,9 @@ type Class struct {
 // AssertClassRequired checks if the required fields are not zero-ed
 func AssertClassRequired(obj Class) error {
 	elements := map[string]interface{}{
-		"_id":     obj.Id,
-		"period":  obj.Period,
-		"name":    obj.Name,
+		"_id": obj.Id,
+		"period": obj.Period,
+		"name": obj.Name,
 		"addCode": obj.AddCode,
 		"members": obj.Members,
 	}

@@ -11,6 +11,7 @@
 package openapi
 
 type ResponseAuth2 struct {
+
 	Email string `json:"email,omitempty"`
 
 	FirstName string `json:"firstName,omitempty"`
@@ -32,7 +33,8 @@ type ResponseAuth2 struct {
 func AssertResponseAuth2Required(obj ResponseAuth2) error {
 	elements := map[string]interface{}{
 		"isAdmin": obj.IsAdmin,
-		"isAuth":  obj.IsAuth,
+		"isAuth": obj.IsAuth,
+		"role": obj.Role,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

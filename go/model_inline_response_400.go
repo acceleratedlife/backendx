@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse400 struct {
+
 	Error string `json:"error,omitempty"`
 }
 

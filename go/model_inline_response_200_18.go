@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse20018 struct {
+
 	Transaction InlineResponse20018Transaction `json:"transaction,omitempty"`
 
 	Accounts []InlineResponse20018Accounts `json:"accounts,omitempty"`

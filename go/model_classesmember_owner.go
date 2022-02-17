@@ -11,6 +11,7 @@
 package openapi
 
 type ClassesmemberOwner struct {
+
 	FirstName string `json:"firstName,omitempty"`
 
 	LastName string `json:"lastName,omitempty"`

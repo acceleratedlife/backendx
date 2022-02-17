@@ -83,9 +83,52 @@ func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.
 	panic("implement me")
 }
 
-func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, s string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, id openapi.RequestUser) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	_, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	var resp openapi.User
+	err = a.db.View(func(tx *bolt.Tx) error {
+		user, err := UserByIdTx(tx, id)
+		if err != nil {
+			return err
+		}
+
+		println(user)
+
+		nWorth, _ := StudentNetWorthTx(tx, "user.Email").Float64()
+		nUser := openapi.User{
+			// Id:            "",
+			//CollegeEnd:    time.Time{},
+			//TransitionEnd: time.Time{},
+			FirstName: "user.FirstName",
+			LastName:  "user.LastName",
+			Email:     "user.Email",
+			Confirmed: "user.Confirmed" == "no",
+			SchoolId:  "user.SchoolId",
+			//College:       false,
+			//Children:      0,
+			Income:   10,
+			Role:     1,
+			Rank:     2,
+			NetWorth: float32(nWorth),
+		}
+		resp = nUser
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR cannot find the user: %s %v", id, err)
+		return openapi.Response(500, "{}"), nil
+	}
+	return openapi.Response(200, resp), nil
 }
 
 func (a AllApiServiceImpl) SearchStudentBuck(ctx context.Context, s string) (openapi.ImplResponse, error) {
