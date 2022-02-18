@@ -11,7 +11,6 @@
 package openapi
 
 type InlineResponse20018Accounts struct {
-
 	Basis float32 `json:"basis,omitempty"`
 
 	CurrentPrice float32 `json:"currentPrice,omitempty"`

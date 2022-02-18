@@ -11,7 +11,6 @@
 package openapi
 
 type UsersUserBody struct {
-
 	Email string `json:"email,omitempty"`
 
 	FirstName string `json:"firstName,omitempty"`
