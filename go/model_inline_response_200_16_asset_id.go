@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse20016AssetId struct {
+
 	Name string `json:"name,omitempty"`
 }
 

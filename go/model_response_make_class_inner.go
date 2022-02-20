@@ -15,13 +15,13 @@ type ResponseMakeClassInner struct {
 
 	Name string `json:"name,omitempty"`
 
-	Owner string `json:"owner,omitempty"`
+	OwnerId string `json:"owner,omitempty"`
 
 	Period int32 `json:"period,omitempty"`
 
 	AddCode string `json:"addCode,omitempty"`
 
-	Members []string `json:"members,omitempty"`
+	Members []string `json:"members,omitempty=false"`
 }
 
 // AssertResponseMakeClassInnerRequired checks if the required fields are not zero-ed

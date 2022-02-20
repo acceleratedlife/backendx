@@ -88,7 +88,6 @@ go/model_response_events_inner.go
 go/model_response_events_inner_owner_id.go
 go/model_response_login2.go
 go/model_response_login4.go
-go/model_response_make_class_inner.go
 go/model_response_register2.go
 go/model_response_register4.go
 go/model_response_schools_inner.go

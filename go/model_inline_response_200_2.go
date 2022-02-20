@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse2002 struct {
+
 	Searched string `json:"searched,omitempty"`
 
 	Usd float32 `json:"usd,omitempty"`

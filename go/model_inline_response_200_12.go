@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse20012 struct {
+
 	Owner ClassesmemberOwner `json:"owner,omitempty"`
 
 	Period int32 `json:"period,omitempty"`

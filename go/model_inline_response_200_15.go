@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse20015 struct {
+
 	Account string `json:"account,omitempty"`
 
 	Owner string `json:"owner,omitempty"`

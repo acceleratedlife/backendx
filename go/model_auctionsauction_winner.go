@@ -11,6 +11,7 @@
 package openapi
 
 type AuctionsauctionWinner struct {
+
 	FirstName string `json:"firstName,omitempty"`
 
 	LastName string `json:"lastName,omitempty"`

@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse20010 struct {
+
 	KickId string `json:"kick_id,omitempty"`
 }
 

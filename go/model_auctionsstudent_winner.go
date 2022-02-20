@@ -11,6 +11,7 @@
 package openapi
 
 type AuctionsstudentWinner struct {
+
 	Id string `json:"_id,omitempty"`
 
 	FirstName string `json:"firstName,omitempty"`

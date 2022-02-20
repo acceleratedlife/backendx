@@ -11,6 +11,7 @@
 package openapi
 
 type TransactionsConversionTransactionBody struct {
+
 	AccountFrom string `json:"accountFrom,omitempty"`
 
 	AccountTo string `json:"accountTo,omitempty"`

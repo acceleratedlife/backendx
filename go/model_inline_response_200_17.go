@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse20017 struct {
+
 	Success bool `json:"success,omitempty"`
 }
 

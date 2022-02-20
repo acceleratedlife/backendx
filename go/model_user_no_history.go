@@ -15,6 +15,7 @@ import (
 )
 
 type UserNoHistory struct {
+
 	Id string `json:"_id"`
 
 	CollegeEnd time.Time `json:"collegeEnd,omitempty"`
@@ -47,17 +48,17 @@ type UserNoHistory struct {
 // AssertUserNoHistoryRequired checks if the required fields are not zero-ed
 func AssertUserNoHistoryRequired(obj UserNoHistory) error {
 	elements := map[string]interface{}{
-		"_id":       obj.Id,
+		"_id": obj.Id,
 		"firstName": obj.FirstName,
-		"lastName":  obj.LastName,
-		"email":     obj.Email,
+		"lastName": obj.LastName,
+		"email": obj.Email,
 		"confirmed": obj.Confirmed,
-		"college":   obj.College,
-		"children":  obj.Children,
-		"income":    obj.Income,
-		"role":      obj.Role,
-		"rank":      obj.Rank,
-		"netWorth":  obj.NetWorth,
+		"college": obj.College,
+		"children": obj.Children,
+		"income": obj.Income,
+		"role": obj.Role,
+		"rank": obj.Rank,
+		"netWorth": obj.NetWorth,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

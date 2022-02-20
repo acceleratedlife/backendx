@@ -11,6 +11,7 @@
 package openapi
 
 type Transaction struct {
+
 	Id string `json:"_id"`
 
 	OwnerId string `json:"owner_id,omitempty"`
@@ -35,14 +36,14 @@ type Transaction struct {
 // AssertTransactionRequired checks if the required fields are not zero-ed
 func AssertTransactionRequired(obj Transaction) error {
 	elements := map[string]interface{}{
-		"_id":             obj.Id,
-		"balance":         obj.Balance,
-		"description":     obj.Description,
+		"_id": obj.Id,
+		"balance": obj.Balance,
+		"description": obj.Description,
 		"conversionRatio": obj.ConversionRatio,
-		"amount":          obj.Amount,
-		"uBucks":          obj.UBucks,
-		"type":            obj.Type,
-		"assetID":         obj.AssetID,
+		"amount": obj.Amount,
+		"uBucks": obj.UBucks,
+		"type": obj.Type,
+		"assetID": obj.AssetID,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {
