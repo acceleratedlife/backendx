@@ -11,7 +11,6 @@
 package openapi
 
 type RequestMakeClass struct {
-
 	Name string `json:"name,omitempty"`
 
 	OwnerId string `json:"owner_id,omitempty"`

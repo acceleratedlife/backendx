@@ -15,7 +15,6 @@ import (
 )
 
 type InlineResponse2005 struct {
-
 	Id string `json:"_id,omitempty"`
 
 	Bid float32 `json:"bid,omitempty"`
