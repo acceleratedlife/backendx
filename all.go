@@ -83,7 +83,7 @@ func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.
 	panic("implement me")
 }
 
-func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, id openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, userID openapi.RequestUser) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	_, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -95,23 +95,21 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, id openapi.Reques
 
 	var resp openapi.User
 	err = a.db.View(func(tx *bolt.Tx) error {
-		user, err := UserByIdTx(tx, id)
+		user, err := getUserInLocalStoreTx(tx, userID.Id)
 		if err != nil {
 			return err
 		}
 
-		println(user)
-
-		nWorth, _ := StudentNetWorthTx(tx, "user.Email").Float64()
+		nWorth, _ := StudentNetWorthTx(tx, user.Email).Float64()
 		nUser := openapi.User{
-			// Id:            "",
+			Id: user.Email,
 			//CollegeEnd:    time.Time{},
 			//TransitionEnd: time.Time{},
-			FirstName: "user.FirstName",
-			LastName:  "user.LastName",
-			Email:     "user.Email",
-			Confirmed: "user.Confirmed" == "no",
-			SchoolId:  "user.SchoolId",
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			Confirmed: user.Confirmed,
+			SchoolId:  user.SchoolId,
 			//College:       false,
 			//Children:      0,
 			Income:   10,
@@ -125,7 +123,7 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, id openapi.Reques
 	})
 
 	if err != nil {
-		lgr.Printf("ERROR cannot find the user: %s %v", id, err)
+		lgr.Printf("ERROR cannot find the user: %s %v", userID.Id, err)
 		return openapi.Response(500, "{}"), nil
 	}
 	return openapi.Response(200, resp), nil
