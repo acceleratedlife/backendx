@@ -12,11 +12,21 @@ package openapi
 
 type InlineResponse20010 struct {
 
-	KickId string `json:"kick_id,omitempty"`
+	Transaction InlineResponse20010Transaction `json:"transaction,omitempty"`
+
+	Accounts []InlineResponse20010Accounts `json:"accounts,omitempty"`
 }
 
 // AssertInlineResponse20010Required checks if the required fields are not zero-ed
 func AssertInlineResponse20010Required(obj InlineResponse20010) error {
+	if err := AssertInlineResponse20010TransactionRequired(obj.Transaction); err != nil {
+		return err
+	}
+	for _, el := range obj.Accounts {
+		if err := AssertInlineResponse20010AccountsRequired(el); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

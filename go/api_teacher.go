@@ -60,18 +60,18 @@ func (c *TeacherApiController) Routes() Routes {
 
 // TeacherAddClass - teacher adding self to class
 func (c *TeacherApiController) TeacherAddClass(w http.ResponseWriter, r *http.Request) {
-	classesAddAdminBodyParam := ClassesAddAdminBody{}
+	requestAddClassParam := RequestAddClass{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&classesAddAdminBodyParam); err != nil {
+	if err := d.Decode(&requestAddClassParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertClassesAddAdminBodyRequired(classesAddAdminBodyParam); err != nil {
+	if err := AssertRequestAddClassRequired(requestAddClassParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.TeacherAddClass(r.Context(), classesAddAdminBodyParam)
+	result, err := c.service.TeacherAddClass(r.Context(), requestAddClassParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

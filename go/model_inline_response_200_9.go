@@ -12,15 +12,7 @@ package openapi
 
 type InlineResponse2009 struct {
 
-	Name string `json:"name,omitempty"`
-
-	Owner string `json:"owner,omitempty"`
-
-	Period int32 `json:"period,omitempty"`
-
-	AddCode string `json:"addCode,omitempty"`
-
-	Members []string `json:"members,omitempty"`
+	Success bool `json:"success,omitempty"`
 }
 
 // AssertInlineResponse2009Required checks if the required fields are not zero-ed

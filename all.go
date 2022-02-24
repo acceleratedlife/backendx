@@ -73,9 +73,38 @@ func (a AllApiServiceImpl) SearchBucks(ctx context.Context, s string) (openapi.I
 	panic("implement me")
 }
 
-func (a AllApiServiceImpl) SearchClass(ctx context.Context, s string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	var resp openapi.ClassWithMembers
+	err = a.db.View(func(tx *bolt.Tx) error {
+		classBucket, err := ClassForAll(tx, query.Id)
+		if err != nil {
+			return err
+		}
+		resp.Id = query.Id
+		resp.AddCode = string(classBucket.Get([]byte(KeyAddCode)))
+		// resp.OwnerId = string(class.Get([]byte("ownerId")))
+		resp.Period = btoi32(classBucket.Get([]byte("period")))
+		resp.Name = string(classBucket.Get([]byte(KeyName)))
+		Members, err := PopulateClassMembers(tx, classBucket)
+		if err != nil {
+			return err
+		}
+		resp.Members = Members
+		return nil
+	})
+	if err != nil {
+		lgr.Printf("ERROR cannot collect classes from the school: %s %v", userDetails.SchoolId, err)
+		return openapi.Response(500, "{}"), nil
+	}
+	return openapi.Response(200, resp), nil
 }
 
 func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.ImplResponse, error) {
@@ -83,7 +112,7 @@ func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.
 	panic("implement me")
 }
 
-func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, userID openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	_, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -95,7 +124,7 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, userID openapi.Re
 
 	var resp openapi.User
 	err = a.db.View(func(tx *bolt.Tx) error {
-		user, err := getUserInLocalStoreTx(tx, userID.Id)
+		user, err := getUserInLocalStoreTx(tx, query.Id)
 		if err != nil {
 			return err
 		}
@@ -123,7 +152,7 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, userID openapi.Re
 	})
 
 	if err != nil {
-		lgr.Printf("ERROR cannot find the user: %s %v", userID.Id, err)
+		lgr.Printf("ERROR cannot find the user: %s %v", query.Id, err)
 		return openapi.Response(500, "{}"), nil
 	}
 	return openapi.Response(200, resp), nil

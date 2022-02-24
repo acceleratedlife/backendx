@@ -12,19 +12,30 @@ package openapi
 
 type InlineResponse2008 struct {
 
-	Name string `json:"name,omitempty"`
+	Account string `json:"account,omitempty"`
 
 	Owner string `json:"owner,omitempty"`
 
-	Period int32 `json:"period,omitempty"`
+	Balance float32 `json:"balance,omitempty"`
 
-	AddCode string `json:"addCode,omitempty"`
+	Description string `json:"description,omitempty"`
 
-	Members []string `json:"members,omitempty"`
+	ConversionRatio float32 `json:"conversionRatio,omitempty"`
+
+	Amount float32 `json:"amount,omitempty"`
+
+	UBucks float32 `json:"uBucks,omitempty"`
+
+	Type string `json:"type,omitempty"`
+
+	AssetID InlineResponse2008AssetId `json:"assetID,omitempty"`
 }
 
 // AssertInlineResponse2008Required checks if the required fields are not zero-ed
 func AssertInlineResponse2008Required(obj InlineResponse2008) error {
+	if err := AssertInlineResponse2008AssetIdRequired(obj.AssetID); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -14,7 +14,7 @@ type ClassWithMembers struct {
 
 	Id string `json:"_id"`
 
-	OwnerId string `json:"owner_id,omitempty"`
+	OwnerId string `json:"owner_id"`
 
 	Period int32 `json:"period"`
 
@@ -29,6 +29,7 @@ type ClassWithMembers struct {
 func AssertClassWithMembersRequired(obj ClassWithMembers) error {
 	elements := map[string]interface{}{
 		"_id": obj.Id,
+		"owner_id": obj.OwnerId,
 		"period": obj.Period,
 		"name": obj.Name,
 		"addCode": obj.AddCode,

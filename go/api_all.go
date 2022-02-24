@@ -275,7 +275,7 @@ func (c *AllApiController) SearchBucks(w http.ResponseWriter, r *http.Request) {
 // SearchClass - searches for a class
 func (c *AllApiController) SearchClass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := query.Get("_id")
+	idParam := RequestUser{query.Get("_id")}
 	result, err := c.service.SearchClass(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {

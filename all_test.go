@@ -43,7 +43,7 @@ func TestSearchStudents(t *testing.T) {
 	db, tearDown := FullStartTestServer("addCode", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, _, err := CreateTestAccounts(db, 1, 1, 2, 6)
+	_, _, teachers, _, _, err := CreateTestAccounts(db, 1, 1, 1, 1)
 
 	SetTestLoginUser(teachers[0])
 
@@ -94,4 +94,37 @@ func TestSearchStudent(t *testing.T) {
 	require.NotNil(t, data.FirstName)
 	require.NotNil(t, data.LastName)
 	require.NotNil(t, data.Income)
+}
+
+func TestSearchClass(t *testing.T) {
+	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	defer tearDown()
+	members := 3
+
+	_, _, _, classes, students, err := CreateTestAccounts(db, 3, 3, 3, members)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/classes/class?_id="+classes[0],
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.ClassWithMembers
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, students[1], data.Members[0].Id) //I don't understand why this is not students[0]
+	require.Equal(t, classes[0], data.Id)
+	require.Equal(t, len(data.Members), members)
+	// require.NotNil(t, data.FirstName)
+	// require.NotNil(t, data.LastName)
+	// require.NotNil(t, data.Income)
 }

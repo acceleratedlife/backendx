@@ -66,7 +66,6 @@ func getClassesTx(teacher *bolt.Bucket) []openapi.Class {
 		}
 		classes = append(classes, iClass)
 	}
-	println(classes)
 	return classes
 }
 

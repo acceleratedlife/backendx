@@ -28,7 +28,7 @@ func NewAllSchoolApiService() AllSchoolApiServicer {
 }
 
 // AddCodeClass - change class addCode
-func (s *AllSchoolApiService) AddCodeClass(ctx context.Context, classAddCodeBody ClassAddCodeBody) (ImplResponse, error) {
+func (s *AllSchoolApiService) AddCodeClass(ctx context.Context, requestUser RequestUser) (ImplResponse, error) {
 	// TODO - update AddCodeClass with the required logic for this service method.
 	// Add api_all_school_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -42,12 +42,12 @@ func (s *AllSchoolApiService) AddCodeClass(ctx context.Context, classAddCodeBody
 }
 
 // RemoveClass - remove self from class
-func (s *AllSchoolApiService) RemoveClass(ctx context.Context, classesRemoveAdminBody ClassesRemoveAdminBody) (ImplResponse, error) {
+func (s *AllSchoolApiService) RemoveClass(ctx context.Context, requestKickClass RequestKickClass) (ImplResponse, error) {
 	// TODO - update RemoveClass with the required logic for this service method.
 	// Add api_all_school_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse20012{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse20012{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseMemberClass{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseMemberClass{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -70,12 +70,12 @@ func (s *AllSchoolApiService) SearchAuctions(ctx context.Context, id string) (Im
 }
 
 // SearchMyClasses - searches for users classes that the requester is a member of
-func (s *AllSchoolApiService) SearchMyClasses(ctx context.Context, id string) (ImplResponse, error) {
+func (s *AllSchoolApiService) SearchMyClasses(ctx context.Context, id RequestUser) (ImplResponse, error) {
 	// TODO - update SearchMyClasses with the required logic for this service method.
 	// Add api_all_school_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse20011{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse20011{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseMemberClass{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseMemberClass{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

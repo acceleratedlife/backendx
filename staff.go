@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"sort"
+
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
-	"sort"
 )
 
 type StaffApiServiceImpl struct {
@@ -23,17 +24,17 @@ func (s StaffApiServiceImpl) DeleteAuction(ctx context.Context, s2 string) (open
 	panic("implement me")
 }
 
-func (s StaffApiServiceImpl) Deleteclass(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
+func (s *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.ClassesClassBody) (openapi.ImplResponse, error) {
+func (s *StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.RequestEditClass) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.ClassKickBody) (openapi.ImplResponse, error) {
+func (s *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.RequestKickClass) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -86,7 +87,7 @@ func (s StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context, s2 strin
 	panic("implement me")
 }
 
-func (s *StaffApiServiceImpl) SearchClasses(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
+func (s *StaffApiServiceImpl) SearchClasses(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
 	if err != nil {

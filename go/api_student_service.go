@@ -46,8 +46,8 @@ func (s *StudentApiService) BuckConvert(ctx context.Context, userId string, tran
 	// TODO - update BuckConvert with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse20017{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse20017{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2009{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2009{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -60,8 +60,8 @@ func (s *StudentApiService) CryptoConvert(ctx context.Context, userId string, tr
 	// TODO - update CryptoConvert with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse20018{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse20018{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse20010{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse20010{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -88,8 +88,8 @@ func (s *StudentApiService) SearchBuckTransaction(ctx context.Context, id string
 	// TODO - update SearchBuckTransaction with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse20015{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse20015{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2007{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2007{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -116,8 +116,8 @@ func (s *StudentApiService) SearchCryptoTransaction(ctx context.Context, id stri
 	// TODO - update SearchCryptoTransaction with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse20016{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse20016{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2008{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2008{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -154,12 +154,12 @@ func (s *StudentApiService) SearchStudentUbuck(ctx context.Context, userId strin
 }
 
 // StudentAddClass - student adding self to class
-func (s *StudentApiService) StudentAddClass(ctx context.Context, classesAddClassBody ClassesAddClassBody) (ImplResponse, error) {
+func (s *StudentApiService) StudentAddClass(ctx context.Context, requestAddClass RequestAddClass) (ImplResponse, error) {
 	// TODO - update StudentAddClass with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse20014{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse20014{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseMemberClass{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseMemberClass{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
