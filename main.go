@@ -12,6 +12,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth"
 	"github.com/go-pkgz/auth/avatar"
@@ -21,10 +26,6 @@ import (
 	"github.com/go-pkgz/lgr"
 	"github.com/gorilla/mux"
 	bolt "go.etcd.io/bbolt"
-	"log"
-	"net/http"
-	"strings"
-	"time"
 )
 
 const (
@@ -46,6 +47,7 @@ const (
 	KeyCity         = "city"
 	KeyZip          = "zip"
 	KeyDayPayment   = "dayPayment"
+	KeyPeriod       = "period"
 )
 
 type Clock interface {
