@@ -38,3 +38,36 @@ func TestAllSchoolApiServiceImpl_AddCodeClass(t *testing.T) {
 	_ = decoder.Decode(&v)
 	assert.Equal(t, 6, len(v.AddCode))
 }
+
+func TestRemoveClass(t *testing.T) {
+	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
+	defer tearDown()
+	members := 2
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 2, 2, members)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.RequestKickClass{
+		Id:     classes[0],
+		KickId: students[0],
+	}
+
+	marshal, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/removeAdmin", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v []openapi.ResponseMemberClass
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&v)
+
+	assert.Equal(t, teachers[0], v[0].Owner.Id)
+	assert.Equal(t, members-1, len(v))
+	assert.Equal(t, classes[0], v[0].Id)
+}

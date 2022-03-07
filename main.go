@@ -48,6 +48,7 @@ const (
 	KeyZip          = "zip"
 	KeyDayPayment   = "dayPayment"
 	KeyPeriod       = "period"
+	KeyAdmins       = "admins"
 )
 
 type Clock interface {

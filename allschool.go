@@ -6,6 +6,7 @@ import (
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
+	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -72,8 +73,38 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 }
 
 func (a *AllSchoolApiServiceImpl) RemoveClass(ctx context.Context, body openapi.RequestKickClass) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	resp := make([]openapi.ResponseMemberClass, 0)
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		classBucket, err := ClassForAll(tx, body.Id)
+		if err != nil {
+			return err
+		}
+		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
+		err = studentsBucket.Delete([]byte(body.KickId))
+		if err != nil {
+			return err
+		}
+		classes, err := classesWithOwnerDetails(a.db, userDetails.SchoolId, userDetails.Email)
+		if err != nil {
+			return err
+		}
+		resp = classes
+		return nil
+	})
+	if err != nil {
+		lgr.Printf("ERROR cannot edit class with Id: %s %v", body.Id, err)
+		return openapi.Response(500, "{}"), nil
+	}
+	return openapi.Response(200, resp), nil
 }
 
 func (a AllSchoolApiServiceImpl) SearchAuctions(ctx context.Context, s string) (openapi.ImplResponse, error) {
@@ -91,4 +122,30 @@ func NewAllSchoolApiServiceImpl(db *bolt.DB) openapi.AllSchoolApiServicer {
 	return &AllSchoolApiServiceImpl{
 		db: db,
 	}
+}
+
+func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.ResponseMemberClass, error) {
+	sClasses, err := getClassMembership(db, schoolID, userId)
+	if err != nil {
+		return nil, err
+	}
+	classes := make([]openapi.ResponseMemberClass, 0)
+	for _, currentClass := range sClasses {
+		ownerDetails, err := getClassOwner(db, currentClass.Id, schoolID)
+		if err != nil {
+			return nil, err
+		}
+		owner := openapi.ResponseMemberClassOwner{
+			FirstName: ownerDetails.FirstName,
+			LastName:  ownerDetails.LastName,
+			Id:        ownerDetails.Email,
+		}
+		class := openapi.ResponseMemberClass{
+			Id:     currentClass.Id,
+			Owner:  owner,
+			Period: currentClass.Period,
+		}
+		classes = append(classes, class)
+	}
+	return classes, nil
 }

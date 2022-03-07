@@ -91,7 +91,7 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.Reque
 		resp.Id = query.Id
 		resp.AddCode = string(classBucket.Get([]byte(KeyAddCode)))
 		// resp.OwnerId = string(class.Get([]byte("ownerId")))
-		resp.Period = btoi32(classBucket.Get([]byte("period")))
+		resp.Period = btoi32(classBucket.Get([]byte(KeyPeriod)))
 		resp.Name = string(classBucket.Get([]byte(KeyName)))
 		Members, err := PopulateClassMembers(tx, classBucket)
 		if err != nil {
