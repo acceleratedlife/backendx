@@ -11,7 +11,6 @@
 package openapi
 
 type AuctionsPlaceBidBody struct {
-
 	Item string `json:"item,omitempty"`
 
 	Bid float32 `json:"bid,omitempty"`

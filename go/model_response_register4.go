@@ -11,7 +11,6 @@
 package openapi
 
 type ResponseRegister4 struct {
-
 	Message string `json:"message,omitempty"`
 }
 

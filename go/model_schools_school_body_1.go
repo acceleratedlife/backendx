@@ -11,7 +11,6 @@
 package openapi
 
 type SchoolsSchoolBody1 struct {
-
 	Name string `json:"name,omitempty"`
 
 	City string `json:"city,omitempty"`

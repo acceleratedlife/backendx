@@ -11,7 +11,6 @@
 package openapi
 
 type ClassesRemoveAdminBody struct {
-
 	KickId string `json:"kick_id,omitempty"`
 
 	Id string `json:"_id,omitempty"`

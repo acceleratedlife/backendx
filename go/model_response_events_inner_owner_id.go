@@ -11,7 +11,6 @@
 package openapi
 
 type ResponseEventsInnerOwnerId struct {
-
 	FirstName string `json:"firstName,omitempty"`
 
 	LastName string `json:"lastName,omitempty"`

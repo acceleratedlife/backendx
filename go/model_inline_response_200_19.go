@@ -11,7 +11,6 @@
 package openapi
 
 type InlineResponse20019 struct {
-
 	Deleted bool `json:"deleted,omitempty"`
 }
 

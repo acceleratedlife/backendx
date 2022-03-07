@@ -11,7 +11,6 @@
 package openapi
 
 type AccountsAccountBody struct {
-
 	Id string `json:"_id,omitempty"`
 
 	Owner string `json:"owner,omitempty"`
