@@ -192,8 +192,8 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 
 		studentsId := make(map[string]int, 0)
 
-		iterateBuckets(teachers, func(teacher *bolt.Bucket) {
-			iterateBuckets(teacher, func(class *bolt.Bucket) {
+		iterateBuckets(teachers, func(teacher *bolt.Bucket, _ []byte) {
+			iterateBuckets(teacher, func(class *bolt.Bucket, _ []byte) {
 				students := class.Bucket([]byte(KeyStudents))
 				if students == nil {
 					return
