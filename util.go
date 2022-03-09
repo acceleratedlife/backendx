@@ -57,13 +57,13 @@ func EncodePassword(password string) string {
 }
 
 // iterates over buckets inside given bucket
-func iterateBuckets(mainBucket *bolt.Bucket, teacherHandler func(bucket *bolt.Bucket)) {
+func iterateBuckets(mainBucket *bolt.Bucket, teacherHandler func(bucket *bolt.Bucket, key []byte)) {
 	c := mainBucket.Cursor()
 	for k, v := c.First(); k != nil; k, v = c.Next() {
 		if v != nil {
 			continue
 		}
 		teacher := mainBucket.Bucket(k)
-		teacherHandler(teacher)
+		teacherHandler(teacher, k)
 	}
 }

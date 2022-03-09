@@ -82,26 +82,28 @@ func (a *AllSchoolApiServiceImpl) RemoveClass(ctx context.Context, body openapi.
 		}), nil
 	}
 
-	resp := make([]openapi.ResponseMemberClass, 0)
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(200, nil), nil
+	}
+
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, err := ClassForAll(tx, body.Id)
+		classBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 		if err != nil {
 			return err
 		}
 		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
-		err = studentsBucket.Delete([]byte(body.KickId))
+		err = studentsBucket.Delete([]byte(userDetails.Name))
 		if err != nil {
 			return err
 		}
-		classes, err := classesWithOwnerDetails(a.db, userDetails.SchoolId, userDetails.Email)
-		if err != nil {
-			return err
-		}
-		resp = classes
 		return nil
 	})
 	if err != nil {
 		lgr.Printf("ERROR cannot edit class with Id: %s %v", body.Id, err)
+		return openapi.Response(500, "{}"), nil
+	}
+	resp, err := classesWithOwnerDetails(a.db, userDetails.SchoolId, userDetails.Email)
+	if err != nil {
 		return openapi.Response(500, "{}"), nil
 	}
 	return openapi.Response(200, resp), nil
@@ -125,27 +127,47 @@ func NewAllSchoolApiServiceImpl(db *bolt.DB) openapi.AllSchoolApiServicer {
 }
 
 func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.ResponseMemberClass, error) {
-	sClasses, err := getClassMembership(db, schoolID, userId)
-	if err != nil {
-		return nil, err
-	}
+
 	classes := make([]openapi.ResponseMemberClass, 0)
-	for _, currentClass := range sClasses {
-		ownerDetails, err := getClassOwner(db, currentClass.Id, schoolID)
+	err := db.View(func(tx *bolt.Tx) error {
+		school, err := SchoolByIdTx(tx, schoolID)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		owner := openapi.ResponseMemberClassOwner{
-			FirstName: ownerDetails.FirstName,
-			LastName:  ownerDetails.LastName,
-			Id:        ownerDetails.Email,
+		teachers := school.Bucket([]byte(KeyTeachers))
+		if teachers == nil {
+			return fmt.Errorf("no teachers at school")
 		}
-		class := openapi.ResponseMemberClass{
-			Id:     currentClass.Id,
-			Owner:  owner,
-			Period: currentClass.Period,
-		}
-		classes = append(classes, class)
-	}
-	return classes, nil
+		iterateBuckets(teachers, func(teacher *bolt.Bucket, teacherId []byte) {
+			iterateBuckets(teacher, func(class *bolt.Bucket, classId []byte) {
+				students := class.Bucket([]byte(KeyStudents))
+				if students == nil {
+					return
+				}
+				student := class.Get([]byte(userId))
+				if student == nil {
+					return
+				}
+				teacherDetails, err := getUserInLocalStoreTx(tx, string(teacherId))
+				if err != nil {
+					lgr.Printf("ERROR cannot find details for teacher %x", teacherId)
+					return
+				}
+				period := class.Get([]byte(KeyPeriod))
+
+				classes = append(classes, openapi.ResponseMemberClass{
+					Owner: openapi.ResponseMemberClassOwner{
+						FirstName: teacherDetails.FirstName,
+						LastName:  teacherDetails.LastName,
+						Id:        teacherDetails.Name,
+					},
+					Period: btoi32(period),
+					Id:     string(classId),
+				})
+			})
+		})
+		return nil
+	})
+
+	return classes, err
 }

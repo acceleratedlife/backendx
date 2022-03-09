@@ -43,7 +43,9 @@ func TestRemoveClass(t *testing.T) {
 	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
 	defer tearDown()
 	members := 2
-	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 2, 2, members)
+	_, _, _, classes, students, err := CreateTestAccounts(db, 1, 2, 2, members)
+
+	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])
 
@@ -65,9 +67,9 @@ func TestRemoveClass(t *testing.T) {
 
 	var v []openapi.ResponseMemberClass
 	decoder := json.NewDecoder(resp.Body)
-	_ = decoder.Decode(&v)
+	err = decoder.Decode(&v)
 
-	assert.Equal(t, teachers[0], v[0].Owner.Id)
-	assert.Equal(t, members-1, len(v))
-	assert.Equal(t, classes[0], v[0].Id)
+	require.Nil(t, err)
+
+	assert.Equal(t, 0, len(v))
 }
