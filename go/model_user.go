@@ -15,7 +15,6 @@ import (
 )
 
 type User struct {
-
 	History [][]int32 `json:"history"`
 
 	Id string `json:"_id"`
@@ -50,18 +49,18 @@ type User struct {
 // AssertUserRequired checks if the required fields are not zero-ed
 func AssertUserRequired(obj User) error {
 	elements := map[string]interface{}{
-		"history": obj.History,
-		"_id": obj.Id,
+		"history":   obj.History,
+		"_id":       obj.Id,
 		"firstName": obj.FirstName,
-		"lastName": obj.LastName,
-		"email": obj.Email,
+		"lastName":  obj.LastName,
+		"email":     obj.Email,
 		"confirmed": obj.Confirmed,
-		"college": obj.College,
-		"children": obj.Children,
-		"income": obj.Income,
-		"role": obj.Role,
-		"rank": obj.Rank,
-		"netWorth": obj.NetWorth,
+		"college":   obj.College,
+		"children":  obj.Children,
+		"income":    obj.Income,
+		"role":      obj.Role,
+		"rank":      obj.Rank,
+		"netWorth":  obj.NetWorth,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

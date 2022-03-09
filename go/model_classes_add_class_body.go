@@ -11,7 +11,6 @@
 package openapi
 
 type ClassesAddClassBody struct {
-
 	AddCode string `json:"addCode,omitempty"`
 
 	Id string `json:"_id,omitempty"`

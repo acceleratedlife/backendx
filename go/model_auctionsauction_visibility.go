@@ -11,7 +11,6 @@
 package openapi
 
 type AuctionsauctionVisibility struct {
-
 	Name string `json:"name,omitempty"`
 }
 

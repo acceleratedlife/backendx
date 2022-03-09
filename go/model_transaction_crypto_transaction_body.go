@@ -11,7 +11,6 @@
 package openapi
 
 type TransactionCryptoTransactionBody struct {
-
 	Name string `json:"name,omitempty"`
 
 	Buy float32 `json:"buy,omitempty"`

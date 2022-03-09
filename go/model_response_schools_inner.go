@@ -11,7 +11,6 @@
 package openapi
 
 type ResponseSchoolsInner struct {
-
 	Name string `json:"name,omitempty"`
 
 	Id string `json:"_id,omitempty"`

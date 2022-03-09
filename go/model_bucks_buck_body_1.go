@@ -11,7 +11,6 @@
 package openapi
 
 type BucksBuckBody1 struct {
-
 	Name string `json:"name,omitempty"`
 
 	Owner string `json:"owner,omitempty"`

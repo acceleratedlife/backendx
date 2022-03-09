@@ -11,7 +11,6 @@
 package openapi
 
 type RequestKickClass struct {
-
 	KickId string `json:"kick_id,omitempty"`
 
 	Id string `json:"_id,omitempty"`

@@ -11,7 +11,6 @@
 package openapi
 
 type ResponseRegister2 struct {
-
 	Success bool `json:"success,omitempty"`
 }
 

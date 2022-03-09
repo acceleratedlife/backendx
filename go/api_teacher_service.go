@@ -12,8 +12,8 @@ package openapi
 
 import (
 	"context"
-	"net/http"
 	"errors"
+	"net/http"
 )
 
 // TeacherApiService is a service that implements the logic for the TeacherApiServicer

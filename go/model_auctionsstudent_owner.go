@@ -11,7 +11,6 @@
 package openapi
 
 type AuctionsstudentOwner struct {
-
 	Id string `json:"_id,omitempty"`
 
 	LastName string `json:"lastName,omitempty"`
