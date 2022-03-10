@@ -71,3 +71,34 @@ func TestRemoveClass(t *testing.T) {
 
 	assert.Equal(t, 0, len(v))
 }
+
+func TestSearchMyClasses(t *testing.T) {
+	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.RequestUser{
+		Id: students[0],
+	}
+
+	marshal, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/classes/member", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v []openapi.ResponseMemberClass
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+
+	assert.Equal(t, 1, len(v))
+}

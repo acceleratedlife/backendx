@@ -26,7 +26,7 @@ func UserByIdTx(tx *bolt.Tx, userId string) (user *bolt.Bucket, err error) {
 
 }
 
-func ClassForAll(tx *bolt.Tx, classId string) (classBucket *bolt.Bucket, err error) {
+func ClassForAllTx(tx *bolt.Tx, classId string) (classBucket *bolt.Bucket, err error) {
 	schools := tx.Bucket([]byte(KeySchools))
 	cSchools := schools.Cursor()
 	for k, v := cSchools.First(); k != nil; k, v = cSchools.Next() { //iterate through all schools

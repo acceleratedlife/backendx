@@ -41,7 +41,7 @@ func (a *StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.Reques
 	}
 	var class openapi.Class
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, err := ClassForAll(tx, body.Id)
+		classBucket, err := ClassForAllTx(tx, body.Id)
 		if err != nil {
 			return err
 		}
