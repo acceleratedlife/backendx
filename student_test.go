@@ -1,13 +1,18 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"testing"
+	"time"
+
+	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"testing"
-	"time"
 )
 
 func Test_addUbuck2Student(t *testing.T) {
@@ -100,4 +105,45 @@ func TestDailyPayment(t *testing.T) {
 	})
 
 	require.True(t, netWorth.GreaterThan(decimal.NewFromInt(200)))
+}
+
+func TestStudentAddClass(t *testing.T) {
+	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, classes, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/classes/class?_id="+classes[1],
+		nil)
+
+	resp, _ := client.Do(req)
+	var data openapi.ClassWithMembers
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	body := openapi.RequestAddClass{
+		Id:      students[0],
+		AddCode: data.AddCode,
+	}
+
+	marshal, _ := json.Marshal(body)
+	req, _ = http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v []openapi.ResponseMemberClass
+	decoder = json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+
+	assert.Equal(t, 2, len(v))
 }

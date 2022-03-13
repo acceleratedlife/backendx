@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
 )
@@ -71,6 +72,34 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 				role = UserRoleTeacher
 				pathId.schoolId = string(currentSchoolId)
 				return nil
+			}
+
+			schoolClasses := school.Bucket([]byte(KeyClasses))
+			if schoolClasses != nil {
+				res := schoolClasses.ForEach(func(classId, v []byte) error {
+					if v != nil {
+						return nil
+					}
+					class := schoolClasses.Bucket(classId)
+					if class == nil {
+						return nil
+					}
+					addCodeTx := class.Get([]byte(KeyAddCode))
+					if addCodeTx != nil && string(addCodeTx) == code {
+						admins := schools.Bucket([]byte(KeyAdmins))
+						cAdmins := admins.Cursor()
+						adminId, _ := cAdmins.First()
+						role = UserRoleStudent
+						pathId.schoolId = string(currentSchoolId)
+						pathId.classId = string(classId)
+						pathId.teacherId = string(adminId)
+						return fmt.Errorf("found")
+					}
+					return nil
+				})
+				if res != nil && res.Error() == "found" {
+					return nil
+				}
 			}
 
 			teachers := school.Bucket([]byte(KeyTeachers))

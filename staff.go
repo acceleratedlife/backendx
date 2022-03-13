@@ -32,16 +32,19 @@ func (s *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.Req
 
 func (a *StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.RequestEditClass) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
-	_, err := getUserInLocalStore(a.db, userData.Name)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
 		return openapi.Response(404, openapi.ResponseAuth{
 			IsAuth: false,
 			Error:  true,
 		}), nil
 	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
 	var class openapi.Class
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, err := ClassForAllTx(tx, body.Id)
+		classBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 		if err != nil {
 			return err
 		}

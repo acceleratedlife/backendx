@@ -87,7 +87,7 @@ func (a *AllSchoolApiServiceImpl) RemoveClass(ctx context.Context, body openapi.
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, err := ClassForAllTx(tx, body.Id)
+		classBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 		if err != nil {
 			return err
 		}
@@ -114,7 +114,7 @@ func (a AllSchoolApiServiceImpl) SearchAuctions(ctx context.Context, s string) (
 	panic("implement me")
 }
 
-func (a AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a *AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {

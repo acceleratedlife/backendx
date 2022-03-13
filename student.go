@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
@@ -29,6 +32,22 @@ type Transaction struct {
 	XRate          decimal.Decimal
 	Reference      string
 }
+
+type StudentApiServiceImpl struct {
+	db *bolt.DB
+}
+
+// func getClassbyAddCodeTx(tx *bolt.Tx, schoolId, addCode string) (classBucket *bolt.Bucket, err error) {
+// 	schools := tx.Bucket([]byte(KeySchools))
+// 	if schools == nil {
+// 		return nil, fmt.Errorf("schools not found")
+// 	}
+// 	school := schools.Bucket([]byte(schoolId))
+// 	if school == nil {
+// 		return nil, fmt.Errorf("school not found")
+// 	}
+// 	schoolClass :=
+// }
 
 // adds ubucks from CB
 //creates order, transaction into student account, update account balance, update ubuck balance
@@ -263,6 +282,89 @@ func IsDailyPayNeeded(student *bolt.Bucket, clock Clock) bool {
 		return true
 	}
 	return false
+}
+
+func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openapi.RequestAddClass) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	_, pathId, err := RoleByAddCode(a.db, body.AddCode)
+	if err != nil {
+		return openapi.Response(404,
+			openapi.ResponseRegister4{
+				Message: err.Error(),
+			}), nil
+	}
+
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		// classBucket, err := getClassbyAddCodeTx(tx, userDetails.SchoolId, body.AddCode)
+		school := tx.Bucket([]byte(userDetails.SchoolId))
+		if school == nil {
+			return fmt.Errorf("can't find school")
+		}
+
+		schoolClasses := school.Bucket([]byte(KeyClasses))
+		if schoolClasses == nil {
+			return fmt.Errorf("can't find school classes")
+		}
+		class := schoolClasses.Bucket([]byte(pathId.classId))
+		if class != nil {
+			studentsBucket := class.Bucket([]byte(KeyStudents))
+			if studentsBucket != nil {
+				err = studentsBucket.Put([]byte(userDetails.Email), nil)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+		}
+
+		teachers := school.Bucket([]byte(KeyTeachers))
+		if teachers == nil {
+			return fmt.Errorf("can't find teachers")
+		}
+		teacher := teachers.Bucket([]byte(pathId.teacherId))
+		if teacher == nil {
+			return fmt.Errorf("can't find teacher")
+		}
+		classes := teacher.Bucket([]byte(KeyClasses))
+		if classes == nil {
+			return fmt.Errorf("can't find class")
+		}
+		classBucket := classes.Bucket([]byte(pathId.classId))
+		if classBucket == nil {
+			return fmt.Errorf("can't find class")
+		}
+		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
+		if studentsBucket == nil {
+			return fmt.Errorf("can't find students")
+		}
+		err = studentsBucket.Put([]byte(userDetails.Email), nil)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR cannot edit class with Id: %s %v", body.Id, err)
+		return openapi.Response(500, "{}"), nil
+	}
+	resp, err := classesWithOwnerDetails(a.db, userDetails.SchoolId, userDetails.Email)
+	if err != nil {
+		return openapi.Response(500, "{}"), nil
+	}
+	return openapi.Response(200, resp), nil
+
 }
 
 //How to calculate netWorth

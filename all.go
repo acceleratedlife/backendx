@@ -84,7 +84,7 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.Reque
 	}
 	var resp openapi.ClassWithMembers
 	err = a.db.View(func(tx *bolt.Tx) error {
-		classBucket, err := ClassForAllTx(tx, query.Id)
+		classBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, query.Id)
 		if err != nil {
 			return err
 		}
