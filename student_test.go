@@ -110,7 +110,7 @@ func TestDailyPayment(t *testing.T) {
 func TestStudentAddClass(t *testing.T) {
 	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
 	defer tearDown()
-	_, _, _, classes, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	_, _, _, classes, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])

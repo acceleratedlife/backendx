@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.99.0 // indirect
+	github.com/br0xen/boltbrowser v0.0.0-20210531150353-7f10a81cece0 // indirect
 	github.com/go-pkgz/auth v1.18.0
 	github.com/go-pkgz/lgr v0.10.4
 	github.com/go-pkgz/rest v1.12.0 // indirect

@@ -104,7 +104,7 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 
 			teachers := school.Bucket([]byte(KeyTeachers))
 			if teachers == nil {
-				return nil
+				continue
 			}
 
 			res := teachers.ForEach(func(teacherId, v []byte) error {
@@ -124,12 +124,15 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 					if class == nil {
 						return nil
 					}
-					role = UserRoleStudent
-					pathId.schoolId = string(currentSchoolId)
-					pathId.teacherId = string(teacherId)
-					pathId.classId = string(currentClassId)
-					return fmt.Errorf("found")
-
+					addCodeTx := class.Get([]byte(KeyAddCode))
+					if addCodeTx != nil && string(addCodeTx) == code {
+						role = UserRoleStudent
+						pathId.schoolId = string(currentSchoolId)
+						pathId.teacherId = string(teacherId)
+						pathId.classId = string(currentClassId)
+						return fmt.Errorf("found")
+					}
+					return nil
 				})
 
 				return res
