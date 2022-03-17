@@ -105,3 +105,38 @@ func TestEditClass(t *testing.T) {
 	require.Equal(t, int32(4), data.Period)
 	require.Equal(t, classes[0], data.Id)
 }
+
+func TestDeleteClass(t *testing.T) {
+	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	defer tearDown()
+	noClasses := 2
+
+	_, _, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, noClasses, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestUser{
+		Id: classes[0],
+	}
+
+	marshal, err := json.Marshal(body)
+
+	req, err := http.NewRequest(http.MethodDelete,
+		"http://127.0.0.1:8090/api/classes/class",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.Class
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, "Test Name", data.Name)
+	require.Equal(t, int32(4), data.Period)
+	require.Equal(t, classes[0], data.Id)
+}
