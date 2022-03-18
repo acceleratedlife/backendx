@@ -26,24 +26,24 @@ func UserByIdTx(tx *bolt.Tx, userId string) (user *bolt.Bucket, err error) {
 
 }
 
-func getClassAtSchoolTx(tx *bolt.Tx, schoolId, classId string) (classBucket *bolt.Bucket, err error) {
+func getClassAtSchoolTx(tx *bolt.Tx, schoolId, classId string) (classBucket *bolt.Bucket, parentBucket *bolt.Bucket, err error) {
 
 	school, err := SchoolByIdTx(tx, schoolId)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	classes := school.Bucket([]byte(KeyClasses))
 	if classes != nil {
 		classBucket := classes.Bucket([]byte(classId))
 		if classBucket != nil {
-			return classBucket, nil
+			return classBucket, classes, nil
 		}
 	}
 
 	teachers := school.Bucket([]byte(KeyTeachers))
 	if teachers == nil {
-		return nil, fmt.Errorf("no teachers at school")
+		return nil, nil, fmt.Errorf("no teachers at school")
 	}
 	cTeachers := teachers.Cursor()
 	for k, v := cTeachers.First(); k != nil; k, v = cTeachers.Next() { //iterate the teachers
@@ -55,9 +55,9 @@ func getClassAtSchoolTx(tx *bolt.Tx, schoolId, classId string) (classBucket *bol
 		if classBucket == nil {
 			continue
 		}
-		return classBucket, nil
+		return classBucket, teacher, nil
 	}
-	return nil, fmt.Errorf("class not found")
+	return nil, nil, fmt.Errorf("class not found")
 }
 
 func ClassForAllTx(tx *bolt.Tx, classId string) (classBucket *bolt.Bucket, err error) {

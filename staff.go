@@ -40,14 +40,10 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, body openapi.Requ
 	var resp openapi.Class
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+		classBucket, parentBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 		if err != nil {
 			return err
 		}
-		path := classBucket.Tx().DB().Path()
-		println(path)
-		root := classBucket.Root()
-		println(root)
 		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
 		members, err := studentsToSlice(studentsBucket)
 		if err != nil {
@@ -59,6 +55,10 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, body openapi.Requ
 			Period:  btoi32(classBucket.Get([]byte(KeyPeriod))),
 			Name:    string(classBucket.Get([]byte(KeyName))),
 			Members: members,
+		}
+		err = parentBucket.DeleteBucket([]byte(body.Id))
+		if err != nil {
+			return err
 		}
 		return nil
 	})
@@ -83,7 +83,7 @@ func (a *StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.Reques
 	}
 	var class openapi.Class
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+		classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 		if err != nil {
 			return err
 		}

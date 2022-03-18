@@ -87,7 +87,7 @@ func (a *AllSchoolApiServiceImpl) RemoveClass(ctx context.Context, body openapi.
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+		classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 		if err != nil {
 			return err
 		}

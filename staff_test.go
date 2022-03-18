@@ -135,8 +135,4 @@ func TestDeleteClass(t *testing.T) {
 	var data openapi.Class
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
-
-	require.Equal(t, "Test Name", data.Name)
-	require.Equal(t, int32(4), data.Period)
-	require.Equal(t, classes[0], data.Id)
 }
