@@ -147,18 +147,9 @@ func (c *StaffApiController) DeleteAuction(w http.ResponseWriter, r *http.Reques
 
 // Deleteclass - delete class
 func (c *StaffApiController) Deleteclass(w http.ResponseWriter, r *http.Request) {
-	requestUserParam := RequestUser{}
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(&requestUserParam); err != nil {
-		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-		return
-	}
-	if err := AssertRequestUserRequired(requestUserParam); err != nil {
-		c.errorHandler(w, r, err, nil)
-		return
-	}
-	result, err := c.service.Deleteclass(r.Context(), requestUserParam)
+	query := r.URL.Query()
+	idParam := RequestUser{query.Get("_id")}
+	result, err := c.service.Deleteclass(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

@@ -1,0 +1,10 @@
+diff a/go/api_staff_service.go b/go/api_staff_service.go	(rejected hunks)
+@@ -42,7 +42,7 @@
+ }
+ 
+ // Deleteclass - delete class
+-func (s *StaffApiService) Deleteclass(ctx context.Context, id RequestUser) (ImplResponse, error) {
++func (s *StaffApiService) Deleteclass(ctx context.Context, requestUser RequestUser) (ImplResponse, error) {
+ 	// TODO - update Deleteclass with the required logic for this service method.
+ 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+ 

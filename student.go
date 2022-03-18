@@ -62,7 +62,6 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 			Error:  true,
 		}), nil
 	}
-	println(body)
 	if userDetails.Role != UserRoleStudent {
 		return openapi.Response(401, ""), nil
 	}

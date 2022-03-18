@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -25,7 +26,7 @@ func (s StaffApiServiceImpl) DeleteAuction(ctx context.Context, s2 string) (open
 	panic("implement me")
 }
 
-func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, body openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -40,23 +41,26 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, body openapi.Requ
 	var resp openapi.Class
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, parentBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+		classBucket, parentBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, query.Id)
 		if err != nil {
 			return err
 		}
 		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
+		if studentsBucket == nil {
+			return errors.New("Cannot get studentsBucket")
+		}
 		members, err := studentsToSlice(studentsBucket)
 		if err != nil {
 			return err
 		}
 		resp = openapi.Class{
-			Id:      body.Id,
+			Id:      query.Id,
 			AddCode: string(classBucket.Get([]byte(KeyAddCode))),
 			Period:  btoi32(classBucket.Get([]byte(KeyPeriod))),
 			Name:    string(classBucket.Get([]byte(KeyName))),
 			Members: members,
 		}
-		err = parentBucket.DeleteBucket([]byte(body.Id))
+		err = parentBucket.DeleteBucket([]byte(query.Id))
 		if err != nil {
 			return err
 		}

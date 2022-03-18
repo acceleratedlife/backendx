@@ -116,15 +116,10 @@ func TestDeleteClass(t *testing.T) {
 	SetTestLoginUser(teachers[0])
 
 	client := &http.Client{}
-	body := openapi.RequestUser{
-		Id: classes[0],
-	}
-
-	marshal, err := json.Marshal(body)
 
 	req, err := http.NewRequest(http.MethodDelete,
-		"http://127.0.0.1:8090/api/classes/class",
-		bytes.NewBuffer(marshal))
+		"http://127.0.0.1:8090/api/classes/class?_id="+classes[0],
+		nil)
 
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
