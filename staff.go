@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 
@@ -47,7 +46,7 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.Req
 		}
 		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
 		if studentsBucket == nil {
-			return errors.New("Cannot get studentsBucket")
+			return fmt.Errorf("cannot get studentsBucket")
 		}
 		members, err := studentsToSlice(studentsBucket)
 		if err != nil {
