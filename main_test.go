@@ -279,13 +279,18 @@ func TestInitialDB(t *testing.T) {
 	db, teardown := OpenTestDB("inidb")
 	defer teardown()
 
-	a, s, tt, c, st, err := CreateTestAccounts(db, 2, 3, 4, 5)
+	noSchools := 2
+	noTeachers := 3
+	noClasses := 4
+	noStudents := 5
+
+	a, s, tt, c, st, err := CreateTestAccounts(db, noSchools, noTeachers, noClasses, noStudents)
 	require.Nil(t, err)
-	require.Equal(t, 2, len(s))
-	require.Equal(t, 2, len(a))
-	require.Equal(t, 6, len(tt))
-	require.Equal(t, 32, len(c))
-	require.Equal(t, 120, len(st))
+	require.Equal(t, noSchools, len(s))
+	require.Equal(t, noSchools, len(a))
+	require.Equal(t, noSchools*noTeachers, len(tt))
+	require.Equal(t, noSchools*noTeachers*noClasses+noSchools*4, len(c))
+	require.Equal(t, noSchools*noTeachers*noClasses*noStudents, len(st))
 
 	store, err := getUserInLocalStore(db, st[0])
 
@@ -296,4 +301,34 @@ func TestInitialDB(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, tt[0], teach.Name)
 
+	err = db.View(func(tx *bolt.Tx) error {
+		schools := tx.Bucket([]byte(KeySchools))
+		for i, si := range s {
+			school := schools.Bucket([]byte(si))
+
+			if school == nil {
+				return fmt.Errorf("school %d not found", i)
+			}
+
+			teachers := school.Bucket([]byte(KeyTeachers))
+			for j, ti := range tt[i*noTeachers : (i+1)*noTeachers] {
+				teachInfo, err := getUserInLocalStoreTx(tx, ti)
+				if err != nil {
+					return fmt.Errorf("teacher %d in school %d is not found", j, i)
+				}
+
+				if teachInfo.SchoolId != si {
+					return fmt.Errorf("mismatch school id for teacher %d", j)
+				}
+				teach := teachers.Bucket([]byte(ti))
+				if teach == nil {
+					return fmt.Errorf("teachers bucket not found for %d in school %d", j, i)
+				}
+			}
+
+		}
+		return nil
+	})
+
+	require.Nil(t, err)
 }
