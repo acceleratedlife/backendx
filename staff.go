@@ -37,27 +37,11 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.Req
 	if userDetails.Role == UserRoleStudent {
 		return openapi.Response(401, ""), nil
 	}
-	var resp openapi.Class
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, parentBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, query.Id)
+		_, parentBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, query.Id)
 		if err != nil {
 			return err
-		}
-		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
-		if studentsBucket == nil {
-			return fmt.Errorf("cannot get studentsBucket")
-		}
-		members, err := studentsToSlice(studentsBucket)
-		if err != nil {
-			return err
-		}
-		resp = openapi.Class{
-			Id:      query.Id,
-			AddCode: string(classBucket.Get([]byte(KeyAddCode))),
-			Period:  btoi32(classBucket.Get([]byte(KeyPeriod))),
-			Name:    string(classBucket.Get([]byte(KeyName))),
-			Members: members,
 		}
 		err = parentBucket.DeleteBucket([]byte(query.Id))
 		if err != nil {
@@ -69,7 +53,7 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.Req
 		lgr.Printf("ERROR cannot collect classes from the school: %s %v", userDetails.SchoolId, err)
 		return openapi.Response(500, "{}"), nil
 	}
-	return openapi.Response(200, resp), nil
+	return openapi.Response(200, nil), nil
 }
 
 func (a *StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.RequestEditClass) (openapi.ImplResponse, error) {

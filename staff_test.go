@@ -126,8 +126,4 @@ func TestDeleteClass(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
-
-	var data openapi.Class
-	decoder := json.NewDecoder(resp.Body)
-	_ = decoder.Decode(&data)
 }
