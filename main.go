@@ -29,26 +29,33 @@ import (
 )
 
 const (
-	OperationDebit  = 1
-	OperationCredit = 2
-	CurrencyUBuck   = "ubuck"
-	KeyCB           = "cb"
-	KeyUsers        = "users"
-	KeyAccounts     = "accounts"
-	KeyBalance      = "balance"
-	KeyTransactions = "transactions"
-	KeyTeachers     = "teachers"
-	KeySchools      = "schools"
-	KeyStudents     = "students"
-	KeyOrders       = "orders"
-	KeyClasses      = "classes"
-	KeyAddCode      = "addCode"
-	KeyName         = "name"
-	KeyCity         = "city"
-	KeyZip          = "zip"
-	KeyDayPayment   = "dayPayment"
-	KeyPeriod       = "period"
-	KeyAdmins       = "admins"
+	OperationDebit      = 1
+	OperationCredit     = 2
+	CurrencyUBuck       = "ubuck"
+	KeyCB               = "cb"
+	KeyUsers            = "users"
+	KeyAccounts         = "accounts"
+	KeyBalance          = "balance"
+	KeyTransactions     = "transactions"
+	KeyTeachers         = "teachers"
+	KeySchools          = "schools"
+	KeyStudents         = "students"
+	KeyOrders           = "orders"
+	KeyClasses          = "classes"
+	KeyAddCode          = "addCode"
+	KeyName             = "name"
+	KeyCity             = "city"
+	KeyZip              = "zip"
+	KeyDayPayment       = "dayPayment"
+	KeyPeriod           = "period"
+	KeyAdmins           = "admins"
+	KeyEmail            = "Email"
+	KeyFirstName        = "FirstName"
+	KeyLastName         = "LastName"
+	KeyCollege          = "College"
+	KeyCareerTransition = "CareerTransition"
+	KeyCareerEnd        = "CareerEnd"
+	KeyCollegeEnd       = "CollegeEnd"
 )
 
 type Clock interface {
@@ -91,6 +98,9 @@ func main() {
 func createRouter(db *bolt.DB) *mux.Router {
 	clock := &AppClock{}
 
+	teacherApiServiceImpl := NewTeacherApiServiceImpl(db)
+	teacherApiController := openapi.NewTeacherApiController(teacherApiServiceImpl)
+
 	StudentApiServiceImpl := NewStudentApiServiceImpl(db)
 	StudentApiController := openapi.NewStudentApiController(StudentApiServiceImpl)
 
@@ -119,7 +129,8 @@ func createRouter(db *bolt.DB) *mux.Router {
 		schoolApiController,
 		staffApiController,
 		unregisteredApiController,
-		StudentApiController)
+		StudentApiController,
+		teacherApiController)
 
 }
 

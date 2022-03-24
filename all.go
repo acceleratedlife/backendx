@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -109,6 +110,7 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.Reque
 
 func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.ImplResponse, error) {
 	//TODO implement me
+	//depricated
 	panic("implement me")
 }
 
@@ -254,9 +256,86 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 	return openapi.Response(200, resp), nil
 }
 
-func (a AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUserBody) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUserBody) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		users := tx.Bucket([]byte(KeyUsers))
+		if users == nil {
+			return fmt.Errorf("users do not exist")
+		}
+
+		userBucket := users.Bucket([]byte(userData.Name))
+
+		if userBucket == nil {
+			return fmt.Errorf("user does not exist")
+		}
+		if body.Email != userDetails.Email {
+			err := userBucket.Put([]byte(KeyEmail), []byte(body.Email))
+			if err != nil {
+				return err
+			}
+		}
+		if body.FirstName != userDetails.FirstName {
+			err := userBucket.Put([]byte(KeyFirstName), []byte(body.FirstName))
+			if err != nil {
+				return err
+			}
+		}
+		if body.LastName != userDetails.LastName {
+			err := userBucket.Put([]byte(KeyLastName), []byte(body.LastName))
+			if err != nil {
+				return err
+			}
+		}
+		if body.Password != "" {
+			// err := userBucket.Put([]byte(KeyPassword), []byte(body.Password))
+			// if err != nil {
+			// 	return err
+			// }
+		}
+		if body.CareerTransition && body.CareerTransition != userDetails.CareerTransition {
+			// err := userBucket.Put([]byte(KeyCareerTransition), []byte(body.CareerTransition))
+			// if err != nil {
+			// 	return err
+			// }
+			err := userBucket.Put([]byte(KeyCareerEnd), []byte(body.CareerTransition))
+		}
+		if body.College && body.College != userDetails.College {
+			// err := userBucket.Put([]byte(KeyCollege), []byte(body.College))
+			// if err != nil {
+			// 	return err
+			// }
+			// other things to check in here as well
+		}
+		return nil
+	})
+
+	if err != nil {
+		return openapi.Response(500, nil), err
+	}
+
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(500, nil), err
+	}
+
+	resp := openapi.User{
+		Id: userDetails.Name,
+		// CollegeEnd: userDetails.CollegeEnd,
+		// TransitionEnd: userDetails.TransitionEnd,
+		FirstName: userDetails.FirstName,
+		LastName:  userDetails.LastName,
+		// History: userDetails.History,
+	}
+	return openapi.Response(200, resp), nil //this is incomplete
 }
 
 // NewAllApiServiceImpl provides real api

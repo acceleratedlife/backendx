@@ -104,9 +104,35 @@ func (a *StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.Reques
 	return openapi.Response(200, class), nil
 }
 
-func (s *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.RequestKickClass) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.RequestKickClass) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		_, parentBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+		if err != nil {
+			return err
+		}
+		err = parentBucket.DeleteBucket([]byte(body.Id))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		lgr.Printf("ERROR cannot collect classes from the school: %s %v", userDetails.SchoolId, err)
+		return openapi.Response(500, "{}"), nil
+	}
+	return openapi.Response(200, nil), nil
 }
 
 func (s StaffApiServiceImpl) MakeAuction(ctx context.Context, s2 string, body openapi.AuctionsBody) (openapi.ImplResponse, error) {
