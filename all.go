@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/mail"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -277,43 +278,33 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		if userBucket == nil {
 			return fmt.Errorf("user does not exist")
 		}
-		if body.Email != userDetails.Email {
-			err := userBucket.Put([]byte(KeyEmail), []byte(body.Email))
-			if err != nil {
-				return err
-			}
+
+		_, err := mail.ParseAddress(body.Email)
+
+		if err != nil {
+			userDetails.Email = body.Email
 		}
-		if body.FirstName != userDetails.FirstName {
-			err := userBucket.Put([]byte(KeyFirstName), []byte(body.FirstName))
-			if err != nil {
-				return err
-			}
+		if body.FirstName != "" {
+			userDetails.FirstName = body.FirstName
 		}
-		if body.LastName != userDetails.LastName {
-			err := userBucket.Put([]byte(KeyLastName), []byte(body.LastName))
-			if err != nil {
-				return err
-			}
+		if body.LastName != "" {
+			userDetails.LastName = body.LastName
 		}
-		if body.Password != "" {
-			// err := userBucket.Put([]byte(KeyPassword), []byte(body.Password))
-			// if err != nil {
-			// 	return err
-			// }
+		if len(body.Password) > 5 {
+			userDetails.PasswordSha = EncodePassword(body.Password)
 		}
-		if body.CareerTransition && body.CareerTransition != userDetails.CareerTransition {
-			// err := userBucket.Put([]byte(KeyCareerTransition), []byte(body.CareerTransition))
-			// if err != nil {
-			// 	return err
-			// }
-			err := userBucket.Put([]byte(KeyCareerEnd), []byte(body.CareerTransition))
+		if body.CareerTransition && !userDetails.CareerTransition {
+			userDetails.CareerTransition = true
+			myTime := Clock.Now().UTC()
+			userDetails.TransitionEnd = myTime.AddDate(0, 0, 7) //7 days
+			userDetails.Salary = userDetails.Salary / 2
 		}
-		if body.College && body.College != userDetails.College {
-			// err := userBucket.Put([]byte(KeyCollege), []byte(body.College))
-			// if err != nil {
-			// 	return err
-			// }
-			// other things to check in here as well
+		if body.College && !userDetails.College {
+			// makeTransaction(req, res)
+			userDetails.College = true
+			myTime := Clock.Now().UTC()
+			userDetails.CollegeEnd = myTime.AddDate(0, 0, 28) //28 days
+			userDetails.Salary = userDetails.Salary / 2
 		}
 		return nil
 	})

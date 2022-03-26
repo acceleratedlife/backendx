@@ -3,8 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	bolt "go.etcd.io/bbolt"
 	"time"
+
+	bolt "go.etcd.io/bbolt"
 )
 
 const (
@@ -14,16 +15,20 @@ const (
 )
 
 type UserInfo struct {
-	Name           string
-	FirstName      string
-	LastName       string
-	Email          string
-	Confirmed      bool
-	PasswordSha    string
-	SchoolId       string
-	Role           int32     // 0 student, 1 teacher, 2 admin
-	Salary         float64   `json:",omitempty"`
-	LastSalaryPaid time.Time `json:",omitempty"`
+	Name             string
+	CareerTransition bool
+	TransitionEnd    time.Time
+	College          bool
+	CollegeEnd       time.Time
+	FirstName        string
+	LastName         string
+	Email            string
+	Confirmed        bool
+	PasswordSha      string
+	SchoolId         string
+	Role             int32     // 0 student, 1 teacher, 2 admin
+	Salary           float64   `json:",omitempty"`
+	LastSalaryPaid   time.Time `json:",omitempty"`
 }
 
 type PathId struct {
