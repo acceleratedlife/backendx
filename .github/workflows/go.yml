@@ -45,7 +45,7 @@ jobs:
         username: ${{ secrets.USER }}
         passphrase: ${{ secrets.PASS }}
         key: ${{ secrets.KEY }}
-        source: "backend"
+        source: "out/backend"
         target: ${{ secrets.TARGET }}
 
 
