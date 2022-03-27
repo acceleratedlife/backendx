@@ -21,31 +21,18 @@ jobs:
     - name: Build
       run: go build -o out/ -v ./...
 
-#    - name: Test
-#      run: go test -v ./...
+    - name: Test
+      run: go test -v ./...
 
-    - uses: actions/cache@v2
-      id: cache
-      with:
-        path: out
-        key: backend
-
-  deployment:
-    runs-on: ubuntu-latest
-    if: ${{ github.ref }} = 'refs/heads/main'
-    needs: build
-    environment:
-      name: test
-    steps:
     - name: deploy-test
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: ${{ github.ref }} = 'refs/heads/main'
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
         passphrase: ${{ secrets.PASS }}
         key: ${{ secrets.KEY }}
-        source: "/backend"
+        source: "out/backend"
         target: ${{ secrets.TARGET }}
 
 
