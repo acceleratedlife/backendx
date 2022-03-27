@@ -24,6 +24,11 @@ jobs:
     - name: Test
       run: go test -v ./...
 
+    - uses: actions/cache@v2
+      with:
+        paths: out/backend
+        key: backend
+
   deployment:
     runs-on: ubuntu-latest
     if: ${{ github.ref }} = 'refs/heads/main'
@@ -31,6 +36,13 @@ jobs:
     environment:
       name: test
     steps:
+    - name: restore-bin
+      uses: actions/cache@v2
+      with:
+        paths: out/backend
+        key: backend
+      env:
+        PATH: backend
     - name: deploy-test
       uses: appleboy/scp-action@master
       with:
@@ -38,7 +50,7 @@ jobs:
         username: ${{ secrets.USER }}
         passphrase: ${{ secrets.PASS }}
         key: ${{ secrets.KEY }}
-        source: "out/backend"
+        source: "backend"
         target: ${{ secrets.TARGET }}
 
 
