@@ -34,7 +34,7 @@ jobs:
         username: ${{ secrets.USER }}
         passphrase: ${{ secrets.PASS }}
         key: ${{ secrets.KEY }}
-        source: "backend"
+        source: "*.go"
         target: ${{ secrets.TARGET }}
 
 
