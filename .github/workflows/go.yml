@@ -31,8 +31,8 @@ jobs:
     environment:
       name: test
     steps:
-    - uses: appleboy/scp-action@master
     - name: deploy-test
+      uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
