@@ -20,7 +20,7 @@ jobs:
         go-version: 1.17
 
     - name: Build
-      run: go build -o backend -v ./...
+      run: go build -o out/ -v ./...
 
 #    - name: Test
 #      run: go test -v ./...
@@ -34,7 +34,7 @@ jobs:
         username: ${{ secrets.USER }}
         passphrase: ${{ secrets.PASS }}
         key: ${{ secrets.KEY }}
-        source: "backend"
+        source: "out/backend"
         target: ${{ secrets.TARGET }}
 
 
