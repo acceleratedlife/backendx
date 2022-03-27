@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@master
-      - name: deploy
+      - name: deploy-test
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST }}
