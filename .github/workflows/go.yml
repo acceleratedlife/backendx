@@ -10,6 +10,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    environment: test
     steps:
     - uses: actions/checkout@v2
 
@@ -26,7 +27,7 @@ jobs:
 
 
     - name: deploy-test
-      if: ${{ github.ref }} = 'refs/heads/main'
+#      if: ${{ github.ref }} = 'refs/heads/main'
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.HOST }}
