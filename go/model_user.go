@@ -42,7 +42,7 @@ type User struct {
 
 	Children int32 `json:"children"`
 
-	Income float32 `json:"income"`
+	Income int32 `json:"income"`
 
 	Role int32 `json:"role"`
 

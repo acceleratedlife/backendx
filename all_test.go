@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -124,4 +125,44 @@ func TestSearchClass(t *testing.T) {
 	require.Equal(t, students[0], data.Members[0].Id) //sometimes this is students[1] and other times students[0], race condition?
 	require.Equal(t, classes[0], data.Id)
 	require.Equal(t, len(data.Members), members)
+}
+
+func TestUserEdit(t *testing.T) {
+	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.UsersUserBody{
+		Email:            "changed@yo.com",
+		FirstName:        "test",
+		LastName:         "user",
+		Password:         "123qwe",
+		College:          true,
+		CareerTransition: true,
+	}
+
+	marshal, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/users/user", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v openapi.User
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+
+	assert.Equal(t, body.Email, v.Email)
+	assert.Equal(t, body.FirstName, v.FirstName)
+	assert.Equal(t, body.LastName, v.LastName)
+	assert.Equal(t, body.College, v.College)
+	assert.Equal(t, body.Email, v.Id)
 }

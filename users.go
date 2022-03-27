@@ -29,8 +29,11 @@ type UserInfo struct {
 	PasswordSha      string
 	SchoolId         string
 	Role             int32     // 0 student, 1 teacher, 2 admin
-	Salary           float64   `json:",omitempty"`
+	Salary           int32     `json:",omitempty"`
 	LastSalaryPaid   time.Time `json:",omitempty"`
+	Children         int32
+	Rank             int32
+	NetWorth         float32
 }
 
 type PathId struct {

@@ -273,17 +273,21 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 			return fmt.Errorf("users do not exist")
 		}
 
-		userBucket := users.Bucket([]byte(userData.Name))
+		user := users.Get([]byte(userData.Name))
 
-		if userBucket == nil {
+		if user == nil {
 			return fmt.Errorf("user does not exist")
 		}
 
 		_, err := mail.ParseAddress(body.Email)
 
 		if err != nil {
-			userDetails.Email = body.Email
+			return fmt.Errorf("Not a proper email")
 		}
+
+		userDetails.Email = body.Email
+		userDetails.Name = body.Email
+
 		if body.FirstName != "" {
 			userDetails.FirstName = body.FirstName
 		}
@@ -327,11 +331,20 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 
 	resp := openapi.User{
 		Id:            userDetails.Name,
+		Email:         userDetails.Email,
 		CollegeEnd:    userDetails.CollegeEnd,
 		TransitionEnd: userDetails.TransitionEnd,
 		FirstName:     userDetails.FirstName,
 		LastName:      userDetails.LastName,
 		History:       userDetails.History,
+		Confirmed:     userDetails.Confirmed,
+		SchoolId:      userDetails.SchoolId,
+		College:       userDetails.College,
+		Children:      userDetails.Children,
+		Income:        userDetails.Salary,
+		Role:          userDetails.Role,
+		Rank:          userDetails.Rank,
+		NetWorth:      userDetails.NetWorth,
 	}
 	return openapi.Response(200, resp), nil //this is incomplete
 }
