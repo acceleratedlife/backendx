@@ -10,7 +10,6 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    environment: test
     steps:
     - uses: actions/checkout@v2
 
@@ -22,13 +21,18 @@ jobs:
     - name: Build
       run: go build -o out/ -v ./...
 
-#    - name: Test
-#      run: go test -v ./...
+    - name: Test
+      run: go test -v ./...
 
-
+  deployment:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref }} = 'refs/heads/main'
+    needs: build
+    environment:
+      name: test
+    steps:
+    - uses: appleboy/scp-action@master
     - name: deploy-test
-#      if: ${{ github.ref }} = 'refs/heads/main'
-      uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
