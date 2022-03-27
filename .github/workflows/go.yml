@@ -19,26 +19,20 @@ jobs:
         go-version: 1.17
 
     - name: Build
-      run: go build -v ./...
+      run: go build -o out/ -v ./...
 
     - name: Test
       run: go test -v ./...
 
-  deployment:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: test
-
-    steps:
-      - uses: actions/checkout@master
-      - name: deploy-test
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          key: ${{ secrets.KEY }}
-          source: "backend"
-          target: ${{ secrets.TARGET }}
+    - name: deploy-test
+      if: ${{ github.ref }} = 'refs/heads/main'
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        passphrase: ${{ secrets.PASS }}
+        key: ${{ secrets.KEY }}
+        source: "out/backend"
+        target: ${{ secrets.TARGET }}
 
 
