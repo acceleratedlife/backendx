@@ -36,6 +36,7 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
+          passphrase: ${{ secrets.PASS }}
           key: ${{ secrets.KEY }}
           source: "backend"
           target: ${{ secrets.TARGET }}
