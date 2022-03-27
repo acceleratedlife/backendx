@@ -295,16 +295,23 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		}
 		if body.CareerTransition && !userDetails.CareerTransition {
 			userDetails.CareerTransition = true
-			myTime := Clock.Now().UTC()
-			userDetails.TransitionEnd = myTime.AddDate(0, 0, 7) //7 days
+			userDetails.TransitionEnd = a.clock.Now().AddDate(0, 0, 7) //7 days
 			userDetails.Salary = userDetails.Salary / 2
 		}
 		if body.College && !userDetails.College {
 			// makeTransaction(req, res)
 			userDetails.College = true
-			myTime := Clock.Now().UTC()
-			userDetails.CollegeEnd = myTime.AddDate(0, 0, 28) //28 days
+			userDetails.CollegeEnd = a.clock.Now().AddDate(0, 0, 28) //28 days
 			userDetails.Salary = userDetails.Salary / 2
+		}
+
+		marshal, err := json.Marshal(userDetails)
+		if err != nil {
+			return fmt.Errorf("Failed to Marshal userDetails")
+		}
+		err = users.Put([]byte(userData.Name), marshal)
+		if err != nil {
+			return fmt.Errorf("Failed to Put userDetails")
 		}
 		return nil
 	})
@@ -313,18 +320,18 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		return openapi.Response(500, nil), err
 	}
 
-	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	userDetails, err = getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
 		return openapi.Response(500, nil), err
 	}
 
 	resp := openapi.User{
-		Id: userDetails.Name,
-		// CollegeEnd: userDetails.CollegeEnd,
-		// TransitionEnd: userDetails.TransitionEnd,
-		FirstName: userDetails.FirstName,
-		LastName:  userDetails.LastName,
-		// History: userDetails.History,
+		Id:            userDetails.Name,
+		CollegeEnd:    userDetails.CollegeEnd,
+		TransitionEnd: userDetails.TransitionEnd,
+		FirstName:     userDetails.FirstName,
+		LastName:      userDetails.LastName,
+		History:       userDetails.History,
 	}
 	return openapi.Response(200, resp), nil //this is incomplete
 }

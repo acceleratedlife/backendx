@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	openapi "github.com/acceleratedlife/backend/go"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -22,6 +23,7 @@ type UserInfo struct {
 	CollegeEnd       time.Time
 	FirstName        string
 	LastName         string
+	History          [][]openapi.History
 	Email            string
 	Confirmed        bool
 	PasswordSha      string
