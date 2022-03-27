@@ -26,12 +26,13 @@ jobs:
 
   deployment:
     runs-on: ubuntu-latest
+    needs: build
     environment:
       name: test
 
     steps:
       - uses: actions/checkout@master
-      - name: deploy
+      - name: deploy-test
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST }}
