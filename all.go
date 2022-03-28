@@ -267,6 +267,7 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		}), nil
 	}
 
+	var history []openapi.History
 	err = a.db.Update(func(tx *bolt.Tx) error {
 		users := tx.Bucket([]byte(KeyUsers))
 		if users == nil {
@@ -317,6 +318,44 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		if err != nil {
 			return fmt.Errorf("Failed to Put userDetails")
 		}
+
+		schools := tx.Bucket([]byte(KeySchools))
+		if schools == nil {
+			return fmt.Errorf("Failed to find schoolsBucket")
+		}
+		school := schools.Bucket([]byte(userDetails.SchoolId))
+		if school == nil {
+			return fmt.Errorf("Failed to get school")
+		}
+		students := school.Bucket([]byte(KeyStudents))
+		if students == nil {
+			return fmt.Errorf("Failed to get students")
+		}
+
+		studentLegacy := students.Get([]byte(userData.Name))
+		if studentLegacy == nil {
+			return fmt.Errorf("Failed to get student ID")
+		}
+
+		err = students.Put([]byte(body.Email), studentLegacy)
+		if err != nil {
+			return fmt.Errorf("Failed to make new student")
+		}
+
+		err = students.Delete([]byte(userData.Name))
+		if err != nil {
+			return fmt.Errorf("Failed to delete new student")
+		}
+
+		student := students.Bucket([]byte(userDetails.Name))
+		if student == nil {
+			return fmt.Errorf("Failed to get student")
+		}
+		historyData := student.Get([]byte(KeyHistory))
+		err = json.Unmarshal(historyData, &history)
+		if err != nil {
+			return fmt.Errorf("ERROR cannot unmarshal History")
+		}
 		return nil
 	})
 
@@ -336,7 +375,7 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		TransitionEnd: userDetails.TransitionEnd,
 		FirstName:     userDetails.FirstName,
 		LastName:      userDetails.LastName,
-		History:       userDetails.History,
+		History:       history,
 		Confirmed:     userDetails.Confirmed,
 		SchoolId:      userDetails.SchoolId,
 		College:       userDetails.College,

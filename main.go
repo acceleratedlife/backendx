@@ -56,6 +56,7 @@ const (
 	KeyCareerTransition = "CareerTransition"
 	KeyCareerEnd        = "CareerEnd"
 	KeyCollegeEnd       = "CollegeEnd"
+	KeyHistory          = "History"
 )
 
 type Clock interface {

@@ -136,7 +136,7 @@ func (a *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.Reques
 }
 
 func (s StaffApiServiceImpl) MakeAuction(ctx context.Context, s2 string, body openapi.AuctionsBody) (openapi.ImplResponse, error) {
-	//TODO implement me
+	//next
 	panic("implement me")
 }
 

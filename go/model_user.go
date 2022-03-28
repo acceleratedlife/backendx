@@ -15,12 +15,12 @@ import (
 )
 
 type History struct {
-	time.Time
-	float64
+	Date     time.Time
+	NetWorth float64
 }
 
 type User struct {
-	History [][]History `json:"history"`
+	History []History `json:"history"`
 
 	Id string `json:"_id"`
 
