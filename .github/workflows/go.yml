@@ -24,9 +24,6 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-    - name: Log
-      run: echo 1. ${{ github.ref }} 2. ${{ github.ref == 'refs/heads/main' }}
-
     - name: deploy-test
       if: ${{ github.ref == 'refs/heads/main' }}
       uses: appleboy/scp-action@master
