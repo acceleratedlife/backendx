@@ -98,9 +98,9 @@ func TestSearchStudent(t *testing.T) {
 }
 
 func TestSearchClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	db, tearDown := FullStartTestServer("searchclass", 8090, "")
 	defer tearDown()
-	members := 1 // if this is a larger number then the test will sometimes fail due to race
+	members := 10
 
 	_, _, _, classes, students, err := CreateTestAccounts(db, 3, 3, 3, members)
 
@@ -122,7 +122,17 @@ func TestSearchClass(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
-	require.Equal(t, students[0], data.Members[0].Id) //sometimes this is students[1] and other times students[0], race condition?
+	require.Equal(t, members, len(data.Members))
+	for _, member := range students[:members] {
+		idx := -1
+		for j, m := range data.Members {
+			if m.Id == member {
+				idx = j
+				break
+			}
+		}
+		require.NotEqual(t, -1, idx)
+	}
 	require.Equal(t, classes[0], data.Id)
 	require.Equal(t, len(data.Members), members)
 }
