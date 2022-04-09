@@ -80,6 +80,7 @@ go/model_inline_response_404_1.go
 go/model_request_login.go
 go/model_request_make_class.go
 go/model_request_register.go
+go/model_request_user.go
 go/model_response_auth2.go
 go/model_response_auth4.go
 go/model_response_cookie.go

@@ -65,3 +65,33 @@ func TestSearchStudents(t *testing.T) {
 
 	require.Equal(t, 12, len(data))
 }
+
+func TestSearchStudent(t *testing.T) {
+	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 2, 6)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/users/user?_id="+students[0],
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.User
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, students[0], data.Id)
+	require.NotNil(t, data.FirstName)
+	require.NotNil(t, data.LastName)
+	require.NotNil(t, data.Income)
+}

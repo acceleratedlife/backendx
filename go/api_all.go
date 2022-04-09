@@ -305,7 +305,7 @@ func (c *AllApiController) SearchSchool(w http.ResponseWriter, r *http.Request) 
 // SearchStudent - return one student
 func (c *AllApiController) SearchStudent(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := query.Get("_id")
+	idParam := RequestUser{query.Get("_id")}
 	result, err := c.service.SearchStudent(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {

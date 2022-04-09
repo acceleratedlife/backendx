@@ -33,6 +33,7 @@ func AssertResponseAuth2Required(obj ResponseAuth2) error {
 	elements := map[string]interface{}{
 		"isAdmin": obj.IsAdmin,
 		"isAuth":  obj.IsAuth,
+		"role":    obj.Role,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

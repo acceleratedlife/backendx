@@ -135,7 +135,7 @@ type AllApiServicer interface {
 	SearchBucks(context.Context, string) (ImplResponse, error)
 	SearchClass(context.Context, string) (ImplResponse, error)
 	SearchSchool(context.Context, string) (ImplResponse, error)
-	SearchStudent(context.Context, string) (ImplResponse, error)
+	SearchStudent(context.Context, RequestUser) (ImplResponse, error)
 	SearchStudentBuck(context.Context, string) (ImplResponse, error)
 	SearchStudents(context.Context) (ImplResponse, error)
 	UserEdit(context.Context, UsersUserBody) (ImplResponse, error)
