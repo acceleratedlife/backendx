@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	openapi "github.com/acceleratedlife/backend/go"
 	bolt "go.etcd.io/bbolt"
 )
@@ -45,8 +46,8 @@ func getTeacherClasses(db *bolt.DB, schoolId, teacherId string) (res []openapi.C
 	return
 }
 
-func getClassesTx(teacher *bolt.Bucket) []openapi.ResponseMakeClassInner {
-	classes := make([]openapi.ResponseMakeClassInner, 0)
+func getClassesTx(teacher *bolt.Bucket) []openapi.Class {
+	classes := make([]openapi.Class, 0)
 
 	c := teacher.Cursor()
 
@@ -55,17 +56,17 @@ func getClassesTx(teacher *bolt.Bucket) []openapi.ResponseMakeClassInner {
 			continue
 		}
 		classBucket := teacher.Bucket(k)
-		iClass := openapi.ResponseMakeClassInner{
+		iClass := openapi.Class{
 			Id:      string(k),
 			Name:    string(classBucket.Get([]byte(KeyName))),
-			Owner:   "",
+			OwnerId: "",
 			Period:  btoi32(classBucket.Get([]byte("period"))),
 			AddCode: string(classBucket.Get([]byte(KeyAddCode))),
 			Members: make([]string, 0),
 		}
 		classes = append(classes, iClass)
 	}
-
+	println(classes)
 	return classes
 }
 
@@ -91,7 +92,7 @@ func getClasses1Tx(teacher *bolt.Bucket, ownerId string) []openapi.Class {
 	return data
 }
 
-func (s *StaffApiServiceImpl) MakeClassImpl(userDetails UserInfo, request openapi.RequestMakeClass) (classes []openapi.ResponseMakeClassInner, err error) {
+func (s *StaffApiServiceImpl) MakeClassImpl(userDetails UserInfo, request openapi.RequestMakeClass) (classes []openapi.Class, err error) {
 	schoolId := userDetails.SchoolId
 	teacherId := userDetails.Name
 	className := request.Name
@@ -102,7 +103,7 @@ func (s *StaffApiServiceImpl) MakeClassImpl(userDetails UserInfo, request openap
 	return classes, err
 }
 
-func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int) (classId string, classes []openapi.ResponseMakeClassInner, err error) {
+func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int) (classId string, classes []openapi.Class, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, schoolId)
 		if err != nil {

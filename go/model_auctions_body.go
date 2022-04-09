@@ -15,6 +15,7 @@ import (
 )
 
 type AuctionsBody struct {
+
 	Bid float32 `json:"bid,omitempty"`
 
 	Description string `json:"description,omitempty"`

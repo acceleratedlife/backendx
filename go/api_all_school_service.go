@@ -12,8 +12,8 @@ package openapi
 
 import (
 	"context"
-	"errors"
 	"net/http"
+	"errors"
 )
 
 // AllSchoolApiService is a service that implements the logic for the AllSchoolApiServicer

@@ -11,6 +11,7 @@
 package openapi
 
 type ClassesClassBody struct {
+
 	Name string `json:"name,omitempty"`
 
 	Period int32 `json:"period,omitempty"`

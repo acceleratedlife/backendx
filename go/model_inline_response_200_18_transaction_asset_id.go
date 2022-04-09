@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse20018TransactionAssetId struct {
+
 	Name string `json:"name,omitempty"`
 
 	Id string `json:"_id,omitempty"`

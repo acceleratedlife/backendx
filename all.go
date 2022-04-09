@@ -195,7 +195,7 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 
 			nWorth, _ := StudentNetWorthTx(tx, student.Name).Float64()
 			nUser := openapi.UserNoHistory{
-				//Id:            "",
+				Id: student.Email,
 				//CollegeEnd:    time.Time{},
 				//TransitionEnd: time.Time{},
 				FirstName: student.FirstName,

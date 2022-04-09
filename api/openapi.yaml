@@ -766,7 +766,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseMakeClass'
+                items:
+                  $ref: '#/components/schemas/Class'
+                type: array
           description: class record is made. Return all the classes from this owner.
             Sort classes by period ascending
         "404":
@@ -1750,7 +1752,7 @@ components:
       - addCode
       - members
       - name
-      - owner
+      - owner_id
       - period
       type: object
     ClassWithMembers:
@@ -1946,16 +1948,6 @@ components:
           example: Auth failed, email not found
           type: string
       type: object
-    ResponseMakeClass:
-      items:
-        $ref: '#/components/schemas/ResponseMakeClass_inner'
-      required:
-      - _id
-      - addCode
-      - members
-      - name
-      - period
-      type: array
     ResponseRegister2:
       example:
         success: true
@@ -3096,38 +3088,6 @@ components:
           type: string
         owner_id:
           $ref: '#/components/schemas/ResponseEvents_inner_owner_id'
-      type: object
-    ResponseMakeClass_inner:
-      example:
-        owner: 613eab19e58cc511801af657
-        period: 2
-        members:
-        - 613eab19e58cc511801af657
-        - 613eab19e58cc511801af657
-        name: Math
-        _id: 613eab19e58cc511801af657
-        addCode: 45DE5
-      properties:
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-        name:
-          example: Math
-          type: string
-        owner:
-          example: 613eab19e58cc511801af657
-          type: string
-        period:
-          example: 2
-          type: integer
-        addCode:
-          example: 45DE5
-          type: string
-        members:
-          items:
-            example: 613eab19e58cc511801af657
-            type: string
-          type: array
       type: object
     ResponseSchools_inner:
       example:

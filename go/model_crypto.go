@@ -11,6 +11,7 @@
 package openapi
 
 type Crypto struct {
+
 	Id string `json:"_id"`
 
 	Name string `json:"name"`
@@ -23,10 +24,10 @@ type Crypto struct {
 // AssertCryptoRequired checks if the required fields are not zero-ed
 func AssertCryptoRequired(obj Crypto) error {
 	elements := map[string]interface{}{
-		"_id":        obj.Id,
-		"name":       obj.Name,
+		"_id": obj.Id,
+		"name": obj.Name,
 		"totalCount": obj.TotalCount,
-		"usd":        obj.Usd,
+		"usd": obj.Usd,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

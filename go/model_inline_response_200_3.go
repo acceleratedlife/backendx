@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse2003 struct {
+
 	Converion float32 `json:"converion,omitempty"`
 
 	History [][]int32 `json:"history,omitempty"`

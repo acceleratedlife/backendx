@@ -12,8 +12,8 @@ package openapi
 
 import (
 	"context"
-	"errors"
 	"net/http"
+	"errors"
 )
 
 // StaffApiService is a service that implements the logic for the StaffApiServicer
@@ -102,8 +102,8 @@ func (s *StaffApiService) MakeClass(ctx context.Context, requestMakeClass Reques
 	// TODO - update MakeClass with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseMakeClassInner{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseMakeClassInner{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []Class{}) or use other options such as http.Ok ...
+	//return Response(200, []Class{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

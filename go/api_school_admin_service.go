@@ -12,8 +12,8 @@ package openapi
 
 import (
 	"context"
-	"errors"
 	"net/http"
+	"errors"
 )
 
 // SchoolAdminApiService is a service that implements the logic for the SchoolAdminApiServicer

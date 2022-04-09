@@ -11,6 +11,7 @@
 package openapi
 
 type Buck struct {
+
 	Id string `json:"_id"`
 
 	OwnerId string `json:"owner_id,omitempty"`
@@ -29,11 +30,11 @@ type Buck struct {
 // AssertBuckRequired checks if the required fields are not zero-ed
 func AssertBuckRequired(obj Buck) error {
 	elements := map[string]interface{}{
-		"_id":           obj.Id,
-		"name":          obj.Name,
+		"_id": obj.Id,
+		"name": obj.Name,
 		"totalCurrency": obj.TotalCurrency,
-		"freeCurrency":  obj.FreeCurrency,
-		"history":       obj.History,
+		"freeCurrency": obj.FreeCurrency,
+		"history": obj.History,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

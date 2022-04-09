@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse2007Members struct {
+
 	FirstName string `json:"firstName,omitempty"`
 
 	LastName string `json:"lastName,omitempty"`

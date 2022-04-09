@@ -11,6 +11,7 @@
 package openapi
 
 type RequestUser struct {
+
 	Id string `json:"_id"`
 }
 

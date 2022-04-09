@@ -11,6 +11,7 @@
 package openapi
 
 type Account struct {
+
 	Id string `json:"_id"`
 
 	OwnerId string `json:"owner_id,omitempty"`
@@ -29,10 +30,10 @@ type Account struct {
 // AssertAccountRequired checks if the required fields are not zero-ed
 func AssertAccountRequired(obj Account) error {
 	elements := map[string]interface{}{
-		"_id":     obj.Id,
-		"kind":    obj.Kind,
-		"value":   obj.Value,
-		"basis":   obj.Basis,
+		"_id": obj.Id,
+		"kind": obj.Kind,
+		"value": obj.Value,
+		"basis": obj.Basis,
 		"history": obj.History,
 	}
 	for name, el := range elements {

@@ -59,7 +59,7 @@ func TestMakeClass(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode)
 
 	defer resp.Body.Close()
-	var respData []openapi.ResponseMakeClassInner
+	var respData []openapi.Class
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&respData)
 

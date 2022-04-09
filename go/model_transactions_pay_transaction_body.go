@@ -11,6 +11,7 @@
 package openapi
 
 type TransactionsPayTransactionBody struct {
+
 	Owner string `json:"owner,omitempty"`
 
 	Description string `json:"description,omitempty"`

@@ -11,6 +11,7 @@
 package openapi
 
 type ClassWithMembersMembers struct {
+
 	LastName string `json:"lastName,omitempty"`
 
 	Id string `json:"_id,omitempty"`

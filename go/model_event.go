@@ -11,6 +11,7 @@
 package openapi
 
 type Event struct {
+
 	Id string `json:"_id"`
 
 	OwnerId string `json:"owner_id,omitempty"`
@@ -25,8 +26,8 @@ type Event struct {
 // AssertEventRequired checks if the required fields are not zero-ed
 func AssertEventRequired(obj Event) error {
 	elements := map[string]interface{}{
-		"_id":         obj.Id,
-		"value":       obj.Value,
+		"_id": obj.Id,
+		"value": obj.Value,
 		"description": obj.Description,
 	}
 	for name, el := range elements {
