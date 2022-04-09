@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/mail"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -280,15 +279,6 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 			return fmt.Errorf("user does not exist")
 		}
 
-		_, err := mail.ParseAddress(body.Email)
-
-		if err != nil {
-			return fmt.Errorf("Not a proper email")
-		}
-
-		userDetails.Email = body.Email
-		userDetails.Name = body.Email
-
 		if body.FirstName != "" {
 			userDetails.FirstName = body.FirstName
 		}
@@ -332,26 +322,15 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 			return fmt.Errorf("Failed to get students")
 		}
 
-		studentLegacy := students.Get([]byte(userData.Name))
-		if studentLegacy == nil {
-			return fmt.Errorf("Failed to get student ID")
-		}
-
-		err = students.Put([]byte(body.Email), studentLegacy)
-		if err != nil {
-			return fmt.Errorf("Failed to make new student")
-		}
-
-		err = students.Delete([]byte(userData.Name))
-		if err != nil {
-			return fmt.Errorf("Failed to delete new student")
-		}
-
 		student := students.Bucket([]byte(userDetails.Name))
 		if student == nil {
 			return fmt.Errorf("Failed to get student")
 		}
+
 		historyData := student.Get([]byte(KeyHistory))
+		if historyData == nil {
+			return fmt.Errorf("Failed to get history")
+		}
 		err = json.Unmarshal(historyData, &history)
 		if err != nil {
 			return fmt.Errorf("ERROR cannot unmarshal History")
@@ -369,21 +348,22 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 	}
 
 	resp := openapi.User{
-		Id:            userDetails.Name,
-		Email:         userDetails.Email,
-		CollegeEnd:    userDetails.CollegeEnd,
-		TransitionEnd: userDetails.TransitionEnd,
-		FirstName:     userDetails.FirstName,
-		LastName:      userDetails.LastName,
-		History:       history,
-		Confirmed:     userDetails.Confirmed,
-		SchoolId:      userDetails.SchoolId,
-		College:       userDetails.College,
-		Children:      userDetails.Children,
-		Income:        userDetails.Salary,
-		Role:          userDetails.Role,
-		Rank:          userDetails.Rank,
-		NetWorth:      userDetails.NetWorth,
+		Id:               userDetails.Name,
+		Email:            userDetails.Email,
+		CollegeEnd:       userDetails.CollegeEnd,
+		TransitionEnd:    userDetails.TransitionEnd,
+		FirstName:        userDetails.FirstName,
+		LastName:         userDetails.LastName,
+		History:          history,
+		Confirmed:        userDetails.Confirmed,
+		SchoolId:         userDetails.SchoolId,
+		CareerTransition: userDetails.CareerTransition,
+		College:          userDetails.College,
+		Children:         userDetails.Children,
+		Income:           userDetails.Salary,
+		Role:             userDetails.Role,
+		Rank:             userDetails.Rank,
+		NetWorth:         userDetails.NetWorth,
 	}
 	return openapi.Response(200, resp), nil //this is incomplete
 }

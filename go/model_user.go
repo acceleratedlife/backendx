@@ -40,6 +40,8 @@ type User struct {
 
 	College bool `json:"college"`
 
+	CareerTransition bool `json:"careerTransition"`
+
 	Children int32 `json:"children"`
 
 	Income int32 `json:"income"`

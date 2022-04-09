@@ -139,7 +139,6 @@ func TestUserEdit(t *testing.T) {
 	client := &http.Client{}
 
 	body := openapi.UsersUserBody{
-		Email:            "changed@yo.com",
 		FirstName:        "test",
 		LastName:         "user",
 		Password:         "123qwe",
@@ -160,9 +159,8 @@ func TestUserEdit(t *testing.T) {
 	err = decoder.Decode(&v)
 	require.Nil(t, err)
 
-	assert.Equal(t, body.Email, v.Email)
 	assert.Equal(t, body.FirstName, v.FirstName)
 	assert.Equal(t, body.LastName, v.LastName)
 	assert.Equal(t, body.College, v.College)
-	assert.Equal(t, body.Email, v.Id)
+	assert.Equal(t, body.CareerTransition, v.CareerTransition)
 }
