@@ -5,8 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	bolt "go.etcd.io/bbolt"
 	"math/big"
+
+	bolt "go.etcd.io/bbolt"
 )
 
 func RandomString(n int) string {

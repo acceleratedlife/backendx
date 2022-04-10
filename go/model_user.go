@@ -14,8 +14,13 @@ import (
 	"time"
 )
 
+type History struct {
+	Date     time.Time
+	NetWorth float64
+}
+
 type User struct {
-	History [][]int32 `json:"history"`
+	History []History `json:"history"`
 
 	Id string `json:"_id"`
 
@@ -35,9 +40,11 @@ type User struct {
 
 	College bool `json:"college"`
 
+	CareerTransition bool `json:"careerTransition"`
+
 	Children int32 `json:"children"`
 
-	Income float32 `json:"income"`
+	Income int32 `json:"income"`
 
 	Role int32 `json:"role"`
 

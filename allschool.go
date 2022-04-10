@@ -43,7 +43,7 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 			Id:      userDetails.SchoolId,
 			OwnerId: userDetails.Email,
 			Period:  0,
-			Name:    "",
+			Name:    "Teacher Class",
 			AddCode: newCode,
 			Members: nil,
 		}
@@ -87,7 +87,7 @@ func (a *AllSchoolApiServiceImpl) RemoveClass(ctx context.Context, body openapi.
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+		classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 		if err != nil {
 			return err
 		}
@@ -114,9 +114,20 @@ func (a AllSchoolApiServiceImpl) SearchAuctions(ctx context.Context, s string) (
 	panic("implement me")
 }
 
-func (a AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	resp, err := classesWithOwnerDetails(a.db, userDetails.SchoolId, userDetails.Email)
+	if err != nil {
+		return openapi.Response(500, "{}"), nil
+	}
+	return openapi.Response(200, resp), nil
 }
 
 // NewAllSchoolApiServiceImpl creates a default api service
@@ -127,7 +138,6 @@ func NewAllSchoolApiServiceImpl(db *bolt.DB) openapi.AllSchoolApiServicer {
 }
 
 func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.ResponseMemberClass, error) {
-
 	classes := make([]openapi.ResponseMemberClass, 0)
 	err := db.View(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, schoolID)
@@ -144,7 +154,7 @@ func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.Re
 				if students == nil {
 					return
 				}
-				student := class.Get([]byte(userId))
+				student := students.Get([]byte(userId))
 				if student == nil {
 					return
 				}
@@ -164,6 +174,42 @@ func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.Re
 					Period: btoi32(period),
 					Id:     string(classId),
 				})
+			})
+		})
+		schoolClasses := school.Bucket([]byte(KeyClasses))
+		if schoolClasses == nil {
+			return fmt.Errorf("no school classes at school")
+		}
+		iterateBuckets(schoolClasses, func(class *bolt.Bucket, classId []byte) {
+			students := class.Bucket([]byte(KeyStudents))
+			if students == nil {
+				return
+			}
+			student := class.Get([]byte(userId))
+			if student == nil {
+				return
+			}
+			adminBucket := school.Bucket([]byte(KeyAdmins))
+			adminId, _ := adminBucket.Cursor().First()
+			if adminId == nil {
+				lgr.Printf("ERROR cannot find bucket for admin %x", adminId)
+				return
+			}
+			adminDetails, err := getUserInLocalStoreTx(tx, string(adminId))
+			if err != nil {
+				lgr.Printf("ERROR cannot find details for teacher %x", adminId)
+				return
+			}
+			period := class.Get([]byte(KeyPeriod))
+
+			classes = append(classes, openapi.ResponseMemberClass{
+				Owner: openapi.ResponseMemberClassOwner{
+					FirstName: adminDetails.FirstName,
+					LastName:  adminDetails.LastName,
+					Id:        adminDetails.Name,
+				},
+				Period: btoi32(period),
+				Id:     string(classId),
 			})
 		})
 		return nil

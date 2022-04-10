@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestAuth(t *testing.T) {
-	_, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
+	_, tearDown := FullStartTestServer("auth", 8090, "test@admin.com")
 	defer tearDown()
 
 	client := &http.Client{}
@@ -40,7 +41,7 @@ func TestAuth(t *testing.T) {
 }
 
 func TestSearchStudents(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	db, tearDown := FullStartTestServer("searchStudents", 8090, "")
 	defer tearDown()
 
 	_, _, teachers, _, _, err := CreateTestAccounts(db, 1, 1, 1, 1)
@@ -67,7 +68,7 @@ func TestSearchStudents(t *testing.T) {
 }
 
 func TestSearchStudent(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	db, tearDown := FullStartTestServer("searchStudent", 8090, "")
 	defer tearDown()
 
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 2, 6)
@@ -97,9 +98,9 @@ func TestSearchStudent(t *testing.T) {
 }
 
 func TestSearchClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	db, tearDown := FullStartTestServer("searchClass", 8090, "")
 	defer tearDown()
-	members := 1 // if this is a larger number then the test will sometimes fail due to race
+	members := 10
 
 	_, _, _, classes, students, err := CreateTestAccounts(db, 3, 3, 3, members)
 
@@ -121,7 +122,53 @@ func TestSearchClass(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
-	require.Equal(t, students[0], data.Members[0].Id) //sometimes this is students[1] and other times students[0], race condition?
+	flag := false
+	for i := range data.Members {
+		if data.Members[i].Id == students[0] {
+			flag = true
+			break
+		}
+	}
+
+	require.Equal(t, flag, true)
 	require.Equal(t, classes[0], data.Id)
 	require.Equal(t, len(data.Members), members)
+}
+
+func TestUserEdit(t *testing.T) {
+	db, tearDown := FullStartTestServer("userEdit", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.UsersUserBody{
+		FirstName:        "test",
+		LastName:         "user",
+		Password:         "123qwe",
+		College:          true,
+		CareerTransition: true,
+	}
+
+	marshal, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/users/user", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v openapi.User
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+
+	assert.Equal(t, body.FirstName, v.FirstName)
+	assert.Equal(t, body.LastName, v.LastName)
+	assert.Equal(t, body.College, v.College)
+	assert.Equal(t, body.CareerTransition, v.CareerTransition)
 }
