@@ -32,7 +32,7 @@ func getTeacherClasses(db *bolt.DB, schoolId, teacherId string) (res []openapi.C
 		if err != nil {
 			return err
 		}
-		teachers := school.Bucket([]byte("teachers"))
+		teachers := school.Bucket([]byte(KeyTeachers))
 		if teachers == nil {
 			return nil
 		}
@@ -60,7 +60,7 @@ func getClassesTx(teacher *bolt.Bucket) []openapi.Class {
 			Id:      string(k),
 			Name:    string(classBucket.Get([]byte(KeyName))),
 			OwnerId: "",
-			Period:  btoi32(classBucket.Get([]byte("period"))),
+			Period:  btoi32(classBucket.Get([]byte(KeyPeriod))),
 			AddCode: string(classBucket.Get([]byte(KeyAddCode))),
 			Members: make([]string, 0),
 		}
@@ -81,7 +81,7 @@ func getClasses1Tx(teacher *bolt.Bucket, ownerId string) []openapi.Class {
 		iClass := openapi.Class{
 			Id:      string(k),
 			OwnerId: ownerId,
-			Period:  btoi32(classBucket.Get([]byte("period"))),
+			Period:  btoi32(classBucket.Get([]byte(KeyPeriod))),
 			Name:    string(classBucket.Get([]byte(KeyName))),
 			AddCode: string(classBucket.Get([]byte(KeyAddCode))),
 			Members: make([]string, 0),
@@ -108,7 +108,7 @@ func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int)
 		if err != nil {
 			return err
 		}
-		teachers := school.Bucket([]byte("teachers"))
+		teachers := school.Bucket([]byte(KeyTeachers))
 		if teachers == nil {
 			return fmt.Errorf("user does not exist")
 		}
@@ -141,7 +141,7 @@ func addClassDetailsTx(bucket *bolt.Bucket, className string, period int) (class
 	if err != nil {
 		return "", err
 	}
-	err = class.Put([]byte("period"), itob32(int32(period)))
+	err = class.Put([]byte(KeyPeriod), itob32(int32(period)))
 	if err != nil {
 		return "", err
 	}

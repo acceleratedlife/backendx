@@ -7,67 +7,38 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-func UserByIdTx(tx *bolt.Tx, userId string) (user *bolt.Bucket, err error) {
-	users := tx.Bucket([]byte(KeyUsers))
-	if users == nil {
-		return nil, fmt.Errorf("no users available")
+func getClassAtSchoolTx(tx *bolt.Tx, schoolId, classId string) (classBucket *bolt.Bucket, parentBucket *bolt.Bucket, err error) {
+
+	school, err := SchoolByIdTx(tx, schoolId)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	c := users.Cursor()
-
-	for k, v := c.First(); k != nil; k, v = c.Next() {
-
-		if string([]byte(k)) == userId {
-			println(k, v)
+	classes := school.Bucket([]byte(KeyClasses))
+	if classes != nil {
+		classBucket := classes.Bucket([]byte(classId))
+		if classBucket != nil {
+			return classBucket, classes, nil
 		}
-
 	}
-	return nil, fmt.Errorf("school not found")
 
-}
-
-func ClassForAll(tx *bolt.Tx, classId string) (classBucket *bolt.Bucket, err error) {
-	schools := tx.Bucket([]byte(KeySchools))
-	cSchools := schools.Cursor()
-	for k, v := cSchools.First(); k != nil; k, v = cSchools.Next() { //iterate through all schools
+	teachers := school.Bucket([]byte(KeyTeachers))
+	if teachers == nil {
+		return nil, nil, fmt.Errorf("no teachers at school")
+	}
+	cTeachers := teachers.Cursor()
+	for k, v := cTeachers.First(); k != nil; k, v = cTeachers.Next() { //iterate the teachers
 		if v != nil {
 			continue
 		}
-		school := schools.Bucket(k)
-		if school == nil {
+		teacher := teachers.Bucket(k)
+		classBucket = teacher.Bucket([]byte(classId)) //found the class
+		if classBucket == nil {
 			continue
 		}
-		cSchool := school.Cursor()
-		for key, v := cSchool.First(); key != nil; key, v = cSchool.Next() { //iterate school bucket
-			if v != nil {
-				continue
-			}
-			if string(key) == KeyClasses { //find the school classes bucket
-				classes := school.Bucket(key)
-				classBucket := classes.Bucket([]byte(classId)) //found the class
-				if classBucket == nil {
-					continue
-				}
-				return classBucket, nil
-			}
-			if string(key) == KeyTeachers { //find the teachers bucket
-				teachers := school.Bucket(key)
-				cTeachers := teachers.Cursor()
-				for k, v := cTeachers.First(); k != nil; k, v = cTeachers.Next() { //iterate the teachers
-					if v != nil {
-						continue
-					}
-					teacher := teachers.Bucket(k)
-					classBucket := teacher.Bucket([]byte(classId)) //found the class
-					if classBucket == nil {
-						continue
-					}
-					return classBucket, nil
-				}
-			}
-		}
+		return classBucket, teacher, nil
 	}
-	return nil, fmt.Errorf("class not found")
+	return nil, nil, fmt.Errorf("class not found")
 }
 
 func PopulateClassMembers(tx *bolt.Tx, classBucket *bolt.Bucket) (Members []openapi.ClassWithMembersMembers, err error) {

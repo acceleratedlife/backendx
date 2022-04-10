@@ -12,7 +12,7 @@ import (
 )
 
 func TestSearchAdminTeacherClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	db, tearDown := FullStartTestServer("searchAdminTeacherClass", 8090, "")
 	defer tearDown()
 
 	admins, _, teachers, _, _, err := CreateTestAccounts(db, 1, 2, 1, 3)

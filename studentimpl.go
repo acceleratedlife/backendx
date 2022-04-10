@@ -30,6 +30,18 @@ type Transaction struct {
 	Reference      string
 }
 
+// func getClassbyAddCodeTx(tx *bolt.Tx, schoolId, addCode string) (classBucket *bolt.Bucket, err error) {
+// 	schools := tx.Bucket([]byte(KeySchools))
+// 	if schools == nil {
+// 		return nil, fmt.Errorf("schools not found")
+// 	}
+// 	school := schools.Bucket([]byte(schoolId))
+// 	if school == nil {
+// 		return nil, fmt.Errorf("school not found")
+// 	}
+// 	schoolClass :=
+// }
+
 // adds ubucks from CB
 //creates order, transaction into student account, update account balance, update ubuck balance
 func addUbuck2Student(db *bolt.DB, clock Clock, studentId string, amount decimal.Decimal, reference string) error {
@@ -39,6 +51,7 @@ func addUbuck2Student(db *bolt.DB, clock Clock, studentId string, amount decimal
 }
 
 // register order, transactions in students account, transactions i CB
+// your functions should sit in a separete file
 func addUbuck2StudentTx(tx *bolt.Tx, clock Clock, studentId string, amount decimal.Decimal, reference string) error {
 	ts := clock.Now()
 	tsk, err := ts.MarshalText()
@@ -264,16 +277,3 @@ func IsDailyPayNeeded(student *bolt.Bucket, clock Clock) bool {
 	}
 	return false
 }
-
-//How to calculate netWorth
-//givens:
-//student accounts:
-//uBucks 0, Kirill Bucks 5
-//
-//uBuck total currency: 1000
-//Kirill Bucks total currency: 100
-//conversion ratio 1000/100 = 10
-//10 ubucks = 1 kirill buck
-//networth = uBucks + Kirill bucks *10
-//50 = 0 + (5*10)
-//networth = 50

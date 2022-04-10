@@ -11,7 +11,6 @@
 package openapi
 
 type School struct {
-
 	Id string `json:"_id"`
 
 	Name string `json:"name"`
@@ -26,11 +25,11 @@ type School struct {
 // AssertSchoolRequired checks if the required fields are not zero-ed
 func AssertSchoolRequired(obj School) error {
 	elements := map[string]interface{}{
-		"_id": obj.Id,
-		"name": obj.Name,
-		"city": obj.City,
+		"_id":          obj.Id,
+		"name":         obj.Name,
+		"city":         obj.City,
 		"adminAddCode": obj.AdminAddCode,
-		"zip": obj.Zip,
+		"zip":          obj.Zip,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

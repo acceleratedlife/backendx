@@ -11,7 +11,6 @@
 package openapi
 
 type ResponseMemberClass struct {
-
 	Owner ResponseMemberClassOwner `json:"owner,omitempty"`
 
 	Period int32 `json:"period,omitempty"`

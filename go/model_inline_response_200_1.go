@@ -11,7 +11,6 @@
 package openapi
 
 type InlineResponse2001 struct {
-
 	Value float32 `json:"value,omitempty"`
 }
 

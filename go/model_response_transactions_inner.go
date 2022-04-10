@@ -15,7 +15,6 @@ import (
 )
 
 type ResponseTransactionsInner struct {
-
 	Amount float32 `json:"amount,omitempty"`
 
 	CreatedAt time.Time `json:"createdAt,omitempty"`

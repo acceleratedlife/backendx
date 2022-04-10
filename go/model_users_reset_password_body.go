@@ -11,7 +11,6 @@
 package openapi
 
 type UsersResetPasswordBody struct {
-
 	Email string `json:"email,omitempty"`
 }
 

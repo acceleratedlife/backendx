@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
@@ -159,6 +161,22 @@ func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
 		if school == nil {
 			return fmt.Errorf("school not found")
 		}
+		schoolStudentsBucket, err := school.CreateBucketIfNotExists([]byte(KeyStudents))
+		if err != nil {
+			return err
+		}
+		schoolStudentBucket, err := schoolStudentsBucket.CreateBucketIfNotExists([]byte(newUser.Email))
+		if err != nil {
+			return err
+		}
+		history := []openapi.History{}
+		row1 := openapi.History{
+			Date:     time.Now(),
+			NetWorth: 0.0,
+		}
+		history = append(history, row1)
+		marshal, _ := json.Marshal(history)
+		schoolStudentBucket.Put([]byte(KeyHistory), marshal)
 		teachers, err := school.CreateBucketIfNotExists([]byte(KeyTeachers))
 		if err != nil {
 			return err

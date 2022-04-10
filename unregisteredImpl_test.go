@@ -3,16 +3,17 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"testing"
+
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"net/http"
-	"testing"
 )
 
 func TestAddTeacher(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("addTeacher", 8090, "test@admin.com")
 	defer tearDown()
 
 	schoolId, _ := FindOrCreateSchool(db, "test school", "no city", 0)

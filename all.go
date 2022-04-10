@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -84,14 +85,14 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.Reque
 	}
 	var resp openapi.ClassWithMembers
 	err = a.db.View(func(tx *bolt.Tx) error {
-		classBucket, err := ClassForAll(tx, query.Id)
+		classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, query.Id)
 		if err != nil {
 			return err
 		}
 		resp.Id = query.Id
 		resp.AddCode = string(classBucket.Get([]byte(KeyAddCode)))
 		// resp.OwnerId = string(class.Get([]byte("ownerId")))
-		resp.Period = btoi32(classBucket.Get([]byte("period")))
+		resp.Period = btoi32(classBucket.Get([]byte(KeyPeriod)))
 		resp.Name = string(classBucket.Get([]byte(KeyName)))
 		Members, err := PopulateClassMembers(tx, classBucket)
 		if err != nil {
@@ -109,6 +110,7 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.Reque
 
 func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.ImplResponse, error) {
 	//TODO implement me
+	//depricated
 	panic("implement me")
 }
 
@@ -192,8 +194,8 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 
 		studentsId := make(map[string]int, 0)
 
-		iterateBuckets(teachers, func(teacher *bolt.Bucket) {
-			iterateBuckets(teacher, func(class *bolt.Bucket) {
+		iterateBuckets(teachers, func(teacher *bolt.Bucket, _ []byte) {
+			iterateBuckets(teacher, func(class *bolt.Bucket, _ []byte) {
 				students := class.Bucket([]byte(KeyStudents))
 				if students == nil {
 					return
@@ -254,9 +256,116 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 	return openapi.Response(200, resp), nil
 }
 
-func (a AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUserBody) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUserBody) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	var history []openapi.History
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		users := tx.Bucket([]byte(KeyUsers))
+		if users == nil {
+			return fmt.Errorf("users do not exist")
+		}
+
+		user := users.Get([]byte(userData.Name))
+
+		if user == nil {
+			return fmt.Errorf("user does not exist")
+		}
+
+		if body.FirstName != "" {
+			userDetails.FirstName = body.FirstName
+		}
+		if body.LastName != "" {
+			userDetails.LastName = body.LastName
+		}
+		if len(body.Password) > 5 {
+			userDetails.PasswordSha = EncodePassword(body.Password)
+		}
+		if body.CareerTransition && !userDetails.CareerTransition {
+			userDetails.CareerTransition = true
+			userDetails.TransitionEnd = a.clock.Now().AddDate(0, 0, 7) //7 days
+			userDetails.Salary = userDetails.Salary / 2
+		}
+		if body.College && !userDetails.College {
+			// makeTransaction(req, res)
+			userDetails.College = true
+			userDetails.CollegeEnd = a.clock.Now().AddDate(0, 0, 28) //28 days
+			userDetails.Salary = userDetails.Salary / 2
+		}
+
+		marshal, err := json.Marshal(userDetails)
+		if err != nil {
+			return fmt.Errorf("Failed to Marshal userDetails")
+		}
+		err = users.Put([]byte(userData.Name), marshal)
+		if err != nil {
+			return fmt.Errorf("Failed to Put userDetails")
+		}
+
+		schools := tx.Bucket([]byte(KeySchools))
+		if schools == nil {
+			return fmt.Errorf("Failed to find schoolsBucket")
+		}
+		school := schools.Bucket([]byte(userDetails.SchoolId))
+		if school == nil {
+			return fmt.Errorf("Failed to get school")
+		}
+		students := school.Bucket([]byte(KeyStudents))
+		if students == nil {
+			return fmt.Errorf("Failed to get students")
+		}
+
+		student := students.Bucket([]byte(userDetails.Name))
+		if student == nil {
+			return fmt.Errorf("Failed to get student")
+		}
+
+		historyData := student.Get([]byte(KeyHistory))
+		if historyData == nil {
+			return fmt.Errorf("Failed to get history")
+		}
+		err = json.Unmarshal(historyData, &history)
+		if err != nil {
+			return fmt.Errorf("ERROR cannot unmarshal History")
+		}
+		return nil
+	})
+
+	if err != nil {
+		return openapi.Response(500, nil), err
+	}
+
+	userDetails, err = getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(500, nil), err
+	}
+
+	resp := openapi.User{
+		Id:               userDetails.Name,
+		Email:            userDetails.Email,
+		CollegeEnd:       userDetails.CollegeEnd,
+		TransitionEnd:    userDetails.TransitionEnd,
+		FirstName:        userDetails.FirstName,
+		LastName:         userDetails.LastName,
+		History:          history,
+		Confirmed:        userDetails.Confirmed,
+		SchoolId:         userDetails.SchoolId,
+		CareerTransition: userDetails.CareerTransition,
+		College:          userDetails.College,
+		Children:         userDetails.Children,
+		Income:           userDetails.Salary,
+		Role:             userDetails.Role,
+		Rank:             userDetails.Rank,
+		NetWorth:         userDetails.NetWorth,
+	}
+	return openapi.Response(200, resp), nil //this is incomplete
 }
 
 // NewAllApiServiceImpl provides real api
