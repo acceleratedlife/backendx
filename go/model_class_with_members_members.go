@@ -12,7 +12,13 @@ package openapi
 
 type ClassWithMembersMembers struct {
 
+	FirstName string `json:"firstName,omitempty"`
+
 	LastName string `json:"lastName,omitempty"`
+
+	Rank int32 `json:"rank,omitempty"`
+
+	NetWorth float32 `json:"netWorth,omitempty"`
 
 	Id string `json:"_id,omitempty"`
 }

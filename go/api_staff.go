@@ -148,7 +148,7 @@ func (c *StaffApiController) DeleteAuction(w http.ResponseWriter, r *http.Reques
 // Deleteclass - delete class
 func (c *StaffApiController) Deleteclass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := query.Get("_id")
+	idParam := RequestUser{query.Get("_id")}
 	result, err := c.service.Deleteclass(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
@@ -162,18 +162,18 @@ func (c *StaffApiController) Deleteclass(w http.ResponseWriter, r *http.Request)
 
 // EditClass - edit class
 func (c *StaffApiController) EditClass(w http.ResponseWriter, r *http.Request) {
-	classesClassBodyParam := ClassesClassBody{}
+	requestEditClassParam := RequestEditClass{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&classesClassBodyParam); err != nil {
+	if err := d.Decode(&requestEditClassParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertClassesClassBodyRequired(classesClassBodyParam); err != nil {
+	if err := AssertRequestEditClassRequired(requestEditClassParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.EditClass(r.Context(), classesClassBodyParam)
+	result, err := c.service.EditClass(r.Context(), requestEditClassParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -186,18 +186,18 @@ func (c *StaffApiController) EditClass(w http.ResponseWriter, r *http.Request) {
 
 // KickClass - Kick member from class
 func (c *StaffApiController) KickClass(w http.ResponseWriter, r *http.Request) {
-	classKickBodyParam := ClassKickBody{}
+	requestKickClassParam := RequestKickClass{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&classKickBodyParam); err != nil {
+	if err := d.Decode(&requestKickClassParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertClassKickBodyRequired(classKickBodyParam); err != nil {
+	if err := AssertRequestKickClassRequired(requestKickClassParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.KickClass(r.Context(), classKickBodyParam)
+	result, err := c.service.KickClass(r.Context(), requestKickClassParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -336,7 +336,8 @@ func (c *StaffApiController) SearchAuctionsTeacher(w http.ResponseWriter, r *htt
 
 // SearchClasses - searches for users classes
 func (c *StaffApiController) SearchClasses(w http.ResponseWriter, r *http.Request) {
-	idParam := r.Header.Get("_id")
+	query := r.URL.Query()
+	idParam := RequestUser{query.Get("_id")}
 	result, err := c.service.SearchClasses(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {

@@ -129,7 +129,7 @@ type AllApiServicer interface {
 	ResetPassword(context.Context, UsersResetPasswordBody) (ImplResponse, error)
 	SearchAccount(context.Context, string) (ImplResponse, error)
 	SearchBucks(context.Context, string) (ImplResponse, error)
-	SearchClass(context.Context, string) (ImplResponse, error)
+	SearchClass(context.Context, RequestUser) (ImplResponse, error)
 	SearchSchool(context.Context, string) (ImplResponse, error)
 	SearchStudent(context.Context, RequestUser) (ImplResponse, error)
 	SearchStudentBuck(context.Context, string) (ImplResponse, error)
@@ -143,10 +143,10 @@ type AllApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type AllSchoolApiServicer interface { 
-	AddCodeClass(context.Context, ClassAddCodeBody) (ImplResponse, error)
-	RemoveClass(context.Context, ClassesRemoveAdminBody) (ImplResponse, error)
+	AddCodeClass(context.Context, RequestUser) (ImplResponse, error)
+	RemoveClass(context.Context, RequestKickClass) (ImplResponse, error)
 	SearchAuctions(context.Context, string) (ImplResponse, error)
-	SearchMyClasses(context.Context, string) (ImplResponse, error)
+	SearchMyClasses(context.Context, RequestUser) (ImplResponse, error)
 }
 
 
@@ -155,7 +155,7 @@ type AllSchoolApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type SchoolAdminApiServicer interface { 
-	SearchAdminTeacherClass(context.Context, string) (ImplResponse, error)
+	SearchAdminTeacherClass(context.Context, RequestUser) (ImplResponse, error)
 }
 
 
@@ -165,16 +165,16 @@ type SchoolAdminApiServicer interface {
 // and updated with the logic required for the API.
 type StaffApiServicer interface { 
 	DeleteAuction(context.Context, string) (ImplResponse, error)
-	Deleteclass(context.Context, string) (ImplResponse, error)
-	EditClass(context.Context, ClassesClassBody) (ImplResponse, error)
-	KickClass(context.Context, ClassKickBody) (ImplResponse, error)
+	Deleteclass(context.Context, RequestUser) (ImplResponse, error)
+	EditClass(context.Context, RequestEditClass) (ImplResponse, error)
+	KickClass(context.Context, RequestKickClass) (ImplResponse, error)
 	MakeAuction(context.Context, string, AuctionsBody) (ImplResponse, error)
 	MakeClass(context.Context, RequestMakeClass) (ImplResponse, error)
 	PayTransaction(context.Context, TransactionsPayTransactionBody) (ImplResponse, error)
 	PayTransactions(context.Context, TransactionsPayTransactionsBody) (ImplResponse, error)
 	SearchAllBucks(context.Context, string) (ImplResponse, error)
 	SearchAuctionsTeacher(context.Context, string) (ImplResponse, error)
-	SearchClasses(context.Context, string) (ImplResponse, error)
+	SearchClasses(context.Context, RequestUser) (ImplResponse, error)
 	SearchEvents(context.Context, string) (ImplResponse, error)
 	SearchTransactions(context.Context, string) (ImplResponse, error)
 }
@@ -194,7 +194,7 @@ type StudentApiServicer interface {
 	SearchCryptoTransaction(context.Context, string) (ImplResponse, error)
 	SearchStudentCrypto(context.Context, string) (ImplResponse, error)
 	SearchStudentUbuck(context.Context, string) (ImplResponse, error)
-	StudentAddClass(context.Context, ClassesAddClassBody) (ImplResponse, error)
+	StudentAddClass(context.Context, RequestAddClass) (ImplResponse, error)
 }
 
 
@@ -224,7 +224,7 @@ type SysAdminApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type TeacherApiServicer interface { 
-	TeacherAddClass(context.Context, ClassesAddAdminBody) (ImplResponse, error)
+	TeacherAddClass(context.Context, RequestAddClass) (ImplResponse, error)
 }
 
 

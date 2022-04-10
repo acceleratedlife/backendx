@@ -276,18 +276,18 @@ func (c *StudentApiController) SearchStudentUbuck(w http.ResponseWriter, r *http
 
 // StudentAddClass - student adding self to class
 func (c *StudentApiController) StudentAddClass(w http.ResponseWriter, r *http.Request) {
-	classesAddClassBodyParam := ClassesAddClassBody{}
+	requestAddClassParam := RequestAddClass{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&classesAddClassBodyParam); err != nil {
+	if err := d.Decode(&requestAddClassParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertClassesAddClassBodyRequired(classesAddClassBodyParam); err != nil {
+	if err := AssertRequestAddClassRequired(requestAddClassParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.StudentAddClass(r.Context(), classesAddClassBodyParam)
+	result, err := c.service.StudentAddClass(r.Context(), requestAddClassParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

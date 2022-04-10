@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"sort"
+
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
-	"sort"
 )
 
 type StaffApiServiceImpl struct {
@@ -23,17 +25,57 @@ func (s StaffApiServiceImpl) DeleteAuction(ctx context.Context, s2 string) (open
 	panic("implement me")
 }
 
-func (s StaffApiServiceImpl) Deleteclass(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
+func (s *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.ClassesClassBody) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.RequestEditClass) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	_, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	var class openapi.Class
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		classBucket, err := ClassForAll(tx, body.Id)
+		if err != nil {
+			return err
+		}
+		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
+		members, err := studentsToSlice(studentsBucket)
+		if err != nil {
+			return err
+		}
+		err = classBucket.Put([]byte(KeyName), []byte(body.Name))
+		if err != nil {
+			return err
+		}
+		err = classBucket.Put([]byte(KeyPeriod), itob32(int32(body.Period)))
+		if err != nil {
+			return err
+		}
+		class = openapi.Class{
+			Id:      body.Id,
+			OwnerId: string(classBucket.Get([]byte("OwnerId"))), //OnwerId is legacy, not sure if it is needed
+			Period:  btoi32(classBucket.Get([]byte(KeyPeriod))),
+			Name:    string(classBucket.Get([]byte(KeyName))),
+			AddCode: string(classBucket.Get([]byte(KeyAddCode))),
+			Members: members,
+		}
+		return nil
+	})
+	if err != nil {
+		lgr.Printf("ERROR cannot edit class with Id: %s %v", body.Id, err)
+		return openapi.Response(500, "{}"), nil
+	}
+	return openapi.Response(200, class), nil
 }
 
-func (s StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.ClassKickBody) (openapi.ImplResponse, error) {
+func (s *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.RequestKickClass) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -86,7 +128,7 @@ func (s StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context, s2 strin
 	panic("implement me")
 }
 
-func (s *StaffApiServiceImpl) SearchClasses(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
+func (s *StaffApiServiceImpl) SearchClasses(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
 	if err != nil {
@@ -128,4 +170,16 @@ func NewStaffApiServiceImpl(db *bolt.DB) openapi.StaffApiServicer {
 	return &StaffApiServiceImpl{
 		db: db,
 	}
+}
+
+func studentsToSlice(students *bolt.Bucket) ([]string, error) {
+	Members := make([]string, 0)
+	cstudents := students.Cursor()
+	for k, v := cstudents.First(); k != nil; k, v = cstudents.Next() {
+		if v == nil {
+			return nil, fmt.Errorf("members of class not found")
+		}
+		Members = append(Members, string(k))
+	}
+	return Members, nil
 }

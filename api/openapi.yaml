@@ -714,14 +714,14 @@ paths:
         name: _id
         required: true
         schema:
-          type: string
+          $ref: '#/components/schemas/RequestUser'
         style: form
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_9'
+                $ref: '#/components/schemas/Class'
           description: School Deleted
         "404":
           description: Class cannot be deleted with that data
@@ -739,14 +739,14 @@ paths:
         name: _id
         required: true
         schema:
-          type: string
+          $ref: '#/components/schemas/RequestUser'
         style: form
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_7'
+                $ref: '#/components/schemas/ClassWithMembers'
           description: class matching criteria
         "404":
           description: No class found
@@ -784,14 +784,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/classes_class_body'
+              $ref: '#/components/schemas/RequestEditClass'
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_8'
-          description: school record is made
+                $ref: '#/components/schemas/Class'
+          description: school record is edited
         "404":
           description: Class cannot be edited with that data
       summary: edit class
@@ -806,13 +806,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/class_kick_body'
+              $ref: '#/components/schemas/RequestKickClass'
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_10'
+                $ref: '#/components/schemas/ResponseKickClass'
           description: class member has been removed from class
         "404":
           description: member cannot be removed with that data
@@ -821,14 +821,14 @@ paths:
       - Staff
   /classes/class/addCode:
     put:
-      description: When a class owner wants to change the class add code. return the
-        class
+      description: When a class owner wants to change the class add code pass in the
+        class _id. return the class
       operationId: addCodeClass
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/class_addCode_body'
+              $ref: '#/components/schemas/RequestUser'
       responses:
         "200":
           content:
@@ -847,13 +847,13 @@ paths:
       operationId: searchClasses
       parameters:
       - description: pass the user_id to be searched
-        explode: false
-        in: header
+        explode: true
+        in: query
         name: _id
         required: true
         schema:
-          type: string
-        style: simple
+          $ref: '#/components/schemas/RequestUser'
+        style: form
       responses:
         "200":
           content:
@@ -880,7 +880,7 @@ paths:
         name: _id
         required: true
         schema:
-          type: string
+          $ref: '#/components/schemas/RequestUser'
         style: form
       responses:
         "200":
@@ -888,7 +888,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_11'
+                  $ref: '#/components/schemas/ResponseMemberClass'
                 type: array
           description: class matching criteria
         "404":
@@ -905,13 +905,13 @@ paths:
       operationId: searchAdminTeacherClass
       parameters:
       - description: pass the _id to be searched
-        explode: false
-        in: header
+        explode: true
+        in: query
         name: _id
         required: true
         schema:
-          type: string
-        style: simple
+          $ref: '#/components/schemas/RequestUser'
+        style: form
       responses:
         "200":
           content:
@@ -934,14 +934,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/classes_removeAdmin_body'
+              $ref: '#/components/schemas/RequestKickClass'
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_12'
+                  $ref: '#/components/schemas/ResponseMemberClass'
                 type: array
           description: class add code has been changed
         "404":
@@ -959,14 +959,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/classes_addAdmin_body'
+              $ref: '#/components/schemas/RequestAddClass'
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_13'
+                  $ref: '#/components/schemas/ResponseMemberClass'
                 type: array
           description: return classes where this user is a member
         "404":
@@ -986,14 +986,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/classes_addClass_body'
+              $ref: '#/components/schemas/RequestAddClass'
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_14'
+                  $ref: '#/components/schemas/ResponseMemberClass'
                 type: array
           description: return classes where this user is a member
         "404":
@@ -1126,7 +1126,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_15'
+                $ref: '#/components/schemas/inline_response_200_7'
           description: transaction matching criteria
         "404":
           description: No transaction found with that data
@@ -1153,7 +1153,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_16'
+                $ref: '#/components/schemas/inline_response_200_8'
           description: transaction matching criteria
         "404":
           description: No transaction found with that data
@@ -1177,7 +1177,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_17'
+                $ref: '#/components/schemas/inline_response_200_9'
           description: class record is made. Return all the classes from this owner.
             Sort classes by period ascending
         "404":
@@ -1204,7 +1204,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_17'
+                $ref: '#/components/schemas/inline_response_200_9'
           description: class record is made. Return all the classes from this owner.
             Sort classes by period ascending
         "404":
@@ -1237,7 +1237,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_17'
+                $ref: '#/components/schemas/inline_response_200_9'
           description: class record is made. Return all the classes from this owner.
             Sort classes by period ascending
         "404":
@@ -1271,7 +1271,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_18'
+                $ref: '#/components/schemas/inline_response_200_10'
           description: return all crypto accounts with value greater than 0 and the
             most recent transaction
         "404":
@@ -1319,7 +1319,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_19'
+                $ref: '#/components/schemas/inline_response_200_11'
           description: transaction Deleted
         "403":
           content:
@@ -1521,7 +1521,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_17'
+                $ref: '#/components/schemas/inline_response_200_9'
           description: class record is made. Return all the classes from this owner.
             Sort classes by period ascending
         "401":
@@ -1551,7 +1551,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_17'
+                $ref: '#/components/schemas/inline_response_200_9'
           description: students matching criteria
         "404":
           description: No user found with that data
@@ -1760,9 +1760,15 @@ components:
         period: 4
         owner_id: 613eab19e58cc511801af657
         members:
-        - lastName: Leno
+        - firstName: Jay
+          lastName: Leno
+          netWorth: 22.1
+          rank: 4
           _id: 613eab19e58cc511801af657
-        - lastName: Leno
+        - firstName: Jay
+          lastName: Leno
+          netWorth: 22.1
+          rank: 4
           _id: 613eab19e58cc511801af657
         name: Math
         _id: 613eab19e58cc511801af657
@@ -1792,7 +1798,7 @@ components:
       - addCode
       - members
       - name
-      - owner
+      - owner_id
       - period
       type: object
     Crypto:
@@ -1927,6 +1933,32 @@ components:
       items:
         $ref: '#/components/schemas/ResponseEvents_inner'
       type: array
+    ResponseKickClass:
+      example:
+        kick_id: 613eab19e58cc511801af657
+      properties:
+        kick_id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    ResponseMemberClass:
+      example:
+        owner:
+          firstName: Jay
+          lastName: Leno
+          _id: 613eab19e58cc511801af657
+        period: 4
+        _id: 613eab19e58cc511801af657
+      properties:
+        owner:
+          $ref: '#/components/schemas/ResponseMemberClass_owner'
+        period:
+          example: 4
+          type: integer
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
     ResponseLogin2:
       example:
         loginSuccess: true
@@ -1970,6 +2002,46 @@ components:
       items:
         $ref: '#/components/schemas/ResponseTransactions_inner'
       type: array
+    RequestAddClass:
+      example:
+        _id: 613eab19e58cc511801af657
+        addCode: dE42Gp
+      properties:
+        addCode:
+          example: dE42Gp
+          type: string
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    RequestEditClass:
+      example:
+        period: 4
+        name: Math
+        _id: 613eab19e58cc511801af657
+      properties:
+        name:
+          example: Math
+          type: string
+        period:
+          example: 4
+          type: integer
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    RequestKickClass:
+      example:
+        kick_id: 613eab19e58cc511801af657
+        _id: 613eab19e58cc511801af657
+      properties:
+        kick_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
     RequestMakeClass:
       example:
         period: 4
@@ -2029,6 +2101,8 @@ components:
           type: integer
       type: object
     RequestUser:
+      example:
+        _id: 613eab19e58cc511801af657
       properties:
         _id:
           example: 613eab19e58cc511801af657
@@ -2578,242 +2652,6 @@ components:
     inline_response_200_7:
       example:
         owner: 613eab19e58cc511801af657
-        period: 2
-        members:
-        - firstName: Jay
-          lastName: Leno
-          netWorth: 123.45
-          rank: 42
-        - firstName: Jay
-          lastName: Leno
-          netWorth: 123.45
-          rank: 42
-        name: math
-        addCode: gewF6
-      properties:
-        name:
-          example: math
-          type: string
-        owner:
-          example: 613eab19e58cc511801af657
-          type: string
-        period:
-          example: 2
-          type: integer
-        addCode:
-          example: gewF6
-          type: string
-        members:
-          items:
-            $ref: '#/components/schemas/inline_response_200_7_members'
-          type: array
-      type: object
-    classes_class_body:
-      properties:
-        name:
-          example: Math
-          type: string
-        period:
-          example: 4
-          type: integer
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-      type: object
-    inline_response_200_8:
-      example:
-        owner: 613eab19e58cc511801af657
-        period: 2
-        members:
-        - 613eab19e58cc511801af657
-        - 613eab19e58cc511801af657
-        name: Math
-        addCode: Dfer53
-      properties:
-        name:
-          example: Math
-          type: string
-        owner:
-          example: 613eab19e58cc511801af657
-          type: string
-        period:
-          example: 2
-          type: integer
-        addCode:
-          example: Dfer53
-          type: string
-        members:
-          items:
-            example: 613eab19e58cc511801af657
-            type: string
-          type: array
-      type: object
-    inline_response_200_9:
-      example:
-        owner: 613eab19e58cc511801af657
-        period: 4
-        members:
-        - 613eab19e58cc511801af657
-        - 613eab19e58cc511801af657
-        name: Math
-        addCode: 13DFE4
-      properties:
-        name:
-          example: Math
-          type: string
-        owner:
-          example: 613eab19e58cc511801af657
-          type: string
-        period:
-          example: 4
-          type: integer
-        addCode:
-          example: 13DFE4
-          type: string
-        members:
-          items:
-            example: 613eab19e58cc511801af657
-            type: string
-          type: array
-      type: object
-    class_kick_body:
-      properties:
-        kick_id:
-          example: 613eab19e58cc511801af657
-          type: string
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-      type: object
-    inline_response_200_10:
-      example:
-        kick_id: 613eab19e58cc511801af657
-      properties:
-        kick_id:
-          example: 613eab19e58cc511801af657
-          type: string
-      type: object
-    class_addCode_body:
-      properties:
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-      type: object
-    classesmember_owner:
-      example:
-        firstName: Jay
-        lastName: Leno
-        _id: 613eab19e58cc511801af657
-      properties:
-        firstName:
-          example: Jay
-          type: string
-        lastName:
-          example: Leno
-          type: string
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-      type: object
-    inline_response_200_11:
-      example:
-        owner:
-          firstName: Jay
-          lastName: Leno
-          _id: 613eab19e58cc511801af657
-        period: 4
-        _id: 613eab19e58cc511801af657
-      properties:
-        owner:
-          $ref: '#/components/schemas/classesmember_owner'
-        period:
-          example: 4
-          type: integer
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-      type: object
-    classes_removeAdmin_body:
-      properties:
-        kick_id:
-          example: 613eab19e58cc511801af657
-          type: string
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-    inline_response_200_12:
-      example:
-        owner:
-          firstName: Jay
-          lastName: Leno
-          _id: 613eab19e58cc511801af657
-        period: 3
-        _id: 613eab19e58cc511801af657
-      properties:
-        owner:
-          $ref: '#/components/schemas/classesmember_owner'
-        period:
-          example: 3
-          type: integer
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-      type: object
-    classes_addAdmin_body:
-      properties:
-        addCode:
-          example: dE42Gp
-          type: string
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-    inline_response_200_13:
-      example:
-        owner:
-          firstName: Jay
-          lastName: Leno
-          _id: 613eab19e58cc511801af657
-        period: 2
-        _id: 613eab19e58cc511801af657
-      properties:
-        owner:
-          $ref: '#/components/schemas/classesmember_owner'
-        period:
-          example: 2
-          type: integer
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-      type: object
-    classes_addClass_body:
-      properties:
-        addCode:
-          example: dE42Gp
-          type: string
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-    inline_response_200_14:
-      example:
-        owner:
-          firstName: Jay
-          lastName: Leno
-          _id: 613eab19e58cc511801af657
-        period: 1
-        _id: 613eab19e58cc511801af657
-      properties:
-        owner:
-          $ref: '#/components/schemas/classesmember_owner'
-        period:
-          example: 1
-          type: integer
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-      type: object
-    inline_response_200_15:
-      example:
-        owner: 613eab19e58cc511801af657
         conversionRatio: 123.45
         amount: 123.45
         balance: 123.45
@@ -2849,9 +2687,9 @@ components:
           example: Buck
           type: string
         assetID:
-          $ref: '#/components/schemas/inline_response_200_15_assetID'
+          $ref: '#/components/schemas/inline_response_200_7_assetID'
       type: object
-    inline_response_200_16:
+    inline_response_200_8:
       example:
         owner: 613eab19e58cc511801af657
         conversionRatio: 123.45
@@ -2889,7 +2727,7 @@ components:
           example: Crypto
           type: string
         assetID:
-          $ref: '#/components/schemas/inline_response_200_16_assetID'
+          $ref: '#/components/schemas/inline_response_200_8_assetID'
       type: object
     transactions_payTransaction_body:
       properties:
@@ -2909,7 +2747,7 @@ components:
           example: Sawayn Bucks
           type: string
       type: object
-    inline_response_200_17:
+    inline_response_200_9:
       example:
         success: true
       properties:
@@ -2959,7 +2797,7 @@ components:
           example: 123.45
           type: number
       type: object
-    inline_response_200_18:
+    inline_response_200_10:
       example:
         accounts:
         - quantity: 123.45
@@ -2984,10 +2822,10 @@ components:
           account: 61c4af5cce0e75f0214cbab1
       properties:
         transaction:
-          $ref: '#/components/schemas/inline_response_200_18_transaction'
+          $ref: '#/components/schemas/inline_response_200_10_transaction'
         accounts:
           items:
-            $ref: '#/components/schemas/inline_response_200_18_accounts'
+            $ref: '#/components/schemas/inline_response_200_10_accounts'
           type: array
       type: object
     users_user_body:
@@ -3012,7 +2850,7 @@ components:
           example: true
           type: boolean
       type: object
-    inline_response_200_19:
+    inline_response_200_11:
       example:
         deleted: true
       properties:
@@ -3054,12 +2892,24 @@ components:
       type: object
     ClassWithMembers_members:
       example:
+        firstName: Jay
         lastName: Leno
+        netWorth: 22.1
+        rank: 4
         _id: 613eab19e58cc511801af657
       properties:
+        firstName:
+          example: Jay
+          type: string
         lastName:
           example: Leno
           type: string
+        rank:
+          example: 4
+          type: integer
+        netWorth:
+          example: 22.1
+          type: number
         _id:
           example: 613eab19e58cc511801af657
           type: string
@@ -3088,6 +2938,22 @@ components:
           type: string
         owner_id:
           $ref: '#/components/schemas/ResponseEvents_inner_owner_id'
+      type: object
+    ResponseMemberClass_owner:
+      example:
+        firstName: Jay
+        lastName: Leno
+        _id: 613eab19e58cc511801af657
+      properties:
+        firstName:
+          example: Jay
+          type: string
+        lastName:
+          example: Leno
+          type: string
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
       type: object
     ResponseSchools_inner:
       example:
@@ -3121,27 +2987,7 @@ components:
           example: Jay Leno
           type: string
       type: object
-    inline_response_200_7_members:
-      example:
-        firstName: Jay
-        lastName: Leno
-        netWorth: 123.45
-        rank: 42
-      properties:
-        firstName:
-          example: Jay
-          type: string
-        lastName:
-          example: Leno
-          type: string
-        rank:
-          example: 42
-          type: integer
-        netWorth:
-          example: 123.45
-          type: number
-      type: object
-    inline_response_200_15_assetID:
+    inline_response_200_7_assetID:
       example:
         name: Jay Bucks
       properties:
@@ -3149,7 +2995,7 @@ components:
           example: Jay Bucks
           type: string
       type: object
-    inline_response_200_16_assetID:
+    inline_response_200_8_assetID:
       example:
         name: Cardano
       properties:
@@ -3157,7 +3003,7 @@ components:
           example: Cardano
           type: string
       type: object
-    inline_response_200_18_transaction_assetID:
+    inline_response_200_10_transaction_assetID:
       example:
         name: vechain
         _id: 61c4af57ce0e75f0214cbaaa
@@ -3169,7 +3015,7 @@ components:
           example: 61c4af57ce0e75f0214cbaaa
           type: string
       type: object
-    inline_response_200_18_transaction:
+    inline_response_200_10_transaction:
       example:
         conversionRatio: 123.45
         owner: 6170a4aff8437c84920b7ff1
@@ -3208,9 +3054,9 @@ components:
           example: 0.0925
           type: number
         assetID:
-          $ref: '#/components/schemas/inline_response_200_18_transaction_assetID'
+          $ref: '#/components/schemas/inline_response_200_10_transaction_assetID'
       type: object
-    inline_response_200_18_accounts:
+    inline_response_200_10_accounts:
       example:
         quantity: 123.45
         name: vechain

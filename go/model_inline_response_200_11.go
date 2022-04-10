@@ -12,18 +12,11 @@ package openapi
 
 type InlineResponse20011 struct {
 
-	Owner ClassesmemberOwner `json:"owner,omitempty"`
-
-	Period int32 `json:"period,omitempty"`
-
-	Id string `json:"_id,omitempty"`
+	Deleted bool `json:"deleted,omitempty"`
 }
 
 // AssertInlineResponse20011Required checks if the required fields are not zero-ed
 func AssertInlineResponse20011Required(obj InlineResponse20011) error {
-	if err := AssertClassesmemberOwnerRequired(obj.Owner); err != nil {
-		return err
-	}
 	return nil
 }
 

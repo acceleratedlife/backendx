@@ -67,3 +67,41 @@ func TestMakeClass(t *testing.T) {
 	assert.Equal(t, 6, len(respData[0].AddCode))
 
 }
+
+func TestEditClass(t *testing.T) {
+	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	defer tearDown()
+	members := 2
+
+	_, _, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, members)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestEditClass{
+		Name:   "Test Name",
+		Period: 4,
+		Id:     classes[0],
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/classes/class",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.Class
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, members, len(data.Members))
+	require.Equal(t, "Test Name", data.Name)
+	require.Equal(t, int32(4), data.Period)
+	require.Equal(t, classes[0], data.Id)
+}

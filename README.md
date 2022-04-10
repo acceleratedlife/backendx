@@ -38,9 +38,9 @@ go tool cover -html=cover.out
                         datetime: {date-time, account-id, xrate, amount}
     "classes"
         [class-id]
-        - name
-        - period
-        - addCode
+        - name: string
+        - period: int32
+        - addCode: string
         "students"
             user-id: ''
                 

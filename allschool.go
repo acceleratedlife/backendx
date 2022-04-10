@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	bolt "go.etcd.io/bbolt"
@@ -12,7 +13,7 @@ type AllSchoolApiServiceImpl struct {
 	db *bolt.DB
 }
 
-func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi.ClassAddCodeBody) (openapi.ImplResponse, error) {
+func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi.RequestUser) (openapi.ImplResponse, error) {
 	//type contextKey string
 	//userData := ctx.Value("user").(token.User)
 	v := ctx.Value("user")
@@ -30,6 +31,7 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 	}
 
 	if userDetails.Role == UserRoleTeacher {
+		// println(body)
 		return openapi.Response(404, nil), fmt.Errorf("not implemented")
 	}
 
@@ -69,7 +71,7 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 	return openapi.Response(500, nil), fmt.Errorf("user's role is not defined")
 }
 
-func (a AllSchoolApiServiceImpl) RemoveClass(ctx context.Context, body openapi.ClassesRemoveAdminBody) (openapi.ImplResponse, error) {
+func (a *AllSchoolApiServiceImpl) RemoveClass(ctx context.Context, body openapi.RequestKickClass) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -79,7 +81,7 @@ func (a AllSchoolApiServiceImpl) SearchAuctions(ctx context.Context, s string) (
 	panic("implement me")
 }
 
-func (a AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, s string) (openapi.ImplResponse, error) {
+func (a AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }

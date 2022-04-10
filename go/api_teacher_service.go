@@ -28,12 +28,12 @@ func NewTeacherApiService() TeacherApiServicer {
 }
 
 // TeacherAddClass - teacher adding self to class
-func (s *TeacherApiService) TeacherAddClass(ctx context.Context, classesAddAdminBody ClassesAddAdminBody) (ImplResponse, error) {
+func (s *TeacherApiService) TeacherAddClass(ctx context.Context, requestAddClass RequestAddClass) (ImplResponse, error) {
 	// TODO - update TeacherAddClass with the required logic for this service method.
 	// Add api_teacher_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse20013{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse20013{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseMemberClass{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseMemberClass{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

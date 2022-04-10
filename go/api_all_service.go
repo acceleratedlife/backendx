@@ -46,8 +46,8 @@ func (s *AllApiService) ConfirmEmail(ctx context.Context, token string) (ImplRes
 	// TODO - update ConfirmEmail with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse20017{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse20017{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2009{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2009{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -105,8 +105,8 @@ func (s *AllApiService) ResetPassword(ctx context.Context, usersResetPasswordBod
 	// TODO - update ResetPassword with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse20017{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse20017{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2009{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2009{}), nil
 
 	//TODO: Uncomment the next line to return response Response(401, InlineResponse401{}) or use other options such as http.Ok ...
 	//return Response(401, InlineResponse401{}), nil
@@ -143,12 +143,12 @@ func (s *AllApiService) SearchBucks(ctx context.Context, id string) (ImplRespons
 }
 
 // SearchClass - searches for a class
-func (s *AllApiService) SearchClass(ctx context.Context, id string) (ImplResponse, error) {
+func (s *AllApiService) SearchClass(ctx context.Context, id RequestUser) (ImplResponse, error) {
 	// TODO - update SearchClass with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2007{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2007{}), nil
+	//TODO: Uncomment the next line to return response Response(200, ClassWithMembers{}) or use other options such as http.Ok ...
+	//return Response(200, ClassWithMembers{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

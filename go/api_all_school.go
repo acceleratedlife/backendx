@@ -78,18 +78,18 @@ func (c *AllSchoolApiController) Routes() Routes {
 
 // AddCodeClass - change class addCode
 func (c *AllSchoolApiController) AddCodeClass(w http.ResponseWriter, r *http.Request) {
-	classAddCodeBodyParam := ClassAddCodeBody{}
+	requestUserParam := RequestUser{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&classAddCodeBodyParam); err != nil {
+	if err := d.Decode(&requestUserParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertClassAddCodeBodyRequired(classAddCodeBodyParam); err != nil {
+	if err := AssertRequestUserRequired(requestUserParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.AddCodeClass(r.Context(), classAddCodeBodyParam)
+	result, err := c.service.AddCodeClass(r.Context(), requestUserParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -102,18 +102,18 @@ func (c *AllSchoolApiController) AddCodeClass(w http.ResponseWriter, r *http.Req
 
 // RemoveClass - remove self from class
 func (c *AllSchoolApiController) RemoveClass(w http.ResponseWriter, r *http.Request) {
-	classesRemoveAdminBodyParam := ClassesRemoveAdminBody{}
+	requestKickClassParam := RequestKickClass{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&classesRemoveAdminBodyParam); err != nil {
+	if err := d.Decode(&requestKickClassParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertClassesRemoveAdminBodyRequired(classesRemoveAdminBodyParam); err != nil {
+	if err := AssertRequestKickClassRequired(requestKickClassParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.RemoveClass(r.Context(), classesRemoveAdminBodyParam)
+	result, err := c.service.RemoveClass(r.Context(), requestKickClassParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -142,7 +142,7 @@ func (c *AllSchoolApiController) SearchAuctions(w http.ResponseWriter, r *http.R
 // SearchMyClasses - searches for users classes that the requester is a member of
 func (c *AllSchoolApiController) SearchMyClasses(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := query.Get("_id")
+	idParam := RequestUser{query.Get("_id")}
 	result, err := c.service.SearchMyClasses(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
