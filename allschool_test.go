@@ -44,6 +44,7 @@ func TestRemoveClass(t *testing.T) {
 	defer tearDown()
 	members := 2
 	_, _, _, classes, students, err := CreateTestAccounts(db, 1, 2, 2, members)
+
 	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])
@@ -67,6 +68,7 @@ func TestRemoveClass(t *testing.T) {
 	var v []openapi.ResponseMemberClass
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&v)
+  
 	require.Nil(t, err)
 
 	assert.Equal(t, 0, len(v))
