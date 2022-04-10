@@ -32,8 +32,49 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 	}
 
 	if userDetails.Role == UserRoleTeacher {
-		// println(body)
-		return openapi.Response(404, nil), fmt.Errorf("not implemented")
+		newCode := RandomString(6)
+
+		class := openapi.ClassWithMembers{
+			Id:      userDetails.SchoolId,
+			OwnerId: userDetails.Email,
+			Period:  0,
+			Name:    "Teachers Class",
+			AddCode: newCode,
+			Members: nil,
+		}
+		err = a.db.Update(func(tx *bolt.Tx) error {
+			//populate class
+			schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
+			if err != nil {
+				return err
+			}
+			school, err := schools.CreateBucketIfNotExists([]byte(userDetails.SchoolId))
+			if err != nil {
+				return err
+			}
+			teachers := school.Bucket([]byte(KeyTeachers))
+			if teachers == nil {
+				return fmt.Errorf("Cannot find bucket for teachers")
+			}
+			teacher := teachers.Bucket([]byte(userDetails.Name))
+			if teacher == nil {
+				return fmt.Errorf("teacher does not exist")
+			}
+			teachersClass := teacher.Bucket([]byte(body.Id))
+			if teachersClass == nil {
+				return fmt.Errorf("class does not exist")
+			}
+			err = teachersClass.Put([]byte(KeyAddCode), []byte(newCode))
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+
+		if err != nil {
+			return openapi.Response(500, nil), err
+		}
+		return openapi.Response(200, class), nil
 	}
 
 	if userDetails.Role == UserRoleAdmin {
@@ -42,8 +83,8 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 		class := openapi.ClassWithMembers{
 			Id:      userDetails.SchoolId,
 			OwnerId: userDetails.Email,
-			Period:  0,
-			Name:    "Teacher Class",
+			Period:  -1,
+			Name:    "My Teachers",
 			AddCode: newCode,
 			Members: nil,
 		}

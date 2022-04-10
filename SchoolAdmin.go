@@ -61,10 +61,10 @@ func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, qu
 
 	return openapi.Response(200,
 		openapi.ClassWithMembers{
-			Id:      "",
+			Id:      userDetails.SchoolId,
 			OwnerId: userDetails.Name,
-			Period:  0,
-			Name:    "teachers at school",
+			Period:  -1,
+			Name:    "My Teachers",
 			AddCode: addCode,
 			Members: members,
 		}), nil
