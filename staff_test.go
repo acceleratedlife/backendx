@@ -16,7 +16,7 @@ func TestMakeClass(t *testing.T) {
 	teacherId := "teacherName"
 	addCode := RandomString(6)
 
-	db, teardown := FullStartTestServer("", 8090, teacherId)
+	db, teardown := FullStartTestServer("makeClass", 8090, teacherId)
 	defer teardown()
 
 	schoolId, _ := FindOrCreateSchool(db, "test school", "no city", 0)
@@ -69,7 +69,7 @@ func TestMakeClass(t *testing.T) {
 }
 
 func TestEditClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	db, tearDown := FullStartTestServer("editClass", 8090, "")
 	defer tearDown()
 	members := 2
 
@@ -107,7 +107,7 @@ func TestEditClass(t *testing.T) {
 }
 
 func TestDeleteClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "")
+	db, tearDown := FullStartTestServer("DeleteClass", 8090, "")
 	defer tearDown()
 	noClasses := 2
 

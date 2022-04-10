@@ -43,7 +43,7 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 			Id:      userDetails.SchoolId,
 			OwnerId: userDetails.Email,
 			Period:  0,
-			Name:    "",
+			Name:    "Teacher Class",
 			AddCode: newCode,
 			Members: nil,
 		}

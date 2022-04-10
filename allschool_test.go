@@ -40,7 +40,7 @@ func TestAllSchoolApiServiceImpl_AddCodeClass(t *testing.T) {
 }
 
 func TestRemoveClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("RemoveClass", 8090, "test@admin.com")
 	defer tearDown()
 	members := 2
 	_, _, _, classes, students, err := CreateTestAccounts(db, 1, 2, 2, members)
@@ -73,7 +73,7 @@ func TestRemoveClass(t *testing.T) {
 }
 
 func TestSearchMyClasses(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("searchMyClasses", 8090, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
 	require.Nil(t, err)
