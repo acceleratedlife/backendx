@@ -44,6 +44,9 @@ func getClassAtSchoolTx(tx *bolt.Tx, schoolId, classId string) (classBucket *bol
 func PopulateClassMembers(tx *bolt.Tx, classBucket *bolt.Bucket) (Members []openapi.ClassWithMembersMembers, err error) {
 	Members = make([]openapi.ClassWithMembersMembers, 0)
 	students := classBucket.Bucket([]byte(KeyStudents))
+	if students == nil {
+		return Members, nil
+	}
 	cStudents := students.Cursor()
 	for k, _ := cStudents.First(); k != nil; k, _ = cStudents.Next() { //iterate students bucket
 		user, err := getUserInLocalStoreTx(tx, string(k))

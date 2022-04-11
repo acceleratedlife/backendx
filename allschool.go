@@ -44,25 +44,9 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 		}
 		err = a.db.Update(func(tx *bolt.Tx) error {
 			//populate class
-			schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
+			teachersClass, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 			if err != nil {
 				return err
-			}
-			school, err := schools.CreateBucketIfNotExists([]byte(userDetails.SchoolId))
-			if err != nil {
-				return err
-			}
-			teachers := school.Bucket([]byte(KeyTeachers))
-			if teachers == nil {
-				return fmt.Errorf("Cannot find bucket for teachers")
-			}
-			teacher := teachers.Bucket([]byte(userDetails.Name))
-			if teacher == nil {
-				return fmt.Errorf("teacher does not exist")
-			}
-			teachersClass := teacher.Bucket([]byte(body.Id))
-			if teachersClass == nil {
-				return fmt.Errorf("class does not exist")
 			}
 			err = teachersClass.Put([]byte(KeyAddCode), []byte(newCode))
 			if err != nil {
@@ -89,18 +73,28 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 			Members: nil,
 		}
 		err = a.db.Update(func(tx *bolt.Tx) error {
-			//populate class
-			schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
-			if err != nil {
-				return err
-			}
-			school, err := schools.CreateBucketIfNotExists([]byte(userDetails.SchoolId))
-			if err != nil {
-				return err
-			}
-			err = school.Put([]byte(KeyAddCode), []byte(newCode))
-			if err != nil {
-				return err
+			if body.Id == KeyAddCode {
+				schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
+				if err != nil {
+					return err
+				}
+				school, err := schools.CreateBucketIfNotExists([]byte(userDetails.SchoolId))
+				if err != nil {
+					return err
+				}
+				err = school.Put([]byte(KeyAddCode), []byte(newCode))
+				if err != nil {
+					return err
+				}
+			} else {
+				classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+				if err != nil {
+					return err
+				}
+				err = classBucket.Put([]byte(KeyAddCode), []byte(newCode))
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})
