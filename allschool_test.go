@@ -15,7 +15,9 @@ func TestAllSchoolApiServiceImpl_AddCodeClass(t *testing.T) {
 	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
 	defer tearDown()
 
-	_, _, _, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, _, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
 
 	// initialize http client
 	client := &http.Client{}

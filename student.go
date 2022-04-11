@@ -110,9 +110,9 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 		if classBucket == nil {
 			return fmt.Errorf("can't find class")
 		}
-		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
-		if studentsBucket == nil {
-			return fmt.Errorf("can't find students")
+		studentsBucket, err := classBucket.CreateBucketIfNotExists([]byte(KeyStudents))
+		if err != nil {
+			return err
 		}
 		err = studentsBucket.Put([]byte(userDetails.Email), nil)
 		if err != nil {
