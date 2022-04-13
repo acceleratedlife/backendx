@@ -73,7 +73,7 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 			Members: nil,
 		}
 		err = a.db.Update(func(tx *bolt.Tx) error {
-			if body.Id == KeyAddCode {
+			if body.Id == userDetails.SchoolId { //school class
 				schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
 				if err != nil {
 					return err
@@ -86,7 +86,7 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 				if err != nil {
 					return err
 				}
-			} else {
+			} else { // admin class
 				classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 				if err != nil {
 					return err
