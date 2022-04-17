@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -78,13 +79,24 @@ func getClasses1Tx(teacher *bolt.Bucket, ownerId string) []openapi.Class {
 			continue
 		}
 		classBucket := teacher.Bucket(k)
+		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
+		members := make([]string, 0)
+		if studentsBucket != nil {
+			innerMembers, err := studentsToSlice(studentsBucket)
+			if err != nil {
+				lgr.Printf("ERROR cannot turn students to slice: %s %v", ownerId, err)
+			} else {
+				members = innerMembers
+			}
+		}
+
 		iClass := openapi.Class{
 			Id:      string(k),
 			OwnerId: ownerId,
 			Period:  btoi32(classBucket.Get([]byte(KeyPeriod))),
 			Name:    string(classBucket.Get([]byte(KeyName))),
 			AddCode: string(classBucket.Get([]byte(KeyAddCode))),
-			Members: make([]string, 0),
+			Members: members,
 		}
 		data = append(data, iClass)
 	}
