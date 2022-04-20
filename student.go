@@ -67,6 +67,7 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 	}
 
 	_, pathId, err := RoleByAddCode(a.db, body.AddCode)
+	println(err)
 	if err != nil {
 		return openapi.Response(404,
 			openapi.ResponseRegister4{
@@ -88,7 +89,10 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 		}
 		class := schoolClasses.Bucket([]byte(pathId.classId))
 		if class != nil {
-			studentsBucket := class.Bucket([]byte(KeyStudents))
+			studentsBucket, err := class.CreateBucketIfNotExists([]byte(KeyStudents))
+			if err != nil {
+				return err
+			}
 			if studentsBucket != nil {
 				err = studentsBucket.Put([]byte(userDetails.Email), nil)
 				if err != nil {

@@ -220,7 +220,7 @@ func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.Re
 			if students == nil {
 				return
 			}
-			student := class.Get([]byte(userId))
+			student := students.Get([]byte(userId))
 			if student == nil {
 				return
 			}

@@ -107,10 +107,10 @@ func TestDailyPayment(t *testing.T) {
 	require.True(t, netWorth.GreaterThan(decimal.NewFromInt(200)))
 }
 
-func TestStudentAddClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("studentAddClass", 8090, "test@admin.com")
+func TestStudentAddClass_Teachers(t *testing.T) {
+	db, tearDown := FullStartTestServer("studentAddClass_Teachers", 8090, "test@admin.com")
 	defer tearDown()
-	_, _, _, classes, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, schools, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])
@@ -118,32 +118,108 @@ func TestStudentAddClass(t *testing.T) {
 	// initialize http client
 	client := &http.Client{}
 
-	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/classes/class?_id="+classes[1],
-		nil)
+	var classAddCode string
 
-	resp, _ := client.Do(req)
-	var data openapi.ClassWithMembers
-	decoder := json.NewDecoder(resp.Body)
-	_ = decoder.Decode(&data)
+	_ = db.View(func(tx *bolt.Tx) error {
+		school, _ := SchoolByIdTx(tx, schools[0])
+		teachersBucket := school.Bucket([]byte(KeyTeachers))
+		teacher := teachersBucket.Bucket([]byte(teachers[0]))
+		c := teacher.Cursor()
+		k, _ := c.First()
+		class := teacher.Bucket(k)
+		classAddCode = string(class.Get([]byte(KeyAddCode)))
+		return nil
+	})
 
 	body := openapi.RequestAddClass{
 		Id:      students[0],
-		AddCode: data.AddCode,
+		AddCode: classAddCode,
 	}
 
 	marshal, _ := json.Marshal(body)
-	req, _ = http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
-	resp, err = client.Do(req)
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
 	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
 	var v []openapi.ResponseMemberClass
-	decoder = json.NewDecoder(resp.Body)
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+}
+
+func TestStudentAddClass_Schools(t *testing.T) {
+	db, tearDown := FullStartTestServer("studentAddClass_Schools", 8090, "test@admin.com")
+	defer tearDown()
+	_, schools, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+	var freshmanAddCode string
+
+	_ = db.View(func(tx *bolt.Tx) error {
+		school, _ := SchoolByIdTx(tx, schools[0])
+		classes := school.Bucket([]byte(KeyClasses))
+		c := classes.Cursor()
+		k, _ := c.First()
+		class := classes.Bucket(k)
+		freshmanAddCode = string(class.Get([]byte(KeyAddCode)))
+		return nil
+	})
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.RequestAddClass{
+		Id:      students[0],
+		AddCode: freshmanAddCode,
+	}
+
+	marshal, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v []openapi.ResponseMemberClass
+	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&v)
 	require.Nil(t, err)
 
-	assert.Equal(t, 2, len(v))
+	assert.Equal(t, 1, len(v))
+}
+
+func TestStudentAddClass_InvalidCode(t *testing.T) {
+	db, tearDown := FullStartTestServer("studentAddClass_InvalidCode", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.RequestAddClass{
+		Id:      students[0],
+		AddCode: "invalid1",
+	}
+
+	marshal, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 404, resp.StatusCode, resp)
+
+	var v openapi.ResponseRegister4
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, "Invalid Add Code", v.Message)
 }
