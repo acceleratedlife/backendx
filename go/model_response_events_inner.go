@@ -15,6 +15,7 @@ import (
 )
 
 type ResponseEventsInner struct {
+
 	Value int32 `json:"value,omitempty"`
 
 	CreatedAt time.Time `json:"createdAt,omitempty"`

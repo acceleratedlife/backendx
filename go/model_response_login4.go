@@ -11,6 +11,7 @@
 package openapi
 
 type ResponseLogin4 struct {
+
 	LoginSuccess bool `json:"loginSuccess,omitempty"`
 
 	Message string `json:"message,omitempty"`

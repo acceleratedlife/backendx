@@ -148,7 +148,9 @@ func (c *StaffApiController) DeleteAuction(w http.ResponseWriter, r *http.Reques
 // Deleteclass - delete class
 func (c *StaffApiController) Deleteclass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := RequestUser{query.Get("_id")}
+	idParam := RequestUser{
+		Id: query.Get("_id"),
+	}
 	result, err := c.service.Deleteclass(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
@@ -259,18 +261,18 @@ func (c *StaffApiController) MakeClass(w http.ResponseWriter, r *http.Request) {
 
 // PayTransaction - When a teacher or admin is paying/debting a student with their own bucks
 func (c *StaffApiController) PayTransaction(w http.ResponseWriter, r *http.Request) {
-	transactionsPayTransactionBodyParam := TransactionsPayTransactionBody{}
+	requestPayTransactionParam := RequestPayTransaction{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&transactionsPayTransactionBodyParam); err != nil {
+	if err := d.Decode(&requestPayTransactionParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertTransactionsPayTransactionBodyRequired(transactionsPayTransactionBodyParam); err != nil {
+	if err := AssertRequestPayTransactionRequired(requestPayTransactionParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.PayTransaction(r.Context(), transactionsPayTransactionBodyParam)
+	result, err := c.service.PayTransaction(r.Context(), requestPayTransactionParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -283,18 +285,18 @@ func (c *StaffApiController) PayTransaction(w http.ResponseWriter, r *http.Reque
 
 // PayTransactions - When a teacher or admin is paying/debting an entire class
 func (c *StaffApiController) PayTransactions(w http.ResponseWriter, r *http.Request) {
-	transactionsPayTransactionsBodyParam := TransactionsPayTransactionsBody{}
+	requestPayTransactionsParam := RequestPayTransactions{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&transactionsPayTransactionsBodyParam); err != nil {
+	if err := d.Decode(&requestPayTransactionsParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertTransactionsPayTransactionsBodyRequired(transactionsPayTransactionsBodyParam); err != nil {
+	if err := AssertRequestPayTransactionsRequired(requestPayTransactionsParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.PayTransactions(r.Context(), transactionsPayTransactionsBodyParam)
+	result, err := c.service.PayTransactions(r.Context(), requestPayTransactionsParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -337,7 +339,9 @@ func (c *StaffApiController) SearchAuctionsTeacher(w http.ResponseWriter, r *htt
 // SearchClasses - searches for users classes
 func (c *StaffApiController) SearchClasses(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := RequestUser{query.Get("_id")}
+	idParam := RequestUser{
+		Id: query.Get("_id"),
+	}
 	result, err := c.service.SearchClasses(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {

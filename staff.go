@@ -163,12 +163,12 @@ func (s *StaffApiServiceImpl) MakeClass(ctx context.Context, request openapi.Req
 	return openapi.Response(200, classes), nil
 }
 
-func (s StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.TransactionsPayTransactionBody) (openapi.ImplResponse, error) {
+func (s StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.RequestPayTransaction) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.TransactionsPayTransactionsBody) (openapi.ImplResponse, error) {
+func (s StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.RequestPayTransactions) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }

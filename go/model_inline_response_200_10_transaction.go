@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse20010Transaction struct {
+
 	Account string `json:"account,omitempty"`
 
 	Amount float32 `json:"amount,omitempty"`

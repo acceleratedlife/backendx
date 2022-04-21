@@ -27,7 +27,7 @@ type UserInfo struct {
 	PasswordSha      string
 	SchoolId         string
 	Role             int32     // 0 student, 1 teacher, 2 admin
-	Income           int32     `json:",omitempty"`
+	Income           float32   `json:",omitempty"`
 	LastIncomePaid   time.Time `json:",omitempty"`
 	Children         int32
 	Rank             int32

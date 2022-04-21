@@ -12,8 +12,8 @@ package openapi
 
 import (
 	"context"
-	"errors"
 	"net/http"
+	"errors"
 )
 
 // StaffApiService is a service that implements the logic for the StaffApiServicer
@@ -46,8 +46,8 @@ func (s *StaffApiService) Deleteclass(ctx context.Context, id RequestUser) (Impl
 	// TODO - update Deleteclass with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, Class{}) or use other options such as http.Ok ...
-	//return Response(200, Class{}), nil
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -112,12 +112,12 @@ func (s *StaffApiService) MakeClass(ctx context.Context, requestMakeClass Reques
 }
 
 // PayTransaction - When a teacher or admin is paying/debting a student with their own bucks
-func (s *StaffApiService) PayTransaction(ctx context.Context, transactionsPayTransactionBody TransactionsPayTransactionBody) (ImplResponse, error) {
+func (s *StaffApiService) PayTransaction(ctx context.Context, requestPayTransaction RequestPayTransaction) (ImplResponse, error) {
 	// TODO - update PayTransaction with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2009{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2009{}), nil
+	//TODO: Uncomment the next line to return response Response(200, ResponsePayTransaction{}) or use other options such as http.Ok ...
+	//return Response(200, ResponsePayTransaction{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -126,12 +126,12 @@ func (s *StaffApiService) PayTransaction(ctx context.Context, transactionsPayTra
 }
 
 // PayTransactions - When a teacher or admin is paying/debting an entire class
-func (s *StaffApiService) PayTransactions(ctx context.Context, transactionsPayTransactionsBody TransactionsPayTransactionsBody) (ImplResponse, error) {
+func (s *StaffApiService) PayTransactions(ctx context.Context, requestPayTransactions RequestPayTransactions) (ImplResponse, error) {
 	// TODO - update PayTransactions with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2009{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2009{}), nil
+	//TODO: Uncomment the next line to return response Response(200, ResponsePayTransaction{}) or use other options such as http.Ok ...
+	//return Response(200, ResponsePayTransaction{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

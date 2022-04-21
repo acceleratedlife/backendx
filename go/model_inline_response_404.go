@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse404 struct {
+
 	SearchSuccess bool `json:"searchSuccess,omitempty"`
 
 	Message string `json:"message,omitempty"`

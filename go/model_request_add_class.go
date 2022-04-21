@@ -11,6 +11,7 @@
 package openapi
 
 type RequestAddClass struct {
+
 	AddCode string `json:"addCode,omitempty"`
 
 	Id string `json:"_id,omitempty"`

@@ -11,6 +11,7 @@
 package openapi
 
 type ResponseCookie struct {
+
 	WAuthExp string `json:"w_authExp,omitempty"`
 
 	WAuth string `json:"w_auth,omitempty"`
