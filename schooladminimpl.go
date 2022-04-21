@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/rand"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -129,6 +131,8 @@ func createTeacher(db *bolt.DB, newUser UserInfo) (err error) {
 }
 
 func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
+	newUser.Income = int32(math.Floor(rand.Float64()*(335-104) + 104))
+	newUser.CareerTransition = false
 	err = db.Update(func(tx *bolt.Tx) error {
 		err = AddUserTx(tx, newUser)
 		if err != nil {
@@ -142,6 +146,7 @@ func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
 				return err
 			}
 			var existingUser UserInfo
+
 			err = json.Unmarshal(user, &existingUser)
 			if err != nil {
 				return err

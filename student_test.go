@@ -85,7 +85,7 @@ func TestDailyPayment(t *testing.T) {
 
 	require.True(t, r)
 
-	require.Equal(t, 121.32, StudentNetWorth(db, student.Name).InexactFloat64())
+	require.Equal(t, float64(student.Income), StudentNetWorth(db, student.Name).InexactFloat64())
 
 	r = DailyPayIfNeeded(db, &clock, student)
 	require.False(t, r)
@@ -190,7 +190,7 @@ func TestStudentAddClass_Schools(t *testing.T) {
 	err = decoder.Decode(&v)
 	require.Nil(t, err)
 
-	assert.Equal(t, 1, len(v))
+	assert.Equal(t, 2, len(v))
 }
 
 func TestStudentAddClass_InvalidCode(t *testing.T) {

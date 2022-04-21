@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -65,4 +66,41 @@ func PopulateClassMembers(tx *bolt.Tx, classBucket *bolt.Bucket) (Members []open
 		Members = append(Members, nUser)
 	}
 	return Members, nil
+}
+
+func getStudentHistory(db *bolt.DB, userName string, schoolId string) (history []openapi.History, err error) {
+	_ = db.View(func(tx *bolt.Tx) error {
+		history, err = getStudentHistoryTX(tx, userName, schoolId)
+		return nil
+	})
+	return
+}
+func getStudentHistoryTX(tx *bolt.Tx, userName string, schoolId string) (history []openapi.History, err error) {
+	schools := tx.Bucket([]byte(KeySchools))
+	if schools == nil {
+		return nil, fmt.Errorf("Failed to find schoolsBucket")
+	}
+	school := schools.Bucket([]byte(schoolId))
+	if school == nil {
+		return nil, fmt.Errorf("Failed to get school")
+	}
+	students := school.Bucket([]byte(KeyStudents))
+	if students == nil {
+		return nil, fmt.Errorf("Failed to get students")
+	}
+
+	student := students.Bucket([]byte(userName))
+	if student == nil {
+		return nil, fmt.Errorf("Failed to get student")
+	}
+
+	historyData := student.Get([]byte(KeyHistory))
+	if historyData == nil {
+		return nil, fmt.Errorf("Failed to get history")
+	}
+	err = json.Unmarshal(historyData, &history)
+	if err != nil {
+		return nil, fmt.Errorf("ERROR cannot unmarshal History")
+	}
+	return
 }

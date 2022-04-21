@@ -250,7 +250,7 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		if err != nil {
 			return fmt.Errorf("cannot save gaily payment date: %v", err)
 		}
-		pay := decimal.NewFromFloat32(121.32)
+		pay := decimal.NewFromFloat32(float32(userDetails.Income))
 		return addUbuck2StudentTx(tx, clock, userDetails.Name, pay, "daily payment")
 	})
 
