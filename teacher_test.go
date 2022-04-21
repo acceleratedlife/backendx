@@ -32,7 +32,7 @@ func Test_addUbuck2StudentTemp(t *testing.T) {
 
 	_ = db.View(func(tx *bolt.Tx) error {
 		cb := tx.Bucket([]byte(KeyCB))
-		accounts := cb.Bucket([]byte(KeyAccounts))
+		accounts := cb.Bucket([]byte(KeybAccounts))
 		ub := accounts.Bucket([]byte(CurrencyUBuck))
 		v := ub.Get([]byte(KeyBalance))
 

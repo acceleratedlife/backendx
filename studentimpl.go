@@ -119,7 +119,7 @@ func addUbuck2StudentTx(tx *bolt.Tx, clock Clock, studentId string, amount decim
 // addToHolderTx updates balance and adds transaction
 // debit means to remove money
 func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction, direction int) (balance decimal.Decimal, errR error) {
-	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
+	accounts, err := holder.CreateBucketIfNotExists([]byte(KeybAccounts))
 	if err != nil {
 		errR = err
 		return
@@ -193,7 +193,7 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 	if err != nil {
 		return
 	}
-	accounts := student.Bucket([]byte(KeyAccounts))
+	accounts := student.Bucket([]byte(KeybAccounts))
 	if accounts == nil {
 		return
 	}
