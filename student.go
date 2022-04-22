@@ -76,7 +76,6 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		// classBucket, err := getClassbyAddCodeTx(tx, userDetails.SchoolId, body.AddCode)
 		schools := tx.Bucket([]byte(KeySchools))
 		school := schools.Bucket([]byte(userDetails.SchoolId))
 		if school == nil {

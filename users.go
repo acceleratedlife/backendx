@@ -124,6 +124,7 @@ func AddUserTx(tx *bolt.Tx, info UserInfo) error {
 	return nil
 }
 
+//get bucket, make bucket if it does not exist, use within update
 func getStudentBucketTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	userInfo, err := getUserInLocalStoreTx(tx, userName)
 	if err != nil {
@@ -152,6 +153,7 @@ func getStudentBucketTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	return student, nil
 }
 
+//get bucket, throw if it does not exist, use with view
 func getStudentBucketRoTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	userInfo, err := getUserInLocalStoreTx(tx, userName)
 	if err != nil {

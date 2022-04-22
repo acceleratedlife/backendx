@@ -127,3 +127,37 @@ func TestDeleteClass(t *testing.T) {
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 }
+
+func TestPayTransaction_credit(t *testing.T) {
+	db, tearDown := FullStartTestServer("payTransaction_credit", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestPayTransaction{
+		Owner:       "",
+		Description: "credit",
+		Amount:      100,
+		Student:     students[0],
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/payTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	// require.Equal(t, members, len(data.Members))
+	// require.Equal(t, "Test Name", data.Name)
+	// require.Equal(t, int32(4), data.Period)
+	// require.Equal(t, classes[0], data.Id)
+}

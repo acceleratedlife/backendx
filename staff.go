@@ -8,11 +8,13 @@ import (
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
 type StaffApiServiceImpl struct {
-	db *bolt.DB
+	db    *bolt.DB
+	clock Clock
 }
 
 func (s StaffApiServiceImpl) SearchEvents(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
@@ -163,14 +165,50 @@ func (s *StaffApiServiceImpl) MakeClass(ctx context.Context, request openapi.Req
 	return openapi.Response(200, classes), nil
 }
 
-func (s StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.RequestPayTransaction) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.RequestPayTransaction) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = addUbuck2Student(s.db, s.clock, userData.Name, decimal.NewFromFloat32(body.Amount), body.Description)
+	if err != nil {
+		return openapi.Response(400, err), nil
+	}
+	return openapi.Response(200, ""), nil
 }
 
-func (s StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.RequestPayTransactions) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.RequestPayTransactions) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	errors := make([]error, 0)
+	for _, student := range body.Students {
+		err = addUbuck2Student(s.db, s.clock, student, decimal.NewFromFloat32(body.Amount), body.Description)
+		if err != nil {
+			errors = append(errors, err)
+		}
+	}
+	if len(errors) != 0 {
+		return openapi.Response(400, errors), nil
+	}
+	return openapi.Response(200, ""), nil
 }
 
 func (s StaffApiServiceImpl) SearchAllBucks(ctx context.Context, s2 string) (openapi.ImplResponse, error) {

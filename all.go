@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/rand"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -300,7 +303,11 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 			userDetails.Income = userDetails.Income / 2
 		}
 		if body.College && !userDetails.College {
-			// makeTransaction(req, res)
+			cost := decimal.NewFromFloat(-math.Floor(rand.Float64()*(8000-5000) + 8000))
+			err := addUbuck2StudentTx(tx, a.clock, userDetails.Name, cost, "Paying for College")
+			if err != nil {
+				return err
+			}
 			userDetails.College = true
 			userDetails.CollegeEnd = a.clock.Now().AddDate(0, 0, 28) //28 days
 			userDetails.Income = userDetails.Income / 2
