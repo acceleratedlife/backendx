@@ -149,7 +149,7 @@ func (c *StaffApiController) DeleteAuction(w http.ResponseWriter, r *http.Reques
 func (c *StaffApiController) Deleteclass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := RequestUser{
-		Id: query.Get("_id"),
+		query.Get("_id"),
 	}
 	result, err := c.service.Deleteclass(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
@@ -340,7 +340,7 @@ func (c *StaffApiController) SearchAuctionsTeacher(w http.ResponseWriter, r *htt
 func (c *StaffApiController) SearchClasses(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := RequestUser{
-		Id: query.Get("_id"),
+		query.Get("_id"),
 	}
 	result, err := c.service.SearchClasses(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code

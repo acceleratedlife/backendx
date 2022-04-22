@@ -81,7 +81,6 @@ go/model_response_login2.go
 go/model_response_login4.go
 go/model_response_member_class.go
 go/model_response_member_class_owner.go
-go/model_response_pay_transaction.go
 go/model_response_register2.go
 go/model_response_register4.go
 go/model_response_schools_inner.go

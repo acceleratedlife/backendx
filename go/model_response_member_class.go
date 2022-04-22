@@ -11,7 +11,7 @@
 package openapi
 
 type ResponseMemberClass struct {
-	Owner_id ResponseMemberClassOwner `json:"owner_id,omitempty"` //generator always makes this OwnerId but it should be Owner_id
+	Owner_id ResponseMemberClassOwner `json:"owner_id,omitempty"`
 
 	Period int32 `json:"period,omitempty"`
 

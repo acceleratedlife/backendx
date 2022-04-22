@@ -61,7 +61,7 @@ func (c *SchoolAdminApiController) Routes() Routes {
 func (c *SchoolAdminApiController) SearchAdminTeacherClass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := RequestUser{
-		Id: query.Get("_id"),
+		query.Get("_id"),
 	}
 	result, err := c.service.SearchAdminTeacherClass(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code

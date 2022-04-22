@@ -276,7 +276,7 @@ func (c *AllApiController) SearchBucks(w http.ResponseWriter, r *http.Request) {
 func (c *AllApiController) SearchClass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := RequestUser{
-		Id: query.Get("_id"),
+		query.Get("_id"),
 	}
 	result, err := c.service.SearchClass(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
@@ -308,7 +308,7 @@ func (c *AllApiController) SearchSchool(w http.ResponseWriter, r *http.Request) 
 func (c *AllApiController) SearchStudent(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := RequestUser{
-		Id: query.Get("_id"),
+		query.Get("_id"),
 	}
 	result, err := c.service.SearchStudent(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code

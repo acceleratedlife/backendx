@@ -116,8 +116,8 @@ func (s *StaffApiService) PayTransaction(ctx context.Context, requestPayTransact
 	// TODO - update PayTransaction with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, ResponsePayTransaction{}) or use other options such as http.Ok ...
-	//return Response(200, ResponsePayTransaction{}), nil
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -130,8 +130,8 @@ func (s *StaffApiService) PayTransactions(ctx context.Context, requestPayTransac
 	// TODO - update PayTransactions with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, ResponsePayTransaction{}) or use other options such as http.Ok ...
-	//return Response(200, ResponsePayTransaction{}), nil
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

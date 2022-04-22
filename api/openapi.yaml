@@ -1170,10 +1170,6 @@ paths:
               $ref: '#/components/schemas/RequestPayTransaction'
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponsePayTransaction'
           description: return success status
         "404":
           description: transaction cannot be made with that data
@@ -1196,10 +1192,6 @@ paths:
               $ref: '#/components/schemas/RequestPayTransactions'
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponsePayTransaction'
           description: return success status
         "404":
           description: transactions cannot be made with that data
@@ -1995,14 +1987,6 @@ components:
         message:
           example: Auth failed, email not found
           type: string
-      type: object
-    ResponsePayTransaction:
-      example:
-        success: true
-      properties:
-        success:
-          example: true
-          type: boolean
       type: object
     ResponseRegister2:
       example:
