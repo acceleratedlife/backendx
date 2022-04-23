@@ -14,7 +14,7 @@ type StudentApiServiceImpl struct {
 	db *bolt.DB
 }
 
-func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, auctionsPlaceBidBody openapi.AuctionsPlaceBidBody) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, auctionsPlaceBidBody openapi.RequestAuctionBid) (openapi.ImplResponse, error) {
 	panic("implement me")
 }
 

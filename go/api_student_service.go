@@ -28,15 +28,15 @@ func NewStudentApiService() StudentApiServicer {
 }
 
 // AuctionBid - auction bid
-func (s *StudentApiService) AuctionBid(ctx context.Context, auctionsPlaceBidBody AuctionsPlaceBidBody) (ImplResponse, error) {
+func (s *StudentApiService) AuctionBid(ctx context.Context, requestAuctionBid RequestAuctionBid) (ImplResponse, error) {
 	// TODO - update AuctionBid with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse2006{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse2006{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseAuctionStudentInner{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseAuctionStudentInner{}), nil
 
-	//TODO: Uncomment the next line to return response Response(400, InlineResponse400{}) or use other options such as http.Ok ...
-	//return Response(400, InlineResponse400{}), nil
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("AuctionBid method not implemented")
 }
@@ -46,8 +46,8 @@ func (s *StudentApiService) BuckConvert(ctx context.Context, userId string, tran
 	// TODO - update BuckConvert with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2009{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2009{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2007{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2007{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -60,8 +60,8 @@ func (s *StudentApiService) CryptoConvert(ctx context.Context, userId string, tr
 	// TODO - update CryptoConvert with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse20010{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse20010{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2008{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2008{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -74,8 +74,8 @@ func (s *StudentApiService) SearchAuctionsStudent(ctx context.Context, userId st
 	// TODO - update SearchAuctionsStudent with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse2006{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse2006{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseAuctionStudentInner{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseAuctionStudentInner{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -88,8 +88,8 @@ func (s *StudentApiService) SearchBuckTransaction(ctx context.Context, id string
 	// TODO - update SearchBuckTransaction with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2007{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2007{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2005{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2005{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -116,8 +116,8 @@ func (s *StudentApiService) SearchCryptoTransaction(ctx context.Context, id stri
 	// TODO - update SearchCryptoTransaction with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2008{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2008{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2006{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2006{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

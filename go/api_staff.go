@@ -213,18 +213,18 @@ func (c *StaffApiController) KickClass(w http.ResponseWriter, r *http.Request) {
 // MakeAuction - make a new auction
 func (c *StaffApiController) MakeAuction(w http.ResponseWriter, r *http.Request) {
 	userIdParam := r.Header.Get("user._id")
-	auctionsBodyParam := AuctionsBody{}
+	requestMakeAuctionParam := RequestMakeAuction{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&auctionsBodyParam); err != nil {
+	if err := d.Decode(&requestMakeAuctionParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertAuctionsBodyRequired(auctionsBodyParam); err != nil {
+	if err := AssertRequestMakeAuctionRequired(requestMakeAuctionParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.MakeAuction(r.Context(), userIdParam, auctionsBodyParam)
+	result, err := c.service.MakeAuction(r.Context(), userIdParam, requestMakeAuctionParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

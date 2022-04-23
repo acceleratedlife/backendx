@@ -168,7 +168,7 @@ type StaffApiServicer interface {
 	Deleteclass(context.Context, RequestUser) (ImplResponse, error)
 	EditClass(context.Context, RequestEditClass) (ImplResponse, error)
 	KickClass(context.Context, RequestKickClass) (ImplResponse, error)
-	MakeAuction(context.Context, string, AuctionsBody) (ImplResponse, error)
+	MakeAuction(context.Context, string, RequestMakeAuction) (ImplResponse, error)
 	MakeClass(context.Context, RequestMakeClass) (ImplResponse, error)
 	PayTransaction(context.Context, RequestPayTransaction) (ImplResponse, error)
 	PayTransactions(context.Context, RequestPayTransactions) (ImplResponse, error)
@@ -185,7 +185,7 @@ type StaffApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type StudentApiServicer interface { 
-	AuctionBid(context.Context, AuctionsPlaceBidBody) (ImplResponse, error)
+	AuctionBid(context.Context, RequestAuctionBid) (ImplResponse, error)
 	BuckConvert(context.Context, string, TransactionsConversionTransactionBody) (ImplResponse, error)
 	CryptoConvert(context.Context, string, TransactionCryptoTransactionBody) (ImplResponse, error)
 	SearchAuctionsStudent(context.Context, string) (ImplResponse, error)

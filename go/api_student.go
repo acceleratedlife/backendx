@@ -114,18 +114,18 @@ func (c *StudentApiController) Routes() Routes {
 
 // AuctionBid - auction bid
 func (c *StudentApiController) AuctionBid(w http.ResponseWriter, r *http.Request) {
-	auctionsPlaceBidBodyParam := AuctionsPlaceBidBody{}
+	requestAuctionBidParam := RequestAuctionBid{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&auctionsPlaceBidBodyParam); err != nil {
+	if err := d.Decode(&requestAuctionBidParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertAuctionsPlaceBidBodyRequired(auctionsPlaceBidBodyParam); err != nil {
+	if err := AssertRequestAuctionBidRequired(requestAuctionBidParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.AuctionBid(r.Context(), auctionsPlaceBidBodyParam)
+	result, err := c.service.AuctionBid(r.Context(), requestAuctionBidParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

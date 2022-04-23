@@ -12,7 +12,7 @@ package openapi
 
 type InlineResponse2009 struct {
 
-	Success bool `json:"success,omitempty"`
+	Deleted bool `json:"deleted,omitempty"`
 }
 
 // AssertInlineResponse2009Required checks if the required fields are not zero-ed

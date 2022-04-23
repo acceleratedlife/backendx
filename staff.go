@@ -137,7 +137,7 @@ func (a *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.Reques
 	return openapi.Response(200, nil), nil
 }
 
-func (s StaffApiServiceImpl) MakeAuction(ctx context.Context, s2 string, body openapi.AuctionsBody) (openapi.ImplResponse, error) {
+func (s StaffApiServiceImpl) MakeAuction(ctx context.Context, s2 string, body openapi.RequestMakeAuction) (openapi.ImplResponse, error) {
 	//next
 	panic("implement me")
 }
