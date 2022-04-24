@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"sort"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -241,18 +242,26 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 				//TransitionEnd: time.Time{},
 				FirstName: student.FirstName,
 				LastName:  student.LastName,
-				Email:     student.Email,
-				Confirmed: student.Confirmed,
-				SchoolId:  student.SchoolId,
+				// Email:     student.Email,
+				// Confirmed: student.Confirmed,
+				// SchoolId:  student.SchoolId,
 				//College:       false,
 				//Children:      0,
-				Income:   10,
-				Role:     student.Role,
-				Rank:     2,
+				// Income:   10,
+				// Role:     student.Role,
+				Rank:     student.Rank,
 				NetWorth: float32(nWorth),
 			}
 
 			resp = append(resp, nUser)
+
+			sort.SliceStable(resp, func(i, j int) bool {
+				return resp[i].NetWorth > resp[j].NetWorth
+			})
+
+			for i := 0; i < len(resp); i++ {
+				resp[i].Rank = int32(i + 1)
+			}
 
 		}
 

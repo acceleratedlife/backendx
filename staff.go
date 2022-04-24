@@ -217,8 +217,8 @@ func (s StaffApiServiceImpl) SearchAllBucks(ctx context.Context, s2 string) (ope
 }
 
 func (s StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	resp := make([]string, 0)
+	return openapi.Response(200, resp), nil
 }
 
 func (s *StaffApiServiceImpl) SearchClasses(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
