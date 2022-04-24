@@ -128,6 +128,46 @@ func TestDeleteClass(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode)
 }
 
+func TestMakeAuction(t *testing.T) {
+	clock := AppClock{}
+	db, teardown := FullStartTestServer("makeClass", 8090, "")
+	defer teardown()
+
+	_, _, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(500),
+		StartDate:   clock.Now(),
+		Owner:       teachers[0],
+		Visibility:  classes,
+	}
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/auctions",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	defer resp.Body.Close()
+	var respData []openapi.Auction
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, 1, len(respData))
+	// assert.Equal(t, 6, len(respData[0].AddCode))
+
+}
+
 func TestPayTransaction_credit(t *testing.T) {
 	db, tearDown := FullStartTestServer("payTransaction_credit", 8090, "")
 	defer tearDown()

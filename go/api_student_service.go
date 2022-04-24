@@ -32,8 +32,8 @@ func (s *StudentApiService) AuctionBid(ctx context.Context, requestAuctionBid Re
 	// TODO - update AuctionBid with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseAuctionStudentInner{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseAuctionStudentInner{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseAuctionStudent{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseAuctionStudent{}), nil
 
 	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
 	//return Response(400, nil),nil
@@ -74,8 +74,8 @@ func (s *StudentApiService) SearchAuctionsStudent(ctx context.Context, userId st
 	// TODO - update SearchAuctionsStudent with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseAuctionStudentInner{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseAuctionStudentInner{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseAuctionStudent{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseAuctionStudent{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

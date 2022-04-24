@@ -47,6 +47,22 @@ func getTeacherClasses(db *bolt.DB, schoolId, teacherId string) (res []openapi.C
 	return
 }
 
+func getTeacherBucketTx(tx *bolt.Tx, schoolId, teacherId string) (teacher *bolt.Bucket, err error) {
+	school, err := SchoolByIdTx(tx, schoolId)
+	if err != nil {
+		return teacher, fmt.Errorf("Cannot find school")
+	}
+	teachers := school.Bucket([]byte(KeyTeachers))
+	if teachers == nil {
+		return teacher, fmt.Errorf("Cannot find teachers")
+	}
+	teacher = teachers.Bucket([]byte(teacherId))
+	if teacher == nil {
+		return teacher, fmt.Errorf("Cannot find teacher")
+	}
+	return
+}
+
 func getClassesTx(teacher *bolt.Bucket) []openapi.Class {
 	classes := make([]openapi.Class, 0)
 

@@ -32,6 +32,7 @@ const (
 	OperationDebit      = 1
 	OperationCredit     = 2
 	CurrencyUBuck       = "ubuck"
+	KeyAuctions         = "auctions"
 	KeyCB               = "cb"
 	KeyUsers            = "users"
 	KeybAccounts        = "bAccounts"

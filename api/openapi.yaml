@@ -48,7 +48,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseSchools'
+                items:
+                  $ref: '#/components/schemas/ResponseSchools'
+                type: array
           description: schools matching criteria
         "400":
           description: That is not a zip code
@@ -418,7 +420,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseMakeAuction'
+                items:
+                  $ref: '#/components/schemas/ResponseMakeAuction'
+                type: array
           description: auctions matching criteria
         "404":
           description: Auction not found
@@ -472,7 +476,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseMakeAuction'
+                items:
+                  $ref: '#/components/schemas/ResponseMakeAuction'
+                type: array
           description: auctions matching criteria
         "404":
           description: No auctions found
@@ -510,7 +516,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseMakeAuction'
+                items:
+                  $ref: '#/components/schemas/ResponseMakeAuction'
+                type: array
           description: auctions matching criteria
         "400":
           description: Auction cannot be made with that data
@@ -541,7 +549,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseAuctionStudent'
+                items:
+                  $ref: '#/components/schemas/ResponseAuctionStudent'
+                type: array
           description: auctions matching criteria
         "404":
           description: No auction found
@@ -564,7 +574,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseAuctionStudent'
+                items:
+                  $ref: '#/components/schemas/ResponseAuctionStudent'
+                type: array
           description: updated auctions that are relevant to the student
         "400":
           description: your bid is not greater than the current bid or the auction
@@ -1003,7 +1015,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseEvents'
+                items:
+                  $ref: '#/components/schemas/ResponseEvents'
+                type: array
           description: events matching criteria in value order decending
         "404":
           description: No events matching that school _id
@@ -1030,7 +1044,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseTransactions'
+                items:
+                  $ref: '#/components/schemas/ResponseTransactions'
+                type: array
           description: transactions matching criteria
         "404":
           description: No transaction found
@@ -1855,9 +1871,45 @@ components:
       - zip
       type: object
     ResponseAuctionStudent:
-      items:
-        $ref: '#/components/schemas/ResponseAuctionStudent_inner'
-      type: array
+      example:
+        owner:
+          lastName: Boy
+          _id: 61be17e2f5691463b0fc972d
+        itemNumber: FyW54G
+        winner:
+          firstName: Tommy
+          lastName: Boy
+          _id: 61be17e2f5691463b0fc972d
+        endDate: 2000-01-23T04:56:07.000+00:00
+        description: Candy Bar
+        _id: 61be17e2f5691463b0fc972d
+        bid: 123.45
+        startDate: 2000-01-23T04:56:07.000+00:00
+      properties:
+        _id:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+        bid:
+          example: 123.45
+          format: float
+          type: number
+        description:
+          example: Candy Bar
+          type: string
+        endDate:
+          format: date-time
+          type: string
+        startDate:
+          format: date-time
+          type: string
+        itemNumber:
+          example: FyW54G
+          type: string
+        owner:
+          $ref: '#/components/schemas/ResponseAuctionStudent_owner'
+        winner:
+          $ref: '#/components/schemas/ResponseAuctionStudent_winner'
+      type: object
     ResponseAuth2:
       example:
         firstName: Tom
@@ -1912,9 +1964,30 @@ components:
           type: string
       type: object
     ResponseEvents:
-      items:
-        $ref: '#/components/schemas/ResponseEvents_inner'
-      type: array
+      example:
+        transaction_id: 613eab19e58cc511801af657
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        owner_id:
+          firstName: Jay
+          lastName: Leno
+        description: on time
+        value: 123
+      properties:
+        value:
+          example: 123
+          type: integer
+        createdAt:
+          format: date-time
+          type: string
+        description:
+          example: on time
+          type: string
+        transaction_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner_id:
+          $ref: '#/components/schemas/ResponseEvents_owner_id'
+      type: object
     ResponseKickClass:
       example:
         kick_id: 613eab19e58cc511801af657
@@ -1979,9 +2052,46 @@ components:
           type: string
       type: object
     ResponseMakeAuction:
-      items:
-        $ref: '#/components/schemas/ResponseMakeAuction_inner'
-      type: array
+      example:
+        itemNumber: FyW54G
+        winner:
+          firstName: Tommy
+          lastName: Boy
+        visibility:
+        - name: Entire School
+        - name: Entire School
+        endDate: 2000-01-23T04:56:07.000+00:00
+        description: Candy Bar
+        _id: 61be17e2f5691463b0fc972d
+        bid: 123.45
+        startDate: 2000-01-23T04:56:07.000+00:00
+      properties:
+        _id:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+        bid:
+          example: 123.45
+          format: float
+          type: number
+        description:
+          example: Candy Bar
+          type: string
+        endDate:
+          format: date-time
+          type: string
+        startDate:
+          format: date-time
+          type: string
+        itemNumber:
+          example: FyW54G
+          type: string
+        winner:
+          $ref: '#/components/schemas/ResponseMakeAuction_winner'
+        visibility:
+          items:
+            $ref: '#/components/schemas/ResponseMakeAuction_visibility'
+          type: array
+      type: object
     ResponseRegister2:
       example:
         success: true
@@ -1997,13 +2107,38 @@ components:
           type: string
       type: object
     ResponseSchools:
-      items:
-        $ref: '#/components/schemas/ResponseSchools_inner'
-      type: array
+      example:
+        name: East High
+        _id: dlkjdlkjdfslkjdfs93
+      properties:
+        name:
+          example: East High
+          type: string
+        _id:
+          example: dlkjdlkjdfslkjdfs93
+          type: string
+      type: object
     ResponseTransactions:
-      items:
-        $ref: '#/components/schemas/ResponseTransactions_inner'
-      type: array
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        amount: 123.45
+        student: Jay Leno
+        description: on time
+      properties:
+        amount:
+          example: 123.45
+          format: float
+          type: number
+        createdAt:
+          format: date-time
+          type: string
+        description:
+          example: on time
+          type: string
+        student:
+          example: Jay Leno
+          type: string
+      type: object
     RequestAddClass:
       example:
         _id: 613eab19e58cc511801af657
@@ -2858,143 +2993,64 @@ components:
           example: 613eab19e58cc511801af657
           type: string
       type: object
-    ResponseAuctionStudent_inner:
+    ResponseAuctionStudent_owner:
       example:
-        owner:
-          lastName: Boy
-          _id: 61be17e2f5691463b0fc972d
-        itemNumber: FyW54G
-        winner:
-          firstName: Tommy
-          lastName: Boy
-          _id: 61be17e2f5691463b0fc972d
-        endDate: 2000-01-23T04:56:07.000+00:00
-        description: Candy Bar
+        lastName: Boy
         _id: 61be17e2f5691463b0fc972d
-        bid: 123.45
-        startDate: 2000-01-23T04:56:07.000+00:00
       properties:
         _id:
           example: 61be17e2f5691463b0fc972d
           type: string
-        bid:
-          example: 123.45
-          format: float
-          type: number
-        description:
-          example: Candy Bar
+        lastName:
+          example: Boy
           type: string
-        endDate:
-          format: date-time
-          type: string
-        startDate:
-          format: date-time
-          type: string
-        itemNumber:
-          example: FyW54G
-          type: string
-        owner:
-          $ref: '#/components/schemas/ResponseAuctionStudent_inner_owner'
-        winner:
-          $ref: '#/components/schemas/ResponseAuctionStudent_inner_winner'
       type: object
-    ResponseEvents_inner:
+    ResponseAuctionStudent_winner:
       example:
-        transaction_id: 613eab19e58cc511801af657
-        createdAt: 2000-01-23T04:56:07.000+00:00
-        owner_id:
-          firstName: Jay
-          lastName: Leno
-        description: on time
-        value: 123
-      properties:
-        value:
-          example: 123
-          type: integer
-        createdAt:
-          format: date-time
-          type: string
-        description:
-          example: on time
-          type: string
-        transaction_id:
-          example: 613eab19e58cc511801af657
-          type: string
-        owner_id:
-          $ref: '#/components/schemas/ResponseEvents_inner_owner_id'
-      type: object
-    ResponseMakeAuction_inner:
-      example:
-        itemNumber: FyW54G
-        winner:
-          firstName: Tommy
-          lastName: Boy
-        visibility:
-        - name: Entire School
-        - name: Entire School
-        endDate: 2000-01-23T04:56:07.000+00:00
-        description: Candy Bar
+        firstName: Tommy
+        lastName: Boy
         _id: 61be17e2f5691463b0fc972d
-        bid: 123.45
-        startDate: 2000-01-23T04:56:07.000+00:00
       properties:
         _id:
           example: 61be17e2f5691463b0fc972d
           type: string
-        bid:
-          example: 123.45
-          format: float
-          type: number
-        description:
-          example: Candy Bar
+        firstName:
+          example: Tommy
           type: string
-        endDate:
-          format: date-time
+        lastName:
+          example: Boy
           type: string
-        startDate:
-          format: date-time
-          type: string
-        itemNumber:
-          example: FyW54G
-          type: string
-        winner:
-          $ref: '#/components/schemas/ResponseMakeAuction_inner_winner'
-        visibility:
-          items:
-            $ref: '#/components/schemas/ResponseMakeAuction_inner_visibility'
-          type: array
       type: object
-    ResponseSchools_inner:
+    ResponseEvents_owner_id:
       example:
-        name: East High
-        _id: dlkjdlkjdfslkjdfs93
+        firstName: Jay
+        lastName: Leno
+      properties:
+        firstName:
+          example: Jay
+          type: string
+        lastName:
+          example: Leno
+          type: string
+      type: object
+    ResponseMakeAuction_winner:
+      example:
+        firstName: Tommy
+        lastName: Boy
+      properties:
+        firstName:
+          example: Tommy
+          type: string
+        lastName:
+          example: Boy
+          type: string
+      type: object
+    ResponseMakeAuction_visibility:
+      example:
+        name: Entire School
       properties:
         name:
-          example: East High
-          type: string
-        _id:
-          example: dlkjdlkjdfslkjdfs93
-          type: string
-      type: object
-    ResponseTransactions_inner:
-      example:
-        createdAt: 2000-01-23T04:56:07.000+00:00
-        amount: 123.45
-        student: Jay Leno
-        description: on time
-      properties:
-        amount:
-          example: 123.45
-          format: float
-          type: number
-        createdAt:
-          format: date-time
-          type: string
-        description:
-          example: on time
-          type: string
-        student:
-          example: Jay Leno
+          example: Entire School
           type: string
       type: object
     inline_response_200_5_assetID:
@@ -3092,64 +3148,4 @@ components:
           example: 123.45
           format: float
           type: number
-      type: object
-    ResponseAuctionStudent_inner_owner:
-      example:
-        lastName: Boy
-        _id: 61be17e2f5691463b0fc972d
-      properties:
-        _id:
-          example: 61be17e2f5691463b0fc972d
-          type: string
-        lastName:
-          example: Boy
-          type: string
-      type: object
-    ResponseAuctionStudent_inner_winner:
-      example:
-        firstName: Tommy
-        lastName: Boy
-        _id: 61be17e2f5691463b0fc972d
-      properties:
-        _id:
-          example: 61be17e2f5691463b0fc972d
-          type: string
-        firstName:
-          example: Tommy
-          type: string
-        lastName:
-          example: Boy
-          type: string
-      type: object
-    ResponseEvents_inner_owner_id:
-      example:
-        firstName: Jay
-        lastName: Leno
-      properties:
-        firstName:
-          example: Jay
-          type: string
-        lastName:
-          example: Leno
-          type: string
-      type: object
-    ResponseMakeAuction_inner_winner:
-      example:
-        firstName: Tommy
-        lastName: Boy
-      properties:
-        firstName:
-          example: Tommy
-          type: string
-        lastName:
-          example: Boy
-          type: string
-      type: object
-    ResponseMakeAuction_inner_visibility:
-      example:
-        name: Entire School
-      properties:
-        name:
-          example: Entire School
-          type: string
       type: object

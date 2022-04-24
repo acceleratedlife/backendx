@@ -32,8 +32,8 @@ func (s *StaffApiService) DeleteAuction(ctx context.Context, id string) (ImplRes
 	// TODO - update DeleteAuction with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseMakeAuctionInner{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseMakeAuctionInner{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseMakeAuction{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseMakeAuction{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -88,8 +88,8 @@ func (s *StaffApiService) MakeAuction(ctx context.Context, userId string, reques
 	// TODO - update MakeAuction with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseMakeAuctionInner{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseMakeAuctionInner{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseMakeAuction{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseMakeAuction{}), nil
 
 	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
 	//return Response(400, nil),nil
@@ -158,8 +158,8 @@ func (s *StaffApiService) SearchAuctionsTeacher(ctx context.Context, userId stri
 	// TODO - update SearchAuctionsTeacher with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseMakeAuctionInner{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseMakeAuctionInner{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseMakeAuction{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseMakeAuction{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -186,8 +186,8 @@ func (s *StaffApiService) SearchEvents(ctx context.Context, id string) (ImplResp
 	// TODO - update SearchEvents with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseEventsInner{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseEventsInner{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseEvents{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseEvents{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -200,8 +200,8 @@ func (s *StaffApiService) SearchTransactions(ctx context.Context, id string) (Im
 	// TODO - update SearchTransactions with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseTransactionsInner{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseTransactionsInner{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseTransactions{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseTransactions{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

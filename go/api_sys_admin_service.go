@@ -189,8 +189,8 @@ func (s *SysAdminApiService) SearchSchools(ctx context.Context, zip int32) (Impl
 	// TODO - update SearchSchools with the required logic for this service method.
 	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseSchoolsInner{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseSchoolsInner{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseSchools{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseSchools{}), nil
 
 	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
 	//return Response(400, nil),nil
