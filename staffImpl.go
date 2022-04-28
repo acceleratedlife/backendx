@@ -41,7 +41,11 @@ func getTeacherClasses(db *bolt.DB, schoolId, teacherId string) (res []openapi.C
 		if teacher == nil {
 			return nil
 		}
-		res = getClasses1Tx(teacher, teacherId)
+		classesBucket := teacher.Bucket([]byte(KeyClasses))
+		if classesBucket == nil {
+			return err
+		}
+		res = getClasses1Tx(classesBucket, teacherId)
 		return nil
 	})
 	return
@@ -63,16 +67,16 @@ func getTeacherBucketTx(tx *bolt.Tx, schoolId, teacherId string) (teacher *bolt.
 	return
 }
 
-func getClassesTx(teacher *bolt.Bucket) []openapi.Class {
+func getClassesTx(classesBucket *bolt.Bucket) []openapi.Class {
 	classes := make([]openapi.Class, 0)
 
-	c := teacher.Cursor()
+	c := classesBucket.Cursor()
 
 	for k, v := c.First(); k != nil; k, v = c.Next() {
 		if v != nil {
 			continue
 		}
-		classBucket := teacher.Bucket(k)
+		classBucket := classesBucket.Bucket(k)
 		iClass := openapi.Class{
 			Id:      string(k),
 			Name:    string(classBucket.Get([]byte(KeyName))),
@@ -86,15 +90,15 @@ func getClassesTx(teacher *bolt.Bucket) []openapi.Class {
 	return classes
 }
 
-func getClasses1Tx(teacher *bolt.Bucket, ownerId string) []openapi.Class {
+func getClasses1Tx(classesBucket *bolt.Bucket, ownerId string) []openapi.Class {
 	data := make([]openapi.Class, 0)
-	c := teacher.Cursor()
+	c := classesBucket.Cursor()
 
 	for k, v := c.First(); k != nil; k, v = c.Next() {
 		if v != nil {
 			continue
 		}
-		classBucket := teacher.Bucket(k)
+		classBucket := classesBucket.Bucket(k)
 		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
 		members := make([]string, 0)
 		if studentsBucket != nil {
@@ -145,12 +149,17 @@ func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int)
 			return fmt.Errorf("user does not exist")
 		}
 
-		classId, err = addClassDetailsTx(teacher, className, period)
+		classesBucket := teacher.Bucket([]byte(KeyClasses))
+		if classesBucket == nil {
+			return fmt.Errorf("Problem finding classesBucket")
+		}
+
+		classId, err = addClassDetailsTx(classesBucket, className, period)
 		if err != nil {
 			return err
 		}
 
-		classes = getClassesTx(teacher)
+		classes = getClassesTx(classesBucket)
 
 		return nil
 	})

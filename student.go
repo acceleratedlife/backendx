@@ -67,7 +67,6 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 	}
 
 	_, pathId, err := RoleByAddCode(a.db, body.AddCode)
-	println(err)
 	if err != nil {
 		return openapi.Response(404,
 			openapi.ResponseRegister4{
@@ -109,7 +108,11 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 		if teacher == nil {
 			return fmt.Errorf("can't find teacher")
 		}
-		classBucket := teacher.Bucket([]byte(pathId.classId))
+		classesBucket := teacher.Bucket([]byte(KeyClasses))
+		if classesBucket == nil {
+			return fmt.Errorf("can't find classesBucket")
+		}
+		classBucket := classesBucket.Bucket([]byte(pathId.classId))
 		if classBucket == nil {
 			return fmt.Errorf("can't find class")
 		}

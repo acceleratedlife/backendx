@@ -121,9 +121,17 @@ func createTeacher(db *bolt.DB, newUser UserInfo) (err error) {
 		if err != nil {
 			return err
 		}
-		_, err = teachers.CreateBucket([]byte(newUser.Email))
+		teacher, err := teachers.CreateBucket([]byte(newUser.Email))
 		if err != nil {
 			return err
+		}
+		_, err = teacher.CreateBucket([]byte(KeyAuctions))
+		if err != nil {
+			return nil
+		}
+		_, err = teacher.CreateBucket([]byte(KeyClasses))
+		if err != nil {
+			return nil
 		}
 		return nil
 	})
@@ -191,7 +199,11 @@ func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
 		if teacher == nil {
 			return fmt.Errorf("teacher not found")
 		}
-		class := teacher.Bucket([]byte(pathId.classId))
+		classes := teacher.Bucket([]byte(KeyClasses))
+		if classes == nil {
+			return fmt.Errorf("classes not found")
+		}
+		class := classes.Bucket([]byte(pathId.classId))
 		if class == nil {
 			return fmt.Errorf("class not found")
 		}

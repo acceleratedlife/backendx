@@ -124,9 +124,10 @@ func TestStudentAddClass_Teachers(t *testing.T) {
 		school, _ := SchoolByIdTx(tx, schools[0])
 		teachersBucket := school.Bucket([]byte(KeyTeachers))
 		teacher := teachersBucket.Bucket([]byte(teachers[0]))
-		c := teacher.Cursor()
+		classesBucket := teacher.Bucket([]byte(KeyClasses))
+		c := classesBucket.Cursor()
 		k, _ := c.First()
-		class := teacher.Bucket(k)
+		class := classesBucket.Bucket(k)
 		classAddCode = string(class.Get([]byte(KeyAddCode)))
 		return nil
 	})

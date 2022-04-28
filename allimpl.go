@@ -33,11 +33,18 @@ func getClassAtSchoolTx(tx *bolt.Tx, schoolId, classId string) (classBucket *bol
 			continue
 		}
 		teacher := teachers.Bucket(k)
-		classBucket = teacher.Bucket([]byte(classId)) //found the class
+		if teacher == nil {
+			continue
+		}
+		classesBucket := teacher.Bucket([]byte(KeyClasses))
+		if classesBucket == nil {
+			continue
+		}
+		classBucket = classesBucket.Bucket([]byte(classId)) //found the class
 		if classBucket == nil {
 			continue
 		}
-		return classBucket, teacher, nil
+		return classBucket, classesBucket, nil
 	}
 	return nil, nil, fmt.Errorf("class not found")
 }

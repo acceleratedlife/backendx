@@ -421,7 +421,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ResponseMakeAuction'
+                  $ref: '#/components/schemas/Auction'
                 type: array
           description: auctions matching criteria
         "404":
@@ -477,7 +477,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ResponseMakeAuction'
+                  $ref: '#/components/schemas/Auction'
                 type: array
           description: auctions matching criteria
         "404":
@@ -517,7 +517,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ResponseMakeAuction'
+                  $ref: '#/components/schemas/Auction'
                 type: array
           description: auctions matching criteria
         "400":
@@ -2051,47 +2051,6 @@ components:
           example: Auth failed, email not found
           type: string
       type: object
-    ResponseMakeAuction:
-      example:
-        itemNumber: FyW54G
-        winner:
-          firstName: Tommy
-          lastName: Boy
-        visibility:
-        - name: Entire School
-        - name: Entire School
-        endDate: 2000-01-23T04:56:07.000+00:00
-        description: Candy Bar
-        _id: 61be17e2f5691463b0fc972d
-        bid: 123.45
-        startDate: 2000-01-23T04:56:07.000+00:00
-      properties:
-        _id:
-          example: 61be17e2f5691463b0fc972d
-          type: string
-        bid:
-          example: 123.45
-          format: float
-          type: number
-        description:
-          example: Candy Bar
-          type: string
-        endDate:
-          format: date-time
-          type: string
-        startDate:
-          format: date-time
-          type: string
-        itemNumber:
-          example: FyW54G
-          type: string
-        winner:
-          $ref: '#/components/schemas/ResponseMakeAuction_winner'
-        visibility:
-          items:
-            $ref: '#/components/schemas/ResponseMakeAuction_visibility'
-          type: array
-      type: object
     ResponseRegister2:
       example:
         success: true
@@ -3031,26 +2990,6 @@ components:
           type: string
         lastName:
           example: Leno
-          type: string
-      type: object
-    ResponseMakeAuction_winner:
-      example:
-        firstName: Tommy
-        lastName: Boy
-      properties:
-        firstName:
-          example: Tommy
-          type: string
-        lastName:
-          example: Boy
-          type: string
-      type: object
-    ResponseMakeAuction_visibility:
-      example:
-        name: Entire School
-      properties:
-        name:
-          example: Entire School
           type: string
       type: object
     inline_response_200_5_assetID:

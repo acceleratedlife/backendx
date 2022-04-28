@@ -75,9 +75,6 @@ go/model_response_events_owner_id.go
 go/model_response_kick_class.go
 go/model_response_login2.go
 go/model_response_login4.go
-go/model_response_make_auction.go
-go/model_response_make_auction_visibility.go
-go/model_response_make_auction_winner.go
 go/model_response_member_class.go
 go/model_response_member_class_owner.go
 go/model_response_register2.go

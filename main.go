@@ -59,6 +59,12 @@ const (
 	KeyCareerEnd        = "CareerEnd"
 	KeyCollegeEnd       = "CollegeEnd"
 	KeyHistory          = "History"
+	KeyEntireSchool     = "entireSchool"
+	KeyTeacherClasses   = "teacherClasses"
+	KeyFreshman         = "freshman"
+	KeySophomores       = "sophomores"
+	KeyJuniors          = "juniors"
+	KeySeniors          = "seniors"
 )
 
 type Clock interface {

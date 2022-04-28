@@ -18,14 +18,32 @@ go tool cover -html cover.out
     - city
     - zip
     - addCode
+    "uBuck"
+        -totalCurrency
+        -freeCurrency
+        -history
     "teachers"
         [teacher-id]
-            [class-id]
-            - name
-            - period
-            - addCode
-            "students"
-                user-id: ''
+            "buck"
+                -name
+                -totalCurrency
+                -freeCurrency
+                -history
+            "auctions"
+                -bid
+                -maxBid
+                -description
+                -endDate
+                -startDate
+                -owner_id
+                -visibility
+            "classes"
+                [class-id]
+                - name
+                - period
+                - addCode
+                "students"
+                    user-id: ''
     "admins"
         user-id: ''
     "students"

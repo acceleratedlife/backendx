@@ -160,9 +160,9 @@ func (a *StaffApiServiceImpl) MakeAuction(ctx context.Context, s2 string, body o
 			return err
 		}
 
-		auctions, err := teacher.CreateBucketIfNotExists([]byte(KeyAuctions))
-		if err != nil {
-			return err
+		auctions := teacher.Bucket([]byte(KeyAuctions))
+		if auctions == nil {
+			return fmt.Errorf("Could not find auctions Bucket")
 		}
 
 		newCode := RandomString(6)
@@ -173,10 +173,17 @@ func (a *StaffApiServiceImpl) MakeAuction(ctx context.Context, s2 string, body o
 			StartDate:   body.StartDate,
 			EndDate:     body.EndDate,
 			ItemNumber:  newCode,
-			Bid:         int32(body.Bid),
+			Bid:         body.Bid,
+			MaxBid:      body.MaxBid,
 			Description: body.Description,
 			Visibility:  body.Visibility,
 		}
+
+		// if body.Visibility[0] == KeyEntireSchool {
+
+		// } else if body.Visibility[0] == KeyTeacherClasses {
+
+		// }
 		marshal, err := json.Marshal(auction)
 		if err != nil {
 			return fmt.Errorf("Failed to Marshal userDetails")
