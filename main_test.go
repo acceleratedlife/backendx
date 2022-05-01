@@ -217,7 +217,7 @@ func TestIntegrationAuth(t *testing.T) {
 	defer teardown()
 
 	InitDefaultAccounts(db)
-	auth := initAuth(db)
+	auth := initAuth(db, ServerConfig{})
 
 	mux := createRouter(db)
 
@@ -331,4 +331,63 @@ func TestInitialDB(t *testing.T) {
 	})
 
 	require.Nil(t, err)
+}
+
+func TestBackupSecured(t *testing.T) {
+
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/backup", backUpHandler(db))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	client := &http.Client{}
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://localhost:8089/admin/backup",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	get, err := client.Do(req)
+	require.Nil(t, err, fmt.Sprintf("backup failed: %v", err))
+	assert.NotNil(t, get)
+	assert.Equal(t, 200, get.StatusCode)
+
+	// wrong password
+	req, _ = http.NewRequest(http.MethodGet,
+		"http://localhost:8089/admin/backup",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDEx")
+	get, err = client.Do(req)
+	require.Nil(t, err, fmt.Sprintf("backup failed: %v", err))
+	assert.NotNil(t, get)
+	assert.Equal(t, 401, get.StatusCode)
+
+	// malformed password
+	req, _ = http.NewRequest(http.MethodGet,
+		"http://localhost:8089/admin/backup",
+		nil)
+	req.Header.Add("Authorization", "Basic malformed")
+	get, err = client.Do(req)
+	require.Nil(t, err, fmt.Sprintf("backup failed: %v", err))
+	assert.NotNil(t, get)
+	assert.Equal(t, 401, get.StatusCode)
+
 }
