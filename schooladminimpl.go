@@ -125,10 +125,6 @@ func createTeacher(db *bolt.DB, newUser UserInfo) (err error) {
 		if err != nil {
 			return err
 		}
-		_, err = teacher.CreateBucket([]byte(KeyAuctions))
-		if err != nil {
-			return nil
-		}
 		_, err = teacher.CreateBucket([]byte(KeyClasses))
 		if err != nil {
 			return nil

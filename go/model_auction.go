@@ -10,10 +10,6 @@
 
 package openapi
 
-import (
-	"time"
-)
-
 type Auction struct {
 	Id string `json:"_id"`
 
@@ -21,9 +17,9 @@ type Auction struct {
 
 	WinnerId string `json:"winner_id,omitempty"`
 
-	StartDate time.Time `json:"startDate"`
+	StartDate string `json:"startDate"`
 
-	EndDate time.Time `json:"endDate,omitempty"`
+	EndDate string `json:"endDate,omitempty"`
 
 	ItemNumber string `json:"itemNumber"`
 

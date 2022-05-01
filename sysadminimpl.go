@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	openapi "github.com/acceleratedlife/backend/go"
 	bolt "go.etcd.io/bbolt"
 )
@@ -78,7 +79,7 @@ func FindOrCreateSchool(db *bolt.DB, name string, city string, zip int) (id stri
 		}
 
 		for _, c := range def {
-			_, err = addClassDetailsTx(classes, c.name, c.period)
+			_, err = addClassDetailsTx(classes, c.name, c.period, true)
 			if err != nil {
 				return err
 			}

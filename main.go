@@ -65,6 +65,14 @@ const (
 	KeySophomores       = "sophomores"
 	KeyJuniors          = "juniors"
 	KeySeniors          = "seniors"
+	KeyBid              = "bid"
+	KeyMaxBid           = "maxBid"
+	KeyDescription      = "description"
+	KeyEndDate          = "endDate"
+	KeyStartDate        = "startDate"
+	KeyOwnerId          = "owner_id"
+	KeyVisibility       = "visibility"
+	KeyWinnerId         = "winner_id"
 )
 
 type Clock interface {

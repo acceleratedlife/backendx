@@ -151,60 +151,13 @@ func (a *StaffApiServiceImpl) MakeAuction(ctx context.Context, s2 string, body o
 		return openapi.Response(401, ""), nil
 	}
 
-	var resp []openapi.Auction
-
-	err = a.db.Update(func(tx *bolt.Tx) error {
-
-		teacher, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Name)
-		if err != nil {
-			return err
-		}
-
-		auctions := teacher.Bucket([]byte(KeyAuctions))
-		if auctions == nil {
-			return fmt.Errorf("Could not find auctions Bucket")
-		}
-
-		newCode := RandomString(6)
-		auction := openapi.Auction{
-			Id:          newCode,
-			OwnerId:     userDetails.Name,
-			WinnerId:    "",
-			StartDate:   body.StartDate,
-			EndDate:     body.EndDate,
-			ItemNumber:  newCode,
-			Bid:         body.Bid,
-			MaxBid:      body.MaxBid,
-			Description: body.Description,
-			Visibility:  body.Visibility,
-		}
-
-		// if body.Visibility[0] == KeyEntireSchool {
-
-		// } else if body.Visibility[0] == KeyTeacherClasses {
-
-		// }
-		marshal, err := json.Marshal(auction)
-		if err != nil {
-			return fmt.Errorf("Failed to Marshal userDetails")
-		}
-
-		err = auctions.Put([]byte(newCode), marshal)
-		if err != nil {
-			return err
-		}
-
-		resp = auctionsToSlice(auctions)
-
-		return nil
-
-	})
+	auctions, err := a.MakeAuctionImpl(userDetails, body)
 	if err != nil {
-		lgr.Printf("ERROR cannot auctions classes from the teacher: %s %v", userDetails.Name, err)
+		lgr.Printf("ERROR cannot make auctions from the teacher: %s %v", userDetails.Name, err)
 		return openapi.Response(500, "{}"), nil
 	}
 
-	return openapi.Response(200, resp), nil
+	return openapi.Response(200, auctions), nil
 }
 
 func (s *StaffApiServiceImpl) MakeClass(ctx context.Context, request openapi.RequestMakeClass) (openapi.ImplResponse, error) {
@@ -359,6 +312,17 @@ func auctionsToSlice(auctions *bolt.Bucket) (resp []openapi.Auction) {
 		}
 
 		resp = append(resp, auction)
+	}
+	return
+}
+
+func visibilityToSlice(classes *bolt.Bucket) (resp []string) {
+	c := classes.Cursor()
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v != nil {
+			continue
+		}
+		resp = append(resp, string(k))
 	}
 	return
 }

@@ -90,6 +90,37 @@ func getClassesTx(classesBucket *bolt.Bucket) []openapi.Class {
 	return classes
 }
 
+func getAuctionsTx(auctionsBucket *bolt.Bucket, ownerId string) []openapi.Auction {
+	auctions := make([]openapi.Auction, 0)
+
+	c := auctionsBucket.Cursor()
+
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v != nil {
+			continue
+		}
+
+		auctionBucket := auctionsBucket.Bucket(k)
+		if string(auctionBucket.Get([]byte(KeyOwnerId))) == ownerId {
+			iAuction := openapi.Auction{
+				Id:          string(k),
+				OwnerId:     string(auctionBucket.Get([]byte(KeyOwnerId))),  //this will be a problem as I don't know the owners name
+				WinnerId:    string(auctionBucket.Get([]byte(KeyWinnerId))), //this will be a problem as I don't know the winners name
+				StartDate:   string(auctionBucket.Get([]byte(KeyStartDate))),
+				EndDate:     string(auctionBucket.Get([]byte(KeyEndDate))),
+				ItemNumber:  RandomString(3),
+				Bid:         btoi32(auctionBucket.Get([]byte(KeyBid))),
+				MaxBid:      btoi32(auctionBucket.Get([]byte(KeyMaxBid))),
+				Description: string(auctionBucket.Get([]byte(KeyDescription))),
+				Visibility:  visibilityToSlice(auctionBucket.Bucket([]byte(KeyVisibility))),
+			}
+			auctions = append(auctions, iAuction)
+		}
+
+	}
+	return auctions
+}
+
 func getClasses1Tx(classesBucket *bolt.Bucket, ownerId string) []openapi.Class {
 	data := make([]openapi.Class, 0)
 	c := classesBucket.Cursor()
@@ -154,7 +185,7 @@ func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int)
 			return fmt.Errorf("Problem finding classesBucket")
 		}
 
-		classId, err = addClassDetailsTx(classesBucket, className, period)
+		classId, err = addClassDetailsTx(classesBucket, className, period, false)
 		if err != nil {
 			return err
 		}
@@ -166,9 +197,89 @@ func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int)
 	return
 }
 
-func addClassDetailsTx(bucket *bolt.Bucket, className string, period int) (classId string, err error) {
-	classId = RandomString(15)
+func (s *StaffApiServiceImpl) MakeAuctionImpl(userDetails UserInfo, request openapi.RequestMakeAuction) (auctions []openapi.Auction, err error) {
+	_, auctions, err = CreateAuction(s.db, userDetails, request)
 
+	return auctions, err
+}
+
+func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (auctionId string, auctions []openapi.Auction, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+		if err != nil {
+			return err
+		}
+		auctionsBucket, err := school.CreateBucketIfNotExists([]byte(KeyAuctions))
+		if err != nil {
+			return err
+		}
+
+		auctionId, err = addAuctionDetailsTx(auctionsBucket, request)
+		if err != nil {
+			return err
+		}
+
+		auctions = getAuctionsTx(auctionsBucket, userDetails.Name)
+
+		return nil
+	})
+
+	return
+}
+
+func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction) (auctionId string, err error) {
+	// auctionId = RandomString(15)
+	auctionId = request.EndDate.String()
+	auction, err1 := bucket.CreateBucket([]byte(auctionId)) //what happens if 2 actions are made to end at the same time?
+	if err1 != nil {
+		return "", err1
+	}
+
+	err = auction.Put([]byte(KeyBid), itob32(int32(request.Bid)))
+	if err != nil {
+		return "", err
+	}
+	err = auction.Put([]byte(KeyMaxBid), itob32(int32(request.MaxBid)))
+	if err != nil {
+		return "", err
+	}
+	err = auction.Put([]byte(KeyDescription), []byte(request.Description))
+	if err != nil {
+		return "", err
+	}
+	err = auction.Put([]byte(KeyEndDate), []byte(request.EndDate.String()))
+	if err != nil {
+		return "", err
+	}
+	err = auction.Put([]byte(KeyStartDate), []byte(request.StartDate.String()))
+	if err != nil {
+		return "", err
+	}
+	err = auction.Put([]byte(KeyOwnerId), []byte(request.Owner_id))
+	if err != nil {
+		return "", err
+	}
+	visibility, err := auction.CreateBucket([]byte(KeyVisibility))
+	if err != nil {
+		return "", err
+	}
+
+	for _, s := range request.Visibility {
+		visibility.CreateBucket([]byte(s))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return
+}
+
+func addClassDetailsTx(bucket *bolt.Bucket, className string, period int, adminClass bool) (classId string, err error) {
+	if adminClass {
+		classId = className
+	} else {
+		classId = RandomString(15)
+	}
 	class, err1 := bucket.CreateBucket([]byte(classId))
 	if err1 != nil {
 		return "", err1

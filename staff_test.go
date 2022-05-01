@@ -122,6 +122,34 @@ func TestEditClass(t *testing.T) {
 	require.Equal(t, classes[0], data.Id)
 }
 
+func TestKickClass(t *testing.T) {
+	db, tearDown := FullStartTestServer("kickClass", 8090, "")
+	defer tearDown()
+	members := 2
+
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, members)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestKickClass{
+		KickId: students[0],
+		Id:     classes[0],
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/classes/class/kick",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+}
+
 func TestDeleteClass(t *testing.T) {
 	db, tearDown := FullStartTestServer("DeleteClass", 8090, "")
 	defer tearDown()
@@ -180,7 +208,7 @@ func TestMakeAuction(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&respData)
 
-	assert.Equal(t, len(classes), len(respData[0].Visibility))
+	assert.Equal(t, len(classes)-4, len(respData[0].Visibility)) // -4 because both schools have freshman sophomores... the key is the same so only added once
 	assert.Equal(t, 1, len(respData))
 	// assert.Equal(t, 6, len(respData[0].AddCode))
 
