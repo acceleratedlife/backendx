@@ -12,8 +12,8 @@ package openapi
 
 import (
 	"context"
-	"net/http"
 	"errors"
+	"net/http"
 )
 
 // AllApiService is a service that implements the logic for the AllApiServicer
@@ -157,7 +157,7 @@ func (s *AllApiService) SearchClass(ctx context.Context, id RequestUser) (ImplRe
 }
 
 // SearchSchool - searches for a school
-func (s *AllApiService) SearchSchool(ctx context.Context, id string) (ImplResponse, error) {
+func (s *AllApiService) SearchSchool(ctx context.Context, id RequestUser) (ImplResponse, error) {
 	// TODO - update SearchSchool with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 

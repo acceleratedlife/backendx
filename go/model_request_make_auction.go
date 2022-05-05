@@ -15,9 +15,10 @@ import (
 )
 
 type RequestMakeAuction struct {
-	Bid int32 `json:"bid,omitempty"`
 
-	MaxBid int32 `json:"maxBid,omitempty"`
+	Bid float32 `json:"bid,omitempty"`
+
+	MaxBid float32 `json:"maxBid,omitempty"`
 
 	Description string `json:"description,omitempty"`
 
@@ -25,7 +26,7 @@ type RequestMakeAuction struct {
 
 	StartDate time.Time `json:"startDate,omitempty"`
 
-	Owner_id string `json:"owner_id,omitempty"`
+	OwnerId string `json:"owner_id,omitempty"`
 
 	Visibility []string `json:"visibility,omitempty"`
 }

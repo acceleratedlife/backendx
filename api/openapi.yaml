@@ -245,15 +245,6 @@ paths:
       description: by extracting user id and user school from request the proper account
         value is returned
       operationId: searchStudentUbuck
-      parameters:
-      - description: gets the _id from req.user._id
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       responses:
         "200":
           content:
@@ -273,15 +264,6 @@ paths:
         in its ref to the Crypto table. The crypto.usd may have to be updated if it
         is older than 60 seconds. It should be sorted in decending order.
       operationId: searchStudentCrypto
-      parameters:
-      - description: gets the _id from req.user._id
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       responses:
         "200":
           content:
@@ -303,14 +285,6 @@ paths:
         than 60 seconds
       operationId: searchCrypto
       parameters:
-      - description: gets the _id from req.user._id
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       - description: get the crypto from name
         explode: true
         in: query
@@ -413,7 +387,7 @@ paths:
         name: _id
         required: true
         schema:
-          type: string
+          $ref: '#/components/schemas/RequestUser'
         style: form
       responses:
         "200":
@@ -462,15 +436,6 @@ paths:
         with firstName and lastName and sorted by endDate ascending. Visibility is
         populated with name and sorted by name ascending.
       operationId: searchAuctionsTeacher
-      parameters:
-      - description: pass the id to be searched
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       responses:
         "200":
           content:
@@ -497,15 +462,6 @@ paths:
         name and sorted by name ascending. With winner populated with firstName and
         lastName. Make all auctions sorted by endDate ascending.
       operationId: makeAuction
-      parameters:
-      - description: pass the id to be searched
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       requestBody:
         content:
           application/json:
@@ -535,15 +491,6 @@ paths:
         with lastName. Populate winner with firstName, lastName and _id. Sort by endDate
         ascending
       operationId: searchAuctionsStudent
-      parameters:
-      - description: pass the id to be searched
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       responses:
         "200":
           content:
@@ -803,10 +750,6 @@ paths:
               $ref: '#/components/schemas/RequestKickClass'
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseKickClass'
           description: class member has been removed from class
         "404":
           description: member cannot be removed with that data
@@ -1606,33 +1549,39 @@ components:
         visibility:
         - 613eab19e58cc511801af657
         - 613eab19e58cc511801af657
-        endDate: 2000-01-23T04:56:07.000+00:00
-        owner_id: 613eab19e58cc511801af657
-        winner_id: 613eab19e58cc511801af657
+        endDate: endDate
+        owner_id:
+          lastName: Jones
+          _id: ou812
+        maxBid: 4
+        winner_id:
+          firstName: Tom
+          lastName: Jones
+          _id: ou812
         description: Candy Bar
         _id: 613eab19e58cc511801af657
         bid: 4
-        startDate: 2000-01-23T04:56:07.000+00:00
+        startDate: startDate
       properties:
         _id:
           example: 613eab19e58cc511801af657
           type: string
         owner_id:
-          example: 613eab19e58cc511801af657
-          type: string
+          $ref: '#/components/schemas/Auction_owner_id'
         winner_id:
-          example: 613eab19e58cc511801af657
-          type: string
+          $ref: '#/components/schemas/Auction_winner_id'
         startDate:
-          format: date-time
           type: string
         endDate:
-          format: date-time
           type: string
         itemNumber:
           example: dkeD56
           type: string
         bid:
+          default: 0
+          example: 4
+          type: integer
+        maxBid:
           default: 0
           example: 4
           type: integer
@@ -1989,8 +1938,6 @@ components:
           $ref: '#/components/schemas/ResponseEvents_owner_id'
       type: object
     ResponseKickClass:
-      example:
-        kick_id: 613eab19e58cc511801af657
       properties:
         kick_id:
           example: 613eab19e58cc511801af657
@@ -2157,18 +2104,21 @@ components:
       type: object
     RequestMakeAuction:
       example:
-        owner: 61be17e2f5691463b0fc972d
         visibility:
         - 613eab19e58cc511801af657
         - 613eab19e58cc511801af657
         endDate: 2000-01-23T04:56:07.000+00:00
+        owner_id: 61be17e2f5691463b0fc972d
+        maxBid: 123
         description: candy
-        bid: 123.35
+        bid: 123
         startDate: 2000-01-23T04:56:07.000+00:00
       properties:
         bid:
-          example: 123.35
-          format: float
+          example: 123
+          type: number
+        maxBid:
+          example: 123
           type: number
         description:
           example: candy
@@ -2179,7 +2129,7 @@ components:
         startDate:
           format: date-time
           type: string
-        owner:
+        owner_id:
           example: 61be17e2f5691463b0fc972d
           type: string
         visibility:
@@ -2484,6 +2434,18 @@ components:
       - school
       - token
       - tokenExp
+      type: object
+    Schema:
+      properties:
+        id:
+          format: int64
+          type: integer
+      type: object
+    Schema1:
+      properties:
+        id:
+          format: int64
+          type: integer
       type: object
     schools_school_body:
       properties:
@@ -2925,6 +2887,34 @@ components:
           type: string
         message:
           example: There is no confirmed user with that email
+          type: string
+      type: object
+    Auction_owner_id:
+      example:
+        lastName: Jones
+        _id: ou812
+      properties:
+        lastName:
+          example: Jones
+          type: string
+        _id:
+          example: ou812
+          type: string
+      type: object
+    Auction_winner_id:
+      example:
+        firstName: Tom
+        lastName: Jones
+        _id: ou812
+      properties:
+        firstName:
+          example: Tom
+          type: string
+        lastName:
+          example: Jones
+          type: string
+        _id:
+          example: ou812
           type: string
       type: object
     ClassWithMembers_members:

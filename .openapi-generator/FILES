@@ -25,6 +25,8 @@ go/model_account.go
 go/model_accounts_account_body.go
 go/model_accounts_account_body_1.go
 go/model_auction.go
+go/model_auction_owner_id.go
+go/model_auction_winner_id.go
 go/model_buck.go
 go/model_bucks_buck_body.go
 go/model_bucks_buck_body_1.go
@@ -81,6 +83,8 @@ go/model_response_register2.go
 go/model_response_register4.go
 go/model_response_schools.go
 go/model_response_transactions.go
+go/model_schema.go
+go/model_schema1.go
 go/model_school.go
 go/model_schools_school_body.go
 go/model_schools_school_body_1.go

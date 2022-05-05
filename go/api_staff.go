@@ -133,7 +133,9 @@ func (c *StaffApiController) Routes() Routes {
 // DeleteAuction - delete auction
 func (c *StaffApiController) DeleteAuction(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := query.Get("_id")
+	idParam := RequestUser{
+		query.Get("_id"),
+	}
 	result, err := c.service.DeleteAuction(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
@@ -212,7 +214,6 @@ func (c *StaffApiController) KickClass(w http.ResponseWriter, r *http.Request) {
 
 // MakeAuction - make a new auction
 func (c *StaffApiController) MakeAuction(w http.ResponseWriter, r *http.Request) {
-	userIdParam := r.Header.Get("user._id")
 	requestMakeAuctionParam := RequestMakeAuction{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
@@ -224,7 +225,7 @@ func (c *StaffApiController) MakeAuction(w http.ResponseWriter, r *http.Request)
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.MakeAuction(r.Context(), userIdParam, requestMakeAuctionParam)
+	result, err := c.service.MakeAuction(r.Context(), requestMakeAuctionParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -324,8 +325,7 @@ func (c *StaffApiController) SearchAllBucks(w http.ResponseWriter, r *http.Reque
 
 // SearchAuctionsTeacher - searches auctions
 func (c *StaffApiController) SearchAuctionsTeacher(w http.ResponseWriter, r *http.Request) {
-	userIdParam := r.Header.Get("user._id")
-	result, err := c.service.SearchAuctionsTeacher(r.Context(), userIdParam)
+	result, err := c.service.SearchAuctionsTeacher(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

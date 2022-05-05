@@ -26,7 +26,7 @@ func (a *StudentApiServiceImpl) CryptoConvert(context.Context, string, openapi.T
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchAuctionsStudent(context.Context, string) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) SearchAuctionsStudent(context.Context) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -34,7 +34,7 @@ func (a *StudentApiServiceImpl) SearchBuckTransaction(context.Context, string) (
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchCrypto(context.Context, string, string) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) SearchCrypto(context.Context, string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -42,11 +42,11 @@ func (a *StudentApiServiceImpl) SearchCryptoTransaction(context.Context, string)
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchStudentCrypto(context.Context, string) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) SearchStudentCrypto(context.Context) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchStudentUbuck(context.Context, string) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) SearchStudentUbuck(context.Context) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }

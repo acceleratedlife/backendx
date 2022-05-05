@@ -90,7 +90,95 @@ func getClassesTx(classesBucket *bolt.Bucket) []openapi.Class {
 	return classes
 }
 
-func getAuctionsTx(auctionsBucket *bolt.Bucket, ownerId string) []openapi.Auction {
+func getAuctions(db *bolt.DB, userDetails UserInfo) (resp []openapi.Auction, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+		if err != nil {
+			return err
+		}
+		auctionsBucket := school.Bucket([]byte(KeyAuctions))
+		if auctionsBucket == nil {
+			return fmt.Errorf("Cannot find auctions")
+		}
+
+		resp, err = getAuctionsTx(tx, auctionsBucket, userDetails.Name)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func getAuctionBucket(db *bolt.DB, schoolBucket *bolt.Bucket, auctionId string) (auctionsBucket, auctionBucket *bolt.Bucket, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		auctionsBucket, auctionBucket, err = getAuctionBucketTx(tx, schoolBucket, auctionId)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return
+}
+
+func getAuctionBucketTx(tx *bolt.Tx, schoolBucket *bolt.Bucket, auctionId string) (auctionsBucket, auctionBucket *bolt.Bucket, err error) {
+	auctionsBucket = schoolBucket.Bucket([]byte(KeyAuctions))
+	if auctionsBucket == nil {
+		return auctionsBucket, auctionBucket, fmt.Errorf("cannot find auctions bucket")
+	}
+
+	auctionBucket = auctionsBucket.Bucket([]byte(auctionId))
+	if auctionBucket == nil {
+		return auctionsBucket, auctionBucket, fmt.Errorf("cannot find auction bucket")
+	}
+
+	return
+}
+
+func getSchoolBucket(db *bolt.DB, userDetails UserInfo) (school *bolt.Bucket, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		school, err = getSchoolBucketTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+func getSchoolBucketTx(tx *bolt.Tx, userDetails UserInfo) (school *bolt.Bucket, err error) {
+	schools := tx.Bucket([]byte(KeySchools))
+	if schools == nil {
+		return nil, fmt.Errorf("cannot find schools bucket")
+	}
+
+	school = schools.Bucket([]byte(userDetails.SchoolId))
+	if school == nil {
+		return nil, fmt.Errorf("cannot find school bucket")
+	}
+
+	return
+}
+
+func getAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, ownerId string) ([]openapi.Auction, error) {
 	auctions := make([]openapi.Auction, 0)
 
 	c := auctionsBucket.Cursor()
@@ -104,8 +192,6 @@ func getAuctionsTx(auctionsBucket *bolt.Bucket, ownerId string) []openapi.Auctio
 		if string(auctionBucket.Get([]byte(KeyOwnerId))) == ownerId {
 			iAuction := openapi.Auction{
 				Id:          string(k),
-				OwnerId:     string(auctionBucket.Get([]byte(KeyOwnerId))),  //this will be a problem as I don't know the owners name
-				WinnerId:    string(auctionBucket.Get([]byte(KeyWinnerId))), //this will be a problem as I don't know the winners name
 				StartDate:   string(auctionBucket.Get([]byte(KeyStartDate))),
 				EndDate:     string(auctionBucket.Get([]byte(KeyEndDate))),
 				ItemNumber:  RandomString(3),
@@ -114,11 +200,31 @@ func getAuctionsTx(auctionsBucket *bolt.Bucket, ownerId string) []openapi.Auctio
 				Description: string(auctionBucket.Get([]byte(KeyDescription))),
 				Visibility:  visibilityToSlice(auctionBucket.Bucket([]byte(KeyVisibility))),
 			}
+
+			ownerDetails, err := getUserInLocalStoreTx(tx, string(auctionBucket.Get([]byte(KeyOwnerId))))
+			if err != nil {
+				return nil, err
+			}
+
+			iAuction.OwnerId = openapi.AuctionOwnerId{
+				LastName: ownerDetails.LastName,
+				Id:       ownerDetails.Name,
+			}
+
+			winnerDetails, err := getUserInLocalStoreTx(tx, string(auctionBucket.Get([]byte(KeyWinnerId))))
+			if err != nil {
+				iAuction.WinnerId = openapi.AuctionWinnerId{
+					FirstName: winnerDetails.FirstName,
+					LastName:  winnerDetails.LastName,
+					Id:        winnerDetails.Name,
+				}
+			}
+
 			auctions = append(auctions, iAuction)
 		}
 
 	}
-	return auctions
+	return auctions, nil
 }
 
 func getClasses1Tx(classesBucket *bolt.Bucket, ownerId string) []openapi.Class {
@@ -219,7 +325,10 @@ func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMak
 			return err
 		}
 
-		auctions = getAuctionsTx(auctionsBucket, userDetails.Name)
+		auctions, err = getAuctionsTx(tx, auctionsBucket, userDetails.Name)
+		if err != nil {
+			return err
+		}
 
 		return nil
 	})
@@ -255,7 +364,7 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 	if err != nil {
 		return "", err
 	}
-	err = auction.Put([]byte(KeyOwnerId), []byte(request.Owner_id))
+	err = auction.Put([]byte(KeyOwnerId), []byte(request.OwnerId))
 	if err != nil {
 		return "", err
 	}
@@ -266,9 +375,6 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 
 	for _, s := range request.Visibility {
 		visibility.CreateBucket([]byte(s))
-		if err != nil {
-			return "", err
-		}
 	}
 
 	return

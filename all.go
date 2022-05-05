@@ -112,7 +112,7 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.Reque
 	return openapi.Response(200, resp), nil
 }
 
-func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.ImplResponse, error) {
+func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s openapi.RequestUser) (openapi.ImplResponse, error) {
 	//TODO implement me
 	//depricated
 	panic("implement me")

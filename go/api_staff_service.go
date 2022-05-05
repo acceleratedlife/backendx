@@ -28,7 +28,7 @@ func NewStaffApiService() StaffApiServicer {
 }
 
 // DeleteAuction - delete auction
-func (s *StaffApiService) DeleteAuction(ctx context.Context, id string) (ImplResponse, error) {
+func (s *StaffApiService) DeleteAuction(ctx context.Context, id RequestUser) (ImplResponse, error) {
 	// TODO - update DeleteAuction with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -74,8 +74,8 @@ func (s *StaffApiService) KickClass(ctx context.Context, requestKickClass Reques
 	// TODO - update KickClass with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, ResponseKickClass{}) or use other options such as http.Ok ...
-	//return Response(200, ResponseKickClass{}), nil
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -84,7 +84,7 @@ func (s *StaffApiService) KickClass(ctx context.Context, requestKickClass Reques
 }
 
 // MakeAuction - make a new auction
-func (s *StaffApiService) MakeAuction(ctx context.Context, userId string, requestMakeAuction RequestMakeAuction) (ImplResponse, error) {
+func (s *StaffApiService) MakeAuction(ctx context.Context, requestMakeAuction RequestMakeAuction) (ImplResponse, error) {
 	// TODO - update MakeAuction with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -154,7 +154,7 @@ func (s *StaffApiService) SearchAllBucks(ctx context.Context, id string) (ImplRe
 }
 
 // SearchAuctionsTeacher - searches auctions
-func (s *StaffApiService) SearchAuctionsTeacher(ctx context.Context, userId string) (ImplResponse, error) {
+func (s *StaffApiService) SearchAuctionsTeacher(ctx context.Context) (ImplResponse, error) {
 	// TODO - update SearchAuctionsTeacher with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 

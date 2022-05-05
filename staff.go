@@ -23,9 +23,50 @@ func (s StaffApiServiceImpl) SearchEvents(ctx context.Context, s2 string) (opena
 	panic("implement me")
 }
 
-func (s StaffApiServiceImpl) DeleteAuction(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	auctions := make([]openapi.Auction, 0)
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		schoolBucket, err := getSchoolBucketTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		auctionsBucket, _, err := getAuctionBucketTx(tx, schoolBucket, query.Id)
+		if err != nil {
+			return err
+		}
+
+		err = auctionsBucket.DeleteBucket([]byte(query.Id))
+		if err != nil {
+			return err
+		}
+
+		auctions, err = getAuctionsTx(tx, auctionsBucket, userDetails.Name)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR cannot delete auction from the school: %s %v", userDetails.SchoolId, err)
+		return openapi.Response(500, "{}"), nil
+	}
+
+	return openapi.Response(200, auctions), nil
 }
 
 func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
@@ -138,7 +179,7 @@ func (a *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.Reques
 	return openapi.Response(200, nil), nil
 }
 
-func (a *StaffApiServiceImpl) MakeAuction(ctx context.Context, s2 string, body openapi.RequestMakeAuction) (openapi.ImplResponse, error) {
+func (a *StaffApiServiceImpl) MakeAuction(ctx context.Context, body openapi.RequestMakeAuction) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -234,8 +275,24 @@ func (s StaffApiServiceImpl) SearchAllBucks(ctx context.Context, s2 string) (ope
 	panic("implement me")
 }
 
-func (s StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
-	resp := make([]string, 0)
+func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	resp, err := getAuctions(s.db, userDetails)
+	if err != nil {
+		return openapi.Response(400, err), nil
+	}
+
 	return openapi.Response(200, resp), nil
 }
 

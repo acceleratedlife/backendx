@@ -70,7 +70,7 @@ func (s *StudentApiService) CryptoConvert(ctx context.Context, userId string, tr
 }
 
 // SearchAuctionsStudent - searches auctions
-func (s *StudentApiService) SearchAuctionsStudent(ctx context.Context, userId string) (ImplResponse, error) {
+func (s *StudentApiService) SearchAuctionsStudent(ctx context.Context) (ImplResponse, error) {
 	// TODO - update SearchAuctionsStudent with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -98,7 +98,7 @@ func (s *StudentApiService) SearchBuckTransaction(ctx context.Context, id string
 }
 
 // SearchCrypto - returns the given crypto price, how many are owned and how many ubucks the user has.
-func (s *StudentApiService) SearchCrypto(ctx context.Context, userId string, name string) (ImplResponse, error) {
+func (s *StudentApiService) SearchCrypto(ctx context.Context, name string) (ImplResponse, error) {
 	// TODO - update SearchCrypto with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -126,7 +126,7 @@ func (s *StudentApiService) SearchCryptoTransaction(ctx context.Context, id stri
 }
 
 // SearchStudentCrypto - returns all crypto accounts for specific user
-func (s *StudentApiService) SearchStudentCrypto(ctx context.Context, userId string) (ImplResponse, error) {
+func (s *StudentApiService) SearchStudentCrypto(ctx context.Context) (ImplResponse, error) {
 	// TODO - update SearchStudentCrypto with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -140,7 +140,7 @@ func (s *StudentApiService) SearchStudentCrypto(ctx context.Context, userId stri
 }
 
 // SearchStudentUbuck - searches accounts for UBuck for this student at this school
-func (s *StudentApiService) SearchStudentUbuck(ctx context.Context, userId string) (ImplResponse, error) {
+func (s *StudentApiService) SearchStudentUbuck(ctx context.Context) (ImplResponse, error) {
 	// TODO - update SearchStudentUbuck with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
