@@ -44,49 +44,51 @@ type Transaction struct {
 
 // adds ubucks from CB
 //creates order, transaction into student account, update account balance, update ubuck balance
-func addUbuck2Student(db *bolt.DB, clock Clock, studentId string, amount decimal.Decimal, reference string) error {
+func addUbuck2Student(db *bolt.DB, clock Clock, userInfo UserInfo, amount decimal.Decimal, reference string) error {
 	return db.Update(func(tx *bolt.Tx) error {
-		return addUbuck2StudentTx(tx, clock, studentId, amount, reference)
+		return addUbuck2StudentTx(tx, clock, userInfo, amount, reference)
 	})
 }
 
 // register order, transactions in students account, transactions i CB
 // your functions should sit in a separete file
-func addUbuck2StudentTx(tx *bolt.Tx, clock Clock, studentId string, amount decimal.Decimal, reference string) error {
+func addUbuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, reference string) error {
+	if userInfo.Role != UserRoleStudent {
+		return fmt.Errorf("user is not a student")
+	}
+
 	ts := clock.Now()
-	tsk, err := ts.MarshalText()
-
-	if err != nil {
-		return err
-	}
-
-	order := Order{
-		Source:      KeyCB,
-		Destination: studentId,
-		Currency:    CurrencyUBuck,
-		Amount:      amount,
-		Reference:   reference,
-	}
-
-	orders, err := tx.CreateBucketIfNotExists([]byte(KeyOrders))
-	if err != nil {
-		return fmt.Errorf("no bucket orders: %v", err)
-	}
-
-	orderV, err := json.Marshal(order)
-	if err != nil {
-		return err
-	}
-
-	err = orders.Put(tsk, orderV)
-	if err != nil {
-		return err
-	}
+	//tsk, err := ts.MarshalText()
+	//
+	//if err != nil {
+	//	return err
+	//}
+	//order := Order{
+	//	Source:      KeyCB,
+	//	Destination: userInfo.Name,
+	//	Currency:    CurrencyUBuck,
+	//	Amount:      amount,
+	//	Reference:   reference,
+	//}
+	//orders, err := tx.CreateBucketIfNotExists([]byte(KeyOrders))
+	//if err != nil {
+	//	return fmt.Errorf("no bucket orders: %v", err)
+	//}
+	//
+	//orderV, err := json.Marshal(order)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//err = orders.Put(tsk, orderV)
+	//if err != nil {
+	//	return err
+	//}
 
 	transaction := Transaction{
 		Ts:             ts,
 		Source:         "",
-		Destination:    studentId,
+		Destination:    userInfo.Name,
 		CurrencySource: CurrencyUBuck,
 		CurrencyDest:   CurrencyUBuck,
 		AmountSource:   amount,
@@ -94,7 +96,7 @@ func addUbuck2StudentTx(tx *bolt.Tx, clock Clock, studentId string, amount decim
 		XRate:          decimal.NewFromFloat32(1.0),
 		Reference:      reference,
 	}
-	student, err := getStudentBucketTx(tx, studentId)
+	student, err := getStudentBucketTx(tx, userInfo.Name)
 	if err != nil {
 		return err
 	}
@@ -103,7 +105,7 @@ func addUbuck2StudentTx(tx *bolt.Tx, clock Clock, studentId string, amount decim
 		return err
 	}
 
-	cb, err := tx.CreateBucketIfNotExists([]byte(KeyCB))
+	cb, err := getCbTx(tx, userInfo.SchoolId)
 	if err != nil {
 		return err
 	}
@@ -248,10 +250,10 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 		err = student.Put([]byte(KeyDayPayment), payDate)
 		if err != nil {
-			return fmt.Errorf("cannot save gaily payment date: %v", err)
+			return fmt.Errorf("cannot save daily payment date: %v", err)
 		}
 		pay := decimal.NewFromFloat32(121.32)
-		return addUbuck2StudentTx(tx, clock, userDetails.Name, pay, "daily payment")
+		return addUbuck2StudentTx(tx, clock, userDetails, pay, "daily payment")
 	})
 
 	if err != nil {
@@ -276,4 +278,24 @@ func IsDailyPayNeeded(student *bolt.Bucket, clock Clock) bool {
 		return true
 	}
 	return false
+}
+
+func getCbTx(tx *bolt.Tx, schoolId string) (cb *bolt.Bucket, err error) {
+	school, err := SchoolByIdTx(tx, schoolId)
+	if err != nil {
+		return nil, err
+	}
+	return school.CreateBucketIfNotExists([]byte(KeyCB))
+}
+
+func getCbRx(tx *bolt.Tx, schoolId string) (cb *bolt.Bucket, err error) {
+	school, err := SchoolByIdTx(tx, schoolId)
+	if err != nil {
+		return nil, err
+	}
+	cb = school.Bucket([]byte(KeyCB))
+	if cb == nil {
+		return nil, fmt.Errorf("cannot find CB for school %s", schoolId)
+	}
+	return cb, nil
 }
