@@ -42,7 +42,6 @@ const (
 	KeyTeachers         = "teachers"
 	KeySchools          = "schools"
 	KeyStudents         = "students"
-	KeyOrders           = "orders"
 	KeyClasses          = "classes"
 	KeyAddCode          = "addCode"
 	KeyName             = "name"
