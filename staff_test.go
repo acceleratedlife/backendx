@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"testing"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -190,6 +191,12 @@ func TestDeleteAuction(t *testing.T) {
 		Visibility:  classes,
 	}
 
+	auctions, err := s.MakeAuctionImpl(UserInfo{
+		Name:     teachers[0],
+		SchoolId: schools[0],
+		Role:     UserRoleTeacher,
+	}, body)
+
 	_, err = s.MakeAuctionImpl(UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
@@ -200,8 +207,13 @@ func TestDeleteAuction(t *testing.T) {
 
 	client := &http.Client{}
 
+	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/auctions/auction")
+	q := u.Query()
+	q.Set("_id", auctions[0].Id)
+	u.RawQuery = q.Encode()
+
 	req, err := http.NewRequest(http.MethodDelete,
-		"http://127.0.0.1:8090/api/auctions/auction?_id=hello",
+		u.String(),
 		nil)
 
 	resp, err := client.Do(req)
@@ -215,7 +227,7 @@ func TestDeleteAuction(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&respData)
 
-	assert.Equal(t, 0, len(respData))
+	assert.Equal(t, 1, len(respData))
 
 }
 

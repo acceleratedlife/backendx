@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
@@ -309,7 +310,7 @@ func (s *StaffApiServiceImpl) MakeAuctionImpl(userDetails UserInfo, request open
 	return auctions, err
 }
 
-func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (auctionId string, auctions []openapi.Auction, err error) {
+func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (auctionId time.Time, auctions []openapi.Auction, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 		if err != nil {
@@ -336,41 +337,45 @@ func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMak
 	return
 }
 
-func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction) (auctionId string, err error) {
-	// auctionId = RandomString(15)
-	auctionId = request.EndDate.String()
-	auction, err1 := bucket.CreateBucket([]byte(auctionId)) //what happens if 2 actions are made to end at the same time?
+func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction) (auctionId time.Time, err error) {
+	auctionId = request.EndDate
+	auction, err1 := bucket.CreateBucket([]byte(auctionId.String()))
+	for err1 != nil && err1.Error() == "bucket already exists" {
+		auctionId = auctionId.Add(time.Millisecond * 1)
+		auction, err1 = bucket.CreateBucket([]byte(auctionId.String()))
+	}
+
 	if err1 != nil {
-		return "", err1
+		return time.Time{}, err1
 	}
 
 	err = auction.Put([]byte(KeyBid), itob32(int32(request.Bid)))
 	if err != nil {
-		return "", err
+		return time.Time{}, err
 	}
 	err = auction.Put([]byte(KeyMaxBid), itob32(int32(request.MaxBid)))
 	if err != nil {
-		return "", err
+		return time.Time{}, err
 	}
 	err = auction.Put([]byte(KeyDescription), []byte(request.Description))
 	if err != nil {
-		return "", err
+		return time.Time{}, err
 	}
 	err = auction.Put([]byte(KeyEndDate), []byte(request.EndDate.String()))
 	if err != nil {
-		return "", err
+		return time.Time{}, err
 	}
 	err = auction.Put([]byte(KeyStartDate), []byte(request.StartDate.String()))
 	if err != nil {
-		return "", err
+		return time.Time{}, err
 	}
 	err = auction.Put([]byte(KeyOwnerId), []byte(request.OwnerId))
 	if err != nil {
-		return "", err
+		return time.Time{}, err
 	}
 	visibility, err := auction.CreateBucket([]byte(KeyVisibility))
 	if err != nil {
-		return "", err
+		return time.Time{}, err
 	}
 
 	for _, s := range request.Visibility {
