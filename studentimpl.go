@@ -53,68 +53,7 @@ func addUbuck2Student(db *bolt.DB, clock Clock, userInfo UserInfo, amount decima
 // register order, transactions in students account, transactions i CB
 // your functions should sit in a separete file
 func addUbuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, reference string) error {
-	if userInfo.Role != UserRoleStudent {
-		return fmt.Errorf("user is not a student")
-	}
-
-	ts := clock.Now()
-	//tsk, err := ts.MarshalText()
-	//
-	//if err != nil {
-	//	return err
-	//}
-	//order := Order{
-	//	Source:      KeyCB,
-	//	Destination: userInfo.Name,
-	//	Currency:    CurrencyUBuck,
-	//	Amount:      amount,
-	//	Reference:   reference,
-	//}
-	//orders, err := tx.CreateBucketIfNotExists([]byte(KeyOrders))
-	//if err != nil {
-	//	return fmt.Errorf("no bucket orders: %v", err)
-	//}
-	//
-	//orderV, err := json.Marshal(order)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//err = orders.Put(tsk, orderV)
-	//if err != nil {
-	//	return err
-	//}
-
-	transaction := Transaction{
-		Ts:             ts,
-		Source:         "",
-		Destination:    userInfo.Name,
-		CurrencySource: CurrencyUBuck,
-		CurrencyDest:   CurrencyUBuck,
-		AmountSource:   amount,
-		AmountDest:     amount,
-		XRate:          decimal.NewFromFloat32(1.0),
-		Reference:      reference,
-	}
-	student, err := getStudentBucketTx(tx, userInfo.Name)
-	if err != nil {
-		return err
-	}
-	_, err = addToHolderTx(student, CurrencyUBuck, transaction, OperationCredit)
-	if err != nil {
-		return err
-	}
-
-	cb, err := getCbTx(tx, userInfo.SchoolId)
-	if err != nil {
-		return err
-	}
-	_, err = addToHolderTx(cb, CurrencyUBuck, transaction, OperationDebit)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return pay2StudentTx(tx, clock, userInfo, amount, CurrencyUBuck, reference)
 
 }
 
@@ -303,4 +242,147 @@ func getCbRx(tx *bolt.Tx, schoolId string) (cb *bolt.Bucket, err error) {
 		return nil, fmt.Errorf("cannot find CB for school %s", schoolId)
 	}
 	return cb, nil
+}
+
+func chargeStudentUbuck(db *bolt.DB, clock Clock, userDetails UserInfo, amount decimal.Decimal, reference string) (err error) {
+	return db.Update(func(tx *bolt.Tx) error {
+		return chargeStudentUbuckTx(tx, clock, userDetails, amount, reference)
+	})
+}
+func chargeStudentUbuckTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount decimal.Decimal, reference string) (err error) {
+	return chargeStudentTx(tx, clock, userDetails, amount, CurrencyUBuck, reference)
+
+}
+
+func pay2Student(db *bolt.DB, clock Clock, userInfo UserInfo, amount decimal.Decimal, currency string, reference string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		return pay2StudentTx(tx, clock, userInfo, amount, currency, reference)
+	})
+}
+
+func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, currency string, reference string) error {
+	if userInfo.Role != UserRoleStudent {
+		return fmt.Errorf("user is not a student")
+	}
+	if amount.Sign() <= 0 {
+		return fmt.Errorf("amount must be positive")
+	}
+	res, err := isCurrencyTx(tx, userInfo.SchoolId, currency)
+	if err != nil || !res {
+		return fmt.Errorf("currency %s is not supported, %v", currency, err)
+	}
+	
+	ts := clock.Now()
+
+	transaction := Transaction{
+		Ts:             ts,
+		Source:         "",
+		Destination:    userInfo.Name,
+		CurrencySource: currency,
+		CurrencyDest:   currency,
+		AmountSource:   amount,
+		AmountDest:     amount,
+		XRate:          decimal.NewFromFloat32(1.0),
+		Reference:      reference,
+	}
+	student, err := getStudentBucketTx(tx, userInfo.Name)
+	if err != nil {
+		return err
+	}
+	_, err = addToHolderTx(student, currency, transaction, OperationCredit)
+	if err != nil {
+		return err
+	}
+
+	cb, err := getCbTx(tx, userInfo.SchoolId)
+	if err != nil {
+		return err
+	}
+	_, err = addToHolderTx(cb, currency, transaction, OperationDebit)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func chargeStudent(db *bolt.DB, clock Clock, userDetails UserInfo, amount decimal.Decimal, currency string, reference string) (err error) {
+	return db.Update(func(tx *bolt.Tx) error {
+		return chargeStudentTx(tx, clock, userDetails, amount, currency, reference)
+	})
+}
+
+func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount decimal.Decimal, currency string, reference string) (err error) {
+	if userDetails.Role != UserRoleStudent {
+		return fmt.Errorf("user is not a student")
+	}
+	if amount.Sign() <= 0 {
+		return fmt.Errorf("amount must be positive")
+	}
+
+	ts := clock.Now()
+
+	transaction := Transaction{
+		Ts:             ts,
+		Source:         userDetails.Name,
+		Destination:    "",
+		CurrencySource: currency,
+		CurrencyDest:   currency,
+		AmountSource:   amount,
+		AmountDest:     amount,
+		XRate:          decimal.NewFromFloat32(1.0),
+		Reference:      reference,
+	}
+	student, err := getStudentBucketTx(tx, userDetails.Name)
+	if err != nil {
+		return err
+	}
+
+	newBalance, err := addToHolderTx(student, currency, transaction, OperationDebit)
+	if err != nil {
+		return err
+	}
+	if newBalance.Sign() < 0 {
+		return fmt.Errorf("ubuck balance for %s is negative", userDetails.Name)
+	}
+
+	cb, err := getCbTx(tx, userDetails.SchoolId)
+	if err != nil {
+		return err
+	}
+	_, err = addToHolderTx(cb, currency, transaction, OperationCredit)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/*
+check if the currency exists in given school
+*/
+func isCurrencyTx(tx *bolt.Tx, schoolId string, currency string) (bool, error) {
+	if currency == CurrencyUBuck {
+		return true, nil
+	}
+
+	schools := tx.Bucket([]byte(KeySchools))
+	if schools == nil {
+		return false, fmt.Errorf("schools  does not exist")
+	}
+
+	school := schools.Bucket([]byte(schoolId))
+
+	if school == nil {
+		return false, fmt.Errorf("student not found")
+	}
+	teachers := school.Bucket([]byte(KeyTeachers))
+	if teachers == nil {
+		return false, fmt.Errorf("teachers does not exist")
+	}
+	teacher := teachers.Bucket([]byte(currency))
+	if teacher == nil {
+		return false, fmt.Errorf("teacher does not exist")
+	}
+	return true, nil
 }
