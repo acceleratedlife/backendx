@@ -12,12 +12,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth"
@@ -37,6 +38,7 @@ const (
 	KeyAuctions         = "auctions"
 	KeyCB               = "cb"
 	KeyUsers            = "users"
+	KeyAccounts         = "accounts"
 	KeybAccounts        = "bAccounts"
 	KeycAccounts        = "cAccounts"
 	KeyBalance          = "balance"

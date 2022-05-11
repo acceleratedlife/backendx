@@ -237,7 +237,7 @@ func (s *StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.R
 		return openapi.Response(401, ""), nil
 	}
 
-	err = addUbuck2Student(s.db, s.clock, userData.Name, decimal.NewFromFloat32(body.Amount), body.Description)
+	err = addUbuck2Student(s.db, s.clock, userDetails, decimal.NewFromFloat32(body.Amount), body.Description)
 	if err != nil {
 		return openapi.Response(400, err), nil
 	}
@@ -259,7 +259,11 @@ func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.
 
 	errors := make([]error, 0)
 	for _, student := range body.Students {
-		err = addUbuck2Student(s.db, s.clock, student, decimal.NewFromFloat32(body.Amount), body.Description)
+		studentDetails, err := getUserInLocalStore(s.db, student)
+		if err != nil {
+			continue
+		}
+		err = addUbuck2Student(s.db, s.clock, studentDetails, decimal.NewFromFloat32(body.Amount), body.Description)
 		if err != nil {
 			errors = append(errors, err)
 		}

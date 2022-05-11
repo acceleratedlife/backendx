@@ -36,15 +36,10 @@ func Test_addUbuck2Student(t *testing.T) {
 	var studentNetWo decimal.Decimal
 
 	_ = db.View(func(tx *bolt.Tx) error {
-<<<<<<< HEAD
-		cb := tx.Bucket([]byte(KeyCB))
-		accounts := cb.Bucket([]byte(KeybAccounts))
-=======
 		cb, err := getCbRx(tx, schools[0])
 		require.Nil(t, err)
 
 		accounts := cb.Bucket([]byte(KeyAccounts))
->>>>>>> origin/main
 		ub := accounts.Bucket([]byte(CurrencyUBuck))
 		v := ub.Get([]byte(KeyBalance))
 

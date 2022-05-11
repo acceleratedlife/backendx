@@ -191,13 +191,8 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		if err != nil {
 			return fmt.Errorf("cannot save daily payment date: %v", err)
 		}
-<<<<<<< HEAD
-		pay := decimal.NewFromFloat32(float32(userDetails.Income))
-		return addUbuck2StudentTx(tx, clock, userDetails.Name, pay, "daily payment")
-=======
-		pay := decimal.NewFromFloat32(121.32)
+		pay := decimal.NewFromFloat32(userDetails.Income)
 		return addUbuck2StudentTx(tx, clock, userDetails, pay, "daily payment")
->>>>>>> origin/main
 	})
 
 	if err != nil {
@@ -271,7 +266,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	if err != nil || !res {
 		return fmt.Errorf("currency %s is not supported, %v", currency, err)
 	}
-	
+
 	ts := clock.Now()
 
 	transaction := Transaction{
