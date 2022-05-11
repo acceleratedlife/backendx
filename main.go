@@ -12,6 +12,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -42,7 +44,6 @@ const (
 	KeyTeachers         = "teachers"
 	KeySchools          = "schools"
 	KeyStudents         = "students"
-	KeyOrders           = "orders"
 	KeyClasses          = "classes"
 	KeyAddCode          = "addCode"
 	KeyName             = "name"
@@ -75,6 +76,13 @@ const (
 	KeyWinnerId         = "winner_id"
 )
 
+type ServerConfig struct {
+	AdminPassword string
+	SecureCookies bool
+	EnableXSRF    bool
+	SecretKey     string
+}
+
 type Clock interface {
 	Now() time.Time
 }
@@ -89,6 +97,8 @@ func (*AppClock) Now() time.Time {
 func main() {
 	lgr.Printf("server started")
 
+	config := loadConfig()
+
 	db, err := bolt.Open("al.db", 0666, nil)
 	if err != nil {
 		panic(fmt.Errorf("cannot open db %v", err))
@@ -99,14 +109,18 @@ func main() {
 
 	// ***
 
-	authService := initAuth(db)
+	authService := initAuth(db, config)
 	authRoute, _ := authService.Handlers()
 	m := authService.Middleware()
 
-	// ***
+	// *** auth
 	router := createRouter(db)
 	router.Handle("/auth/al/login", authRoute)
 	router.Handle("/auth/al/logout", authRoute)
+
+	// backup
+	router.Handle("/admin/backup", backUpHandler(db))
+
 	router.Use(buildAuthMiddleware(m))
 
 	log.Fatal(http.ListenAndServe(":5000", router))
@@ -178,15 +192,15 @@ func InitDefaultAccounts(db *bolt.DB) {
 
 }
 
-func initAuth(db *bolt.DB) *auth.Service {
+func initAuth(db *bolt.DB, config ServerConfig) *auth.Service {
 	options := auth.Opts{
 		SecretReader: token.SecretFunc(func(id string) (string, error) { // secret key for JWT
-			return "secret", nil
+			return config.SecretKey, nil
 		}),
-		DisableXSRF:    true,
+		DisableXSRF:    !config.EnableXSRF,
 		TokenDuration:  time.Minute * 5, // token expires in 5 minutes
 		CookieDuration: time.Hour * 24,  // cookie expires in 1 day and will enforce re-login
-		SecureCookies:  false,
+		SecureCookies:  config.SecureCookies,
 		Issuer:         "AL",
 		//URL:            "http://127.0.0.1:8080",
 		AvatarStore: avatar.NewNoOp(),
@@ -195,6 +209,7 @@ func initAuth(db *bolt.DB) *auth.Service {
 			//return claims.User != nil && strings.HasPrefix(claims.User.Name, "dev_")
 			return true
 		}),
+		AdminPasswd: config.AdminPassword,
 	}
 
 	// create auth service with providers
@@ -237,4 +252,24 @@ func buildAuthMiddleware(m middleware.Authenticator) func(http.Handler) http.Han
 
 func ErrorHandler(w http.ResponseWriter, r *http.Request, err error, result *openapi.ImplResponse) {
 	lgr.Printf("ERROR %s", err)
+}
+
+func loadConfig() ServerConfig {
+	config := ServerConfig{
+		SecretKey:     "secret",
+		AdminPassword: "admin",
+	}
+
+	yamlFile, err := ioutil.ReadFile("./alcfg.yml")
+	if err != nil {
+		lgr.Printf("ERROR cannot load config %v", err)
+		return config
+	}
+
+	err = yaml.Unmarshal(yamlFile, &config)
+	if err != nil {
+		lgr.Printf("ERROR cannot decode config %v", err)
+	}
+
+	return config
 }

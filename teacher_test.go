@@ -1,4 +1,5 @@
 package main
+<<<<<<< HEAD
 
 import (
 	"testing"
@@ -45,3 +46,5 @@ func Test_addUbuck2StudentTemp(t *testing.T) {
 	assert.Equal(t, decimal.NewFromFloat(-24.24), balance)
 	assert.Equal(t, 1.01, studentNetWo.InexactFloat64())
 }
+=======
+>>>>>>> origin/main

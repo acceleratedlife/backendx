@@ -85,6 +85,15 @@ func FindOrCreateSchool(db *bolt.DB, name string, city string, zip int) (id stri
 			}
 		}
 
+		cb, err := school.CreateBucket([]byte(KeyCB))
+		if err != nil {
+			return err
+		}
+		_, err = cb.CreateBucket([]byte(KeyAccounts))
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 
