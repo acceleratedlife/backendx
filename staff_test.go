@@ -236,7 +236,7 @@ func TestMakeAuction(t *testing.T) {
 	db, teardown := FullStartTestServer("makeClass", 8090, "")
 	defer teardown()
 
-	_, _, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, _, teachers, classes, _, err := CreateTestAccounts(db, 1, 1, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -267,7 +267,7 @@ func TestMakeAuction(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&respData)
 
-	assert.Equal(t, len(classes)-4, len(respData[0].Visibility)) // -4 because both schools have freshman sophomores... the key is the same so only added once
+	assert.Equal(t, len(classes), len(respData[0].Visibility))
 	assert.Equal(t, 1, len(respData))
 
 }
@@ -277,7 +277,7 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 	db, teardown := FullStartTestServer("searchAuctionsTeacher", 8090, "")
 	defer teardown()
 
-	_, schools, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, schools, teachers, classes, _, err := CreateTestAccounts(db, 1, 1, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -320,7 +320,7 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 	_ = decoder.Decode(&respData)
 
 	assert.Equal(t, 1, len(respData))
-	assert.Equal(t, len(classes)-4, len(respData[0].Visibility)) // -4 because both schools have freshman sophomores... the key is the same so only added once
+	assert.Equal(t, len(classes), len(respData[0].Visibility))
 
 }
 

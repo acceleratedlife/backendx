@@ -112,7 +112,7 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.Reque
 	return openapi.Response(200, resp), nil
 }
 
-func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	//depricated
 	panic("implement me")
@@ -315,7 +315,7 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 			cost := decimal.NewFromFloat(math.Floor(rand.Float64()*(8000-5000) + 8000))
 			err := chargeStudentUbuckTx(tx, a.clock, userDetails, cost, "Paying for College")
 			if err != nil {
-				return err
+				return fmt.Errorf("Failed to chargeStudentUbuckTx: %v", err)
 			}
 			userDetails.College = true
 			userDetails.CollegeEnd = a.clock.Now().AddDate(0, 0, 28) //28 days

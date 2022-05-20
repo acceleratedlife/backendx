@@ -53,7 +53,7 @@ func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, query openapi.R
 			return err
 		}
 
-		auctions, err = getAuctionsTx(tx, auctionsBucket, userDetails.Name)
+		auctions, err = getTeacherAuctionsTx(tx, auctionsBucket, userDetails)
 		if err != nil {
 			return err
 		}
@@ -119,10 +119,14 @@ func (a *StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.Reques
 			return err
 		}
 		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
-		members, err := studentsToSlice(studentsBucket)
-		if err != nil {
-			return err
+		members := make([]string, 0)
+		if studentsBucket != nil {
+			members, err = studentsToSlice(studentsBucket)
+			if err != nil {
+				return err
+			}
 		}
+
 		err = classBucket.Put([]byte(KeyName), []byte(body.Name))
 		if err != nil {
 			return err
@@ -162,11 +166,17 @@ func (a *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.Reques
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		_, parentBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+		classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 		if err != nil {
 			return err
 		}
-		err = parentBucket.DeleteBucket([]byte(body.Id))
+
+		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
+		if studentsBucket == nil {
+			return fmt.Errorf("can't find students bucket")
+		}
+
+		err = studentsBucket.Delete([]byte(body.KickId))
 		if err != nil {
 			return err
 		}
@@ -292,7 +302,19 @@ func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openap
 		return openapi.Response(401, ""), nil
 	}
 
-	resp, err := getAuctions(s.db, userDetails)
+	var resp []openapi.Auction
+	err = s.db.View(func(tx *bolt.Tx) error {
+		auctionsBucket, err := getAuctionsTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		resp, err = getTeacherAuctionsTx(tx, auctionsBucket, userDetails)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return openapi.Response(400, err), nil
 	}
@@ -377,13 +399,20 @@ func auctionsToSlice(auctions *bolt.Bucket) (resp []openapi.Auction) {
 	return
 }
 
-func visibilityToSlice(classes *bolt.Bucket) (resp []string) {
-	c := classes.Cursor()
-	for k, v := c.First(); k != nil; k, v = c.Next() {
-		if v != nil {
-			continue
+func visibilityToSlice(tx *bolt.Tx, userDetails UserInfo, classIds *bolt.Bucket) (resp []string) {
+	c := classIds.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		key := string(k)
+		if key == KeyEntireSchool || key == KeyFreshman || key == KeySophomores || key == KeyJuniors || key == KeySeniors {
+			resp = append(resp, string(k))
+		} else {
+			classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, key)
+			if err != nil {
+				continue
+			}
+			name := classBucket.Get([]byte(KeyName))
+			resp = append(resp, string(name))
 		}
-		resp = append(resp, string(k))
 	}
 	return
 }
