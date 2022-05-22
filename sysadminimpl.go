@@ -68,14 +68,19 @@ func FindOrCreateSchool(db *bolt.DB, name string, city string, zip int) (id stri
 			return err
 		}
 
+		_, err = school.CreateBucket([]byte(KeyAuctions))
+		if err != nil {
+			return err
+		}
+
 		def := []struct {
 			name   string
 			period int
 		}{
-			{name: "Freshman", period: 9},
-			{name: "Sophomore", period: 10},
-			{name: "Junior", period: 11},
-			{name: "Senior", period: 12},
+			{name: KeyFreshman, period: 9},
+			{name: KeySophomores, period: 10},
+			{name: KeyJuniors, period: 11},
+			{name: KeySeniors, period: 12},
 		}
 
 		for _, c := range def {

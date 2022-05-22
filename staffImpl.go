@@ -97,8 +97,8 @@ func getAuctionsTx(tx *bolt.Tx, userDetails UserInfo) (auctionsBucket *bolt.Buck
 		return auctionsBucket, err
 	}
 	auctionsBucket = school.Bucket([]byte(KeyAuctions))
-	if auctionsBucket == nil {
-		return auctionsBucket, nil //bucket has not been created yet, return empty
+	if err != nil {
+		return auctionsBucket, nil
 	}
 
 	return
@@ -310,21 +310,21 @@ func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMak
 	err = db.Update(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 		if err != nil {
-			return err
+			return fmt.Errorf("Problem finding auctions bucket: %v", err)
 		}
-		auctionsBucket, err := school.CreateBucketIfNotExists([]byte(KeyAuctions))
-		if err != nil {
-			return err
+		auctionsBucket := school.Bucket([]byte(KeyAuctions))
+		if auctionsBucket == nil {
+			return fmt.Errorf("Problem finding auctions bucket")
 		}
 
 		auctionId, err = addAuctionDetailsTx(auctionsBucket, request)
 		if err != nil {
-			return err
+			return fmt.Errorf("Problem adding auctions details: %v", err)
 		}
 
 		auctions, err = getTeacherAuctionsTx(tx, auctionsBucket, userDetails)
 		if err != nil {
-			return err
+			return fmt.Errorf("Problem finding teacher auctions: %v", err)
 		}
 
 		return nil

@@ -338,7 +338,6 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 		return err
 	}
 	if newBalance.Sign() < 0 {
-		println("Confirmed error is here!!!!!!!!!!!!!!!!!")
 		return fmt.Errorf("ubuck balance for %s is negative", userDetails.Name)
 	}
 
@@ -452,46 +451,46 @@ func getStudentAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails 
 		x := visibilityBucket.Cursor()
 		for k, _ := x.First(); k != nil; k, _ = x.Next() {
 			for _, class := range classes {
-				if class.Id != string(k) {
-					continue
-				}
+				if class.Id == string(k) || string(k) == KeyEntireSchool {
 
-				iAuction := openapi.Auction{
-					Id:          string(k),
-					StartDate:   string(auctionBucket.Get([]byte(KeyStartDate))),
-					EndDate:     string(auctionBucket.Get([]byte(KeyEndDate))),
-					Bid:         btoi32(auctionBucket.Get([]byte(KeyBid))),
-					MaxBid:      btoi32(auctionBucket.Get([]byte(KeyMaxBid))),
-					Description: string(auctionBucket.Get([]byte(KeyDescription))),
-				}
-
-				ownerDetails, err := getUserInLocalStoreTx(tx, string(auctionBucket.Get([]byte(KeyOwnerId))))
-				if err != nil {
-					return nil, err
-				}
-
-				iAuction.OwnerId = openapi.AuctionOwnerId{
-					LastName: ownerDetails.LastName,
-					Id:       ownerDetails.Name,
-				}
-
-				winnerDetails, err := getUserInLocalStoreTx(tx, string(auctionBucket.Get([]byte(KeyWinnerId))))
-				if err != nil {
-					iAuction.WinnerId = openapi.AuctionWinnerId{
-						FirstName: "nil",
-						LastName:  "nil",
-						Id:        "nil",
+					iAuction := openapi.Auction{
+						Id:          string(k),
+						StartDate:   string(auctionBucket.Get([]byte(KeyStartDate))),
+						EndDate:     string(auctionBucket.Get([]byte(KeyEndDate))),
+						Bid:         btoi32(auctionBucket.Get([]byte(KeyBid))),
+						MaxBid:      btoi32(auctionBucket.Get([]byte(KeyMaxBid))),
+						Description: string(auctionBucket.Get([]byte(KeyDescription))),
 					}
-				} else {
-					iAuction.WinnerId = openapi.AuctionWinnerId{
-						FirstName: winnerDetails.FirstName,
-						LastName:  winnerDetails.LastName,
-						Id:        winnerDetails.Name,
-					}
-				}
 
-				auctions = append(auctions, iAuction)
-				break
+					ownerDetails, err := getUserInLocalStoreTx(tx, string(auctionBucket.Get([]byte(KeyOwnerId))))
+					if err != nil {
+						return nil, err
+					}
+
+					iAuction.OwnerId = openapi.AuctionOwnerId{
+						LastName: ownerDetails.LastName,
+						Id:       ownerDetails.Name,
+					}
+
+					winnerDetails, err := getUserInLocalStoreTx(tx, string(auctionBucket.Get([]byte(KeyWinnerId))))
+					if err != nil {
+						iAuction.WinnerId = openapi.AuctionWinnerId{
+							FirstName: "nil",
+							LastName:  "nil",
+							Id:        "nil",
+						}
+					} else {
+						iAuction.WinnerId = openapi.AuctionWinnerId{
+							FirstName: winnerDetails.FirstName,
+							LastName:  winnerDetails.LastName,
+							Id:        winnerDetails.Name,
+						}
+					}
+
+					auctions = append(auctions, iAuction)
+					break
+
+				}
 			}
 		}
 

@@ -71,11 +71,11 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 					Description: auction.Description,
 					EndDate:     end,
 					StartDate:   start,
-					Owner: openapi.ResponseAuctionStudentOwner{
+					OwnerId: openapi.ResponseAuctionStudentOwner{
 						Id:       auction.OwnerId.Id,
 						LastName: auction.OwnerId.LastName,
 					},
-					Winner: openapi.ResponseAuctionStudentWinner{
+					WinnerId: openapi.ResponseAuctionStudentWinner{
 						Id:        auction.WinnerId.Id,
 						FirstName: auction.WinnerId.FirstName,
 						LastName:  auction.WinnerId.LastName,
