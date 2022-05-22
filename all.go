@@ -197,28 +197,41 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 		if err != nil {
 			return err
 		}
-		teachers := school.Bucket([]byte(KeyTeachers))
-		if teachers == nil {
-			lgr.Printf("WARN no teachers bucket in school %s", userDetails.SchoolId)
-			return nil
+
+		students := school.Bucket([]byte(KeyStudents))
+		if students == nil {
+			return fmt.Errorf("cannot find students bucket")
 		}
+
+		c := students.Cursor()
 
 		studentsId := make(map[string]int, 0)
 
-		iterateBuckets(teachers, func(teacher *bolt.Bucket, _ []byte) {
-			iterateBuckets(teacher, func(class *bolt.Bucket, _ []byte) {
-				students := class.Bucket([]byte(KeyStudents))
-				if students == nil {
-					return
-				}
-				c := students.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			studentsId[string(k)] = 0
+		}
+		// teachers := school.Bucket([]byte(KeyTeachers))
+		// if teachers == nil {
+		// 	lgr.Printf("WARN no teachers bucket in school %s", userDetails.SchoolId)
+		// 	return nil
+		// }
 
-				for k, _ := c.First(); k != nil; k, _ = c.Next() {
-					studentsId[string(k)] = 0
-				}
+		// studentsId := make(map[string]int, 0)
 
-			})
-		})
+		// iterateBuckets(teachers, func(teacher *bolt.Bucket, _ []byte) {
+		// 	iterateBuckets(teacher, func(class *bolt.Bucket, _ []byte) {
+		// 		students := class.Bucket([]byte(KeyStudents))
+		// 		if students == nil {
+		// 			return
+		// 		}
+		// 		c := students.Cursor()
+
+		// 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		// 			studentsId[string(k)] = 0
+		// 		}
+
+		// 	})
+		// })
 
 		users := tx.Bucket([]byte(KeyUsers))
 
