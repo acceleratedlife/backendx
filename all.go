@@ -205,37 +205,9 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 
 		c := students.Cursor()
 
-		studentsId := make(map[string]int, 0)
-
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			studentsId[string(k)] = 0
-		}
-		// teachers := school.Bucket([]byte(KeyTeachers))
-		// if teachers == nil {
-		// 	lgr.Printf("WARN no teachers bucket in school %s", userDetails.SchoolId)
-		// 	return nil
-		// }
-
-		// studentsId := make(map[string]int, 0)
-
-		// iterateBuckets(teachers, func(teacher *bolt.Bucket, _ []byte) {
-		// 	iterateBuckets(teacher, func(class *bolt.Bucket, _ []byte) {
-		// 		students := class.Bucket([]byte(KeyStudents))
-		// 		if students == nil {
-		// 			return
-		// 		}
-		// 		c := students.Cursor()
-
-		// 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-		// 			studentsId[string(k)] = 0
-		// 		}
-
-		// 	})
-		// })
-
 		users := tx.Bucket([]byte(KeyUsers))
 
-		for k, _ := range studentsId {
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
 			studentData := users.Get([]byte(k))
 			var student UserInfo
 			err = json.Unmarshal(studentData, &student)
@@ -275,7 +247,6 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 			for i := 0; i < len(resp); i++ {
 				resp[i].Rank = int32(i + 1)
 			}
-
 		}
 
 		return nil
