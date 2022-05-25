@@ -344,6 +344,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 	if err != nil {
 		return err
 	}
+
 	newBalance, err := addToHolderTx(student, currency, transaction, OperationDebit)
 	if err != nil {
 		return err
