@@ -247,10 +247,21 @@ func (s *StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.R
 		return openapi.Response(401, ""), nil
 	}
 
-	err = addUbuck2Student(s.db, s.clock, userDetails, decimal.NewFromFloat32(body.Amount), body.Description)
-	if err != nil {
-		return openapi.Response(400, err), nil
+	amount := decimal.NewFromFloat32(body.Amount)
+	studentDetails, err := getUserInLocalStore(s.db, body.Student)
+
+	if amount.Sign() > 0 {
+		err = addBuck2Student(s.db, s.clock, studentDetails, amount, body.OwnerId, body.Description)
+		if err != nil {
+			return openapi.Response(400, err), nil
+		}
+	} else if amount.Sign() < 0 {
+		err = chargeStudent(s.db, s.clock, studentDetails, amount.Abs(), body.OwnerId, body.Description)
+		if err != nil {
+			return openapi.Response(400, err), nil
+		}
 	}
+
 	return openapi.Response(200, ""), nil
 }
 
@@ -360,9 +371,10 @@ func (s StaffApiServiceImpl) SearchTransactions(ctx context.Context, s2 string) 
 }
 
 // NewStaffApiServiceImpl creates a default api service
-func NewStaffApiServiceImpl(db *bolt.DB) openapi.StaffApiServicer {
+func NewStaffApiServiceImpl(db *bolt.DB, clock Clock) openapi.StaffApiServicer {
 	return &StaffApiServiceImpl{
-		db: db,
+		db:    db,
+		clock: clock,
 	}
 }
 

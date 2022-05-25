@@ -154,7 +154,7 @@ func createRouter(db *bolt.DB) *mux.Router {
 	allSchoolApiServiceImpl := NewAllSchoolApiServiceImpl(db)
 	schoolApiController := openapi.NewAllSchoolApiController(allSchoolApiServiceImpl)
 
-	staffApiServiceImpl := NewStaffApiServiceImpl(db)
+	staffApiServiceImpl := NewStaffApiServiceImpl(db, clock)
 	staffApiController := openapi.NewStaffApiController(staffApiServiceImpl)
 
 	return openapi.NewRouter(SchoolAdminApiController,

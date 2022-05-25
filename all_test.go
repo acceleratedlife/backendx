@@ -137,7 +137,7 @@ func TestSearchClass(t *testing.T) {
 }
 
 func TestUserEdit(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, tearDown := FullStartTestServer("userEdit", 8090, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
@@ -181,41 +181,41 @@ func TestUserEdit(t *testing.T) {
 }
 
 // The test should pass but it won't as negatives are not currently allowed.
-// func TestUserEditNegative(t *testing.T) {
-// 	db, tearDown := FullStartTestServer("userEditNegative", 8090, "test@admin.com")
-// 	defer tearDown()
-// 	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
-// 	require.Nil(t, err)
+func TestUserEditNegative(t *testing.T) {
+	db, tearDown := FullStartTestServer("userEditNegative", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
 
-// 	SetTestLoginUser(students[0])
+	SetTestLoginUser(students[0])
 
-// 	// initialize http client
-// 	client := &http.Client{}
-// 	require.Nil(t, err)
+	// initialize http client
+	client := &http.Client{}
+	require.Nil(t, err)
 
-// 	body := openapi.UsersUserBody{
-// 		FirstName:        "test",
-// 		LastName:         "user",
-// 		Password:         "123qwe",
-// 		College:          true,
-// 		CareerTransition: true,
-// 	}
+	body := openapi.UsersUserBody{
+		FirstName:        "test",
+		LastName:         "user",
+		Password:         "123qwe",
+		College:          true,
+		CareerTransition: true,
+	}
 
-// 	marshal, _ := json.Marshal(body)
-// 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/users/user", bytes.NewBuffer(marshal))
-// 	resp, err := client.Do(req)
-// 	defer resp.Body.Close()
-// 	require.Nil(t, err)
-// 	require.NotNil(t, resp)
-// 	assert.Equal(t, 200, resp.StatusCode, resp)
+	marshal, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/users/user", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
 
-// 	var v openapi.User
-// 	decoder := json.NewDecoder(resp.Body)
-// 	err = decoder.Decode(&v)
-// 	require.Nil(t, err)
+	var v openapi.User
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
 
-// 	assert.Equal(t, body.FirstName, v.FirstName)
-// 	assert.Equal(t, body.LastName, v.LastName)
-// 	assert.Equal(t, body.College, v.College)
-// 	assert.Equal(t, body.CareerTransition, v.CareerTransition)
-// }
+	assert.Equal(t, body.FirstName, v.FirstName)
+	assert.Equal(t, body.LastName, v.LastName)
+	assert.Equal(t, body.College, v.College)
+	assert.Equal(t, body.CareerTransition, v.CareerTransition)
+}

@@ -58,6 +58,17 @@ func addUbuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount deci
 
 }
 
+func addBuck2Student(db *bolt.DB, clock Clock, userInfo UserInfo, amount decimal.Decimal, currency, reference string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		return addBuck2StudentTx(tx, clock, userInfo, amount, currency, reference)
+	})
+}
+
+func addBuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, currency, reference string) error {
+	return pay2StudentTx(tx, clock, userInfo, amount, currency, reference)
+
+}
+
 // addToHolderTx updates balance and adds transaction
 // debit means to remove money
 func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction, direction int) (balance decimal.Decimal, errR error) {
@@ -268,7 +279,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		return fmt.Errorf("currency %s is not supported, %v", currency, err)
 	}
 
-	ts := clock.Now()
+	ts := clock.Now().Truncate(time.Second)
 
 	transaction := Transaction{
 		Ts:             ts,
@@ -316,7 +327,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 		return fmt.Errorf("amount must be positive")
 	}
 
-	ts := clock.Now()
+	ts := clock.Now().Truncate(time.Second)
 
 	transaction := Transaction{
 		Ts:             ts,

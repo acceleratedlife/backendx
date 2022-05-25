@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -324,36 +325,68 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 
 }
 
-// func TestPayTransaction_credit(t *testing.T) {
-// 	db, tearDown := FullStartTestServer("payTransaction_credit", 8090, "")
-// 	defer tearDown()
+func TestPayTransaction_credit(t *testing.T) {
+	db, tearDown := FullStartTestServer("payTransaction_credit", 8090, "")
+	defer tearDown()
 
-// 	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 
-// 	SetTestLoginUser(teachers[0])
+	SetTestLoginUser(teachers[0])
 
-// 	client := &http.Client{}
-// 	body := openapi.RequestPayTransaction{
-// 		Owner:       "",
-// 		Description: "credit",
-// 		Amount:      100,
-// 		Student:     students[0],
-// 	}
+	client := &http.Client{}
+	body := openapi.RequestPayTransaction{
+		OwnerId:     teachers[0],
+		Description: "credit",
+		Amount:      100,
+		Student:     students[0],
+	}
 
-// 	marshal, _ := json.Marshal(body)
+	marshal, _ := json.Marshal(body)
 
-// 	req, _ := http.NewRequest(http.MethodPost,
-// 		"http://127.0.0.1:8090/api/transactions/payTransaction",
-// 		bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/payTransaction",
+		bytes.NewBuffer(marshal))
 
-// 	resp, err := client.Do(req)
-// 	defer resp.Body.Close()
-// 	require.Nil(t, err)
-// 	require.NotNil(t, resp)
-// 	assert.Equal(t, 200, resp.StatusCode)
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
 
-// require.Equal(t, members, len(data.Members))
-// require.Equal(t, "Test Name", data.Name)
-// require.Equal(t, int32(4), data.Period)
-// require.Equal(t, classes[0], data.Id)
-// }
+}
+
+func TestPayTransaction_debit(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("payTransaction_debit", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestPayTransaction{
+		OwnerId:     teachers[0],
+		Description: "debit",
+		Amount:      -100,
+		Student:     students[0],
+	}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/payTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}
