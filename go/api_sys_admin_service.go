@@ -88,8 +88,8 @@ func (s *SysAdminApiService) DeleteUser(ctx context.Context, email string) (Impl
 	// TODO - update DeleteUser with the required logic for this service method.
 	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2009{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2009{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2008{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2008{}), nil
 
 	//TODO: Uncomment the next line to return response Response(403, InlineResponse403{}) or use other options such as http.Ok ...
 	//return Response(403, InlineResponse403{}), nil

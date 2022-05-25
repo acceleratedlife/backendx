@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -26,9 +27,71 @@ func (a *StudentApiServiceImpl) CryptoConvert(context.Context, string, openapi.T
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchAuctionsStudent(context.Context) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	var resp []openapi.ResponseAuctionStudent
+	err = a.db.View(func(tx *bolt.Tx) error {
+		auctionsBucket, err := getAuctionsTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		auctions, err := getStudentAuctionsTx(tx, auctionsBucket, userDetails)
+		if err != nil {
+			return err
+		}
+
+		for _, auction := range auctions {
+			start, err := time.Parse(KeyTime, auction.StartDate)
+			if err != nil {
+				return fmt.Errorf("cannot get start time parse %s: %v", userDetails.Name, err)
+			}
+
+			end, err := time.Parse(KeyTime, auction.EndDate)
+			if err != nil {
+				return fmt.Errorf("cannot get end time parse %s: %v", userDetails.Name, err)
+			}
+
+			now := time.Now()
+			if (start.Before(now) && end.After(now)) || auction.WinnerId.Id == userDetails.Name {
+				iAuction := openapi.ResponseAuctionStudent{
+					Id:          auction.Id,
+					Bid:         float32(auction.Bid),
+					Description: auction.Description,
+					EndDate:     end,
+					StartDate:   start,
+					OwnerId: openapi.ResponseAuctionStudentOwner{
+						Id:       auction.OwnerId.Id,
+						LastName: auction.OwnerId.LastName,
+					},
+					WinnerId: openapi.ResponseAuctionStudentWinner{
+						Id:        auction.WinnerId.Id,
+						FirstName: auction.WinnerId.FirstName,
+						LastName:  auction.WinnerId.LastName,
+					},
+				}
+
+				resp = append(resp, iAuction)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return openapi.Response(400, err), nil
+	}
+
+	return openapi.Response(200, resp), nil
 }
 func (a *StudentApiServiceImpl) SearchBuckTransaction(context.Context, string) (openapi.ImplResponse, error) {
 	//TODO implement me
@@ -46,9 +109,26 @@ func (a *StudentApiServiceImpl) SearchStudentCrypto(context.Context) (openapi.Im
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchStudentUbuck(context.Context) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *StudentApiServiceImpl) SearchStudentUbuck(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	ubucks, err := getStudentUbuck(a.db, userDetails)
+	if err != nil {
+		lgr.Printf("ERROR cannot get Ubucks for: %s %v", userDetails.Name, err)
+		return openapi.Response(500, "{}"), nil
+	}
+	return openapi.Response(200, ubucks), nil
+
 }
 
 //StudentAddClass(context.Context, RequestAddClass) (ImplResponse, error)

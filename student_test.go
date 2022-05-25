@@ -36,7 +36,9 @@ func Test_addUbuck2Student(t *testing.T) {
 	var studentNetWo decimal.Decimal
 
 	_ = db.View(func(tx *bolt.Tx) error {
-		cb := tx.Bucket([]byte(KeyCB))
+		cb, err := getCbRx(tx, schools[0])
+		require.Nil(t, err)
+
 		accounts := cb.Bucket([]byte(KeybAccounts))
 		ub := accounts.Bucket([]byte(CurrencyUBuck))
 		v := ub.Get([]byte(KeyBalance))
@@ -224,4 +226,136 @@ func TestStudentAddClass_InvalidCode(t *testing.T) {
 	err = decoder.Decode(&v)
 	require.Nil(t, err)
 	require.Equal(t, "Invalid Add Code", v.Message)
+}
+
+func TestSearchStudentUbuck(t *testing.T) {
+	clock := AppClock{}
+	db, tearDown := FullStartTestServer("searchStudentUbuck", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/accounts/account/student", nil)
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v openapi.ResponseSearchStudentUbuck
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, float32(10000), v.Value)
+}
+
+func TestSearchAuctionsStudent(t *testing.T) {
+	clock := AppClock{}
+	db, tearDown := FullStartTestServer("searchAuctionsStudent", 8090, "test@admin.com")
+	defer tearDown()
+	_, schools, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 2, 1)
+	require.Nil(t, err)
+
+	s := StaffApiServiceImpl{
+		db: db,
+	}
+
+	teacherClasses := getTeacherClasses(db, schools[0], teachers[0])
+	auctionClasses := make([]string, 0)
+	auctionClasses = append(auctionClasses, teacherClasses[0].Id)
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(time.Minute * 10),
+		StartDate:   clock.Now().Add(time.Minute * -10),
+		OwnerId:     teachers[0],
+		Visibility:  auctionClasses,
+	}
+
+	_, err = s.MakeAuctionImpl(UserInfo{
+		Name:     teachers[0],
+		SchoolId: schools[0],
+		Role:     UserRoleTeacher,
+	}, body)
+
+	auctionClasses = make([]string, 0)
+	auctionClasses = append(auctionClasses, teacherClasses[1].Id)
+
+	body.Visibility = auctionClasses
+
+	_, err = s.MakeAuctionImpl(UserInfo{
+		Name:     teachers[0],
+		SchoolId: schools[0],
+		Role:     UserRoleTeacher,
+	}, body)
+
+	body2 := openapi.RequestAddClass{
+		AddCode: teacherClasses[0].AddCode,
+		Id:      "dd",
+	}
+
+	body3 := openapi.RequestAddClass{
+		AddCode: teacherClasses[1].AddCode,
+		Id:      "dd",
+	}
+
+	body4 := openapi.RequestKickClass{
+		KickId: students[0],
+		Id:     teacherClasses[0].Id,
+	}
+
+	// initialize http client
+	client := &http.Client{}
+	SetTestLoginUser(students[0])
+	marshal, _ := json.Marshal(body2)
+
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	marshal, _ = json.Marshal(body3)
+
+	req, _ = http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	resp, err = client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	SetTestLoginUser(teachers[0])
+	marshal, _ = json.Marshal(body4)
+
+	req, _ = http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/class/kick", bytes.NewBuffer(marshal))
+	resp, err = client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	SetTestLoginUser(students[0])
+
+	req, _ = http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/auctions/student", nil)
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v []openapi.ResponseAuctionStudent
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, 1, len(v))
 }

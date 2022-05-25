@@ -11,8 +11,7 @@
 package openapi
 
 type RequestPayTransaction struct {
-
-	Owner string `json:"owner,omitempty"`
+	OwnerId string `json:"owner_id,omitempty"`
 
 	Description string `json:"description,omitempty"`
 

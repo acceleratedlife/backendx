@@ -15,10 +15,12 @@ import (
 	"net/http"
 )
 
+
+
 // AllApiRouter defines the required methods for binding the api requests to a responses for the AllApi
 // The AllApiRouter implementation should parse necessary information from the http request,
 // pass the data to a AllApiServicer to perform the required actions, then write the service results to the http response.
-type AllApiRouter interface {
+type AllApiRouter interface { 
 	AuthUser(http.ResponseWriter, *http.Request)
 	ConfirmEmail(http.ResponseWriter, *http.Request)
 	ExchangeRate(http.ResponseWriter, *http.Request)
@@ -34,28 +36,25 @@ type AllApiRouter interface {
 	SearchStudents(http.ResponseWriter, *http.Request)
 	UserEdit(http.ResponseWriter, *http.Request)
 }
-
 // AllSchoolApiRouter defines the required methods for binding the api requests to a responses for the AllSchoolApi
 // The AllSchoolApiRouter implementation should parse necessary information from the http request,
 // pass the data to a AllSchoolApiServicer to perform the required actions, then write the service results to the http response.
-type AllSchoolApiRouter interface {
+type AllSchoolApiRouter interface { 
 	AddCodeClass(http.ResponseWriter, *http.Request)
 	RemoveClass(http.ResponseWriter, *http.Request)
 	SearchAuctions(http.ResponseWriter, *http.Request)
 	SearchMyClasses(http.ResponseWriter, *http.Request)
 }
-
 // SchoolAdminApiRouter defines the required methods for binding the api requests to a responses for the SchoolAdminApi
 // The SchoolAdminApiRouter implementation should parse necessary information from the http request,
 // pass the data to a SchoolAdminApiServicer to perform the required actions, then write the service results to the http response.
-type SchoolAdminApiRouter interface {
+type SchoolAdminApiRouter interface { 
 	SearchAdminTeacherClass(http.ResponseWriter, *http.Request)
 }
-
 // StaffApiRouter defines the required methods for binding the api requests to a responses for the StaffApi
 // The StaffApiRouter implementation should parse necessary information from the http request,
 // pass the data to a StaffApiServicer to perform the required actions, then write the service results to the http response.
-type StaffApiRouter interface {
+type StaffApiRouter interface { 
 	DeleteAuction(http.ResponseWriter, *http.Request)
 	Deleteclass(http.ResponseWriter, *http.Request)
 	EditClass(http.ResponseWriter, *http.Request)
@@ -70,11 +69,10 @@ type StaffApiRouter interface {
 	SearchEvents(http.ResponseWriter, *http.Request)
 	SearchTransactions(http.ResponseWriter, *http.Request)
 }
-
 // StudentApiRouter defines the required methods for binding the api requests to a responses for the StudentApi
 // The StudentApiRouter implementation should parse necessary information from the http request,
 // pass the data to a StudentApiServicer to perform the required actions, then write the service results to the http response.
-type StudentApiRouter interface {
+type StudentApiRouter interface { 
 	AuctionBid(http.ResponseWriter, *http.Request)
 	BuckConvert(http.ResponseWriter, *http.Request)
 	CryptoConvert(http.ResponseWriter, *http.Request)
@@ -86,11 +84,10 @@ type StudentApiRouter interface {
 	SearchStudentUbuck(http.ResponseWriter, *http.Request)
 	StudentAddClass(http.ResponseWriter, *http.Request)
 }
-
 // SysAdminApiRouter defines the required methods for binding the api requests to a responses for the SysAdminApi
 // The SysAdminApiRouter implementation should parse necessary information from the http request,
 // pass the data to a SysAdminApiServicer to perform the required actions, then write the service results to the http response.
-type SysAdminApiRouter interface {
+type SysAdminApiRouter interface { 
 	CreateBuck(http.ResponseWriter, *http.Request)
 	DeleteAccount(http.ResponseWriter, *http.Request)
 	DeleteBuck(http.ResponseWriter, *http.Request)
@@ -105,26 +102,25 @@ type SysAdminApiRouter interface {
 	SearchSchools(http.ResponseWriter, *http.Request)
 	SearchTransaction(http.ResponseWriter, *http.Request)
 }
-
 // TeacherApiRouter defines the required methods for binding the api requests to a responses for the TeacherApi
 // The TeacherApiRouter implementation should parse necessary information from the http request,
 // pass the data to a TeacherApiServicer to perform the required actions, then write the service results to the http response.
-type TeacherApiRouter interface {
+type TeacherApiRouter interface { 
 	TeacherAddClass(http.ResponseWriter, *http.Request)
 }
-
 // UnregisteredApiRouter defines the required methods for binding the api requests to a responses for the UnregisteredApi
 // The UnregisteredApiRouter implementation should parse necessary information from the http request,
 // pass the data to a UnregisteredApiServicer to perform the required actions, then write the service results to the http response.
-type UnregisteredApiRouter interface {
+type UnregisteredApiRouter interface { 
 	Register(http.ResponseWriter, *http.Request)
 }
+
 
 // AllApiServicer defines the api actions for the AllApi service
 // This interface intended to stay up to date with the openapi yaml used to generate it,
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
-type AllApiServicer interface {
+type AllApiServicer interface { 
 	AuthUser(context.Context) (ImplResponse, error)
 	ConfirmEmail(context.Context, string) (ImplResponse, error)
 	ExchangeRate(context.Context, string, string) (ImplResponse, error)
@@ -134,37 +130,40 @@ type AllApiServicer interface {
 	SearchAccount(context.Context, string) (ImplResponse, error)
 	SearchBucks(context.Context, string) (ImplResponse, error)
 	SearchClass(context.Context, RequestUser) (ImplResponse, error)
-	SearchSchool(context.Context, RequestUser) (ImplResponse, error)
+	SearchSchool(context.Context, string) (ImplResponse, error)
 	SearchStudent(context.Context, RequestUser) (ImplResponse, error)
 	SearchStudentBuck(context.Context, string) (ImplResponse, error)
 	SearchStudents(context.Context) (ImplResponse, error)
 	UserEdit(context.Context, UsersUserBody) (ImplResponse, error)
 }
 
+
 // AllSchoolApiServicer defines the api actions for the AllSchoolApi service
 // This interface intended to stay up to date with the openapi yaml used to generate it,
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
-type AllSchoolApiServicer interface {
+type AllSchoolApiServicer interface { 
 	AddCodeClass(context.Context, RequestUser) (ImplResponse, error)
 	RemoveClass(context.Context, RequestKickClass) (ImplResponse, error)
 	SearchAuctions(context.Context, string) (ImplResponse, error)
 	SearchMyClasses(context.Context, RequestUser) (ImplResponse, error)
 }
 
+
 // SchoolAdminApiServicer defines the api actions for the SchoolAdminApi service
 // This interface intended to stay up to date with the openapi yaml used to generate it,
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
-type SchoolAdminApiServicer interface {
+type SchoolAdminApiServicer interface { 
 	SearchAdminTeacherClass(context.Context, RequestUser) (ImplResponse, error)
 }
+
 
 // StaffApiServicer defines the api actions for the StaffApi service
 // This interface intended to stay up to date with the openapi yaml used to generate it,
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
-type StaffApiServicer interface {
+type StaffApiServicer interface { 
 	DeleteAuction(context.Context, RequestUser) (ImplResponse, error)
 	Deleteclass(context.Context, RequestUser) (ImplResponse, error)
 	EditClass(context.Context, RequestEditClass) (ImplResponse, error)
@@ -180,11 +179,12 @@ type StaffApiServicer interface {
 	SearchTransactions(context.Context, string) (ImplResponse, error)
 }
 
+
 // StudentApiServicer defines the api actions for the StudentApi service
 // This interface intended to stay up to date with the openapi yaml used to generate it,
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
-type StudentApiServicer interface {
+type StudentApiServicer interface { 
 	AuctionBid(context.Context, RequestAuctionBid) (ImplResponse, error)
 	BuckConvert(context.Context, string, TransactionsConversionTransactionBody) (ImplResponse, error)
 	CryptoConvert(context.Context, string, TransactionCryptoTransactionBody) (ImplResponse, error)
@@ -197,11 +197,12 @@ type StudentApiServicer interface {
 	StudentAddClass(context.Context, RequestAddClass) (ImplResponse, error)
 }
 
+
 // SysAdminApiServicer defines the api actions for the SysAdminApi service
 // This interface intended to stay up to date with the openapi yaml used to generate it,
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
-type SysAdminApiServicer interface {
+type SysAdminApiServicer interface { 
 	CreateBuck(context.Context, BucksBuckBody1) (ImplResponse, error)
 	DeleteAccount(context.Context, string) (ImplResponse, error)
 	DeleteBuck(context.Context, string) (ImplResponse, error)
@@ -217,18 +218,20 @@ type SysAdminApiServicer interface {
 	SearchTransaction(context.Context, string) (ImplResponse, error)
 }
 
+
 // TeacherApiServicer defines the api actions for the TeacherApi service
 // This interface intended to stay up to date with the openapi yaml used to generate it,
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
-type TeacherApiServicer interface {
+type TeacherApiServicer interface { 
 	TeacherAddClass(context.Context, RequestAddClass) (ImplResponse, error)
 }
+
 
 // UnregisteredApiServicer defines the api actions for the UnregisteredApi service
 // This interface intended to stay up to date with the openapi yaml used to generate it,
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
-type UnregisteredApiServicer interface {
+type UnregisteredApiServicer interface { 
 	Register(context.Context, RequestRegister) (ImplResponse, error)
 }

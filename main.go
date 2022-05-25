@@ -12,12 +12,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth"
@@ -37,6 +38,7 @@ const (
 	KeyAuctions         = "auctions"
 	KeyCB               = "cb"
 	KeyUsers            = "users"
+	KeyAccounts         = "accounts"
 	KeybAccounts        = "bAccounts"
 	KeycAccounts        = "cAccounts"
 	KeyBalance          = "balance"
@@ -60,12 +62,12 @@ const (
 	KeyCareerEnd        = "CareerEnd"
 	KeyCollegeEnd       = "CollegeEnd"
 	KeyHistory          = "History"
-	KeyEntireSchool     = "entireSchool"
+	KeyEntireSchool     = "Entire School"
 	KeyTeacherClasses   = "teacherClasses"
-	KeyFreshman         = "freshman"
-	KeySophomores       = "sophomores"
-	KeyJuniors          = "juniors"
-	KeySeniors          = "seniors"
+	KeyFreshman         = "Freshman"
+	KeySophomores       = "Sophomores"
+	KeyJuniors          = "Juniors"
+	KeySeniors          = "Seniors"
 	KeyBid              = "bid"
 	KeyMaxBid           = "maxBid"
 	KeyDescription      = "description"
@@ -74,6 +76,7 @@ const (
 	KeyOwnerId          = "owner_id"
 	KeyVisibility       = "visibility"
 	KeyWinnerId         = "winner_id"
+	KeyTime             = "2006-01-02 15:04:05.999999999 -0700 MST"
 )
 
 type ServerConfig struct {
@@ -151,7 +154,7 @@ func createRouter(db *bolt.DB) *mux.Router {
 	allSchoolApiServiceImpl := NewAllSchoolApiServiceImpl(db)
 	schoolApiController := openapi.NewAllSchoolApiController(allSchoolApiServiceImpl)
 
-	staffApiServiceImpl := NewStaffApiServiceImpl(db)
+	staffApiServiceImpl := NewStaffApiServiceImpl(db, clock)
 	staffApiController := openapi.NewStaffApiController(staffApiServiceImpl)
 
 	return openapi.NewRouter(SchoolAdminApiController,

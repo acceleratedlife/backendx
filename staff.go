@@ -53,7 +53,7 @@ func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, query openapi.R
 			return err
 		}
 
-		auctions, err = getAuctionsTx(tx, auctionsBucket, userDetails.Name)
+		auctions, err = getTeacherAuctionsTx(tx, auctionsBucket, userDetails)
 		if err != nil {
 			return err
 		}
@@ -119,10 +119,14 @@ func (a *StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.Reques
 			return err
 		}
 		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
-		members, err := studentsToSlice(studentsBucket)
-		if err != nil {
-			return err
+		members := make([]string, 0)
+		if studentsBucket != nil {
+			members, err = studentsToSlice(studentsBucket)
+			if err != nil {
+				return err
+			}
 		}
+
 		err = classBucket.Put([]byte(KeyName), []byte(body.Name))
 		if err != nil {
 			return err
@@ -162,11 +166,17 @@ func (a *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.Reques
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		_, parentBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+		classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 		if err != nil {
 			return err
 		}
-		err = parentBucket.DeleteBucket([]byte(body.Id))
+
+		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
+		if studentsBucket == nil {
+			return fmt.Errorf("can't find students bucket")
+		}
+
+		err = studentsBucket.Delete([]byte(body.KickId))
 		if err != nil {
 			return err
 		}
@@ -237,10 +247,21 @@ func (s *StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.R
 		return openapi.Response(401, ""), nil
 	}
 
-	err = addUbuck2Student(s.db, s.clock, userData.Name, decimal.NewFromFloat32(body.Amount), body.Description)
-	if err != nil {
-		return openapi.Response(400, err), nil
+	amount := decimal.NewFromFloat32(body.Amount)
+	studentDetails, err := getUserInLocalStore(s.db, body.Student)
+
+	if amount.Sign() > 0 {
+		err = addBuck2Student(s.db, s.clock, studentDetails, amount, body.OwnerId, body.Description)
+		if err != nil {
+			return openapi.Response(400, err), nil
+		}
+	} else if amount.Sign() < 0 {
+		err = chargeStudent(s.db, s.clock, studentDetails, amount.Abs(), body.OwnerId, body.Description)
+		if err != nil {
+			return openapi.Response(400, err), nil
+		}
 	}
+
 	return openapi.Response(200, ""), nil
 }
 
@@ -259,7 +280,11 @@ func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.
 
 	errors := make([]error, 0)
 	for _, student := range body.Students {
-		err = addUbuck2Student(s.db, s.clock, student, decimal.NewFromFloat32(body.Amount), body.Description)
+		studentDetails, err := getUserInLocalStore(s.db, student)
+		if err != nil {
+			continue
+		}
+		err = addUbuck2Student(s.db, s.clock, studentDetails, decimal.NewFromFloat32(body.Amount), body.Description)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -288,7 +313,19 @@ func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openap
 		return openapi.Response(401, ""), nil
 	}
 
-	resp, err := getAuctions(s.db, userDetails)
+	var resp []openapi.Auction
+	err = s.db.View(func(tx *bolt.Tx) error {
+		auctionsBucket, err := getAuctionsTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		resp, err = getTeacherAuctionsTx(tx, auctionsBucket, userDetails)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return openapi.Response(400, err), nil
 	}
@@ -334,9 +371,10 @@ func (s StaffApiServiceImpl) SearchTransactions(ctx context.Context, s2 string) 
 }
 
 // NewStaffApiServiceImpl creates a default api service
-func NewStaffApiServiceImpl(db *bolt.DB) openapi.StaffApiServicer {
+func NewStaffApiServiceImpl(db *bolt.DB, clock Clock) openapi.StaffApiServicer {
 	return &StaffApiServiceImpl{
-		db: db,
+		db:    db,
+		clock: clock,
 	}
 }
 
@@ -373,13 +411,20 @@ func auctionsToSlice(auctions *bolt.Bucket) (resp []openapi.Auction) {
 	return
 }
 
-func visibilityToSlice(classes *bolt.Bucket) (resp []string) {
-	c := classes.Cursor()
-	for k, v := c.First(); k != nil; k, v = c.Next() {
-		if v != nil {
-			continue
+func visibilityToSlice(tx *bolt.Tx, userDetails UserInfo, classIds *bolt.Bucket) (resp []string) {
+	c := classIds.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		key := string(k)
+		if key == KeyEntireSchool || key == KeyFreshman || key == KeySophomores || key == KeyJuniors || key == KeySeniors {
+			resp = append(resp, string(k))
+		} else {
+			classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, key)
+			if err != nil {
+				continue
+			}
+			name := classBucket.Get([]byte(KeyName))
+			resp = append(resp, string(name))
 		}
-		resp = append(resp, string(k))
 	}
 	return
 }

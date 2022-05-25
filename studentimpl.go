@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
@@ -54,6 +55,17 @@ func addUbuck2Student(db *bolt.DB, clock Clock, userInfo UserInfo, amount decima
 // your functions should sit in a separete file
 func addUbuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, reference string) error {
 	return pay2StudentTx(tx, clock, userInfo, amount, CurrencyUBuck, reference)
+
+}
+
+func addBuck2Student(db *bolt.DB, clock Clock, userInfo UserInfo, amount decimal.Decimal, currency, reference string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		return addBuck2StudentTx(tx, clock, userInfo, amount, currency, reference)
+	})
+}
+
+func addBuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, currency, reference string) error {
+	return pay2StudentTx(tx, clock, userInfo, amount, currency, reference)
 
 }
 
@@ -191,8 +203,8 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		if err != nil {
 			return fmt.Errorf("cannot save daily payment date: %v", err)
 		}
-		pay := decimal.NewFromFloat32(float32(userDetails.Income))
-		return addUbuck2StudentTx(tx, clock, userDetails.Name, pay, "daily payment")
+		pay := decimal.NewFromFloat32(userDetails.Income)
+		return addUbuck2StudentTx(tx, clock, userDetails, pay, "daily payment")
 	})
 
 	if err != nil {
@@ -266,8 +278,8 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	if err != nil || !res {
 		return fmt.Errorf("currency %s is not supported, %v", currency, err)
 	}
-	
-	ts := clock.Now()
+
+	ts := clock.Now().Truncate(time.Second)
 
 	transaction := Transaction{
 		Ts:             ts,
@@ -315,7 +327,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 		return fmt.Errorf("amount must be positive")
 	}
 
-	ts := clock.Now()
+	ts := clock.Now().Truncate(time.Second)
 
 	transaction := Transaction{
 		Ts:             ts,
@@ -380,4 +392,217 @@ func isCurrencyTx(tx *bolt.Tx, schoolId string, currency string) (bool, error) {
 		return false, fmt.Errorf("teacher does not exist")
 	}
 	return true, nil
+}
+
+func getStudentUbuck(db *bolt.DB, userDetails UserInfo) (uBucks openapi.ResponseSearchStudentUbuck, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		uBucks, err = getStudentUbuckTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return
+}
+
+func getStudentUbuckTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseSearchStudentUbuck, err error) {
+	student, err := getStudentBucketRoTx(tx, userDetails.Name)
+	if student == nil {
+		return resp, err
+	}
+
+	bAccounts := student.Bucket([]byte(KeybAccounts))
+	if bAccounts == nil {
+		return resp, fmt.Errorf("cannot find Buck Accounts")
+	}
+
+	ubuck := bAccounts.Bucket([]byte(CurrencyUBuck))
+	if ubuck == nil {
+		return resp, fmt.Errorf("cannot find ubuck")
+	}
+
+	var balance decimal.Decimal
+	balanceB := ubuck.Get([]byte(KeyBalance))
+	err = balance.UnmarshalText(balanceB)
+	if err != nil {
+		return resp, fmt.Errorf("cannot extract balance for the account %s: %v", userDetails.Name, err)
+	}
+	balanceF, _ := balance.Float64()
+	resp = openapi.ResponseSearchStudentUbuck{
+		Value: float32(balanceF),
+	}
+
+	return
+}
+
+func getStudentAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails UserInfo) (auctions []openapi.Auction, err error) {
+
+	c := auctionsBucket.Cursor()
+
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v != nil {
+			continue
+		}
+
+		auctionBucket := auctionsBucket.Bucket(k)
+		if auctionBucket == nil {
+			return auctions, fmt.Errorf("cannot find auction bucket")
+		}
+
+		visibilityBucket := auctionBucket.Bucket([]byte(KeyVisibility))
+		if visibilityBucket == nil {
+			return auctions, fmt.Errorf("cannot find visibility bucket")
+		}
+
+		classes, err := getStudentClassesTx(tx, userDetails)
+		if err != nil {
+			return auctions, fmt.Errorf("cannot get student classes %s: %v", userDetails.Name, err)
+		}
+
+		x := visibilityBucket.Cursor()
+		for k, _ := x.First(); k != nil; k, _ = x.Next() {
+			for _, class := range classes {
+				if class.Id == string(k) || string(k) == KeyEntireSchool {
+
+					iAuction := openapi.Auction{
+						Id:          string(k),
+						StartDate:   string(auctionBucket.Get([]byte(KeyStartDate))),
+						EndDate:     string(auctionBucket.Get([]byte(KeyEndDate))),
+						Bid:         btoi32(auctionBucket.Get([]byte(KeyBid))),
+						MaxBid:      btoi32(auctionBucket.Get([]byte(KeyMaxBid))),
+						Description: string(auctionBucket.Get([]byte(KeyDescription))),
+					}
+
+					ownerDetails, err := getUserInLocalStoreTx(tx, string(auctionBucket.Get([]byte(KeyOwnerId))))
+					if err != nil {
+						return nil, err
+					}
+
+					iAuction.OwnerId = openapi.AuctionOwnerId{
+						LastName: ownerDetails.LastName,
+						Id:       ownerDetails.Name,
+					}
+
+					winnerDetails, err := getUserInLocalStoreTx(tx, string(auctionBucket.Get([]byte(KeyWinnerId))))
+					if err != nil {
+						iAuction.WinnerId = openapi.AuctionWinnerId{
+							FirstName: "nil",
+							LastName:  "nil",
+							Id:        "nil",
+						}
+					} else {
+						iAuction.WinnerId = openapi.AuctionWinnerId{
+							FirstName: winnerDetails.FirstName,
+							LastName:  winnerDetails.LastName,
+							Id:        winnerDetails.Name,
+						}
+					}
+
+					auctions = append(auctions, iAuction)
+					break
+
+				}
+			}
+		}
+
+	}
+
+	return auctions, nil
+}
+
+func getStudentClassesTx(tx *bolt.Tx, userDetails UserInfo) (classes []openapi.Class, err error) {
+	school, err := getSchoolBucketTx(tx, userDetails)
+	if err != nil {
+		return classes, fmt.Errorf("cannot get schools %s: %v", userDetails.Name, err)
+	}
+
+	schoolClasses := school.Bucket([]byte(KeyClasses))
+	if schoolClasses == nil {
+		return classes, fmt.Errorf("cannot get school classes %s: %v", userDetails.Name, err)
+	}
+
+	s := schoolClasses.Cursor()
+	for k, v := s.First(); k != nil; k, v = s.Next() {
+		if v != nil {
+			continue
+		}
+
+		class := schoolClasses.Bucket(k)
+		if class == nil {
+			return classes, fmt.Errorf("cannot get school classes %s: %v", userDetails.Name, err)
+		}
+
+		iClass := getClassMembershipTx(k, class, userDetails)
+		if iClass.AddCode == "" {
+			continue
+		}
+
+		classes = append(classes, iClass)
+	}
+
+	teachers := school.Bucket([]byte(KeyTeachers))
+	if teachers == nil {
+		return classes, fmt.Errorf("cannot get teachers %s: %v", userDetails.Name, err)
+	}
+
+	t := teachers.Cursor()
+	for k, v := t.First(); k != nil; k, v = t.Next() {
+		if v != nil {
+			continue
+		}
+
+		teacher := teachers.Bucket(k)
+		if teacher == nil {
+			return classes, fmt.Errorf("cannot get teacher %s: %v", userDetails.Name, err)
+		}
+
+		classesBucket := teacher.Bucket([]byte(KeyClasses))
+		if classesBucket == nil {
+			continue
+		}
+
+		c := classesBucket.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if v != nil {
+				continue
+			}
+
+			class := classesBucket.Bucket(k)
+			if class == nil {
+				return classes, fmt.Errorf("cannot get teacher classes %s: %v", userDetails.Name, err)
+			}
+
+			iClass := getClassMembershipTx(k, class, userDetails)
+			if iClass.AddCode == "" {
+				continue
+			}
+
+			classes = append(classes, iClass)
+		}
+
+	}
+
+	return
+
+}
+
+func getClassMembershipTx(key []byte, class *bolt.Bucket, userDetails UserInfo) (classResp openapi.Class) {
+	students := class.Bucket([]byte(KeyStudents))
+	if students == nil {
+		return
+	}
+
+	student := students.Get([]byte(userDetails.Name))
+	if student != nil {
+		classResp = openapi.Class{
+			Id:      string(key),
+			OwnerId: string(class.Get([]byte(KeyOwnerId))),
+			Period:  btoi32(class.Get([]byte(KeyPeriod))),
+			Name:    string(class.Get([]byte(KeyName))),
+			AddCode: string(class.Get([]byte(KeyAddCode))),
+		}
+	}
+
+	return
 }

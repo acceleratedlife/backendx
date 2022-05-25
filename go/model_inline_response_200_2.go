@@ -12,13 +12,17 @@ package openapi
 
 type InlineResponse2002 struct {
 
-	Searched string `json:"searched,omitempty"`
+	Converion float32 `json:"converion,omitempty"`
 
-	Usd float32 `json:"usd,omitempty"`
+	History [][]int32 `json:"history,omitempty"`
 
-	Owned float32 `json:"owned,omitempty"`
+	Bucks string `json:"bucks,omitempty"`
 
-	UBuck float32 `json:"UBuck,omitempty"`
+	Balance float32 `json:"balance,omitempty"`
+
+	Id string `json:"_id,omitempty"`
+
+	TypeId string `json:"type_id,omitempty"`
 }
 
 // AssertInlineResponse2002Required checks if the required fields are not zero-ed

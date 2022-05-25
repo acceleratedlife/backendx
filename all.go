@@ -112,7 +112,7 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.Reque
 	return openapi.Response(200, resp), nil
 }
 
-func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	//depricated
 	panic("implement me")
@@ -197,32 +197,17 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 		if err != nil {
 			return err
 		}
-		teachers := school.Bucket([]byte(KeyTeachers))
-		if teachers == nil {
-			lgr.Printf("WARN no teachers bucket in school %s", userDetails.SchoolId)
-			return nil
+
+		students := school.Bucket([]byte(KeyStudents))
+		if students == nil {
+			return fmt.Errorf("cannot find students bucket")
 		}
 
-		studentsId := make(map[string]int, 0)
-
-		iterateBuckets(teachers, func(teacher *bolt.Bucket, _ []byte) {
-			iterateBuckets(teacher, func(class *bolt.Bucket, _ []byte) {
-				students := class.Bucket([]byte(KeyStudents))
-				if students == nil {
-					return
-				}
-				c := students.Cursor()
-
-				for k, _ := c.First(); k != nil; k, _ = c.Next() {
-					studentsId[string(k)] = 0
-				}
-
-			})
-		})
+		c := students.Cursor()
 
 		users := tx.Bucket([]byte(KeyUsers))
 
-		for k, _ := range studentsId {
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
 			studentData := users.Get([]byte(k))
 			var student UserInfo
 			err = json.Unmarshal(studentData, &student)
@@ -262,7 +247,6 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 			for i := 0; i < len(resp); i++ {
 				resp[i].Rank = int32(i + 1)
 			}
-
 		}
 
 		return nil
@@ -312,10 +296,10 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 			userDetails.Income = userDetails.Income / 2
 		}
 		if body.College && !userDetails.College {
-			cost := decimal.NewFromFloat(-math.Floor(rand.Float64()*(8000-5000) + 8000))
-			err := addUbuck2StudentTx(tx, a.clock, userDetails.Name, cost, "Paying for College")
+			cost := decimal.NewFromFloat(math.Floor(rand.Float64()*(8000-5000) + 8000))
+			err := chargeStudentUbuckTx(tx, a.clock, userDetails, cost, "Paying for College")
 			if err != nil {
-				return err
+				return fmt.Errorf("Failed to chargeStudentUbuckTx: %v", err)
 			}
 			userDetails.College = true
 			userDetails.CollegeEnd = a.clock.Now().AddDate(0, 0, 28) //28 days

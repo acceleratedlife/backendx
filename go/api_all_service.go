@@ -12,8 +12,8 @@ package openapi
 
 import (
 	"context"
-	"errors"
 	"net/http"
+	"errors"
 )
 
 // AllApiService is a service that implements the logic for the AllApiServicer
@@ -46,8 +46,8 @@ func (s *AllApiService) ConfirmEmail(ctx context.Context, token string) (ImplRes
 	// TODO - update ConfirmEmail with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2007{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2007{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2006{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2006{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -60,8 +60,8 @@ func (s *AllApiService) ExchangeRate(ctx context.Context, sellCurrency string, b
 	// TODO - update ExchangeRate with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse2004{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse2004{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []InlineResponse2003{}) or use other options such as http.Ok ...
+	//return Response(200, []InlineResponse2003{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -105,8 +105,8 @@ func (s *AllApiService) ResetPassword(ctx context.Context, usersResetPasswordBod
 	// TODO - update ResetPassword with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2007{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2007{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2006{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2006{}), nil
 
 	//TODO: Uncomment the next line to return response Response(401, InlineResponse401{}) or use other options such as http.Ok ...
 	//return Response(401, InlineResponse401{}), nil
@@ -157,7 +157,7 @@ func (s *AllApiService) SearchClass(ctx context.Context, id RequestUser) (ImplRe
 }
 
 // SearchSchool - searches for a school
-func (s *AllApiService) SearchSchool(ctx context.Context, id RequestUser) (ImplResponse, error) {
+func (s *AllApiService) SearchSchool(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchSchool with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -189,8 +189,8 @@ func (s *AllApiService) SearchStudentBuck(ctx context.Context, userId string) (I
 	// TODO - update SearchStudentBuck with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse2003{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse2003{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []InlineResponse2002{}) or use other options such as http.Ok ...
+	//return Response(200, []InlineResponse2002{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
