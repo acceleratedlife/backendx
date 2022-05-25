@@ -20,13 +20,14 @@ func Test_addUbuck2Student(t *testing.T) {
 	db, dbTearDown := OpenTestDB("")
 	defer dbTearDown()
 
-	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 3)
+	_, schools, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 3)
 
 	require.Nil(t, err)
 	require.Equal(t, 24, len(students))
 
 	for _, s := range students {
-		err := addUbuck2Student(db, &clock, s, decimal.NewFromFloat(1.01), "daily payment")
+		userInfo, _ := getUserInLocalStore(db, s)
+		err := addUbuck2Student(db, &clock, userInfo, decimal.NewFromFloat(1.01), "daily payment")
 		require.Nil(t, err)
 	}
 
@@ -46,7 +47,7 @@ func Test_addUbuck2Student(t *testing.T) {
 		return nil
 	})
 
-	assert.Equal(t, decimal.NewFromFloat(-24.24), balance)
+	assert.Equal(t, -12.12, balance.InexactFloat64())
 	assert.Equal(t, 1.01, studentNetWo.InexactFloat64())
 }
 
