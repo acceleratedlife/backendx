@@ -60,7 +60,9 @@ func (c *SchoolAdminApiController) Routes() Routes {
 // SearchAdminTeacherClass - gets the teacher class of an admin and all the teacher that are its members
 func (c *SchoolAdminApiController) SearchAdminTeacherClass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := RequestUser{query.Get("_id")}
+	idParam := RequestUser{
+		query.Get("_id"),
+	}
 	result, err := c.service.SearchAdminTeacherClass(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {

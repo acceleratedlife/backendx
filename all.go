@@ -4,10 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/rand"
+	"sort"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -108,7 +112,7 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.Reque
 	return openapi.Response(200, resp), nil
 }
 
-func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.ImplResponse, error) {
+func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s openapi.RequestUser) (openapi.ImplResponse, error) {
 	//TODO implement me
 	//depricated
 	panic("implement me")
@@ -131,22 +135,29 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, query openapi.Req
 			return err
 		}
 
+		history, err := getStudentHistoryTX(tx, user.Name, user.SchoolId)
+		if err != nil {
+			return err
+		}
+
 		nWorth, _ := StudentNetWorthTx(tx, user.Email).Float64()
 		nUser := openapi.User{
-			Id: user.Email,
-			//CollegeEnd:    time.Time{},
-			//TransitionEnd: time.Time{},
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Email:     user.Email,
-			Confirmed: user.Confirmed,
-			SchoolId:  user.SchoolId,
-			//College:       false,
-			//Children:      0,
-			Income:   10,
-			Role:     1,
-			Rank:     2,
-			NetWorth: float32(nWorth),
+			Id:               user.Email,
+			CollegeEnd:       user.CollegeEnd,
+			TransitionEnd:    user.TransitionEnd,
+			FirstName:        user.FirstName,
+			LastName:         user.LastName,
+			Email:            user.Email,
+			Confirmed:        user.Confirmed,
+			SchoolId:         user.SchoolId,
+			College:          user.College,
+			Children:         user.Children,
+			Income:           user.Income,
+			Role:             0,
+			Rank:             user.Rank,
+			History:          history,
+			CareerTransition: user.CareerTransition,
+			NetWorth:         float32(nWorth),
 		}
 		resp = nUser
 
@@ -231,18 +242,26 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 				//TransitionEnd: time.Time{},
 				FirstName: student.FirstName,
 				LastName:  student.LastName,
-				Email:     student.Email,
-				Confirmed: student.Confirmed,
-				SchoolId:  student.SchoolId,
+				// Email:     student.Email,
+				// Confirmed: student.Confirmed,
+				// SchoolId:  student.SchoolId,
 				//College:       false,
 				//Children:      0,
-				Income:   10,
-				Role:     student.Role,
-				Rank:     2,
+				// Income:   10,
+				// Role:     student.Role,
+				Rank:     student.Rank,
 				NetWorth: float32(nWorth),
 			}
 
 			resp = append(resp, nUser)
+
+			sort.SliceStable(resp, func(i, j int) bool {
+				return resp[i].NetWorth > resp[j].NetWorth
+			})
+
+			for i := 0; i < len(resp); i++ {
+				resp[i].Rank = int32(i + 1)
+			}
 
 		}
 
@@ -266,7 +285,6 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		}), nil
 	}
 
-	var history []openapi.History
 	err = a.db.Update(func(tx *bolt.Tx) error {
 		users := tx.Bucket([]byte(KeyUsers))
 		if users == nil {
@@ -291,13 +309,17 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		if body.CareerTransition && !userDetails.CareerTransition {
 			userDetails.CareerTransition = true
 			userDetails.TransitionEnd = a.clock.Now().AddDate(0, 0, 7) //7 days
-			userDetails.Salary = userDetails.Salary / 2
+			userDetails.Income = userDetails.Income / 2
 		}
 		if body.College && !userDetails.College {
-			// makeTransaction(req, res)
+			cost := decimal.NewFromFloat(-math.Floor(rand.Float64()*(8000-5000) + 8000))
+			err := addUbuck2StudentTx(tx, a.clock, userDetails.Name, cost, "Paying for College")
+			if err != nil {
+				return err
+			}
 			userDetails.College = true
 			userDetails.CollegeEnd = a.clock.Now().AddDate(0, 0, 28) //28 days
-			userDetails.Salary = userDetails.Salary / 2
+			userDetails.Income = userDetails.Income / 2
 		}
 
 		marshal, err := json.Marshal(userDetails)
@@ -307,33 +329,6 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		err = users.Put([]byte(userData.Name), marshal)
 		if err != nil {
 			return fmt.Errorf("Failed to Put userDetails")
-		}
-
-		schools := tx.Bucket([]byte(KeySchools))
-		if schools == nil {
-			return fmt.Errorf("Failed to find schoolsBucket")
-		}
-		school := schools.Bucket([]byte(userDetails.SchoolId))
-		if school == nil {
-			return fmt.Errorf("Failed to get school")
-		}
-		students := school.Bucket([]byte(KeyStudents))
-		if students == nil {
-			return fmt.Errorf("Failed to get students")
-		}
-
-		student := students.Bucket([]byte(userDetails.Name))
-		if student == nil {
-			return fmt.Errorf("Failed to get student")
-		}
-
-		historyData := student.Get([]byte(KeyHistory))
-		if historyData == nil {
-			return fmt.Errorf("Failed to get history")
-		}
-		err = json.Unmarshal(historyData, &history)
-		if err != nil {
-			return fmt.Errorf("ERROR cannot unmarshal History")
 		}
 		return nil
 	})
@@ -347,6 +342,12 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		return openapi.Response(500, nil), err
 	}
 
+	history, err := getStudentHistory(a.db, userDetails.Name, userDetails.SchoolId)
+	if err != nil {
+		return openapi.Response(500, nil), err
+	}
+
+	nWorth, _ := StudentNetWorth(a.db, userDetails.Name).Float64()
 	resp := openapi.User{
 		Id:               userDetails.Name,
 		Email:            userDetails.Email,
@@ -360,10 +361,10 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		CareerTransition: userDetails.CareerTransition,
 		College:          userDetails.College,
 		Children:         userDetails.Children,
-		Income:           userDetails.Salary,
+		Income:           userDetails.Income,
 		Role:             userDetails.Role,
 		Rank:             userDetails.Rank,
-		NetWorth:         userDetails.NetWorth,
+		NetWorth:         float32(nWorth),
 	}
 	return openapi.Response(200, resp), nil //this is incomplete
 }

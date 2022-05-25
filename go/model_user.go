@@ -14,12 +14,8 @@ import (
 	"time"
 )
 
-type History struct {
-	Date     time.Time
-	NetWorth float64
-}
-
 type User struct {
+
 	History []History `json:"history"`
 
 	Id string `json:"_id"`
@@ -44,7 +40,7 @@ type User struct {
 
 	Children int32 `json:"children"`
 
-	Income int32 `json:"income"`
+	Income float32 `json:"income"`
 
 	Role int32 `json:"role"`
 
@@ -56,18 +52,19 @@ type User struct {
 // AssertUserRequired checks if the required fields are not zero-ed
 func AssertUserRequired(obj User) error {
 	elements := map[string]interface{}{
-		"history":   obj.History,
-		"_id":       obj.Id,
+		"history": obj.History,
+		"_id": obj.Id,
 		"firstName": obj.FirstName,
-		"lastName":  obj.LastName,
-		"email":     obj.Email,
+		"lastName": obj.LastName,
+		"email": obj.Email,
 		"confirmed": obj.Confirmed,
-		"college":   obj.College,
-		"children":  obj.Children,
-		"income":    obj.Income,
-		"role":      obj.Role,
-		"rank":      obj.Rank,
-		"netWorth":  obj.NetWorth,
+		"college": obj.College,
+		"careerTransition": obj.CareerTransition,
+		"children": obj.Children,
+		"income": obj.Income,
+		"role": obj.Role,
+		"rank": obj.Rank,
+		"netWorth": obj.NetWorth,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {
@@ -75,6 +72,11 @@ func AssertUserRequired(obj User) error {
 		}
 	}
 
+	for _, el := range obj.History {
+		if err := AssertHistoryRequired(el); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

@@ -60,7 +60,7 @@ func addUbuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount deci
 // addToHolderTx updates balance and adds transaction
 // debit means to remove money
 func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction, direction int) (balance decimal.Decimal, errR error) {
-	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
+	accounts, err := holder.CreateBucketIfNotExists([]byte(KeybAccounts))
 	if err != nil {
 		errR = err
 		return
@@ -134,7 +134,7 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 	if err != nil {
 		return
 	}
-	accounts := student.Bucket([]byte(KeyAccounts))
+	accounts := student.Bucket([]byte(KeybAccounts))
 	if accounts == nil {
 		return
 	}
@@ -191,8 +191,8 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		if err != nil {
 			return fmt.Errorf("cannot save daily payment date: %v", err)
 		}
-		pay := decimal.NewFromFloat32(121.32)
-		return addUbuck2StudentTx(tx, clock, userDetails, pay, "daily payment")
+		pay := decimal.NewFromFloat32(float32(userDetails.Income))
+		return addUbuck2StudentTx(tx, clock, userDetails.Name, pay, "daily payment")
 	})
 
 	if err != nil {

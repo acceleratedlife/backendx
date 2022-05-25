@@ -48,9 +48,9 @@ func SchoolByIdTx(tx *bolt.Tx, schoolId string) (school *bolt.Bucket, err error)
 // RoleByAddCode determines role by addCode and school, for students it determines the class
 func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		schools := tx.Bucket([]byte("schools"))
+		schools := tx.Bucket([]byte(KeySchools))
 		if schools == nil {
-			return fmt.Errorf("school not found")
+			return fmt.Errorf("schools not found")
 		}
 
 		c := schools.Cursor()
@@ -76,29 +76,26 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 
 			schoolClasses := school.Bucket([]byte(KeyClasses))
 			if schoolClasses != nil {
-				res := schoolClasses.ForEach(func(classId, v []byte) error {
+				c := schoolClasses.Cursor()
+				for currentClassId, v := c.First(); currentClassId != nil; currentClassId, v = c.Next() {
 					if v != nil {
-						return nil
+						continue
 					}
-					class := schoolClasses.Bucket(classId)
+					class := schoolClasses.Bucket(currentClassId)
 					if class == nil {
-						return nil
+						return fmt.Errorf("class not found")
 					}
 					addCodeTx := class.Get([]byte(KeyAddCode))
 					if addCodeTx != nil && string(addCodeTx) == code {
-						admins := schools.Bucket([]byte(KeyAdmins))
+						admins := school.Bucket([]byte(KeyAdmins))
 						cAdmins := admins.Cursor()
 						adminId, _ := cAdmins.First()
 						role = UserRoleStudent
 						pathId.schoolId = string(currentSchoolId)
-						pathId.classId = string(classId)
+						pathId.classId = string(currentClassId)
 						pathId.teacherId = string(adminId)
-						return fmt.Errorf("found")
+						return nil
 					}
-					return nil
-				})
-				if res != nil && res.Error() == "found" {
-					return nil
 				}
 			}
 
@@ -115,12 +112,16 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 				if teacher == nil {
 					return nil
 				}
+				classesBucket := teacher.Bucket([]byte(KeyClasses))
+				if classesBucket == nil {
+					return nil
+				}
 
-				res := teacher.ForEach(func(currentClassId, v []byte) error {
+				res := classesBucket.ForEach(func(currentClassId, v []byte) error {
 					if v != nil {
 						return nil
 					}
-					class := teacher.Bucket(currentClassId)
+					class := classesBucket.Bucket(currentClassId)
 					if class == nil {
 						return nil
 					}
@@ -143,7 +144,7 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 			}
 
 		}
-		return fmt.Errorf("school not found")
+		return fmt.Errorf("Invalid Add Code")
 	})
 
 	return

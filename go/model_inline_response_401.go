@@ -11,6 +11,7 @@
 package openapi
 
 type InlineResponse401 struct {
+
 	Error string `json:"error,omitempty"`
 
 	Message string `json:"message,omitempty"`

@@ -11,7 +11,7 @@
 package openapi
 
 type ResponseMemberClass struct {
-	Owner ResponseMemberClassOwner `json:"owner,omitempty"`
+	Owner_id ResponseMemberClassOwner `json:"owner_id,omitempty"`
 
 	Period int32 `json:"period,omitempty"`
 
@@ -20,7 +20,7 @@ type ResponseMemberClass struct {
 
 // AssertResponseMemberClassRequired checks if the required fields are not zero-ed
 func AssertResponseMemberClassRequired(obj ResponseMemberClass) error {
-	if err := AssertResponseMemberClassOwnerRequired(obj.Owner); err != nil {
+	if err := AssertResponseMemberClassOwnerRequired(obj.Owner_id); err != nil {
 		return err
 	}
 	return nil

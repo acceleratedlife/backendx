@@ -65,6 +65,11 @@ func iterateBuckets(mainBucket *bolt.Bucket, teacherHandler func(bucket *bolt.Bu
 			continue
 		}
 		teacher := mainBucket.Bucket(k)
-		teacherHandler(teacher, k)
+		classesBucket := teacher.Bucket([]byte(KeyClasses))
+		if classesBucket != nil {
+			teacherHandler(classesBucket, k)
+		} else {
+			teacherHandler(teacher, k)
+		}
 	}
 }

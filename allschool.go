@@ -44,25 +44,9 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 		}
 		err = a.db.Update(func(tx *bolt.Tx) error {
 			//populate class
-			schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
+			teachersClass, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 			if err != nil {
 				return err
-			}
-			school, err := schools.CreateBucketIfNotExists([]byte(userDetails.SchoolId))
-			if err != nil {
-				return err
-			}
-			teachers := school.Bucket([]byte(KeyTeachers))
-			if teachers == nil {
-				return fmt.Errorf("Cannot find bucket for teachers")
-			}
-			teacher := teachers.Bucket([]byte(userDetails.Name))
-			if teacher == nil {
-				return fmt.Errorf("teacher does not exist")
-			}
-			teachersClass := teacher.Bucket([]byte(body.Id))
-			if teachersClass == nil {
-				return fmt.Errorf("class does not exist")
 			}
 			err = teachersClass.Put([]byte(KeyAddCode), []byte(newCode))
 			if err != nil {
@@ -89,18 +73,28 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 			Members: nil,
 		}
 		err = a.db.Update(func(tx *bolt.Tx) error {
-			//populate class
-			schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
-			if err != nil {
-				return err
-			}
-			school, err := schools.CreateBucketIfNotExists([]byte(userDetails.SchoolId))
-			if err != nil {
-				return err
-			}
-			err = school.Put([]byte(KeyAddCode), []byte(newCode))
-			if err != nil {
-				return err
+			if body.Id == userDetails.SchoolId { //school class
+				schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
+				if err != nil {
+					return err
+				}
+				school, err := schools.CreateBucketIfNotExists([]byte(userDetails.SchoolId))
+				if err != nil {
+					return err
+				}
+				err = school.Put([]byte(KeyAddCode), []byte(newCode))
+				if err != nil {
+					return err
+				}
+			} else { // admin class
+				classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+				if err != nil {
+					return err
+				}
+				err = classBucket.Put([]byte(KeyAddCode), []byte(newCode))
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})
@@ -207,7 +201,7 @@ func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.Re
 				period := class.Get([]byte(KeyPeriod))
 
 				classes = append(classes, openapi.ResponseMemberClass{
-					Owner: openapi.ResponseMemberClassOwner{
+					Owner_id: openapi.ResponseMemberClassOwner{
 						FirstName: teacherDetails.FirstName,
 						LastName:  teacherDetails.LastName,
 						Id:        teacherDetails.Name,
@@ -226,7 +220,7 @@ func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.Re
 			if students == nil {
 				return
 			}
-			student := class.Get([]byte(userId))
+			student := students.Get([]byte(userId))
 			if student == nil {
 				return
 			}
@@ -244,7 +238,7 @@ func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.Re
 			period := class.Get([]byte(KeyPeriod))
 
 			classes = append(classes, openapi.ResponseMemberClass{
-				Owner: openapi.ResponseMemberClassOwner{
+				Owner_id: openapi.ResponseMemberClassOwner{
 					FirstName: adminDetails.FirstName,
 					LastName:  adminDetails.LastName,
 					Id:        adminDetails.Name,

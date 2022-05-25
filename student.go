@@ -14,7 +14,7 @@ type StudentApiServiceImpl struct {
 	db *bolt.DB
 }
 
-func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, auctionsPlaceBidBody openapi.AuctionsPlaceBidBody) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, auctionsPlaceBidBody openapi.RequestAuctionBid) (openapi.ImplResponse, error) {
 	panic("implement me")
 }
 
@@ -26,7 +26,7 @@ func (a *StudentApiServiceImpl) CryptoConvert(context.Context, string, openapi.T
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchAuctionsStudent(context.Context, string) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) SearchAuctionsStudent(context.Context) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -34,7 +34,7 @@ func (a *StudentApiServiceImpl) SearchBuckTransaction(context.Context, string) (
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchCrypto(context.Context, string, string) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) SearchCrypto(context.Context, string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -42,11 +42,11 @@ func (a *StudentApiServiceImpl) SearchCryptoTransaction(context.Context, string)
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchStudentCrypto(context.Context, string) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) SearchStudentCrypto(context.Context) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchStudentUbuck(context.Context, string) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) SearchStudentUbuck(context.Context) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -75,7 +75,6 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		// classBucket, err := getClassbyAddCodeTx(tx, userDetails.SchoolId, body.AddCode)
 		schools := tx.Bucket([]byte(KeySchools))
 		school := schools.Bucket([]byte(userDetails.SchoolId))
 		if school == nil {
@@ -88,7 +87,10 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 		}
 		class := schoolClasses.Bucket([]byte(pathId.classId))
 		if class != nil {
-			studentsBucket := class.Bucket([]byte(KeyStudents))
+			studentsBucket, err := class.CreateBucketIfNotExists([]byte(KeyStudents))
+			if err != nil {
+				return err
+			}
 			if studentsBucket != nil {
 				err = studentsBucket.Put([]byte(userDetails.Email), nil)
 				if err != nil {
@@ -106,13 +108,17 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 		if teacher == nil {
 			return fmt.Errorf("can't find teacher")
 		}
-		classBucket := teacher.Bucket([]byte(pathId.classId))
+		classesBucket := teacher.Bucket([]byte(KeyClasses))
+		if classesBucket == nil {
+			return fmt.Errorf("can't find classesBucket")
+		}
+		classBucket := classesBucket.Bucket([]byte(pathId.classId))
 		if classBucket == nil {
 			return fmt.Errorf("can't find class")
 		}
-		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
-		if studentsBucket == nil {
-			return fmt.Errorf("can't find students")
+		studentsBucket, err := classBucket.CreateBucketIfNotExists([]byte(KeyStudents))
+		if err != nil {
+			return err
 		}
 		err = studentsBucket.Put([]byte(userDetails.Email), nil)
 		if err != nil {

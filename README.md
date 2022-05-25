@@ -5,7 +5,7 @@ go build
 
 ## test & coverage
 go test -coverprofile cover.out
-go tool cover -html=cover.out
+go tool cover -html cover.out
 
 ## local run
 - default admin test@admin.com
@@ -14,46 +14,78 @@ go tool cover -html=cover.out
 
 "schools"
     [school-id]
-    - name
-    - city
-    - zip
-    - addCode
-    "teachers"
-        [teacher-id]
-            [class-id]
-            - name
-            - period
-            - addCode
-            "students"
-                user-id: ''
-    "admins"
-        user-id: ''
-    "students"
-        [userName]
-            dayPayment: datetime
+        - name
+        - city
+        - zip
+        - addCode
+        "cb"
             "accounts"
-                [account-id]
-                - balance: decimal
+                [account-id]  (ubuck/teacher-id)
+                    -name
+                    -totalCurrency :decimal
+                    -freeCurrency :decimal
+                    "history"
+                        -trade
+                        -date
                     "transactions"
-                        datetime: {date-time, account-id, xrate, amount}
-    "classes"
-        [class-id]
-        - name: string
-        - period: int32
-        - addCode: string
-        "students"
+                        [transaction-id]
+                            -dateTime
+                            -account-id
+                            -xrate
+                            -amount
+        "auctions"
+            [auction-id]
+                - bid
+                - maxBid
+                - description
+                - endDate
+                - startDate
+                - owner_id
+                - winner_id
+                "visibility"
+                    class-id: ''
+        "teachers"
+            [teacher-id]
+                "classes"
+                    [class-id]
+                        - name
+                        - period
+                        - addCode
+                        "students"
+                            [user-id]
+                                - firstName
+                                - lastName
+                                - email
+                "market"
+                    [item_id]
+                        - description
+                        - cost
+
+
+        "admins"
             user-id: ''
+        "students"
+            [userName]
+                dayPayment: datetime
+                event: datetime
+                "accounts"
+                    [account-id]
+                        - balance: decimal
+                        "transactions"
+                            -dateTime
+                            -account-id
+                            -xrate
+                            -amount
+        "classes"
+            [class-id]
+                - name: string
+                - period: int32
+                - addCode: string
+                "students"
+                    user-id: ''
                 
 "users"
     [userName]: UserInfo
-
-"cb"
-    "accounts"
-        [account-id]  (ubuck/teacher-id)
-        - balance: decimal
-        "transactions"
-            datetime: {date-time, account-id, xrate, amount}
-   
 
 "orders"
   datetime: OrderInfo

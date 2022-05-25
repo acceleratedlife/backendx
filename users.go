@@ -27,8 +27,8 @@ type UserInfo struct {
 	PasswordSha      string
 	SchoolId         string
 	Role             int32     // 0 student, 1 teacher, 2 admin
-	Salary           int32     `json:",omitempty"`
-	LastSalaryPaid   time.Time `json:",omitempty"`
+	Income           float32   `json:",omitempty"`
+	LastIncomePaid   time.Time `json:",omitempty"`
 	Children         int32
 	Rank             int32
 	NetWorth         float32
@@ -124,6 +124,7 @@ func AddUserTx(tx *bolt.Tx, info UserInfo) error {
 	return nil
 }
 
+//get bucket, make bucket if it does not exist, use within update
 func getStudentBucketTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	userInfo, err := getUserInLocalStoreTx(tx, userName)
 	if err != nil {
@@ -152,6 +153,7 @@ func getStudentBucketTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	return student, nil
 }
 
+//get bucket, throw if it does not exist, use with view
 func getStudentBucketRoTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	userInfo, err := getUserInLocalStoreTx(tx, userName)
 	if err != nil {

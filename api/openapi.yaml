@@ -48,7 +48,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseSchools'
+                items:
+                  $ref: '#/components/schemas/ResponseSchools'
+                type: array
           description: schools matching criteria
         "400":
           description: That is not a zip code
@@ -243,15 +245,6 @@ paths:
       description: by extracting user id and user school from request the proper account
         value is returned
       operationId: searchStudentUbuck
-      parameters:
-      - description: gets the _id from req.user._id
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       responses:
         "200":
           content:
@@ -271,15 +264,6 @@ paths:
         in its ref to the Crypto table. The crypto.usd may have to be updated if it
         is older than 60 seconds. It should be sorted in decending order.
       operationId: searchStudentCrypto
-      parameters:
-      - description: gets the _id from req.user._id
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       responses:
         "200":
           content:
@@ -301,14 +285,6 @@ paths:
         than 60 seconds
       operationId: searchCrypto
       parameters:
-      - description: gets the _id from req.user._id
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       - description: get the crypto from name
         explode: true
         in: query
@@ -411,7 +387,7 @@ paths:
         name: _id
         required: true
         schema:
-          type: string
+          $ref: '#/components/schemas/RequestUser'
         style: form
       responses:
         "200":
@@ -419,7 +395,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_5'
+                  $ref: '#/components/schemas/Auction'
                 type: array
           description: auctions matching criteria
         "404":
@@ -460,22 +436,13 @@ paths:
         with firstName and lastName and sorted by endDate ascending. Visibility is
         populated with name and sorted by name ascending.
       operationId: searchAuctionsTeacher
-      parameters:
-      - description: pass the id to be searched
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_5'
+                  $ref: '#/components/schemas/Auction'
                 type: array
           description: auctions matching criteria
         "404":
@@ -495,27 +462,18 @@ paths:
         name and sorted by name ascending. With winner populated with firstName and
         lastName. Make all auctions sorted by endDate ascending.
       operationId: makeAuction
-      parameters:
-      - description: pass the id to be searched
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/auctions_body'
+              $ref: '#/components/schemas/RequestMakeAuction'
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_5'
+                  $ref: '#/components/schemas/Auction'
                 type: array
           description: auctions matching criteria
         "400":
@@ -533,22 +491,13 @@ paths:
         with lastName. Populate winner with firstName, lastName and _id. Sort by endDate
         ascending
       operationId: searchAuctionsStudent
-      parameters:
-      - description: pass the id to be searched
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_6'
+                  $ref: '#/components/schemas/ResponseAuctionStudent'
                 type: array
           description: auctions matching criteria
         "404":
@@ -566,21 +515,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/auctions_placeBid_body'
+              $ref: '#/components/schemas/RequestAuctionBid'
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_6'
+                  $ref: '#/components/schemas/ResponseAuctionStudent'
                 type: array
           description: updated auctions that are relevant to the student
         "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_400'
           description: your bid is not greater than the current bid or the auction
             is over, refresh page
       summary: auction bid
@@ -718,10 +663,6 @@ paths:
         style: form
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Class'
           description: School Deleted
         "404":
           description: Class cannot be deleted with that data
@@ -809,10 +750,6 @@ paths:
               $ref: '#/components/schemas/RequestKickClass'
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseKickClass'
           description: class member has been removed from class
         "404":
           description: member cannot be removed with that data
@@ -943,7 +880,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ResponseMemberClass'
                 type: array
-          description: class add code has been changed
+          description: return all the classes of that user
         "404":
           description: Cannot remove from class with that data
       summary: remove self from class
@@ -1021,7 +958,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseEvents'
+                items:
+                  $ref: '#/components/schemas/ResponseEvents'
+                type: array
           description: events matching criteria in value order decending
         "404":
           description: No events matching that school _id
@@ -1048,7 +987,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ResponseTransactions'
+                items:
+                  $ref: '#/components/schemas/ResponseTransactions'
+                type: array
           description: transactions matching criteria
         "404":
           description: No transaction found
@@ -1126,7 +1067,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_7'
+                $ref: '#/components/schemas/inline_response_200_5'
           description: transaction matching criteria
         "404":
           description: No transaction found with that data
@@ -1153,7 +1094,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_8'
+                $ref: '#/components/schemas/inline_response_200_6'
           description: transaction matching criteria
         "404":
           description: No transaction found with that data
@@ -1171,15 +1112,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/transactions_payTransaction_body'
+              $ref: '#/components/schemas/RequestPayTransaction'
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_200_9'
-          description: class record is made. Return all the classes from this owner.
-            Sort classes by period ascending
+          description: return success status
         "404":
           description: transaction cannot be made with that data
       summary: When a teacher or admin is paying/debting a student with their own
@@ -1198,15 +1134,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/transactions_payTransactions_body'
+              $ref: '#/components/schemas/RequestPayTransactions'
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_200_9'
-          description: class record is made. Return all the classes from this owner.
-            Sort classes by period ascending
+          description: return success status
         "404":
           description: transactions cannot be made with that data
       summary: When a teacher or admin is paying/debting an entire class
@@ -1237,7 +1168,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_9'
+                $ref: '#/components/schemas/inline_response_200_7'
           description: class record is made. Return all the classes from this owner.
             Sort classes by period ascending
         "404":
@@ -1271,7 +1202,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_10'
+                $ref: '#/components/schemas/inline_response_200_8'
           description: return all crypto accounts with value greater than 0 and the
             most recent transaction
         "404":
@@ -1319,7 +1250,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_11'
+                $ref: '#/components/schemas/inline_response_200_9'
           description: transaction Deleted
         "403":
           content:
@@ -1378,7 +1309,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-          description: return classes where this user is a member
+          description: return user information with history
         "404":
           description: Cannot update user with that data
       summary: edit a user
@@ -1521,7 +1452,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_9'
+                $ref: '#/components/schemas/inline_response_200_7'
           description: class record is made. Return all the classes from this owner.
             Sort classes by period ascending
         "401":
@@ -1551,7 +1482,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_9'
+                $ref: '#/components/schemas/inline_response_200_7'
           description: students matching criteria
         "404":
           description: No user found with that data
@@ -1589,9 +1520,11 @@ components:
         value:
           default: 0
           example: 1245.7
+          format: float
           type: number
         basis:
           example: 1245.7
+          format: float
           type: number
         history:
           items:
@@ -1616,28 +1549,30 @@ components:
         visibility:
         - 613eab19e58cc511801af657
         - 613eab19e58cc511801af657
-        endDate: 2000-01-23T04:56:07.000+00:00
-        owner_id: 613eab19e58cc511801af657
-        winner_id: 613eab19e58cc511801af657
+        endDate: endDate
+        owner_id:
+          lastName: Jones
+          _id: ou812
+        maxBid: 4
+        winner_id:
+          firstName: Tom
+          lastName: Jones
+          _id: ou812
         description: Candy Bar
         _id: 613eab19e58cc511801af657
         bid: 4
-        startDate: 2000-01-23T04:56:07.000+00:00
+        startDate: startDate
       properties:
         _id:
           example: 613eab19e58cc511801af657
           type: string
         owner_id:
-          example: 613eab19e58cc511801af657
-          type: string
+          $ref: '#/components/schemas/Auction_owner_id'
         winner_id:
-          example: 613eab19e58cc511801af657
-          type: string
+          $ref: '#/components/schemas/Auction_winner_id'
         startDate:
-          format: date-time
           type: string
         endDate:
-          format: date-time
           type: string
         itemNumber:
           example: dkeD56
@@ -1645,7 +1580,11 @@ components:
         bid:
           default: 0
           example: 4
-          type: number
+          type: integer
+        maxBid:
+          default: 0
+          example: 4
+          type: integer
         description:
           example: Candy Bar
           type: string
@@ -1694,10 +1633,12 @@ components:
         totalCurrency:
           default: 0
           example: 514286.578391947
+          format: float
           type: number
         freeCurrency:
           default: 0
           example: 5565
+          format: float
           type: number
         history:
           items:
@@ -1812,9 +1753,11 @@ components:
         totalCount:
           default: 0
           example: 514.57
+          format: float
           type: number
         usd:
           example: 12.45
+          format: float
           type: number
       required:
       - _id
@@ -1876,6 +1819,46 @@ components:
       - name
       - zip
       type: object
+    ResponseAuctionStudent:
+      example:
+        owner:
+          lastName: Boy
+          _id: 61be17e2f5691463b0fc972d
+        itemNumber: FyW54G
+        winner:
+          firstName: Tommy
+          lastName: Boy
+          _id: 61be17e2f5691463b0fc972d
+        endDate: 2000-01-23T04:56:07.000+00:00
+        description: Candy Bar
+        _id: 61be17e2f5691463b0fc972d
+        bid: 123.45
+        startDate: 2000-01-23T04:56:07.000+00:00
+      properties:
+        _id:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+        bid:
+          example: 123.45
+          format: float
+          type: number
+        description:
+          example: Candy Bar
+          type: string
+        endDate:
+          format: date-time
+          type: string
+        startDate:
+          format: date-time
+          type: string
+        itemNumber:
+          example: FyW54G
+          type: string
+        owner:
+          $ref: '#/components/schemas/ResponseAuctionStudent_owner'
+        winner:
+          $ref: '#/components/schemas/ResponseAuctionStudent_winner'
+      type: object
     ResponseAuth2:
       example:
         firstName: Tom
@@ -1930,12 +1913,31 @@ components:
           type: string
       type: object
     ResponseEvents:
-      items:
-        $ref: '#/components/schemas/ResponseEvents_inner'
-      type: array
-    ResponseKickClass:
       example:
-        kick_id: 613eab19e58cc511801af657
+        transaction_id: 613eab19e58cc511801af657
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        owner_id:
+          firstName: Jay
+          lastName: Leno
+        description: on time
+        value: 123
+      properties:
+        value:
+          example: 123
+          type: integer
+        createdAt:
+          format: date-time
+          type: string
+        description:
+          example: on time
+          type: string
+        transaction_id:
+          example: 613eab19e58cc511801af657
+          type: string
+        owner_id:
+          $ref: '#/components/schemas/ResponseEvents_owner_id'
+      type: object
+    ResponseKickClass:
       properties:
         kick_id:
           example: 613eab19e58cc511801af657
@@ -1943,18 +1945,34 @@ components:
       type: object
     ResponseMemberClass:
       example:
-        owner:
+        period: 4
+        owner_id:
           firstName: Jay
           lastName: Leno
           _id: 613eab19e58cc511801af657
-        period: 4
         _id: 613eab19e58cc511801af657
       properties:
-        owner:
-          $ref: '#/components/schemas/ResponseMemberClass_owner'
+        owner_id:
+          $ref: '#/components/schemas/ResponseMemberClassOwner'
         period:
           example: 4
           type: integer
+        _id:
+          example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    ResponseMemberClassOwner:
+      example:
+        firstName: Jay
+        lastName: Leno
+        _id: 613eab19e58cc511801af657
+      properties:
+        firstName:
+          example: Jay
+          type: string
+        lastName:
+          example: Leno
+          type: string
         _id:
           example: 613eab19e58cc511801af657
           type: string
@@ -1995,13 +2013,38 @@ components:
           type: string
       type: object
     ResponseSchools:
-      items:
-        $ref: '#/components/schemas/ResponseSchools_inner'
-      type: array
+      example:
+        name: East High
+        _id: dlkjdlkjdfslkjdfs93
+      properties:
+        name:
+          example: East High
+          type: string
+        _id:
+          example: dlkjdlkjdfslkjdfs93
+          type: string
+      type: object
     ResponseTransactions:
-      items:
-        $ref: '#/components/schemas/ResponseTransactions_inner'
-      type: array
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        amount: 123.45
+        student: Jay Leno
+        description: on time
+      properties:
+        amount:
+          example: 123.45
+          format: float
+          type: number
+        createdAt:
+          format: date-time
+          type: string
+        description:
+          example: on time
+          type: string
+        student:
+          example: Jay Leno
+          type: string
+      type: object
     RequestAddClass:
       example:
         _id: 613eab19e58cc511801af657
@@ -2012,6 +2055,23 @@ components:
           type: string
         _id:
           example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    RequestAuctionBid:
+      example:
+        item: 24d54dD
+        _id: 61be17e2f5691463b0fc972d
+        bid: 123.45
+      properties:
+        item:
+          example: 24d54dD
+          type: string
+        bid:
+          example: 123.45
+          format: float
+          type: number
+        _id:
+          example: 61be17e2f5691463b0fc972d
           type: string
       type: object
     RequestEditClass:
@@ -2042,6 +2102,42 @@ components:
           example: 613eab19e58cc511801af657
           type: string
       type: object
+    RequestMakeAuction:
+      example:
+        visibility:
+        - 613eab19e58cc511801af657
+        - 613eab19e58cc511801af657
+        endDate: 2000-01-23T04:56:07.000+00:00
+        owner_id: 61be17e2f5691463b0fc972d
+        maxBid: 123
+        description: candy
+        bid: 123
+        startDate: 2000-01-23T04:56:07.000+00:00
+      properties:
+        bid:
+          example: 123
+          type: number
+        maxBid:
+          example: 123
+          type: number
+        description:
+          example: candy
+          type: string
+        endDate:
+          format: date-time
+          type: string
+        startDate:
+          format: date-time
+          type: string
+        owner_id:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+        visibility:
+          items:
+            example: 613eab19e58cc511801af657
+            type: string
+          type: array
+      type: object
     RequestMakeClass:
       example:
         period: 4
@@ -2070,6 +2166,52 @@ components:
         password:
           example: Pa$$w0rd
           type: string
+      type: object
+    RequestPayTransaction:
+      example:
+        owner: 613eab19e58cc511801af657
+        amount: 123.45
+        student: 614290257145de7a9e40c58d
+        description: Life Event
+      properties:
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        description:
+          example: Life Event
+          type: string
+        amount:
+          example: 123.45
+          format: float
+          type: number
+        student:
+          example: 614290257145de7a9e40c58d
+          type: string
+      type: object
+    RequestPayTransactions:
+      example:
+        owner: 613eab19e58cc511801af657
+        amount: 123.45
+        description: Life Event
+        students:
+        - 614290257145de7a9e40c58d
+        - 614290257145de7a9e40c58d
+      properties:
+        owner:
+          example: 613eab19e58cc511801af657
+          type: string
+        description:
+          example: Life Event
+          type: string
+        amount:
+          example: 123.45
+          format: float
+          type: number
+        students:
+          items:
+            example: 614290257145de7a9e40c58d
+            type: string
+          type: array
       type: object
     RequestRegister:
       example:
@@ -2134,18 +2276,22 @@ components:
           type: string
         balance:
           example: 123.45
+          format: float
           type: number
         description:
           example: Life Event
           type: string
         conversionRatio:
           example: 123.45
+          format: float
           type: number
         amount:
           example: 123.45
+          format: float
           type: number
         uBucks:
           example: 123.45
+          format: float
           type: number
         type:
           example: Crypto
@@ -2165,23 +2311,36 @@ components:
       - type
       - uBucks
       type: object
+    History:
+      example:
+        date: 2000-01-23T04:56:07.000+00:00
+        netWorth: 123.45
+      properties:
+        date:
+          format: date-time
+          type: string
+        netWorth:
+          default: 0
+          example: 123.45
+          format: float
+          type: number
+      required:
+      - date
+      - netWorth
+      type: object
     User:
       allOf:
       - $ref: '#/components/schemas/UserNoHistory'
       example:
         history:
-        - - 0
-          - 0
-        - - 0
-          - 0
+        - date: 2000-01-23T04:56:07.000+00:00
+          netWorth: 123.45
+        - date: 2000-01-23T04:56:07.000+00:00
+          netWorth: 123.45
       properties:
         history:
           items:
-            items:
-              type: integer
-            maxItems: 2
-            minItems: 2
-            type: array
+            $ref: '#/components/schemas/History'
           type: array
       required:
       - history
@@ -2194,6 +2353,7 @@ components:
         collegeEnd: 2000-01-23T04:56:07.000+00:00
         role: 2
         confirmed: true
+        careerTransition: false
         firstName: Tom
         school_id: 613eab19e58cc511801af657
         children: 3
@@ -2233,12 +2393,17 @@ components:
           default: false
           example: false
           type: boolean
+        careerTransition:
+          default: false
+          example: false
+          type: boolean
         children:
           default: 0
           example: 3
           type: integer
         income:
           example: 123.45
+          format: float
           type: number
         role:
           default: 0
@@ -2251,6 +2416,7 @@ components:
         netWorth:
           default: 0
           example: 123.45
+          format: float
           type: number
       required:
       - _id
@@ -2268,6 +2434,18 @@ components:
       - school
       - token
       - tokenExp
+      type: object
+    Schema:
+      properties:
+        id:
+          format: int64
+          type: integer
+      type: object
+    Schema1:
+      properties:
+        id:
+          format: int64
+          type: integer
       type: object
     schools_school_body:
       properties:
@@ -2317,9 +2495,11 @@ components:
           type: string
         value:
           example: 123.45
+          format: float
           type: number
         basis:
           example: 123.45
+          format: float
           type: number
       type: object
     accounts_account_body_1:
@@ -2335,9 +2515,11 @@ components:
           type: string
         value:
           example: 123.45
+          format: float
           type: number
         basis:
           example: 123.45
+          format: float
           type: number
       type: object
     inline_response_200_1:
@@ -2346,6 +2528,7 @@ components:
       properties:
         value:
           example: 123.45
+          format: float
           type: number
       type: object
     inline_response_200_2:
@@ -2360,12 +2543,15 @@ components:
           type: string
         usd:
           example: 123.45
+          format: float
           type: number
         owned:
           example: 123.45
+          format: float
           type: number
         UBuck:
           example: 123.45
+          format: float
           type: number
       type: object
     inline_response_404:
@@ -2387,6 +2573,7 @@ components:
           type: integer
         UBuck:
           example: 123.45
+          format: float
           type: number
       type: object
     inline_response_200_3:
@@ -2404,6 +2591,7 @@ components:
       properties:
         converion:
           example: 123.45
+          format: float
           type: number
         history:
           items:
@@ -2418,6 +2606,7 @@ components:
           type: string
         balance:
           example: 123.45
+          format: float
           type: number
         _id:
           example: 614290257145de7a9e40c594
@@ -2436,187 +2625,20 @@ components:
       properties:
         converion:
           example: 123.45
+          format: float
           type: number
         bucks:
           example: Smith Bucks
           type: string
         balance:
           example: 123.45
+          format: float
           type: number
         _id:
           example: 614290257145de7a9e40c594
           type: string
         type_id:
           example: 614290257145de7a9e40c594
-          type: string
-      type: object
-    auctionsauction_winner:
-      example:
-        firstName: Tommy
-        lastName: Boy
-      properties:
-        firstName:
-          example: Tommy
-          type: string
-        lastName:
-          example: Boy
-          type: string
-      type: object
-    auctionsauction_visibility:
-      example:
-        name: Entire School
-      properties:
-        name:
-          example: Entire School
-          type: string
-      type: object
-    inline_response_200_5:
-      example:
-        itemNumber: FyW54G
-        winner:
-          firstName: Tommy
-          lastName: Boy
-        visibility:
-        - name: Entire School
-        - name: Entire School
-        endDate: 2000-01-23T04:56:07.000+00:00
-        description: Candy Bar
-        _id: 61be17e2f5691463b0fc972d
-        bid: 123.45
-        startDate: 2000-01-23T04:56:07.000+00:00
-      properties:
-        _id:
-          example: 61be17e2f5691463b0fc972d
-          type: string
-        bid:
-          example: 123.45
-          type: number
-        description:
-          example: Candy Bar
-          type: string
-        endDate:
-          format: date-time
-          type: string
-        startDate:
-          format: date-time
-          type: string
-        itemNumber:
-          example: FyW54G
-          type: string
-        winner:
-          $ref: '#/components/schemas/auctionsauction_winner'
-        visibility:
-          items:
-            $ref: '#/components/schemas/auctionsauction_visibility'
-          type: array
-      type: object
-    auctions_body:
-      properties:
-        bid:
-          example: 123.35
-          type: number
-        description:
-          example: candy
-          type: string
-        endDate:
-          format: date-time
-          type: string
-        startDate:
-          format: date-time
-          type: string
-        owner:
-          example: 61be17e2f5691463b0fc972d
-          type: string
-        visibility:
-          items:
-            example: 613eab19e58cc511801af657
-            type: string
-          type: array
-      type: object
-    auctionsstudent_owner:
-      example:
-        lastName: Boy
-        _id: 61be17e2f5691463b0fc972d
-      properties:
-        _id:
-          example: 61be17e2f5691463b0fc972d
-          type: string
-        lastName:
-          example: Boy
-          type: string
-      type: object
-    auctionsstudent_winner:
-      example:
-        firstName: Tommy
-        lastName: Boy
-        _id: 61be17e2f5691463b0fc972d
-      properties:
-        _id:
-          example: 61be17e2f5691463b0fc972d
-          type: string
-        firstName:
-          example: Tommy
-          type: string
-        lastName:
-          example: Boy
-          type: string
-      type: object
-    inline_response_200_6:
-      example:
-        owner:
-          lastName: Boy
-          _id: 61be17e2f5691463b0fc972d
-        itemNumber: FyW54G
-        winner:
-          firstName: Tommy
-          lastName: Boy
-          _id: 61be17e2f5691463b0fc972d
-        endDate: 2000-01-23T04:56:07.000+00:00
-        description: Candy Bar
-        _id: 61be17e2f5691463b0fc972d
-        bid: 123.45
-        startDate: 2000-01-23T04:56:07.000+00:00
-      properties:
-        _id:
-          example: 61be17e2f5691463b0fc972d
-          type: string
-        bid:
-          example: 123.45
-          type: number
-        description:
-          example: Candy Bar
-          type: string
-        endDate:
-          format: date-time
-          type: string
-        startDate:
-          format: date-time
-          type: string
-        itemNumber:
-          example: FyW54G
-          type: string
-        owner:
-          $ref: '#/components/schemas/auctionsstudent_owner'
-        winner:
-          $ref: '#/components/schemas/auctionsstudent_winner'
-      type: object
-    auctions_placeBid_body:
-      properties:
-        item:
-          example: 24d54dD
-          type: string
-        bid:
-          example: 123.45
-          type: number
-        _id:
-          example: 61be17e2f5691463b0fc972d
-          type: string
-      type: object
-    inline_response_400:
-      properties:
-        error:
-          example: your bid is not greater than the current bid or the auction is
-            over, refresh page
           type: string
       type: object
     bucks_buck_body:
@@ -2632,9 +2654,11 @@ components:
           type: string
         totalCurrency:
           example: 123.45
+          format: float
           type: number
         freeCurrency:
           example: 123.45
+          format: float
           type: number
       type: object
     bucks_buck_body_1:
@@ -2649,7 +2673,7 @@ components:
           example: 613eab19e58cc511801af657
           type: string
       type: object
-    inline_response_200_7:
+    inline_response_200_5:
       example:
         owner: 613eab19e58cc511801af657
         conversionRatio: 123.45
@@ -2670,26 +2694,30 @@ components:
           type: string
         balance:
           example: 123.45
+          format: float
           type: number
         description:
           example: Life Event
           type: string
         conversionRatio:
           example: 123.45
+          format: float
           type: number
         amount:
           example: 123.45
+          format: float
           type: number
         uBucks:
           example: 123.45
+          format: float
           type: number
         type:
           example: Buck
           type: string
         assetID:
-          $ref: '#/components/schemas/inline_response_200_7_assetID'
+          $ref: '#/components/schemas/inline_response_200_5_assetID'
       type: object
-    inline_response_200_8:
+    inline_response_200_6:
       example:
         owner: 613eab19e58cc511801af657
         conversionRatio: 123.45
@@ -2710,68 +2738,28 @@ components:
           type: string
         balance:
           example: 123.45
+          format: float
           type: number
         description:
           example: Life Event
           type: string
         conversionRatio:
           example: 123.45
+          format: float
           type: number
         amount:
           example: 123.45
+          format: float
           type: number
         uBucks:
           example: 123.45
+          format: float
           type: number
         type:
           example: Crypto
           type: string
         assetID:
-          $ref: '#/components/schemas/inline_response_200_8_assetID'
-      type: object
-    transactions_payTransaction_body:
-      properties:
-        owner:
-          example: 613eab19e58cc511801af657
-          type: string
-        description:
-          example: Life Event
-          type: string
-        amount:
-          example: 123.45
-          type: number
-        student:
-          example: 614290257145de7a9e40c58d
-          type: string
-        kind:
-          example: Sawayn Bucks
-          type: string
-      type: object
-    inline_response_200_9:
-      example:
-        success: true
-      properties:
-        success:
-          example: true
-          type: boolean
-      type: object
-    transactions_payTransactions_body:
-      properties:
-        owner:
-          example: 613eab19e58cc511801af657
-          type: string
-        description:
-          example: Life Event
-          type: string
-        amount:
-          example: 123.45
-          type: number
-        student:
-          example: 614290257145de7a9e40c58d
-          type: string
-        kind:
-          example: Sawayn Bucks
-          type: string
+          $ref: '#/components/schemas/inline_response_200_6_assetID'
       type: object
     transactions_conversionTransaction_body:
       properties:
@@ -2783,7 +2771,16 @@ components:
           type: string
         amount:
           example: 123.45
+          format: float
           type: number
+      type: object
+    inline_response_200_7:
+      example:
+        success: true
+      properties:
+        success:
+          example: true
+          type: boolean
       type: object
     transaction_cryptoTransaction_body:
       properties:
@@ -2792,12 +2789,14 @@ components:
           type: string
         buy:
           example: 123.45
+          format: float
           type: number
         sell:
           example: 123.45
+          format: float
           type: number
       type: object
-    inline_response_200_10:
+    inline_response_200_8:
       example:
         accounts:
         - quantity: 123.45
@@ -2822,10 +2821,10 @@ components:
           account: 61c4af5cce0e75f0214cbab1
       properties:
         transaction:
-          $ref: '#/components/schemas/inline_response_200_10_transaction'
+          $ref: '#/components/schemas/inline_response_200_8_transaction'
         accounts:
           items:
-            $ref: '#/components/schemas/inline_response_200_10_accounts'
+            $ref: '#/components/schemas/inline_response_200_8_accounts'
           type: array
       type: object
     users_user_body:
@@ -2850,7 +2849,7 @@ components:
           example: true
           type: boolean
       type: object
-    inline_response_200_11:
+    inline_response_200_9:
       example:
         deleted: true
       properties:
@@ -2890,6 +2889,34 @@ components:
           example: There is no confirmed user with that email
           type: string
       type: object
+    Auction_owner_id:
+      example:
+        lastName: Jones
+        _id: ou812
+      properties:
+        lastName:
+          example: Jones
+          type: string
+        _id:
+          example: ou812
+          type: string
+      type: object
+    Auction_winner_id:
+      example:
+        firstName: Tom
+        lastName: Jones
+        _id: ou812
+      properties:
+        firstName:
+          example: Tom
+          type: string
+        lastName:
+          example: Jones
+          type: string
+        _id:
+          example: ou812
+          type: string
+      type: object
     ClassWithMembers_members:
       example:
         firstName: Jay
@@ -2909,41 +2936,44 @@ components:
           type: integer
         netWorth:
           example: 22.1
+          format: float
           type: number
         _id:
           example: 613eab19e58cc511801af657
           type: string
       type: object
-    ResponseEvents_inner:
+    ResponseAuctionStudent_owner:
       example:
-        transaction_id: 613eab19e58cc511801af657
-        createdAt: 2000-01-23T04:56:07.000+00:00
-        owner_id:
-          firstName: Jay
-          lastName: Leno
-        description: on time
-        value: 123
+        lastName: Boy
+        _id: 61be17e2f5691463b0fc972d
       properties:
-        value:
-          example: 123
-          type: integer
-        createdAt:
-          format: date-time
+        _id:
+          example: 61be17e2f5691463b0fc972d
           type: string
-        description:
-          example: on time
+        lastName:
+          example: Boy
           type: string
-        transaction_id:
-          example: 613eab19e58cc511801af657
-          type: string
-        owner_id:
-          $ref: '#/components/schemas/ResponseEvents_inner_owner_id'
       type: object
-    ResponseMemberClass_owner:
+    ResponseAuctionStudent_winner:
+      example:
+        firstName: Tommy
+        lastName: Boy
+        _id: 61be17e2f5691463b0fc972d
+      properties:
+        _id:
+          example: 61be17e2f5691463b0fc972d
+          type: string
+        firstName:
+          example: Tommy
+          type: string
+        lastName:
+          example: Boy
+          type: string
+      type: object
+    ResponseEvents_owner_id:
       example:
         firstName: Jay
         lastName: Leno
-        _id: 613eab19e58cc511801af657
       properties:
         firstName:
           example: Jay
@@ -2951,43 +2981,8 @@ components:
         lastName:
           example: Leno
           type: string
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
       type: object
-    ResponseSchools_inner:
-      example:
-        name: East High
-        _id: dlkjdlkjdfslkjdfs93
-      properties:
-        name:
-          example: East High
-          type: string
-        _id:
-          example: dlkjdlkjdfslkjdfs93
-          type: string
-      type: object
-    ResponseTransactions_inner:
-      example:
-        createdAt: 2000-01-23T04:56:07.000+00:00
-        amount: 123.45
-        student: Jay Leno
-        description: on time
-      properties:
-        amount:
-          example: 123.45
-          type: number
-        createdAt:
-          format: date-time
-          type: string
-        description:
-          example: on time
-          type: string
-        student:
-          example: Jay Leno
-          type: string
-      type: object
-    inline_response_200_7_assetID:
+    inline_response_200_5_assetID:
       example:
         name: Jay Bucks
       properties:
@@ -2995,7 +2990,7 @@ components:
           example: Jay Bucks
           type: string
       type: object
-    inline_response_200_8_assetID:
+    inline_response_200_6_assetID:
       example:
         name: Cardano
       properties:
@@ -3003,7 +2998,7 @@ components:
           example: Cardano
           type: string
       type: object
-    inline_response_200_10_transaction_assetID:
+    inline_response_200_8_transaction_assetID:
       example:
         name: vechain
         _id: 61c4af57ce0e75f0214cbaaa
@@ -3015,7 +3010,7 @@ components:
           example: 61c4af57ce0e75f0214cbaaa
           type: string
       type: object
-    inline_response_200_10_transaction:
+    inline_response_200_8_transaction:
       example:
         conversionRatio: 123.45
         owner: 6170a4aff8437c84920b7ff1
@@ -3034,12 +3029,15 @@ components:
           type: string
         amount:
           example: 123.45
+          format: float
           type: number
         balance:
           example: 123.45
+          format: float
           type: number
         conversionRatio:
           example: 123.45
+          format: float
           type: number
         description:
           example: Conversion to this account
@@ -3052,11 +3050,12 @@ components:
           type: string
         uBucks:
           example: 0.0925
+          format: float
           type: number
         assetID:
-          $ref: '#/components/schemas/inline_response_200_10_transaction_assetID'
+          $ref: '#/components/schemas/inline_response_200_8_transaction_assetID'
       type: object
-    inline_response_200_10_accounts:
+    inline_response_200_8_accounts:
       example:
         quantity: 123.45
         name: vechain
@@ -3065,26 +3064,17 @@ components:
       properties:
         basis:
           example: 0.124
+          format: float
           type: number
         currentPrice:
           example: 1.255
+          format: float
           type: number
         name:
           example: vechain
           type: string
         quantity:
           example: 123.45
+          format: float
           type: number
-      type: object
-    ResponseEvents_inner_owner_id:
-      example:
-        firstName: Jay
-        lastName: Leno
-      properties:
-        firstName:
-          example: Jay
-          type: string
-        lastName:
-          example: Leno
-          type: string
       type: object

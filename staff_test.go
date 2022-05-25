@@ -4,41 +4,24 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"testing"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	bolt "go.etcd.io/bbolt"
 )
 
 func TestMakeClass(t *testing.T) {
-	teacherId := "teacherName"
-	addCode := RandomString(6)
 
-	db, teardown := FullStartTestServer("makeClass", 8090, teacherId)
+	db, teardown := FullStartTestServer("makeClass", 8090, "")
 	defer teardown()
 
-	schoolId, _ := FindOrCreateSchool(db, "test school", "no city", 0)
-	err := db.Update(func(tx *bolt.Tx) error {
-		_ = AddUserTx(tx, UserInfo{
-			Name:      teacherId,
-			Email:     teacherId,
-			Confirmed: true,
-			SchoolId:  schoolId,
-			Role:      UserRoleTeacher,
-		})
+	_, _, teachers, _, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
 
-		school, _ := SchoolByIdTx(tx, schoolId)
-		_ = school.Put([]byte("addCode"), []byte(addCode))
-		teachers, _ := school.CreateBucketIfNotExists([]byte("teachers"))
-		_, _ = teachers.CreateBucket([]byte(teacherId))
-		//class, _ := teacher.CreateBucket([]byte(RandomString(12)))
-		//_ = class.Put([]byte("name"), []byte("1"))
-		//_ = class.Put([]byte("period"), itob32(13))
-		//_ = class.Put([]byte("addCode"), []byte(addCode))
-		return nil
-	})
+	SetTestLoginUser(teachers[0])
+	// openapi.NewAllApiService().SearchClass(classes[0])
+
 	assert.Nil(t, err)
 	client := &http.Client{}
 
@@ -63,9 +46,38 @@ func TestMakeClass(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&respData)
 
-	assert.Equal(t, 1, len(respData))
+	assert.Equal(t, 3, len(respData))
 	assert.Equal(t, 6, len(respData[0].AddCode))
 
+}
+
+func TestSearchClasses(t *testing.T) {
+	db, tearDown := FullStartTestServer("searchClasses", 8090, "")
+	defer tearDown()
+	classCount := 2
+
+	_, _, teachers, _, _, err := CreateTestAccounts(db, 2, 2, classCount, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/classes",
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data []openapi.Class
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, classCount, len(data))
+	require.Equal(t, teachers[0], data[0].OwnerId)
 }
 
 func TestEditClass(t *testing.T) {
@@ -106,6 +118,34 @@ func TestEditClass(t *testing.T) {
 	require.Equal(t, classes[0], data.Id)
 }
 
+func TestKickClass(t *testing.T) {
+	db, tearDown := FullStartTestServer("kickClass", 8090, "")
+	defer tearDown()
+	members := 2
+
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, members)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestKickClass{
+		KickId: students[0],
+		Id:     classes[0],
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/classes/class/kick",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+}
+
 func TestDeleteClass(t *testing.T) {
 	db, tearDown := FullStartTestServer("DeleteClass", 8090, "")
 	defer tearDown()
@@ -127,3 +167,193 @@ func TestDeleteClass(t *testing.T) {
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 }
+
+func TestDeleteAuction(t *testing.T) {
+	db, tearDown := FullStartTestServer("deleteAuction", 8090, "")
+	clock := AppClock{}
+	defer tearDown()
+
+	_, schools, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	s := StaffApiServiceImpl{
+		db: db,
+	}
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(500),
+		StartDate:   clock.Now(),
+		OwnerId:     teachers[0],
+		Visibility:  classes,
+	}
+
+	auctions, err := s.MakeAuctionImpl(UserInfo{
+		Name:     teachers[0],
+		SchoolId: schools[0],
+		Role:     UserRoleTeacher,
+	}, body)
+
+	_, err = s.MakeAuctionImpl(UserInfo{
+		Name:     teachers[0],
+		SchoolId: schools[0],
+		Role:     UserRoleTeacher,
+	}, body)
+
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/auctions/auction")
+	q := u.Query()
+	q.Set("_id", auctions[0].Id)
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest(http.MethodDelete,
+		u.String(),
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	defer resp.Body.Close()
+	var respData []openapi.Auction
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, 1, len(respData))
+
+}
+
+func TestMakeAuction(t *testing.T) {
+	clock := AppClock{}
+	db, teardown := FullStartTestServer("makeClass", 8090, "")
+	defer teardown()
+
+	_, _, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(500),
+		StartDate:   clock.Now(),
+		OwnerId:     teachers[0],
+		Visibility:  classes,
+	}
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/auctions",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	defer resp.Body.Close()
+	var respData []openapi.Auction
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, len(classes)-4, len(respData[0].Visibility)) // -4 because both schools have freshman sophomores... the key is the same so only added once
+	assert.Equal(t, 1, len(respData))
+
+}
+
+func TestSearchAuctionsTeacher(t *testing.T) {
+	clock := AppClock{}
+	db, teardown := FullStartTestServer("searchAuctionsTeacher", 8090, "")
+	defer teardown()
+
+	_, schools, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	s := StaffApiServiceImpl{
+		db: db,
+	}
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(500),
+		StartDate:   clock.Now(),
+		OwnerId:     teachers[0],
+		Visibility:  classes,
+	}
+
+	_, err = s.MakeAuctionImpl(UserInfo{
+		Name:     teachers[0],
+		SchoolId: schools[0],
+		Role:     UserRoleTeacher,
+	}, body)
+
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/auctions",
+		nil)
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	defer resp.Body.Close()
+	var respData []openapi.Auction
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, 1, len(respData))
+	assert.Equal(t, len(classes)-4, len(respData[0].Visibility)) // -4 because both schools have freshman sophomores... the key is the same so only added once
+
+}
+
+// func TestPayTransaction_credit(t *testing.T) {
+// 	db, tearDown := FullStartTestServer("payTransaction_credit", 8090, "")
+// 	defer tearDown()
+
+// 	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+
+// 	SetTestLoginUser(teachers[0])
+
+// 	client := &http.Client{}
+// 	body := openapi.RequestPayTransaction{
+// 		Owner:       "",
+// 		Description: "credit",
+// 		Amount:      100,
+// 		Student:     students[0],
+// 	}
+
+// 	marshal, _ := json.Marshal(body)
+
+// 	req, _ := http.NewRequest(http.MethodPost,
+// 		"http://127.0.0.1:8090/api/transactions/payTransaction",
+// 		bytes.NewBuffer(marshal))
+
+// 	resp, err := client.Do(req)
+// 	defer resp.Body.Close()
+// 	require.Nil(t, err)
+// 	require.NotNil(t, resp)
+// 	assert.Equal(t, 200, resp.StatusCode)
+
+// require.Equal(t, members, len(data.Members))
+// require.Equal(t, "Test Name", data.Name)
+// require.Equal(t, int32(4), data.Period)
+// require.Equal(t, classes[0], data.Id)
+// }

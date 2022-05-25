@@ -34,9 +34,11 @@ const (
 	OperationDebit      = 1
 	OperationCredit     = 2
 	CurrencyUBuck       = "ubuck"
+	KeyAuctions         = "auctions"
 	KeyCB               = "cb"
 	KeyUsers            = "users"
-	KeyAccounts         = "accounts"
+	KeybAccounts        = "bAccounts"
+	KeycAccounts        = "cAccounts"
 	KeyBalance          = "balance"
 	KeyTransactions     = "transactions"
 	KeyTeachers         = "teachers"
@@ -58,6 +60,20 @@ const (
 	KeyCareerEnd        = "CareerEnd"
 	KeyCollegeEnd       = "CollegeEnd"
 	KeyHistory          = "History"
+	KeyEntireSchool     = "entireSchool"
+	KeyTeacherClasses   = "teacherClasses"
+	KeyFreshman         = "freshman"
+	KeySophomores       = "sophomores"
+	KeyJuniors          = "juniors"
+	KeySeniors          = "seniors"
+	KeyBid              = "bid"
+	KeyMaxBid           = "maxBid"
+	KeyDescription      = "description"
+	KeyEndDate          = "endDate"
+	KeyStartDate        = "startDate"
+	KeyOwnerId          = "owner_id"
+	KeyVisibility       = "visibility"
+	KeyWinnerId         = "winner_id"
 )
 
 type ServerConfig struct {

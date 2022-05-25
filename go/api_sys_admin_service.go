@@ -12,8 +12,8 @@ package openapi
 
 import (
 	"context"
-	"errors"
 	"net/http"
+	"errors"
 )
 
 // SysAdminApiService is a service that implements the logic for the SysAdminApiServicer
@@ -88,8 +88,8 @@ func (s *SysAdminApiService) DeleteUser(ctx context.Context, email string) (Impl
 	// TODO - update DeleteUser with the required logic for this service method.
 	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse20011{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse20011{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2009{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2009{}), nil
 
 	//TODO: Uncomment the next line to return response Response(403, InlineResponse403{}) or use other options such as http.Ok ...
 	//return Response(403, InlineResponse403{}), nil
@@ -189,8 +189,8 @@ func (s *SysAdminApiService) SearchSchools(ctx context.Context, zip int32) (Impl
 	// TODO - update SearchSchools with the required logic for this service method.
 	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseSchoolsInner{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseSchoolsInner{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseSchools{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseSchools{}), nil
 
 	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
 	//return Response(400, nil),nil

@@ -10,34 +10,30 @@
 
 package openapi
 
-import (
-	"time"
-)
-
 type InlineResponse2006 struct {
-	Id string `json:"_id,omitempty"`
 
-	Bid float32 `json:"bid,omitempty"`
+	Account string `json:"account,omitempty"`
+
+	Owner string `json:"owner,omitempty"`
+
+	Balance float32 `json:"balance,omitempty"`
 
 	Description string `json:"description,omitempty"`
 
-	EndDate time.Time `json:"endDate,omitempty"`
+	ConversionRatio float32 `json:"conversionRatio,omitempty"`
 
-	StartDate time.Time `json:"startDate,omitempty"`
+	Amount float32 `json:"amount,omitempty"`
 
-	ItemNumber string `json:"itemNumber,omitempty"`
+	UBucks float32 `json:"uBucks,omitempty"`
 
-	Owner AuctionsstudentOwner `json:"owner,omitempty"`
+	Type string `json:"type,omitempty"`
 
-	Winner AuctionsstudentWinner `json:"winner,omitempty"`
+	AssetID InlineResponse2006AssetId `json:"assetID,omitempty"`
 }
 
 // AssertInlineResponse2006Required checks if the required fields are not zero-ed
 func AssertInlineResponse2006Required(obj InlineResponse2006) error {
-	if err := AssertAuctionsstudentOwnerRequired(obj.Owner); err != nil {
-		return err
-	}
-	if err := AssertAuctionsstudentWinnerRequired(obj.Winner); err != nil {
+	if err := AssertInlineResponse2006AssetIdRequired(obj.AssetID); err != nil {
 		return err
 	}
 	return nil

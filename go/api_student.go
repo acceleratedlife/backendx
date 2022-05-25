@@ -114,18 +114,18 @@ func (c *StudentApiController) Routes() Routes {
 
 // AuctionBid - auction bid
 func (c *StudentApiController) AuctionBid(w http.ResponseWriter, r *http.Request) {
-	auctionsPlaceBidBodyParam := AuctionsPlaceBidBody{}
+	requestAuctionBidParam := RequestAuctionBid{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&auctionsPlaceBidBodyParam); err != nil {
+	if err := d.Decode(&requestAuctionBidParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertAuctionsPlaceBidBodyRequired(auctionsPlaceBidBodyParam); err != nil {
+	if err := AssertRequestAuctionBidRequired(requestAuctionBidParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.AuctionBid(r.Context(), auctionsPlaceBidBodyParam)
+	result, err := c.service.AuctionBid(r.Context(), requestAuctionBidParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -188,8 +188,7 @@ func (c *StudentApiController) CryptoConvert(w http.ResponseWriter, r *http.Requ
 
 // SearchAuctionsStudent - searches auctions
 func (c *StudentApiController) SearchAuctionsStudent(w http.ResponseWriter, r *http.Request) {
-	userIdParam := r.Header.Get("user._id")
-	result, err := c.service.SearchAuctionsStudent(r.Context(), userIdParam)
+	result, err := c.service.SearchAuctionsStudent(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -218,9 +217,8 @@ func (c *StudentApiController) SearchBuckTransaction(w http.ResponseWriter, r *h
 // SearchCrypto - returns the given crypto price, how many are owned and how many ubucks the user has.
 func (c *StudentApiController) SearchCrypto(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	userIdParam := r.Header.Get("user._id")
 	nameParam := query.Get("name")
-	result, err := c.service.SearchCrypto(r.Context(), userIdParam, nameParam)
+	result, err := c.service.SearchCrypto(r.Context(), nameParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -248,8 +246,7 @@ func (c *StudentApiController) SearchCryptoTransaction(w http.ResponseWriter, r 
 
 // SearchStudentCrypto - returns all crypto accounts for specific user
 func (c *StudentApiController) SearchStudentCrypto(w http.ResponseWriter, r *http.Request) {
-	userIdParam := r.Header.Get("user._id")
-	result, err := c.service.SearchStudentCrypto(r.Context(), userIdParam)
+	result, err := c.service.SearchStudentCrypto(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -262,8 +259,7 @@ func (c *StudentApiController) SearchStudentCrypto(w http.ResponseWriter, r *htt
 
 // SearchStudentUbuck - searches accounts for UBuck for this student at this school
 func (c *StudentApiController) SearchStudentUbuck(w http.ResponseWriter, r *http.Request) {
-	userIdParam := r.Header.Get("user._id")
-	result, err := c.service.SearchStudentUbuck(r.Context(), userIdParam)
+	result, err := c.service.SearchStudentUbuck(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
