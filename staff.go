@@ -247,19 +247,9 @@ func (s *StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.R
 		return openapi.Response(401, ""), nil
 	}
 
-	amount := decimal.NewFromFloat32(body.Amount)
-	studentDetails, err := getUserInLocalStore(s.db, body.Student)
-
-	if amount.Sign() > 0 {
-		err = addBuck2Student(s.db, s.clock, studentDetails, amount, body.OwnerId, body.Description)
-		if err != nil {
-			return openapi.Response(400, err), nil
-		}
-	} else if amount.Sign() < 0 {
-		err = chargeStudent(s.db, s.clock, studentDetails, amount.Abs(), body.OwnerId, body.Description)
-		if err != nil {
-			return openapi.Response(400, err), nil
-		}
+	err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
+	if err != nil {
+		return openapi.Response(400, err), nil
 	}
 
 	return openapi.Response(200, ""), nil
@@ -280,11 +270,7 @@ func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.
 
 	errors := make([]error, 0)
 	for _, student := range body.Students {
-		studentDetails, err := getUserInLocalStore(s.db, student)
-		if err != nil {
-			continue
-		}
-		err = addUbuck2Student(s.db, s.clock, studentDetails, decimal.NewFromFloat32(body.Amount), body.Description)
+		err = executeTransaction(s.db, s.clock, body.Amount, student, body.Owner, body.Description)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -427,4 +413,26 @@ func visibilityToSlice(tx *bolt.Tx, userDetails UserInfo, classIds *bolt.Bucket)
 		}
 	}
 	return
+}
+
+func executeTransaction(db *bolt.DB, clock Clock, value float32, student, owner, description string) error {
+	amount := decimal.NewFromFloat32(value)
+	studentDetails, err := getUserInLocalStore(db, student)
+	if err != nil {
+		return fmt.Errorf("error finding student: %v", err)
+	}
+
+	if amount.Sign() > 0 {
+		err = addBuck2Student(db, clock, studentDetails, amount, owner, description)
+		if err != nil {
+			return fmt.Errorf("error paying student: %v", err)
+		}
+	} else if amount.Sign() < 0 {
+		err = chargeStudent(db, clock, studentDetails, amount.Abs(), owner, description)
+		if err != nil {
+			return fmt.Errorf("error depting student: %v", err)
+		}
+	}
+
+	return nil
 }

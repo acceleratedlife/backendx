@@ -390,3 +390,71 @@ func TestPayTransaction_debit(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode)
 
 }
+
+func TestPayTransactions_credit(t *testing.T) {
+	db, tearDown := FullStartTestServer("payTransactions_credit", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestPayTransactions{
+		Owner:       teachers[0],
+		Description: "credit",
+		Amount:      100,
+		Students:    students,
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/payTransactions",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}
+
+func TestPayTransactions_debit(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("payTransactions_debit", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestPayTransactions{
+		Owner:       teachers[0],
+		Description: "debit",
+		Amount:      -100,
+		Students:    students,
+	}
+
+	for _, student := range students {
+		userDetails, err := getUserInLocalStore(db, student)
+		require.Nil(t, err)
+		err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "pre load")
+		require.Nil(t, err)
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/payTransactions",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}

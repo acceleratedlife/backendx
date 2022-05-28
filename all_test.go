@@ -145,7 +145,7 @@ func TestUserEdit(t *testing.T) {
 
 	userDetails, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
-	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(15000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])
