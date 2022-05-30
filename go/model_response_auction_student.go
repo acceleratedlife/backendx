@@ -17,15 +17,13 @@ import (
 type ResponseAuctionStudent struct {
 	Id string `json:"_id,omitempty"`
 
-	Bid float32 `json:"bid"`
+	Bid float32 `json:"bid,omitempty"`
 
 	Description string `json:"description,omitempty"`
 
 	EndDate time.Time `json:"endDate,omitempty"`
 
 	StartDate time.Time `json:"startDate,omitempty"`
-
-	ItemNumber string `json:"itemNumber,omitempty"`
 
 	OwnerId ResponseAuctionStudentOwner `json:"owner_id,omitempty"`
 

@@ -22,8 +22,6 @@ type Auction struct {
 
 	EndDate string `json:"endDate,omitempty"`
 
-	ItemNumber string `json:"itemNumber"`
-
 	Bid int32 `json:"bid"`
 
 	MaxBid int32 `json:"maxBid,omitempty"`
@@ -38,7 +36,6 @@ func AssertAuctionRequired(obj Auction) error {
 	elements := map[string]interface{}{
 		"_id": obj.Id,
 		"startDate": obj.StartDate,
-		"itemNumber": obj.ItemNumber,
 		"bid": obj.Bid,
 		"description": obj.Description,
 		"visibility": obj.Visibility,

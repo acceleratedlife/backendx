@@ -1138,8 +1138,14 @@ paths:
       responses:
         "200":
           description: return success status
-        "404":
-          description: transactions cannot be made with that data
+        "400":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponsePayTransactions'
+                type: array
+          description: at lest 1 transaction failed
       summary: When a teacher or admin is paying/debting an entire class
       tags:
       - Staff
@@ -1545,7 +1551,6 @@ components:
       type: object
     Auction:
       example:
-        itemNumber: dkeD56
         visibility:
         - 613eab19e58cc511801af657
         - 613eab19e58cc511801af657
@@ -1574,9 +1579,6 @@ components:
           type: string
         endDate:
           type: string
-        itemNumber:
-          example: dkeD56
-          type: string
         bid:
           default: 0
           example: 4
@@ -1598,7 +1600,6 @@ components:
       - _id
       - bid
       - description
-      - itemNumber
       - owner
       - startDate
       - visibility
@@ -1821,16 +1822,15 @@ components:
       type: object
     ResponseAuctionStudent:
       example:
-        owner:
+        endDate: 2000-01-23T04:56:07.000+00:00
+        owner_id:
           lastName: Boy
           _id: 61be17e2f5691463b0fc972d
-        itemNumber: FyW54G
-        winner:
+        description: Candy Bar
+        winner_id:
           firstName: Tommy
           lastName: Boy
           _id: 61be17e2f5691463b0fc972d
-        endDate: 2000-01-23T04:56:07.000+00:00
-        description: Candy Bar
         _id: 61be17e2f5691463b0fc972d
         bid: 123.45
         startDate: 2000-01-23T04:56:07.000+00:00
@@ -1851,13 +1851,10 @@ components:
         startDate:
           format: date-time
           type: string
-        itemNumber:
-          example: FyW54G
-          type: string
-        owner:
-          $ref: '#/components/schemas/ResponseAuctionStudent_owner'
-        winner:
-          $ref: '#/components/schemas/ResponseAuctionStudent_winner'
+        owner_id:
+          $ref: '#/components/schemas/ResponseAuctionStudent_owner_id'
+        winner_id:
+          $ref: '#/components/schemas/ResponseAuctionStudent_winner_id'
       type: object
     ResponseAuth2:
       example:
@@ -1996,6 +1993,12 @@ components:
           type: boolean
         message:
           example: Auth failed, email not found
+          type: string
+      type: object
+    ResponsePayTransactions:
+      properties:
+        message:
+          example: ss1@ss.com was not paid 2300
           type: string
       type: object
     ResponseRegister2:
@@ -2178,12 +2181,12 @@ components:
       type: object
     RequestPayTransaction:
       example:
-        owner: 613eab19e58cc511801af657
         amount: 123.45
         student: 614290257145de7a9e40c58d
+        owner_id: 613eab19e58cc511801af657
         description: Life Event
       properties:
-        owner:
+        owner_id:
           example: 613eab19e58cc511801af657
           type: string
         description:
@@ -2942,7 +2945,7 @@ components:
           example: 613eab19e58cc511801af657
           type: string
       type: object
-    ResponseAuctionStudent_owner:
+    ResponseAuctionStudent_owner_id:
       example:
         lastName: Boy
         _id: 61be17e2f5691463b0fc972d
@@ -2954,7 +2957,7 @@ components:
           example: Boy
           type: string
       type: object
-    ResponseAuctionStudent_winner:
+    ResponseAuctionStudent_winner_id:
       example:
         firstName: Tommy
         lastName: Boy

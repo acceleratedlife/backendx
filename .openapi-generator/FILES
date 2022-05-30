@@ -66,8 +66,8 @@ go/model_request_pay_transactions.go
 go/model_request_register.go
 go/model_request_user.go
 go/model_response_auction_student.go
-go/model_response_auction_student_owner.go
-go/model_response_auction_student_winner.go
+go/model_response_auction_student_owner_id.go
+go/model_response_auction_student_winner_id.go
 go/model_response_auth2.go
 go/model_response_auth4.go
 go/model_response_cookie.go
@@ -78,6 +78,7 @@ go/model_response_login2.go
 go/model_response_login4.go
 go/model_response_member_class.go
 go/model_response_member_class_owner.go
+go/model_response_pay_transactions.go
 go/model_response_register2.go
 go/model_response_register4.go
 go/model_response_schools.go

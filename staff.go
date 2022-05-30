@@ -249,7 +249,7 @@ func (s *StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.R
 
 	err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
 	if err != nil {
-		return openapi.Response(400, err), nil
+		return openapi.Response(400, ""), err
 	}
 
 	return openapi.Response(200, ""), nil
@@ -268,11 +268,13 @@ func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.
 		return openapi.Response(401, ""), nil
 	}
 
-	errors := make([]error, 0)
+	errors := make([]openapi.ResponsePayTransactions, 0)
 	for _, student := range body.Students {
 		err = executeTransaction(s.db, s.clock, body.Amount, student, body.Owner, body.Description)
 		if err != nil {
-			errors = append(errors, err)
+			errors = append(errors, openapi.ResponsePayTransactions{
+				Message: student + " was not paid, error: " + err.Error(),
+			})
 		}
 	}
 	if len(errors) != 0 {
@@ -430,7 +432,7 @@ func executeTransaction(db *bolt.DB, clock Clock, value float32, student, owner,
 	} else if amount.Sign() < 0 {
 		err = chargeStudent(db, clock, studentDetails, amount.Abs(), owner, description)
 		if err != nil {
-			return fmt.Errorf("error depting student: %v", err)
+			return fmt.Errorf("error debting student: %v", err)
 		}
 	}
 
