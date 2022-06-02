@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -406,5 +408,77 @@ func addClassDetailsTx(bucket *bolt.Bucket, className string, period int, adminC
 	}
 	addCode := RandomString(6)
 	err = class.Put([]byte(KeyAddCode), []byte(addCode))
+	return
+}
+
+func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.ResponseTransactions, err error) {
+	CB, err := getCbRx(tx, teacher.SchoolId)
+	if err != nil {
+		return
+	}
+
+	bAccounts := CB.Bucket([]byte(KeybAccounts))
+	if bAccounts == nil {
+		return resp, fmt.Errorf("Cannot find buck accounts bucket")
+	}
+
+	buck := bAccounts.Bucket([]byte(teacher.Name))
+	if buck == nil {
+		return resp, fmt.Errorf("Cannot find " + teacher.LastName + " buck bucket")
+	}
+
+	transactions := buck.Bucket([]byte(KeyTransactions))
+	if transactions == nil {
+		return resp, fmt.Errorf("Cannot find transactions bucket")
+	}
+
+	c := transactions.Cursor()
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v == nil {
+			continue
+		}
+
+		items := strings.Split(string(v), ",")
+		source := strings.Split(items[1], ":") //this needs to mean from teacher but it does not
+		if source[1] != "\"\"" {
+			continue
+		}
+
+		time, err := time.Parse(time.RFC3339, string(k))
+		if err != nil {
+			return resp, fmt.Errorf("Cannot parse time")
+		}
+
+		amount := strings.Split(items[5], ":")
+		parseAmount := amount[1][1 : len(amount[1])-1]
+		value, err := strconv.ParseFloat(parseAmount, 32)
+		if err != nil {
+			return resp, fmt.Errorf("Cannot parse float")
+		}
+		float := float32(value)
+
+		descirption := strings.Split(items[8], ":")
+		parseDescription := descirption[1][1 : len(descirption[1])-2]
+		reciever := strings.Split(items[2], ":")
+		parseReciever := reciever[1][1 : len(reciever[1])-1]
+		student, err := getUserInLocalStoreTx(tx, parseReciever)
+		if err != nil {
+			return resp, fmt.Errorf("Cannot find student details")
+		}
+
+		var slice []openapi.ResponseTransactions
+		slice = append(slice, openapi.ResponseTransactions{
+			Amount:      float,
+			CreatedAt:   time,
+			Description: parseDescription,
+			Student:     student.FirstName + " " + student.LastName,
+		})
+
+		resp = append(slice, resp...)
+		if len(resp) >= 60 {
+			break
+		}
+	}
+
 	return
 }

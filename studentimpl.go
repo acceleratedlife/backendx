@@ -123,6 +123,17 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 		errR = err
 		return
 	}
+
+	oldTransaction := transactions.Get(tsB)
+	if oldTransaction != nil {
+		transaction.Ts.Add(time.Millisecond * 1)
+		tsB, err = transaction.Ts.MarshalText()
+		if err != nil {
+			errR = err
+			return
+		}
+	}
+
 	transactionB, err := json.Marshal(transaction)
 	if err != nil {
 		errR = err
@@ -279,7 +290,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		return fmt.Errorf("currency %s is not supported, %v", currency, err)
 	}
 
-	ts := clock.Now().Truncate(time.Second)
+	ts := clock.Now().Truncate(time.Millisecond)
 
 	transaction := Transaction{
 		Ts:             ts,
