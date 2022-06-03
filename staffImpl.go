@@ -433,7 +433,7 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 	}
 
 	c := transactions.Cursor()
-	for k, v := c.First(); k != nil; k, v = c.Next() {
+	for k, v := c.Last(); k != nil; k, v = c.Prev() {
 		if v == nil {
 			continue
 		}
@@ -466,15 +466,14 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 			return resp, fmt.Errorf("Cannot find student details")
 		}
 
-		var slice []openapi.ResponseTransactions
-		slice = append(slice, openapi.ResponseTransactions{
+		slice := openapi.ResponseTransactions{
 			Amount:      float,
 			CreatedAt:   time,
 			Description: parseDescription,
 			Student:     student.FirstName + " " + student.LastName,
-		})
+		}
 
-		resp = append(slice, resp...)
+		resp = append(resp, slice)
 		if len(resp) >= 60 {
 			break
 		}
