@@ -1253,26 +1253,12 @@ paths:
         style: form
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_200_8'
           description: transaction Deleted
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_403'
-          description: Students are trying to delete students
         "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_404_1'
           description: There is no user with that email
       summary: delete user
       tags:
-      - SysAdmin
+      - Staff
     get:
       description: return student
       operationId: searchStudent
@@ -1469,7 +1455,7 @@ paths:
           description: unconfirmed email
       summary: reset password
       tags:
-      - All
+      - Staff
   /users/confirmEmail:
     get:
       description: user is authenticated by token and confirmed is changed to true
@@ -2851,31 +2837,6 @@ components:
         careerTransition:
           example: true
           type: boolean
-      type: object
-    inline_response_200_8:
-      example:
-        deleted: true
-      properties:
-        deleted:
-          example: true
-          type: boolean
-      type: object
-    inline_response_403:
-      properties:
-        error:
-          example: access level
-          type: string
-        message:
-          example: Students cannot delete users
-          type: string
-      type: object
-    inline_response_404_1:
-      properties:
-        error:
-          type: string
-        message:
-          example: There is no user with that email
-          type: string
       type: object
     users_resetPassword_body:
       properties:

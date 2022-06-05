@@ -74,12 +74,6 @@ func (c *SysAdminApiController) Routes() Routes {
 			c.DeleteSchool,
 		},
 		{
-			"DeleteUser",
-			strings.ToUpper("Delete"),
-			"/api/users/user",
-			c.DeleteUser,
-		},
-		{
 			"Deletetransaction",
 			strings.ToUpper("Delete"),
 			"/api/transactions/transaction",
@@ -189,21 +183,6 @@ func (c *SysAdminApiController) DeleteSchool(w http.ResponseWriter, r *http.Requ
 	query := r.URL.Query()
 	idParam := query.Get("_id")
 	result, err := c.service.DeleteSchool(r.Context(), idParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// DeleteUser - delete user
-func (c *SysAdminApiController) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	emailParam := query.Get("email")
-	result, err := c.service.DeleteUser(r.Context(), emailParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

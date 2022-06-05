@@ -497,3 +497,26 @@ func TestSearchTransactions(t *testing.T) {
 	assert.Equal(t, numStudents, len(respData))
 
 }
+
+func TestDeleteUser(t *testing.T) {
+	db, tearDown := FullStartTestServer("deleteUser", 8090, "")
+	defer tearDown()
+	numStudents := 50
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, numStudents)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodDelete,
+		"http://127.0.0.1:8090/api/users/user?_id="+students[0],
+		bytes.NewBuffer(nil))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}

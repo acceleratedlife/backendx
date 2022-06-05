@@ -83,23 +83,6 @@ func (s *SysAdminApiService) DeleteSchool(ctx context.Context, id string) (ImplR
 	return Response(http.StatusNotImplemented, nil), errors.New("DeleteSchool method not implemented")
 }
 
-// DeleteUser - delete user
-func (s *SysAdminApiService) DeleteUser(ctx context.Context, email string) (ImplResponse, error) {
-	// TODO - update DeleteUser with the required logic for this service method.
-	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2008{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2008{}), nil
-
-	//TODO: Uncomment the next line to return response Response(403, InlineResponse403{}) or use other options such as http.Ok ...
-	//return Response(403, InlineResponse403{}), nil
-
-	//TODO: Uncomment the next line to return response Response(404, InlineResponse4041{}) or use other options such as http.Ok ...
-	//return Response(404, InlineResponse4041{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("DeleteUser method not implemented")
-}
-
 // Deletetransaction - delete transaction
 func (s *SysAdminApiService) Deletetransaction(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update Deletetransaction with the required logic for this service method.

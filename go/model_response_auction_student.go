@@ -15,6 +15,7 @@ import (
 )
 
 type ResponseAuctionStudent struct {
+
 	Id string `json:"_id,omitempty"`
 
 	Bid float32 `json:"bid,omitempty"`
@@ -25,17 +26,17 @@ type ResponseAuctionStudent struct {
 
 	StartDate time.Time `json:"startDate,omitempty"`
 
-	OwnerId ResponseAuctionStudentOwner `json:"owner_id,omitempty"`
+	OwnerId ResponseAuctionStudentOwnerId `json:"owner_id,omitempty"`
 
-	WinnerId ResponseAuctionStudentWinner `json:"winner_id,omitempty"`
+	WinnerId ResponseAuctionStudentWinnerId `json:"winner_id,omitempty"`
 }
 
 // AssertResponseAuctionStudentRequired checks if the required fields are not zero-ed
 func AssertResponseAuctionStudentRequired(obj ResponseAuctionStudent) error {
-	if err := AssertResponseAuctionStudentOwnerRequired(obj.OwnerId); err != nil {
+	if err := AssertResponseAuctionStudentOwnerIdRequired(obj.OwnerId); err != nil {
 		return err
 	}
-	if err := AssertResponseAuctionStudentWinnerRequired(obj.WinnerId); err != nil {
+	if err := AssertResponseAuctionStudentWinnerIdRequired(obj.WinnerId); err != nil {
 		return err
 	}
 	return nil
