@@ -315,7 +315,7 @@ func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openap
 		return nil
 	})
 	if err != nil {
-		return openapi.Response(400, err), nil
+		return openapi.Response(400, ""), err
 	}
 
 	return openapi.Response(200, resp), nil
@@ -353,9 +353,39 @@ func (s *StaffApiServiceImpl) SearchClasses(ctx context.Context, query openapi.R
 
 }
 
-func (s StaffApiServiceImpl) SearchTransactions(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *StaffApiServiceImpl) SearchTransactions(ctx context.Context, teacherId string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	teacherDetails, err := getUserInLocalStore(s.db, teacherId)
+	if err != nil {
+		return openapi.Response(401, ""), err
+	}
+
+	var resp []openapi.ResponseTransactions
+	err = s.db.View(func(tx *bolt.Tx) error {
+		resp, err = getTeacherTransactionsTx(tx, teacherDetails)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return openapi.Response(401, ""), err
+	}
+
+	return openapi.Response(200, resp), nil
 }
 
 // NewStaffApiServiceImpl creates a default api service
