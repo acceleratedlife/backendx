@@ -100,6 +100,28 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.Req
 	return openapi.Response(200, nil), nil
 }
 
+func (s *StaffApiServiceImpl) DeleteUser(ctx context.Context, query string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = deleteStudent(s.db, query)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
+}
+
 func (a *StaffApiServiceImpl) EditClass(ctx context.Context, body openapi.RequestEditClass) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
@@ -281,6 +303,11 @@ func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.
 		return openapi.Response(400, errors), nil
 	}
 	return openapi.Response(200, ""), nil
+}
+
+func (a StaffApiServiceImpl) ResetPassword(ctx context.Context, body openapi.UsersResetPasswordBody) (openapi.ImplResponse, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (s StaffApiServiceImpl) SearchAllBucks(ctx context.Context, s2 string) (openapi.ImplResponse, error) {

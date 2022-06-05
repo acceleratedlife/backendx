@@ -63,11 +63,6 @@ func (a AllApiServiceImpl) Logout(ctx context.Context, s string) (openapi.ImplRe
 	panic("implement me")
 }
 
-func (a AllApiServiceImpl) ResetPassword(ctx context.Context, body openapi.UsersResetPasswordBody) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (a AllApiServiceImpl) SearchAccount(ctx context.Context, s string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")

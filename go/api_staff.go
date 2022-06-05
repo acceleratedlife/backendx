@@ -56,6 +56,12 @@ func (c *StaffApiController) Routes() Routes {
 			c.DeleteAuction,
 		},
 		{
+			"DeleteUser",
+			strings.ToUpper("Delete"),
+			"/api/users/user",
+			c.DeleteUser,
+		},
+		{
 			"Deleteclass",
 			strings.ToUpper("Delete"),
 			"/api/classes/class",
@@ -98,6 +104,12 @@ func (c *StaffApiController) Routes() Routes {
 			c.PayTransactions,
 		},
 		{
+			"ResetPassword",
+			strings.ToUpper("Post"),
+			"/api/users/resetPassword",
+			c.ResetPassword,
+		},
+		{
 			"SearchAllBucks",
 			strings.ToUpper("Get"),
 			"/api/bucks",
@@ -137,6 +149,21 @@ func (c *StaffApiController) DeleteAuction(w http.ResponseWriter, r *http.Reques
 		query.Get("_id"),
 	}
 	result, err := c.service.DeleteAuction(r.Context(), idParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// DeleteUser - delete user
+func (c *StaffApiController) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.DeleteUser(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -298,6 +325,30 @@ func (c *StaffApiController) PayTransactions(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	result, err := c.service.PayTransactions(r.Context(), requestPayTransactionsParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// ResetPassword - reset password
+func (c *StaffApiController) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	usersResetPasswordBodyParam := UsersResetPasswordBody{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&usersResetPasswordBodyParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertUsersResetPasswordBodyRequired(usersResetPasswordBodyParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.ResetPassword(r.Context(), usersResetPasswordBodyParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

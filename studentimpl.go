@@ -327,7 +327,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 		return fmt.Errorf("amount must be positive")
 	}
 
-	ts := clock.Now().Truncate(time.Second)
+	ts := clock.Now().Truncate(time.Millisecond)
 
 	transaction := Transaction{
 		Ts:             ts,

@@ -9,6 +9,87 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+func deleteStudent(db *bolt.DB, studentId string) (err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		return deleteStudentTx(tx, studentId)
+	})
+
+	return
+}
+
+func deleteStudentTx(tx *bolt.Tx, studentId string) (err error) {
+	studentInfo, err := getUserInLocalStoreTx(tx, studentId)
+	if err != nil {
+		return err
+	}
+
+	auctionsBucket, err := getAuctionsTx(tx, studentInfo)
+	if err != nil {
+		return err
+	}
+
+	auctions, err := getStudentAuctionsTx(tx, auctionsBucket, studentInfo)
+	if err != nil {
+		return err
+	}
+
+	for _, c := range auctions {
+		if c.OwnerId.Id == studentInfo.Name {
+			// repayAuctionLoser()
+			err := auctionsBucket.DeleteBucket([]byte(c.Id))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	classes, err := getStudentClassesTx(tx, studentInfo)
+	if err != nil {
+		return err
+	}
+
+	for _, c := range classes {
+		classBucket, _, err := getClassAtSchoolTx(tx, studentInfo.SchoolId, c.Id)
+		if err != nil {
+			return err
+		}
+		students := classBucket.Bucket([]byte(KeyStudents))
+		students.Delete([]byte(studentInfo.Name))
+		studentFound := students.Get([]byte(studentInfo.Name))
+		if studentFound != nil {
+			return fmt.Errorf("failed to delete student from class: %v", c.Name)
+		}
+	}
+
+	users := tx.Bucket([]byte(KeyUsers))
+	if users == nil {
+		return fmt.Errorf("cannot get users bucket")
+	}
+
+	users.Delete([]byte(studentId))
+	user := users.Get([]byte(studentId))
+	if user != nil {
+		return fmt.Errorf("failed to delete user")
+	}
+
+	school, err := getSchoolBucketTx(tx, studentInfo)
+	if err != nil {
+		return fmt.Errorf("cannot get school: %v", err)
+	}
+	students := school.Bucket([]byte(KeyStudents))
+	if students == nil {
+		return fmt.Errorf("cannot get students bucket")
+	}
+
+	err = students.DeleteBucket([]byte(studentId))
+	if err != nil {
+		return err
+	}
+
+	return
+
+}
+
 func getSchoolClasses(db *bolt.DB, schoolId string) (res []openapi.Class) {
 	_ = db.View(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, schoolId)

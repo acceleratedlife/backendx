@@ -201,7 +201,7 @@ func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.Re
 				period := class.Get([]byte(KeyPeriod))
 
 				classes = append(classes, openapi.ResponseMemberClass{
-					Owner_id: openapi.ResponseMemberClassOwner{
+					OwnerId: openapi.ResponseMemberClassOwner{
 						FirstName: teacherDetails.FirstName,
 						LastName:  teacherDetails.LastName,
 						Id:        teacherDetails.Name,
@@ -238,7 +238,7 @@ func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.Re
 			period := class.Get([]byte(KeyPeriod))
 
 			classes = append(classes, openapi.ResponseMemberClass{
-				Owner_id: openapi.ResponseMemberClassOwner{
+				OwnerId: openapi.ResponseMemberClassOwner{
 					FirstName: adminDetails.FirstName,
 					LastName:  adminDetails.LastName,
 					Id:        adminDetails.Name,
