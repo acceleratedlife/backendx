@@ -80,12 +80,6 @@ func (c *AllApiController) Routes() Routes {
 			c.Logout,
 		},
 		{
-			"ResetPassword",
-			strings.ToUpper("Post"),
-			"/api/users/resetPassword",
-			c.ResetPassword,
-		},
-		{
 			"SearchAccount",
 			strings.ToUpper("Get"),
 			"/api/accounts/account",
@@ -208,30 +202,6 @@ func (c *AllApiController) Login(w http.ResponseWriter, r *http.Request) {
 func (c *AllApiController) Logout(w http.ResponseWriter, r *http.Request) {
 	idParam := r.Header.Get("_id")
 	result, err := c.service.Logout(r.Context(), idParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// ResetPassword - reset password
-func (c *AllApiController) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	usersResetPasswordBodyParam := UsersResetPasswordBody{}
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(&usersResetPasswordBodyParam); err != nil {
-		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-		return
-	}
-	if err := AssertUsersResetPasswordBodyRequired(usersResetPasswordBodyParam); err != nil {
-		c.errorHandler(w, r, err, nil)
-		return
-	}
-	result, err := c.service.ResetPassword(r.Context(), usersResetPasswordBodyParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

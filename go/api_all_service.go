@@ -100,20 +100,6 @@ func (s *AllApiService) Logout(ctx context.Context, id string) (ImplResponse, er
 	return Response(http.StatusNotImplemented, nil), errors.New("Logout method not implemented")
 }
 
-// ResetPassword - reset password
-func (s *AllApiService) ResetPassword(ctx context.Context, usersResetPasswordBody UsersResetPasswordBody) (ImplResponse, error) {
-	// TODO - update ResetPassword with the required logic for this service method.
-	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2006{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2006{}), nil
-
-	//TODO: Uncomment the next line to return response Response(401, InlineResponse401{}) or use other options such as http.Ok ...
-	//return Response(401, InlineResponse401{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("ResetPassword method not implemented")
-}
-
 // SearchAccount - searches for a account
 func (s *AllApiService) SearchAccount(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchAccount with the required logic for this service method.

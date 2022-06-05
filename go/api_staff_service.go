@@ -41,6 +41,20 @@ func (s *StaffApiService) DeleteAuction(ctx context.Context, id RequestUser) (Im
 	return Response(http.StatusNotImplemented, nil), errors.New("DeleteAuction method not implemented")
 }
 
+// DeleteUser - delete user
+func (s *StaffApiService) DeleteUser(ctx context.Context, email string) (ImplResponse, error) {
+	// TODO - update DeleteUser with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("DeleteUser method not implemented")
+}
+
 // Deleteclass - delete class
 func (s *StaffApiService) Deleteclass(ctx context.Context, id RequestUser) (ImplResponse, error) {
 	// TODO - update Deleteclass with the required logic for this service method.
@@ -137,6 +151,20 @@ func (s *StaffApiService) PayTransactions(ctx context.Context, requestPayTransac
 	//return Response(400, []ResponsePayTransactions{}), nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("PayTransactions method not implemented")
+}
+
+// ResetPassword - reset password
+func (s *StaffApiService) ResetPassword(ctx context.Context, usersResetPasswordBody UsersResetPasswordBody) (ImplResponse, error) {
+	// TODO - update ResetPassword with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2006{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2006{}), nil
+
+	//TODO: Uncomment the next line to return response Response(401, InlineResponse401{}) or use other options such as http.Ok ...
+	//return Response(401, InlineResponse401{}), nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("ResetPassword method not implemented")
 }
 
 // SearchAllBucks - searches all bucks

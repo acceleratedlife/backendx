@@ -26,7 +26,6 @@ type AllApiRouter interface {
 	ExchangeRate(http.ResponseWriter, *http.Request)
 	Login(http.ResponseWriter, *http.Request)
 	Logout(http.ResponseWriter, *http.Request)
-	ResetPassword(http.ResponseWriter, *http.Request)
 	SearchAccount(http.ResponseWriter, *http.Request)
 	SearchBucks(http.ResponseWriter, *http.Request)
 	SearchClass(http.ResponseWriter, *http.Request)
@@ -56,6 +55,7 @@ type SchoolAdminApiRouter interface {
 // pass the data to a StaffApiServicer to perform the required actions, then write the service results to the http response.
 type StaffApiRouter interface { 
 	DeleteAuction(http.ResponseWriter, *http.Request)
+	DeleteUser(http.ResponseWriter, *http.Request)
 	Deleteclass(http.ResponseWriter, *http.Request)
 	EditClass(http.ResponseWriter, *http.Request)
 	KickClass(http.ResponseWriter, *http.Request)
@@ -63,6 +63,7 @@ type StaffApiRouter interface {
 	MakeClass(http.ResponseWriter, *http.Request)
 	PayTransaction(http.ResponseWriter, *http.Request)
 	PayTransactions(http.ResponseWriter, *http.Request)
+	ResetPassword(http.ResponseWriter, *http.Request)
 	SearchAllBucks(http.ResponseWriter, *http.Request)
 	SearchAuctionsTeacher(http.ResponseWriter, *http.Request)
 	SearchClasses(http.ResponseWriter, *http.Request)
@@ -92,7 +93,6 @@ type SysAdminApiRouter interface {
 	DeleteAccount(http.ResponseWriter, *http.Request)
 	DeleteBuck(http.ResponseWriter, *http.Request)
 	DeleteSchool(http.ResponseWriter, *http.Request)
-	DeleteUser(http.ResponseWriter, *http.Request)
 	Deletetransaction(http.ResponseWriter, *http.Request)
 	EditAccount(http.ResponseWriter, *http.Request)
 	EditBuck(http.ResponseWriter, *http.Request)
@@ -126,7 +126,6 @@ type AllApiServicer interface {
 	ExchangeRate(context.Context, string, string) (ImplResponse, error)
 	Login(context.Context, RequestLogin) (ImplResponse, error)
 	Logout(context.Context, string) (ImplResponse, error)
-	ResetPassword(context.Context, UsersResetPasswordBody) (ImplResponse, error)
 	SearchAccount(context.Context, string) (ImplResponse, error)
 	SearchBucks(context.Context, string) (ImplResponse, error)
 	SearchClass(context.Context, RequestUser) (ImplResponse, error)
@@ -165,6 +164,7 @@ type SchoolAdminApiServicer interface {
 // and updated with the logic required for the API.
 type StaffApiServicer interface { 
 	DeleteAuction(context.Context, RequestUser) (ImplResponse, error)
+	DeleteUser(context.Context, string) (ImplResponse, error)
 	Deleteclass(context.Context, RequestUser) (ImplResponse, error)
 	EditClass(context.Context, RequestEditClass) (ImplResponse, error)
 	KickClass(context.Context, RequestKickClass) (ImplResponse, error)
@@ -172,6 +172,7 @@ type StaffApiServicer interface {
 	MakeClass(context.Context, RequestMakeClass) (ImplResponse, error)
 	PayTransaction(context.Context, RequestPayTransaction) (ImplResponse, error)
 	PayTransactions(context.Context, RequestPayTransactions) (ImplResponse, error)
+	ResetPassword(context.Context, UsersResetPasswordBody) (ImplResponse, error)
 	SearchAllBucks(context.Context, string) (ImplResponse, error)
 	SearchAuctionsTeacher(context.Context) (ImplResponse, error)
 	SearchClasses(context.Context, RequestUser) (ImplResponse, error)
@@ -207,7 +208,6 @@ type SysAdminApiServicer interface {
 	DeleteAccount(context.Context, string) (ImplResponse, error)
 	DeleteBuck(context.Context, string) (ImplResponse, error)
 	DeleteSchool(context.Context, string) (ImplResponse, error)
-	DeleteUser(context.Context, string) (ImplResponse, error)
 	Deletetransaction(context.Context, string) (ImplResponse, error)
 	EditAccount(context.Context, AccountsAccountBody) (ImplResponse, error)
 	EditBuck(context.Context, BucksBuckBody) (ImplResponse, error)

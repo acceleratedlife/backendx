@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	openapi "github.com/acceleratedlife/backend/go"
 	bolt "go.etcd.io/bbolt"
 )
@@ -26,11 +27,6 @@ func (s SysAdminApiServiceImpl) DeleteBuck(ctx context.Context, s2 string) (open
 }
 
 func (s SysAdminApiServiceImpl) DeleteSchool(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s SysAdminApiServiceImpl) DeleteUser(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
