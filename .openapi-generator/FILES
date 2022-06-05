@@ -49,7 +49,6 @@ go/model_inline_response_200_7.go
 go/model_inline_response_200_7_accounts.go
 go/model_inline_response_200_7_transaction.go
 go/model_inline_response_200_7_transaction_asset_id.go
-go/model_inline_response_401.go
 go/model_inline_response_404.go
 go/model_request_add_class.go
 go/model_request_auction_bid.go
@@ -78,11 +77,10 @@ go/model_response_member_class_owner.go
 go/model_response_pay_transactions.go
 go/model_response_register2.go
 go/model_response_register4.go
+go/model_response_reset_password.go
 go/model_response_schools.go
 go/model_response_search_student_ubuck.go
 go/model_response_transactions.go
-go/model_schema.go
-go/model_schema1.go
 go/model_school.go
 go/model_schools_school_body.go
 go/model_schools_school_body_1.go
@@ -91,6 +89,5 @@ go/model_transaction_crypto_transaction_body.go
 go/model_transactions_conversion_transaction_body.go
 go/model_user.go
 go/model_user_no_history.go
-go/model_users_reset_password_body.go
 go/model_users_user_body.go
 go/routers.go

@@ -55,7 +55,7 @@ type SchoolAdminApiRouter interface {
 // pass the data to a StaffApiServicer to perform the required actions, then write the service results to the http response.
 type StaffApiRouter interface { 
 	DeleteAuction(http.ResponseWriter, *http.Request)
-	DeleteUser(http.ResponseWriter, *http.Request)
+	DeleteStudent(http.ResponseWriter, *http.Request)
 	Deleteclass(http.ResponseWriter, *http.Request)
 	EditClass(http.ResponseWriter, *http.Request)
 	KickClass(http.ResponseWriter, *http.Request)
@@ -164,7 +164,7 @@ type SchoolAdminApiServicer interface {
 // and updated with the logic required for the API.
 type StaffApiServicer interface { 
 	DeleteAuction(context.Context, RequestUser) (ImplResponse, error)
-	DeleteUser(context.Context, string) (ImplResponse, error)
+	DeleteStudent(context.Context, string) (ImplResponse, error)
 	Deleteclass(context.Context, RequestUser) (ImplResponse, error)
 	EditClass(context.Context, RequestEditClass) (ImplResponse, error)
 	KickClass(context.Context, RequestKickClass) (ImplResponse, error)
@@ -172,7 +172,7 @@ type StaffApiServicer interface {
 	MakeClass(context.Context, RequestMakeClass) (ImplResponse, error)
 	PayTransaction(context.Context, RequestPayTransaction) (ImplResponse, error)
 	PayTransactions(context.Context, RequestPayTransactions) (ImplResponse, error)
-	ResetPassword(context.Context, UsersResetPasswordBody) (ImplResponse, error)
+	ResetPassword(context.Context, RequestUser) (ImplResponse, error)
 	SearchAllBucks(context.Context, string) (ImplResponse, error)
 	SearchAuctionsTeacher(context.Context) (ImplResponse, error)
 	SearchClasses(context.Context, RequestUser) (ImplResponse, error)

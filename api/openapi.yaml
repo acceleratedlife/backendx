@@ -1236,8 +1236,8 @@ paths:
       - All
   /users/user:
     delete:
-      description: Delete a user.
-      operationId: deleteUser
+      description: Delete a student.
+      operationId: deleteStudent
       parameters:
       - description: pass the email to be deleted. Delete all of their transactions
           and events. Search classes that the user is a member in and remove them
@@ -1246,7 +1246,7 @@ paths:
           totalCount then delete the account
         explode: true
         in: query
-        name: email
+        name: _id
         required: true
         schema:
           type: string
@@ -1256,7 +1256,7 @@ paths:
           description: transaction Deleted
         "404":
           description: There is no user with that email
-      summary: delete user
+      summary: delete student
       tags:
       - Staff
     get:
@@ -1438,20 +1438,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/users_resetPassword_body'
+              $ref: '#/components/schemas/RequestUser'
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_6'
+                $ref: '#/components/schemas/ResponseResetPassword'
           description: class record is made. Return all the classes from this owner.
             Sort classes by period ascending
         "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_401'
           description: unconfirmed email
       summary: reset password
       tags:
@@ -2240,6 +2236,16 @@ components:
           example: 2
           type: integer
       type: object
+    ResponseResetPassword:
+      example:
+        password: wetSwd
+      properties:
+        password:
+          example: wetSwd
+          type: string
+      required:
+      - password
+      type: object
     RequestUser:
       example:
         _id: 613eab19e58cc511801af657
@@ -2432,18 +2438,6 @@ components:
       - school
       - token
       - tokenExp
-      type: object
-    Schema:
-      properties:
-        id:
-          format: int64
-          type: integer
-      type: object
-    Schema1:
-      properties:
-        id:
-          format: int64
-          type: integer
       type: object
     schools_school_body:
       properties:
@@ -2837,21 +2831,6 @@ components:
         careerTransition:
           example: true
           type: boolean
-      type: object
-    users_resetPassword_body:
-      properties:
-        email:
-          example: ss@ss.com
-          format: email
-          type: string
-      type: object
-    inline_response_401:
-      properties:
-        error:
-          type: string
-        message:
-          example: There is no confirmed user with that email
-          type: string
       type: object
     Auction_owner_id:
       example:

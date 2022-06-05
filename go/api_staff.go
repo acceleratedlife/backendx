@@ -56,10 +56,10 @@ func (c *StaffApiController) Routes() Routes {
 			c.DeleteAuction,
 		},
 		{
-			"DeleteUser",
+			"DeleteStudent",
 			strings.ToUpper("Delete"),
 			"/api/users/user",
-			c.DeleteUser,
+			c.DeleteStudent,
 		},
 		{
 			"Deleteclass",
@@ -159,11 +159,11 @@ func (c *StaffApiController) DeleteAuction(w http.ResponseWriter, r *http.Reques
 
 }
 
-// DeleteUser - delete user
-func (c *StaffApiController) DeleteUser(w http.ResponseWriter, r *http.Request) {
+// DeleteStudent - delete student
+func (c *StaffApiController) DeleteStudent(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := query.Get("_id")
-	result, err := c.service.DeleteUser(r.Context(), idParam)
+	result, err := c.service.DeleteStudent(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -337,18 +337,18 @@ func (c *StaffApiController) PayTransactions(w http.ResponseWriter, r *http.Requ
 
 // ResetPassword - reset password
 func (c *StaffApiController) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	usersResetPasswordBodyParam := UsersResetPasswordBody{}
+	requestUserParam := RequestUser{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&usersResetPasswordBodyParam); err != nil {
+	if err := d.Decode(&requestUserParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertUsersResetPasswordBodyRequired(usersResetPasswordBodyParam); err != nil {
+	if err := AssertRequestUserRequired(requestUserParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.ResetPassword(r.Context(), usersResetPasswordBodyParam)
+	result, err := c.service.ResetPassword(r.Context(), requestUserParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
