@@ -100,7 +100,7 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.Req
 	return openapi.Response(200, nil), nil
 }
 
-func (s *StaffApiServiceImpl) DeleteUser(ctx context.Context, query string) (openapi.ImplResponse, error) {
+func (s *StaffApiServiceImpl) DeleteStudent(ctx context.Context, query string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
 	if err != nil {
@@ -305,9 +305,58 @@ func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.
 	return openapi.Response(200, ""), nil
 }
 
-func (a StaffApiServiceImpl) ResetPassword(ctx context.Context, body openapi.UsersResetPasswordBody) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *StaffApiServiceImpl) ResetPassword(ctx context.Context, body openapi.RequestUser) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	studentDetails, err := getUserInLocalStore(s.db, body.Id)
+	if err != nil {
+		return openapi.Response(400, ""), err
+	}
+
+	var resp openapi.ResponseResetPassword
+	err = s.db.Update(func(tx *bolt.Tx) error {
+		users := tx.Bucket([]byte(KeyUsers))
+		if users == nil {
+			return fmt.Errorf("users do not exist")
+		}
+
+		user := users.Get([]byte(studentDetails.Name))
+
+		if user == nil {
+			return fmt.Errorf("user does not exist")
+		}
+
+		resp.Password = RandomString(6)
+		studentDetails.PasswordSha = EncodePassword(resp.Password)
+
+		marshal, err := json.Marshal(studentDetails)
+		if err != nil {
+			return fmt.Errorf("Failed to Marshal userDetails")
+		}
+
+		err = users.Put([]byte(studentDetails.Name), marshal)
+		if err != nil {
+			return fmt.Errorf("Failed to Put studendDetails")
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return openapi.Response(400, ""), err
+	}
+
+	return openapi.Response(200, resp), nil
 }
 
 func (s StaffApiServiceImpl) SearchAllBucks(ctx context.Context, s2 string) (openapi.ImplResponse, error) {

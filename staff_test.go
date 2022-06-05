@@ -498,8 +498,8 @@ func TestSearchTransactions(t *testing.T) {
 
 }
 
-func TestDeleteUser(t *testing.T) {
-	db, tearDown := FullStartTestServer("deleteUser", 8090, "")
+func TestDeleteStudent(t *testing.T) {
+	db, tearDown := FullStartTestServer("deleteStudent", 8090, "")
 	defer tearDown()
 	numStudents := 50
 
@@ -519,4 +519,36 @@ func TestDeleteUser(t *testing.T) {
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
+}
+
+func TestResetPassword(t *testing.T) {
+	db, tearDown := FullStartTestServer("resetPassword", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestUser{
+		Id: students[0],
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/users/resetPassword",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.ResponseResetPassword
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, 6, len(data.Password))
 }
