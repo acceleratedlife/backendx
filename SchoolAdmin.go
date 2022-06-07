@@ -13,7 +13,7 @@ type SchoolAdminServiceImpl struct {
 	db *bolt.DB
 }
 
-func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, Id string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
 	if err != nil {

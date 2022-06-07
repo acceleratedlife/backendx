@@ -77,28 +77,15 @@ func PopulateClassMembers(tx *bolt.Tx, classBucket *bolt.Bucket) (Members []open
 
 func getStudentHistory(db *bolt.DB, userName string, schoolId string) (history []openapi.History, err error) {
 	_ = db.View(func(tx *bolt.Tx) error {
-		history, err = getStudentHistoryTX(tx, userName, schoolId)
+		history, err = getStudentHistoryTX(tx, userName)
 		return nil
 	})
 	return
 }
-func getStudentHistoryTX(tx *bolt.Tx, userName string, schoolId string) (history []openapi.History, err error) {
-	schools := tx.Bucket([]byte(KeySchools))
-	if schools == nil {
-		return nil, fmt.Errorf("Failed to find schoolsBucket")
-	}
-	school := schools.Bucket([]byte(schoolId))
-	if school == nil {
-		return nil, fmt.Errorf("Failed to get school")
-	}
-	students := school.Bucket([]byte(KeyStudents))
-	if students == nil {
-		return nil, fmt.Errorf("Failed to get students")
-	}
-
-	student := students.Bucket([]byte(userName))
-	if student == nil {
-		return nil, fmt.Errorf("Failed to get student")
+func getStudentHistoryTX(tx *bolt.Tx, userName string) (history []openapi.History, err error) {
+	student, err := getStudentBucketRoTx(tx, userName)
+	if err == nil {
+		return nil, err
 	}
 
 	historyData := student.Get([]byte(KeyHistory))
@@ -109,5 +96,57 @@ func getStudentHistoryTX(tx *bolt.Tx, userName string, schoolId string) (history
 	if err != nil {
 		return nil, fmt.Errorf("ERROR cannot unmarshal History")
 	}
+	return
+}
+
+func getStudentBaccountRoTx(tx *bolt.Tx, bAccount *bolt.Bucket) (resp openapi.ResponseAccount, err error) {
+	// historyData := bAccount.Get([]byte(KeyHistory))
+	// if historyData == nil {
+	// 	return resp, fmt.Errorf("Failed to get history")
+	// }
+	// err = json.Unmarshal(historyData, &resp.History)
+	// if err != nil {
+	// 	return resp, fmt.Errorf("ERROR cannot unmarshal History")
+	// }
+
+	balanceData := bAccount.Get([]byte(KeyBalance))
+	err = json.Unmarshal(balanceData, &resp.Balance)
+
+	return
+}
+
+func getCBaccountDetailsRoTx(tx *bolt.Tx, userDetails UserInfo, account openapi.ResponseAccount) (finalAccount openapi.ResponseAccount, err error) {
+	cb, err := getCbRx(tx, userDetails.SchoolId)
+	if err != nil {
+		return
+	}
+
+	bAccounts := cb.Bucket([]byte(KeybAccounts))
+	if bAccounts == nil {
+		return finalAccount, fmt.Errorf("cannot find cb buck accounts")
+	}
+
+	bAccount := bAccounts.Bucket([]byte(account.Id))
+	if bAccount == nil {
+		return finalAccount, fmt.Errorf("cannot find cb buck account")
+	}
+
+	// conversionData := bAccount.Get([]byte(KeyConversion))
+	// err = json.Unmarshal(conversionData, &account.Conversion)
+	// if err != nil {
+	// 	return
+	// }
+
+	// historyData := bAccount.Get([]byte(KeyHistory))
+	// if historyData == nil {
+	// 	return finalAccount, fmt.Errorf("Failed to get history")
+	// }
+	// err = json.Unmarshal(historyData, &account.History)
+	// if err != nil {
+	// 	return finalAccount, fmt.Errorf("ERROR cannot unmarshal History")
+	// }
+
+	finalAccount = account
+
 	return
 }

@@ -70,7 +70,7 @@ func (s *AllSchoolApiService) SearchAuctions(ctx context.Context, id string) (Im
 }
 
 // SearchMyClasses - searches for users classes that the requester is a member of
-func (s *AllSchoolApiService) SearchMyClasses(ctx context.Context, id RequestUser) (ImplResponse, error) {
+func (s *AllSchoolApiService) SearchMyClasses(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchMyClasses with the required logic for this service method.
 	// Add api_all_school_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 

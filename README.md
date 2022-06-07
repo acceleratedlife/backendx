@@ -68,6 +68,17 @@ go tool cover -html cover.out
             [userName]
                 dayPayment: datetime
                 event: datetime
+                "bAccounts"
+                    [account-id]
+                        - balance: decimal
+                        "transactions"
+                            -dateTime
+                            -account-id
+                            -xrate
+                            -amount
+                        "history"
+                            -trade
+                            -date
                 "accounts"
                     [account-id]
                         - balance: decimal
@@ -76,6 +87,20 @@ go tool cover -html cover.out
                             -account-id
                             -xrate
                             -amount
+                        "history"
+                            -trade
+                            -date
+                "cAccounts"
+                    [account-id]
+                        - balance: decimal
+                        "transactions"
+                            -dateTime
+                            -account-id
+                            -xrate
+                            -amount
+                        "history"
+                            -trade
+                            -date
         "classes"
             [class-id]
                 - name: string

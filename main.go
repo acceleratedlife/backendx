@@ -38,9 +38,10 @@ const (
 	KeyAuctions         = "auctions"
 	KeyCB               = "cb"
 	KeyUsers            = "users"
-	KeyAccounts         = "accounts"
-	KeybAccounts        = "bAccounts"
-	KeycAccounts        = "cAccounts"
+	KeyAccounts         = "accounts"  //securities
+	KeybAccounts        = "bAccounts" //bucks
+	KeycAccounts        = "cAccounts" //cryptos
+	KeyConversion       = "conversion"
 	KeyBalance          = "balance"
 	KeyTransactions     = "transactions"
 	KeyTeachers         = "teachers"

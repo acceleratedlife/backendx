@@ -46,8 +46,8 @@ func (s *AllApiService) ConfirmEmail(ctx context.Context, token string) (ImplRes
 	// TODO - update ConfirmEmail with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2006{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2006{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2005{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2005{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -60,8 +60,8 @@ func (s *AllApiService) ExchangeRate(ctx context.Context, sellCurrency string, b
 	// TODO - update ExchangeRate with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse2003{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse2003{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []InlineResponse2002{}) or use other options such as http.Ok ...
+	//return Response(200, []InlineResponse2002{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -129,7 +129,7 @@ func (s *AllApiService) SearchBucks(ctx context.Context, id string) (ImplRespons
 }
 
 // SearchClass - searches for a class
-func (s *AllApiService) SearchClass(ctx context.Context, id RequestUser) (ImplResponse, error) {
+func (s *AllApiService) SearchClass(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchClass with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -157,7 +157,7 @@ func (s *AllApiService) SearchSchool(ctx context.Context, id string) (ImplRespon
 }
 
 // SearchStudent - return one student
-func (s *AllApiService) SearchStudent(ctx context.Context, id RequestUser) (ImplResponse, error) {
+func (s *AllApiService) SearchStudent(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchStudent with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -170,18 +170,18 @@ func (s *AllApiService) SearchStudent(ctx context.Context, id RequestUser) (Impl
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchStudent method not implemented")
 }
 
-// SearchStudentBuck - returns all buck accounts for specific user
-func (s *AllApiService) SearchStudentBuck(ctx context.Context, userId string) (ImplResponse, error) {
-	// TODO - update SearchStudentBuck with the required logic for this service method.
+// SearchStudentBucks - returns all buck accounts for specific user
+func (s *AllApiService) SearchStudentBucks(ctx context.Context) (ImplResponse, error) {
+	// TODO - update SearchStudentBucks with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse2002{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse2002{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseAccount{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseAccount{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
 
-	return Response(http.StatusNotImplemented, nil), errors.New("SearchStudentBuck method not implemented")
+	return Response(http.StatusNotImplemented, nil), errors.New("SearchStudentBucks method not implemented")
 }
 
 // SearchStudents - return all students from a school
