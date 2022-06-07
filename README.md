@@ -20,7 +20,10 @@ go tool cover -html cover.out
         - addCode
         "cb"
             "accounts"
+                    
                 [account-id]  (ubuck/teacher-id)
+                    "value"
+                       "date": decimal  
                     -name
                     -totalCurrency :decimal
                     -freeCurrency :decimal
