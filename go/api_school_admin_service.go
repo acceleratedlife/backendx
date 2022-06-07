@@ -28,7 +28,7 @@ func NewSchoolAdminApiService() SchoolAdminApiServicer {
 }
 
 // SearchAdminTeacherClass - gets the teacher class of an admin and all the teacher that are its members
-func (s *SchoolAdminApiService) SearchAdminTeacherClass(ctx context.Context, id RequestUser) (ImplResponse, error) {
+func (s *SchoolAdminApiService) SearchAdminTeacherClass(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchAdminTeacherClass with the required logic for this service method.
 	// Add api_school_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 

@@ -544,7 +544,8 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 		parseReciever := reciever[1][1 : len(reciever[1])-1]
 		student, err := getUserInLocalStoreTx(tx, parseReciever)
 		if err != nil {
-			return resp, fmt.Errorf("Cannot find student details")
+			student.FirstName = "Deleted"
+			student.LastName = "Student"
 		}
 
 		slice := openapi.ResponseTransactions{

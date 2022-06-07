@@ -110,10 +110,10 @@ func (c *AllApiController) Routes() Routes {
 			c.SearchStudent,
 		},
 		{
-			"SearchStudentBuck",
+			"SearchStudentBucks",
 			strings.ToUpper("Get"),
 			"/api/accounts/all",
-			c.SearchStudentBuck,
+			c.SearchStudentBucks,
 		},
 		{
 			"SearchStudents",
@@ -245,9 +245,7 @@ func (c *AllApiController) SearchBucks(w http.ResponseWriter, r *http.Request) {
 // SearchClass - searches for a class
 func (c *AllApiController) SearchClass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := RequestUser{
-		query.Get("_id"),
-	}
+	idParam := query.Get("_id")
 	result, err := c.service.SearchClass(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
@@ -277,9 +275,7 @@ func (c *AllApiController) SearchSchool(w http.ResponseWriter, r *http.Request) 
 // SearchStudent - return one student
 func (c *AllApiController) SearchStudent(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := RequestUser{
-		query.Get("_id"),
-	}
+	idParam := query.Get("_id")
 	result, err := c.service.SearchStudent(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
@@ -291,10 +287,9 @@ func (c *AllApiController) SearchStudent(w http.ResponseWriter, r *http.Request)
 
 }
 
-// SearchStudentBuck - returns all buck accounts for specific user
-func (c *AllApiController) SearchStudentBuck(w http.ResponseWriter, r *http.Request) {
-	userIdParam := r.Header.Get("user._id")
-	result, err := c.service.SearchStudentBuck(r.Context(), userIdParam)
+// SearchStudentBucks - returns all buck accounts for specific user
+func (c *AllApiController) SearchStudentBucks(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.SearchStudentBucks(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

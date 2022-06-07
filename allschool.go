@@ -149,7 +149,7 @@ func (a AllSchoolApiServiceImpl) SearchAuctions(ctx context.Context, s string) (
 	panic("implement me")
 }
 
-func (a *AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a *AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, Id string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {

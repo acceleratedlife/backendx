@@ -73,7 +73,7 @@ func (a AllApiServiceImpl) SearchBucks(ctx context.Context, s string) (openapi.I
 	panic("implement me")
 }
 
-func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a *AllApiServiceImpl) SearchClass(ctx context.Context, Id string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -84,11 +84,11 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, query openapi.Reque
 	}
 	var resp openapi.ClassWithMembers
 	err = a.db.View(func(tx *bolt.Tx) error {
-		classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, query.Id)
+		classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, Id)
 		if err != nil {
 			return err
 		}
-		resp.Id = query.Id
+		resp.Id = Id
 		resp.AddCode = string(classBucket.Get([]byte(KeyAddCode)))
 		// resp.OwnerId = string(class.Get([]byte("ownerId")))
 		resp.Period = btoi32(classBucket.Get([]byte(KeyPeriod)))
@@ -113,7 +113,7 @@ func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.
 	panic("implement me")
 }
 
-func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	_, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -125,12 +125,12 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, query openapi.Req
 
 	var resp openapi.User
 	err = a.db.View(func(tx *bolt.Tx) error {
-		user, err := getUserInLocalStoreTx(tx, query.Id)
+		user, err := getUserInLocalStoreTx(tx, Id)
 		if err != nil {
 			return err
 		}
 
-		history, err := getStudentHistoryTX(tx, user.Name, user.SchoolId)
+		history, err := getStudentHistoryTX(tx, user.Name)
 		if err != nil {
 			return err
 		}
@@ -160,15 +160,67 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, query openapi.Req
 	})
 
 	if err != nil {
-		lgr.Printf("ERROR cannot find the user: %s %v", query.Id, err)
+		lgr.Printf("ERROR cannot find the user: %s %v", Id, err)
 		return openapi.Response(500, "{}"), nil
 	}
 	return openapi.Response(200, resp), nil
 }
 
-func (a AllApiServiceImpl) SearchStudentBuck(ctx context.Context, s string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	var resp []openapi.ResponseAccount
+	err = s.db.View(func(tx *bolt.Tx) error {
+		student, err := getStudentBucketRoTx(tx, userDetails.Name)
+		if err != nil {
+			return err
+		}
+
+		bAccounts := student.Bucket([]byte(KeybAccounts))
+		if bAccounts == nil {
+			return fmt.Errorf("cannot find students buck accounts")
+		}
+
+		c := bAccounts.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			account, err := getStudentBaccountRoTx(tx, bAccounts.Bucket(k))
+			if err != nil {
+				return err
+			}
+
+			account.Id = string(k)
+			if account.Id == CurrencyUBuck {
+				account.Buck.Name = "UBuck"
+			} else {
+				owner, err := getUserInLocalStoreTx(tx, account.Id)
+				if err != nil {
+					return err
+				}
+				account.Buck.Name = owner.LastName + " Bucks"
+			}
+
+			account, err = getCBaccountDetailsRoTx(tx, userDetails, account)
+			if err != nil {
+				return err
+			}
+
+			resp = append(resp, account)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+	return openapi.Response(200, resp), nil
 }
 
 func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplResponse, error) {

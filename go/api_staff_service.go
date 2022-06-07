@@ -28,7 +28,7 @@ func NewStaffApiService() StaffApiServicer {
 }
 
 // DeleteAuction - delete auction
-func (s *StaffApiService) DeleteAuction(ctx context.Context, id RequestUser) (ImplResponse, error) {
+func (s *StaffApiService) DeleteAuction(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update DeleteAuction with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -56,7 +56,7 @@ func (s *StaffApiService) DeleteStudent(ctx context.Context, id string) (ImplRes
 }
 
 // Deleteclass - delete class
-func (s *StaffApiService) Deleteclass(ctx context.Context, id RequestUser) (ImplResponse, error) {
+func (s *StaffApiService) Deleteclass(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update Deleteclass with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -196,7 +196,7 @@ func (s *StaffApiService) SearchAuctionsTeacher(ctx context.Context) (ImplRespon
 }
 
 // SearchClasses - searches for users classes
-func (s *StaffApiService) SearchClasses(ctx context.Context, id RequestUser) (ImplResponse, error) {
+func (s *StaffApiService) SearchClasses(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchClasses with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 

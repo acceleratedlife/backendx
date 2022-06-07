@@ -23,7 +23,7 @@ func (s StaffApiServiceImpl) SearchEvents(ctx context.Context, s2 string) (opena
 	panic("implement me")
 }
 
-func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, Id string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -43,12 +43,12 @@ func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, query openapi.R
 			return err
 		}
 
-		auctionsBucket, _, err := getAuctionBucketTx(tx, schoolBucket, query.Id)
+		auctionsBucket, _, err := getAuctionBucketTx(tx, schoolBucket, Id)
 		if err != nil {
 			return err
 		}
 
-		err = auctionsBucket.DeleteBucket([]byte(query.Id))
+		err = auctionsBucket.DeleteBucket([]byte(Id))
 		if err != nil {
 			return err
 		}
@@ -69,7 +69,7 @@ func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, query openapi.R
 	return openapi.Response(200, auctions), nil
 }
 
-func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, Id string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -83,11 +83,11 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, query openapi.Req
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		_, parentBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, query.Id)
+		_, parentBucket, err := getClassAtSchoolTx(tx, userDetails.SchoolId, Id)
 		if err != nil {
 			return err
 		}
-		err = parentBucket.DeleteBucket([]byte(query.Id))
+		err = parentBucket.DeleteBucket([]byte(Id))
 		if err != nil {
 			return err
 		}
@@ -397,7 +397,7 @@ func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openap
 	return openapi.Response(200, resp), nil
 }
 
-func (s *StaffApiServiceImpl) SearchClasses(ctx context.Context, query openapi.RequestUser) (openapi.ImplResponse, error) {
+func (s *StaffApiServiceImpl) SearchClasses(ctx context.Context, Id string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
 	if err != nil {

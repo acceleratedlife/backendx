@@ -14,8 +14,6 @@ type InlineResponse2002 struct {
 
 	Converion float32 `json:"converion,omitempty"`
 
-	History [][]int32 `json:"history,omitempty"`
-
 	Bucks string `json:"bucks,omitempty"`
 
 	Balance float32 `json:"balance,omitempty"`

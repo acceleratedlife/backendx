@@ -145,9 +145,7 @@ func (c *StaffApiController) Routes() Routes {
 // DeleteAuction - delete auction
 func (c *StaffApiController) DeleteAuction(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := RequestUser{
-		query.Get("_id"),
-	}
+	idParam := query.Get("_id")
 	result, err := c.service.DeleteAuction(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
@@ -177,9 +175,7 @@ func (c *StaffApiController) DeleteStudent(w http.ResponseWriter, r *http.Reques
 // Deleteclass - delete class
 func (c *StaffApiController) Deleteclass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := RequestUser{
-		query.Get("_id"),
-	}
+	idParam := query.Get("_id")
 	result, err := c.service.Deleteclass(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
@@ -390,9 +386,7 @@ func (c *StaffApiController) SearchAuctionsTeacher(w http.ResponseWriter, r *htt
 // SearchClasses - searches for users classes
 func (c *StaffApiController) SearchClasses(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := RequestUser{
-		query.Get("_id"),
-	}
+	idParam := query.Get("_id")
 	result, err := c.service.SearchClasses(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {

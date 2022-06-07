@@ -314,23 +314,14 @@ paths:
     get:
       description: users user._id to find all buck accounts for that user. Need to
         also find its conversion with the school UBuck
-      operationId: searchStudentBuck
-      parameters:
-      - description: gets the _id from req.user._id
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
+      operationId: searchStudentBucks
       responses:
         "200":
           content:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_2'
+                  $ref: '#/components/schemas/ResponseAccount'
                 type: array
           description: accounts matching criteria
         "404":
@@ -367,7 +358,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/inline_response_200_3'
+                  $ref: '#/components/schemas/inline_response_200_2'
                 type: array
           description: accounts with names and conversion details
         "404":
@@ -387,7 +378,7 @@ paths:
         name: _id
         required: true
         schema:
-          $ref: '#/components/schemas/RequestUser'
+          type: string
         style: form
       responses:
         "200":
@@ -659,7 +650,7 @@ paths:
         name: _id
         required: true
         schema:
-          $ref: '#/components/schemas/RequestUser'
+          type: string
         style: form
       responses:
         "200":
@@ -680,7 +671,7 @@ paths:
         name: _id
         required: true
         schema:
-          $ref: '#/components/schemas/RequestUser'
+          type: string
         style: form
       responses:
         "200":
@@ -789,7 +780,7 @@ paths:
         name: _id
         required: true
         schema:
-          $ref: '#/components/schemas/RequestUser'
+          type: string
         style: form
       responses:
         "200":
@@ -817,7 +808,7 @@ paths:
         name: _id
         required: true
         schema:
-          $ref: '#/components/schemas/RequestUser'
+          type: string
         style: form
       responses:
         "200":
@@ -847,7 +838,7 @@ paths:
         name: _id
         required: true
         schema:
-          $ref: '#/components/schemas/RequestUser'
+          type: string
         style: form
       responses:
         "200":
@@ -1067,7 +1058,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_3'
           description: transaction matching criteria
         "404":
           description: No transaction found with that data
@@ -1094,7 +1085,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_5'
+                $ref: '#/components/schemas/inline_response_200_4'
           description: transaction matching criteria
         "404":
           description: No transaction found with that data
@@ -1174,7 +1165,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_6'
+                $ref: '#/components/schemas/inline_response_200_5'
           description: class record is made. Return all the classes from this owner.
             Sort classes by period ascending
         "404":
@@ -1208,7 +1199,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_7'
+                $ref: '#/components/schemas/inline_response_200_6'
           description: return all crypto accounts with value greater than 0 and the
             most recent transaction
         "404":
@@ -1269,7 +1260,7 @@ paths:
         name: _id
         required: true
         schema:
-          $ref: '#/components/schemas/RequestUser'
+          type: string
         style: form
       responses:
         "200":
@@ -1470,7 +1461,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_6'
+                $ref: '#/components/schemas/inline_response_200_5'
           description: students matching criteria
         "404":
           description: No user found with that data
@@ -1801,6 +1792,46 @@ components:
       - city
       - name
       - zip
+      type: object
+    ResponseAccount:
+      example:
+        balance: 123.45
+        buck:
+          name: Jones Bucks
+          history:
+          - date: 2000-01-23T04:56:07.000+00:00
+            netWorth: 123.45
+          - date: 2000-01-23T04:56:07.000+00:00
+            netWorth: 123.45
+        type_id: 614290257145de7a9e40c594
+        history:
+        - date: 2000-01-23T04:56:07.000+00:00
+          netWorth: 123.45
+        - date: 2000-01-23T04:56:07.000+00:00
+          netWorth: 123.45
+        _id: 614290257145de7a9e40c594
+        conversion: 123.45
+      properties:
+        conversion:
+          example: 123.45
+          format: float
+          type: number
+        history:
+          items:
+            $ref: '#/components/schemas/History'
+          type: array
+        buck:
+          $ref: '#/components/schemas/ResponseAccount_buck'
+        balance:
+          example: 123.45
+          format: float
+          type: number
+        _id:
+          example: 614290257145de7a9e40c594
+          type: string
+        type_id:
+          example: 614290257145de7a9e40c594
+          type: string
       type: object
     ResponseAuctionStudent:
       example:
@@ -2565,45 +2596,6 @@ components:
         bucks: Smith Bucks
         balance: 123.45
         type_id: 614290257145de7a9e40c594
-        history:
-        - - 0
-          - 0
-        - - 0
-          - 0
-        _id: 614290257145de7a9e40c594
-      properties:
-        converion:
-          example: 123.45
-          format: float
-          type: number
-        history:
-          items:
-            items:
-              type: integer
-            maxItems: 2
-            minItems: 2
-            type: array
-          type: array
-        bucks:
-          example: Smith Bucks
-          type: string
-        balance:
-          example: 123.45
-          format: float
-          type: number
-        _id:
-          example: 614290257145de7a9e40c594
-          type: string
-        type_id:
-          example: 614290257145de7a9e40c594
-          type: string
-      type: object
-    inline_response_200_3:
-      example:
-        converion: 123.45
-        bucks: Smith Bucks
-        balance: 123.45
-        type_id: 614290257145de7a9e40c594
         _id: 614290257145de7a9e40c594
       properties:
         converion:
@@ -2656,7 +2648,7 @@ components:
           example: 613eab19e58cc511801af657
           type: string
       type: object
-    inline_response_200_4:
+    inline_response_200_3:
       example:
         owner: 613eab19e58cc511801af657
         conversionRatio: 123.45
@@ -2698,9 +2690,9 @@ components:
           example: Buck
           type: string
         assetID:
-          $ref: '#/components/schemas/inline_response_200_4_assetID'
+          $ref: '#/components/schemas/inline_response_200_3_assetID'
       type: object
-    inline_response_200_5:
+    inline_response_200_4:
       example:
         owner: 613eab19e58cc511801af657
         conversionRatio: 123.45
@@ -2742,7 +2734,7 @@ components:
           example: Crypto
           type: string
         assetID:
-          $ref: '#/components/schemas/inline_response_200_5_assetID'
+          $ref: '#/components/schemas/inline_response_200_4_assetID'
       type: object
     transactions_conversionTransaction_body:
       properties:
@@ -2757,7 +2749,7 @@ components:
           format: float
           type: number
       type: object
-    inline_response_200_6:
+    inline_response_200_5:
       example:
         success: true
       properties:
@@ -2779,7 +2771,7 @@ components:
           format: float
           type: number
       type: object
-    inline_response_200_7:
+    inline_response_200_6:
       example:
         accounts:
         - quantity: 123.45
@@ -2804,10 +2796,10 @@ components:
           account: 61c4af5cce0e75f0214cbab1
       properties:
         transaction:
-          $ref: '#/components/schemas/inline_response_200_7_transaction'
+          $ref: '#/components/schemas/inline_response_200_6_transaction'
         accounts:
           items:
-            $ref: '#/components/schemas/inline_response_200_7_accounts'
+            $ref: '#/components/schemas/inline_response_200_6_accounts'
           type: array
       type: object
     users_user_body:
@@ -2885,6 +2877,23 @@ components:
           example: 613eab19e58cc511801af657
           type: string
       type: object
+    ResponseAccount_buck:
+      example:
+        name: Jones Bucks
+        history:
+        - date: 2000-01-23T04:56:07.000+00:00
+          netWorth: 123.45
+        - date: 2000-01-23T04:56:07.000+00:00
+          netWorth: 123.45
+      properties:
+        history:
+          items:
+            $ref: '#/components/schemas/History'
+          type: array
+        name:
+          example: Jones Bucks
+          type: string
+      type: object
     ResponseAuctionStudent_owner_id:
       example:
         lastName: Boy
@@ -2925,7 +2934,7 @@ components:
           example: Leno
           type: string
       type: object
-    inline_response_200_4_assetID:
+    inline_response_200_3_assetID:
       example:
         name: Jay Bucks
       properties:
@@ -2933,7 +2942,7 @@ components:
           example: Jay Bucks
           type: string
       type: object
-    inline_response_200_5_assetID:
+    inline_response_200_4_assetID:
       example:
         name: Cardano
       properties:
@@ -2941,7 +2950,7 @@ components:
           example: Cardano
           type: string
       type: object
-    inline_response_200_7_transaction_assetID:
+    inline_response_200_6_transaction_assetID:
       example:
         name: vechain
         _id: 61c4af57ce0e75f0214cbaaa
@@ -2953,7 +2962,7 @@ components:
           example: 61c4af57ce0e75f0214cbaaa
           type: string
       type: object
-    inline_response_200_7_transaction:
+    inline_response_200_6_transaction:
       example:
         conversionRatio: 123.45
         owner: 6170a4aff8437c84920b7ff1
@@ -2996,9 +3005,9 @@ components:
           format: float
           type: number
         assetID:
-          $ref: '#/components/schemas/inline_response_200_7_transaction_assetID'
+          $ref: '#/components/schemas/inline_response_200_6_transaction_assetID'
       type: object
-    inline_response_200_7_accounts:
+    inline_response_200_6_accounts:
       example:
         quantity: 123.45
         name: vechain
