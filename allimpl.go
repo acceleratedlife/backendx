@@ -131,6 +131,8 @@ func getCBaccountDetailsRoTx(tx *bolt.Tx, userDetails UserInfo, account openapi.
 		return finalAccount, fmt.Errorf("cannot find cb buck account")
 	}
 
+	account.Conversion = float32(1) //delete this when conversion is implemented
+
 	// conversionData := bAccount.Get([]byte(KeyConversion))
 	// err = json.Unmarshal(conversionData, &account.Conversion)
 	// if err != nil {

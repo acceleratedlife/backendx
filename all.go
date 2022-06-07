@@ -196,11 +196,15 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 			}
 
 			account.Id = string(k)
-			owner, err := getUserInLocalStoreTx(tx, account.Id)
-			if err != nil {
-				return err
+			if account.Id == CurrencyUBuck {
+				account.Buck.Name = "UBuck"
+			} else {
+				owner, err := getUserInLocalStoreTx(tx, account.Id)
+				if err != nil {
+					return err
+				}
+				account.Buck.Name = owner.LastName + " Bucks"
 			}
-			account.Buck.Name = owner.LastName + " Bucks"
 
 			account, err = getCBaccountDetailsRoTx(tx, userDetails, account)
 			if err != nil {
