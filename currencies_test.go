@@ -31,11 +31,7 @@ func TestSchool_xRateTx(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := School{
-				db:       tt.fields.db,
-				schoolId: tt.fields.schoolId,
-			}
-			got, err := s.xRateTx(tt.args.tx, tt.args.schoolId, tt.args.from, tt.args.to)
+			got, err := xRateFromToBaseTx(tt.args.tx, tt.args.schoolId, tt.args.from, tt.args.to)
 			if !tt.wantErr(t, err, fmt.Sprintf("xRateTx(%v, %v, %v, %v)", tt.args.tx, tt.args.schoolId, tt.args.from, tt.args.to)) {
 				return
 			}
@@ -100,7 +96,7 @@ func Test_addStepTx(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := addStepTx(tt.args.tx, tt.args.schoolId, tt.args.clock, tt.args.currencyId, tt.args.amount)
+				got, err := addStepTx(tt.args.tx, tt.args.schoolId,, tt.args.currencyId, tt.args.amount)
 				if !tt.wantErr(t, err, fmt.Sprintf("addStepTx(%v, %v, %v, %v, %v)", tt.args.tx, tt.args.schoolId, tt.args.clock, tt.args.currencyId, tt.args.amount)) {
 					return
 				}

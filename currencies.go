@@ -8,25 +8,41 @@ import (
 )
 
 // rate of currency 'from' comparative to 'base'
-// rate R of 'from' to 'base' means you need to pay R of 'from' to buy 1 'base'
-// from, base - empty value refers to uBucj
-func xRateTx(tx *bolt.Tx, schoolId, from, base string) (decimal.Decimal, error) {
+// how much 'base' to buy 1 'from'
+// from, base - empty value refers to uBuck
+func xRateFromToBaseTx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decimal, err error) {
 
 	if from == base {
 		return decimal.NewFromInt32(1), nil
 	}
-	fromRate
-	baseRate
+	fromValue := decimal.Zero
+	baseValue := decimal.Zero
 
-	cb, err := getCbTx(tx, schoolId)
-	if err != nil {
-		return decimal.Zero, err
+	if from == "" {
+		fromValue, err = getUbuckValueTx(tx, schoolId)
+		if err != nil {
+			return decimal.Zero, err
+		}
+	} else {
+		fromValue, err = getCurrencyMMATx(tx, schoolId, from)
+		if err != nil {
+			return decimal.Zero, err
+		}
 	}
 
-	accounts, err := cb.CreateBucketIfNotExists([]byte(KeyAccounts))
-	if err != nil {
-		return decimal.Zero, err
+	if base == "" {
+		baseValue, err = getUbuckValueTx(tx, schoolId)
+		if err != nil {
+			return decimal.Zero, err
+		}
+	} else {
+		baseValue, err = getCurrencyMMATx(tx, schoolId, from)
+		if err != nil {
+			return decimal.Zero, err
+		}
 	}
+
+	return baseValue.DivRound(fromValue, 6), nil
 
 }
 
@@ -73,7 +89,20 @@ func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32) 
 }
 
 // calculates avg of all currencies
-func getUbuckValue(accounts bolt.Bucket) (decimal.Decimal, error) {
+func getUbuckValueTx(tx *bolt.Tx, schoolId string) (decimal.Decimal, error) {
+	cb, err := getCbTx(tx, schoolId)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	accounts, err := cb.CreateBucketIfNotExists([]byte(KeyAccounts))
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	return getUbuckValue1Tx(accounts)
+}
+func getUbuckValue1Tx(accounts *bolt.Bucket) (decimal.Decimal, error) {
 	sum := decimal.Zero
 	validCurrencies := int32(0)
 	_ = accounts.ForEach(func(k, v []byte) error {
