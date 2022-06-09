@@ -96,7 +96,7 @@ func Test_addStepTx(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := addStepTx(tt.args.tx, tt.args.schoolId,, tt.args.currencyId, tt.args.amount)
+				got, err := addStepTx(tt.args.tx, tt.args.schoolId, tt.args.currencyId, tt.args.amount)
 				if !tt.wantErr(t, err, fmt.Sprintf("addStepTx(%v, %v, %v, %v, %v)", tt.args.tx, tt.args.schoolId, tt.args.clock, tt.args.currencyId, tt.args.amount)) {
 					return
 				}
