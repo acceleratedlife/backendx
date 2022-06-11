@@ -10,7 +10,7 @@ import (
 // rate of currency 'from' comparative to 'base'
 // how much 'base' to buy 1 'from'
 // from, base - empty value refers to uBuck
-func xRateFromToBaseTx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decimal, err error) {
+func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decimal, err error) {
 
 	if from == base {
 		return decimal.NewFromInt32(1), nil
@@ -19,24 +19,24 @@ func xRateFromToBaseTx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.D
 	baseValue := decimal.Zero
 
 	if from == "" {
-		fromValue, err = getUbuckValueTx(tx, schoolId)
+		fromValue, err = getUbuckValueRx(tx, schoolId)
 		if err != nil {
 			return decimal.Zero, err
 		}
 	} else {
-		fromValue, err = getCurrencyMMATx(tx, schoolId, from)
+		fromValue, err = getCurrencyMMARx(tx, schoolId, from)
 		if err != nil {
 			return decimal.Zero, err
 		}
 	}
 
 	if base == "" {
-		baseValue, err = getUbuckValueTx(tx, schoolId)
+		baseValue, err = getUbuckValueRx(tx, schoolId)
 		if err != nil {
 			return decimal.Zero, err
 		}
 	} else {
-		baseValue, err = getCurrencyMMATx(tx, schoolId, from)
+		baseValue, err = getCurrencyMMARx(tx, schoolId, base)
 		if err != nil {
 			return decimal.Zero, err
 		}
@@ -49,17 +49,7 @@ func xRateFromToBaseTx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.D
 // updates MMA
 // returns MMA
 func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32) (decimal.Decimal, error) {
-	cb, err := getCbTx(tx, schoolId)
-	if err != nil {
-		return decimal.Zero, err
-	}
-
-	accounts, err := cb.CreateBucketIfNotExists([]byte(KeyAccounts))
-	if err != nil {
-		return decimal.Zero, err
-	}
-
-	account, err := accounts.CreateBucketIfNotExists([]byte(currencyId))
+	account, err := getAccountBucketTx(tx, schoolId, currencyId)
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -72,7 +62,7 @@ func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32) 
 		if err != nil {
 			return decimal.Zero, err
 		}
-		d = (last.Mul(decimal.NewFromFloat(99)).Add(d)).Div(decimal.NewFromFloat(100))
+		d = (last.Mul(decimal.NewFromFloat(99)).Add(decimal.NewFromFloat32(amount))).Div(decimal.NewFromFloat(100))
 	} else {
 		d = decimal.NewFromFloat32(amount)
 	}
@@ -88,21 +78,21 @@ func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32) 
 
 }
 
-// calculates avg of all currencies
-func getUbuckValueTx(tx *bolt.Tx, schoolId string) (decimal.Decimal, error) {
-	cb, err := getCbTx(tx, schoolId)
+// calculates avg MMA of all currencies
+func getUbuckValueRx(tx *bolt.Tx, schoolId string) (decimal.Decimal, error) {
+	cb, err := getCbRx(tx, schoolId)
 	if err != nil {
 		return decimal.Zero, err
 	}
 
-	accounts, err := cb.CreateBucketIfNotExists([]byte(KeyAccounts))
-	if err != nil {
-		return decimal.Zero, err
+	accounts := cb.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
+		return decimal.Zero, nil
 	}
 
-	return getUbuckValue1Tx(accounts)
+	return getUbuckValue1Rx(accounts)
 }
-func getUbuckValue1Tx(accounts *bolt.Bucket) (decimal.Decimal, error) {
+func getUbuckValue1Rx(accounts *bolt.Bucket) (decimal.Decimal, error) {
 	sum := decimal.Zero
 	validCurrencies := int32(0)
 	_ = accounts.ForEach(func(k, v []byte) error {
@@ -111,7 +101,7 @@ func getUbuckValue1Tx(accounts *bolt.Bucket) (decimal.Decimal, error) {
 		}
 		account := accounts.Bucket(k)
 
-		d, err := getCurrencyAccMMATx(account)
+		d, err := getCurrencyAccMMARx(account)
 		if err != nil {
 			lgr.Printf("ERROR exclude currency %s from calculating avg - %v ", string(k), err)
 			return nil
@@ -128,14 +118,21 @@ func getUbuckValue1Tx(accounts *bolt.Bucket) (decimal.Decimal, error) {
 	return sum.Div(decimal.NewFromInt32(validCurrencies)), nil
 }
 
-func updateXRates(accounts bolt.Bucket, uBuckValue decimal.Decimal, clock Clock) error {
+func updateXRatesTx(accounts *bolt.Bucket, clock Clock) error {
+	uBuckValue, err := getUbuckValue1Rx(accounts)
+	if err != nil {
+		return err
+	}
+	now := clock.Now()
 	return accounts.ForEach(func(k, v []byte) error {
 		if v != nil {
 			return nil
 		}
 		account := accounts.Bucket(k)
-
-		d, err := getCurrencyAccMMATx(account)
+		if account == nil {
+			return fmt.Errorf("account does not exist")
+		}
+		d, err := getCurrencyAccMMARx(account)
 		if err != nil {
 			lgr.Printf("ERROR exclude currency %s from calculating avg - %v ", string(k), err)
 			return nil
@@ -147,7 +144,6 @@ func updateXRates(accounts bolt.Bucket, uBuckValue decimal.Decimal, clock Clock)
 		if err != nil {
 			return fmt.Errorf("cannot create bucket: %v ", err)
 		}
-		now := clock.Now()
 
 		valueX, err := xRate.MarshalText()
 		if err != nil {
@@ -162,9 +158,35 @@ func updateXRates(accounts bolt.Bucket, uBuckValue decimal.Decimal, clock Clock)
 
 }
 
-// returns current MMA
-func getCurrencyMMATx(tx *bolt.Tx, schoolId, currencyId string) (decimal.Decimal, error) {
+func getAccountBucketRx(tx *bolt.Tx, schoolId, currencyId string) *bolt.Bucket {
+	cb, err := getCbRx(tx, schoolId)
+	if err != nil {
+		return nil
+	}
+
+	accounts := cb.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
+		return nil
+	}
+	return accounts.Bucket([]byte(currencyId))
+}
+
+func getAccountBucketTx(tx *bolt.Tx, schoolId, currencyId string) (*bolt.Bucket, error) {
 	cb, err := getCbTx(tx, schoolId)
+	if err != nil {
+		return nil, err
+	}
+
+	accounts, err := cb.CreateBucketIfNotExists([]byte(KeyAccounts))
+	if accounts == nil {
+		return nil, err
+	}
+	return accounts.CreateBucketIfNotExists([]byte(currencyId))
+}
+
+// returns current MMA
+func getCurrencyMMARx(tx *bolt.Tx, schoolId, currencyId string) (decimal.Decimal, error) {
+	cb, err := getCbRx(tx, schoolId)
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -174,12 +196,13 @@ func getCurrencyMMATx(tx *bolt.Tx, schoolId, currencyId string) (decimal.Decimal
 		return decimal.Zero, fmt.Errorf("no accounts bucket")
 	}
 	account := accounts.Bucket([]byte(currencyId))
-	return getCurrencyAccMMATx(account)
-}
-func getCurrencyAccMMATx(account *bolt.Bucket) (decimal.Decimal, error) {
 	if account == nil {
 		return decimal.Zero, fmt.Errorf("account does not exist")
 	}
+	return getCurrencyAccMMARx(account)
+}
+func getCurrencyAccMMARx(account *bolt.Bucket) (decimal.Decimal, error) {
+
 	v := account.Get([]byte(KeyMMA))
 	if v == nil {
 		return decimal.Zero, fmt.Errorf("MMA not defined")
