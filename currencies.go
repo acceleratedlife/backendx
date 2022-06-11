@@ -5,6 +5,7 @@ import (
 	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
+	"strings"
 )
 
 // calculate rate of currency 'from' comparative to 'base'
@@ -67,6 +68,9 @@ func xRateToBaseHistoricalRx(tx *bolt.Tx, schoolId, from, base string) (rate dec
 	return fromValue.Div(baseValue), nil
 }
 
+// calculate rate of currency 'from' comparative to 'base'
+// how much 'base' to buy 1 'from'
+// from, base - empty value refers to uBuck
 func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decimal, err error) {
 	if from == base {
 		return decimal.NewFromInt32(1), nil
@@ -135,6 +139,9 @@ func getUbuckValue1Rx(accounts *bolt.Bucket) (decimal.Decimal, error) {
 	validCurrencies := int32(0)
 	_ = accounts.ForEach(func(k, v []byte) error {
 		if v != nil {
+			return nil
+		}
+		if !isTeacherAccount(string(k)) {
 			return nil
 		}
 		account := accounts.Bucket(k)
@@ -270,4 +277,8 @@ func getCurrencyAccMMARx(account *bolt.Bucket) (decimal.Decimal, error) {
 func convert(schoolId, from, to string, amount float64) (float64, error) {
 	return amount, nil
 
+}
+
+func isTeacherAccount(id string) bool {
+	return strings.IndexAny(id, "@") != -1
 }

@@ -23,7 +23,7 @@ go tool cover -html cover.out
                     
                 [account-id]  (ubuck/teacher-id)
                     -MMA: decimal // valid  MMAs
-                    "value"  // history of value. Value is how mucj uBuck you can buy for 1 buck - more number means more valuable currency
+                    "value"  // history of value. Value is how much uBuck you can buy for 1 buck - more number means more valuable currency
                        "date": decimal  
                     -name
                     -totalCurrency :decimal
