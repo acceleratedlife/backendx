@@ -18,26 +18,26 @@ func TestSchool_xRateTx(t *testing.T) {
 	require.Nil(t, err)
 
 	_ = db.Update(func(tx *bolt.Tx) error {
-		_, err2 := xRateToBaseRx(tx, schools[0], teachers[0], "")
+		_, err2 := xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
 
 		require.NotNil(t, err2)
 
 		// add first currency in a school
 		_, _ = addStepTx(tx, schools[0], teachers[0], 10)
-		r, err2 := xRateToBaseRx(tx, schools[0], teachers[0], "")
+		r, err2 := xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
 		require.Equal(t, 1.0, r.InexactFloat64())
 
 		// payment by 2nd teacher
 		_, _ = addStepTx(tx, schools[0], teachers[1], 20)
 
-		r, err2 = xRateToBaseRx(tx, schools[0], teachers[0], "")
+		r, err2 = xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
 		require.Equal(t, 1.5, r.InexactFloat64())
-		r, err2 = xRateToBaseRx(tx, schools[0], teachers[1], "")
+		r, err2 = xRateToBaseInstantRx(tx, schools[0], teachers[1], "")
 		require.Equal(t, 0.75, r.InexactFloat64())
 
-		r, err2 = xRateToBaseRx(tx, schools[0], teachers[0], teachers[1])
+		r, err2 = xRateToBaseInstantRx(tx, schools[0], teachers[0], teachers[1])
 		require.Equal(t, 2.0, r.InexactFloat64())
-		r, err2 = xRateToBaseRx(tx, schools[0], teachers[1], teachers[0])
+		r, err2 = xRateToBaseInstantRx(tx, schools[0], teachers[1], teachers[0])
 		require.Equal(t, 0.5, r.InexactFloat64())
 
 		return nil
@@ -109,6 +109,78 @@ func Test_addStepTx(t *testing.T) {
 		mmaTx, err2 := getCurrencyMMARx(tx, schools[0], teachers[0])
 		require.Nil(t, err2)
 		assert.True(t, mmaTx.Sub(decimal.NewFromFloat32(10.90)).LessThan(decimal.NewFromFloat(0.001)))
+		return nil
+	})
+}
+
+func Test_HistoricalRates(t *testing.T) {
+	db, teardown := OpenTestDB("historical change")
+	defer teardown()
+
+	clock := TestClock{}
+
+	_, schools, teachers, _, _, err := CreateTestAccounts(db, 2, 10, 1, 2)
+	require.Nil(t, err)
+
+	_ = db.Update(func(tx *bolt.Tx) error {
+		cb, err := getCbRx(tx, schools[0])
+		require.Nil(t, err)
+		accounts := cb.Bucket([]byte(KeyAccounts))
+		require.NotNil(t, accounts)
+
+		stepTx, err := addStepTx(tx, schools[0], teachers[0], 10)
+		require.Nil(t, err)
+		require.Equal(t, 10.0, stepTx.InexactFloat64())
+
+		err = updateXRatesTx(accounts, &clock)
+		require.Nil(t, err)
+
+		stepTx, err = addStepTx(tx, schools[0], teachers[0], 10)
+		require.Nil(t, err)
+		require.Equal(t, 10.0, stepTx.InexactFloat64())
+		err = updateXRatesTx(accounts, &clock)
+		require.Nil(t, err)
+
+		rx, err := xRateToBaseHistoricalRx(tx, schools[0], teachers[0], "")
+		require.Nil(t, err)
+		require.Equal(t, 1.0, rx.InexactFloat64())
+
+		stepTx, err = addStepTx(tx, schools[0], teachers[1], 100)
+		require.Nil(t, err)
+		require.Equal(t, 100.0, stepTx.InexactFloat64())
+		err = updateXRatesTx(accounts, &clock)
+		require.Nil(t, err)
+
+		/// historical
+		rx, err = xRateToBaseHistoricalRx(tx, schools[0], teachers[0], "")
+		require.Nil(t, err)
+		require.Equal(t, 5.5, rx.InexactFloat64())
+
+		rx, err = xRateToBaseHistoricalRx(tx, schools[0], teachers[1], "")
+		require.Nil(t, err)
+		require.Equal(t, 0.55, rx.InexactFloat64())
+
+		rx, err = xRateToBaseHistoricalRx(tx, schools[0], teachers[0], teachers[1])
+		require.Nil(t, err)
+		require.Equal(t, 10.0, rx.InexactFloat64())
+
+		// instant
+		rx, err = xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
+		require.Nil(t, err)
+		require.Equal(t, 5.5, rx.InexactFloat64())
+
+		rx, err = xRateToBaseInstantRx(tx, schools[0], teachers[1], "")
+		require.Nil(t, err)
+		require.Equal(t, 0.55, rx.InexactFloat64())
+
+		rx, err = xRateToBaseInstantRx(tx, schools[0], teachers[0], teachers[1])
+		require.Nil(t, err)
+		require.Equal(t, 10.0, rx.InexactFloat64())
+
+		rx, err = xRateToBaseRx(tx, schools[0], teachers[1], teachers[0])
+		require.Nil(t, err)
+		require.Equal(t, 0.1, rx.InexactFloat64())
+
 		return nil
 	})
 }

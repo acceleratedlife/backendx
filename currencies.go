@@ -7,10 +7,11 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-// rate of currency 'from' comparative to 'base'
+// calculate rate of currency 'from' comparative to 'base'
 // how much 'base' to buy 1 'from'
 // from, base - empty value refers to uBuck
-func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decimal, err error) {
+// NB: if uBuck involved iterates through all currencies in CB
+func xRateToBaseInstantRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decimal, err error) {
 
 	if from == base {
 		return decimal.NewFromInt32(1), nil
@@ -43,7 +44,44 @@ func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decim
 	}
 
 	return baseValue.DivRound(fromValue, 6), nil
+}
 
+// calculate rate of currency 'from' comparative to 'base'
+// how much 'base' to buy 1 'from'
+// from, base - empty value refers to uBuck
+// NB: uses saved xRates for currencies, only takes saved rates
+func xRateToBaseHistoricalRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decimal, err error) {
+	if from == base {
+		return decimal.NewFromInt32(1), nil
+	}
+	fromValue, err := getSavedXRateRx(tx, schoolId, from)
+	if err != nil {
+		return fromValue, err
+	}
+
+	baseValue, err := getSavedXRateRx(tx, schoolId, base)
+	if err != nil {
+		return baseValue, err
+	}
+
+	return fromValue.Div(baseValue), nil
+}
+
+func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decimal, err error) {
+	if from == base {
+		return decimal.NewFromInt32(1), nil
+	}
+
+	if from == "" || base == "" {
+		rate, err = xRateToBaseHistoricalRx(tx, schoolId, from, base)
+		if err == nil {
+			return
+		} else {
+			lgr.Printf("WARN historical xrate calculation failed: %v", err)
+		}
+	}
+
+	return xRateToBaseInstantRx(tx, schoolId, from, base)
 }
 
 // updates MMA
@@ -54,8 +92,8 @@ func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32) 
 		return decimal.Zero, err
 	}
 
-	v := account.Get([]byte(KeyMMA))
 	var d decimal.Decimal
+	v := account.Get([]byte(KeyMMA))
 	if v != nil {
 		var last decimal.Decimal
 		err = last.UnmarshalText(v)
@@ -118,6 +156,7 @@ func getUbuckValue1Rx(accounts *bolt.Bucket) (decimal.Decimal, error) {
 	return sum.Div(decimal.NewFromInt32(validCurrencies)), nil
 }
 
+// saves xrates to uBuck for every currency
 func updateXRatesTx(accounts *bolt.Bucket, clock Clock) error {
 	uBuckValue, err := getUbuckValue1Rx(accounts)
 	if err != nil {
@@ -155,6 +194,28 @@ func updateXRatesTx(accounts *bolt.Bucket, clock Clock) error {
 		}
 		return nil
 	})
+}
+
+func getSavedXRateRx(tx *bolt.Tx, schoolId, currency string) (rate decimal.Decimal, err error) {
+	if currency == "" {
+		return decimal.NewFromInt(1), nil
+	}
+
+	bucketRx := getAccountBucketRx(tx, schoolId, currency)
+	if bucketRx == nil {
+		return decimal.Zero, fmt.Errorf("no account for %s", currency)
+	}
+	history := bucketRx.Bucket([]byte(KeyValue))
+	if history == nil {
+		return decimal.Zero, fmt.Errorf("no saved history for %s", currency)
+	}
+	cursor := history.Cursor()
+	_, v := cursor.Last()
+	if v == nil {
+		return decimal.Zero, fmt.Errorf("no saved rates for %s", currency)
+	}
+	err = rate.UnmarshalText(v)
+	return
 
 }
 
@@ -186,16 +247,7 @@ func getAccountBucketTx(tx *bolt.Tx, schoolId, currencyId string) (*bolt.Bucket,
 
 // returns current MMA
 func getCurrencyMMARx(tx *bolt.Tx, schoolId, currencyId string) (decimal.Decimal, error) {
-	cb, err := getCbRx(tx, schoolId)
-	if err != nil {
-		return decimal.Zero, err
-	}
-
-	accounts := cb.Bucket([]byte(KeyAccounts))
-	if accounts == nil {
-		return decimal.Zero, fmt.Errorf("no accounts bucket")
-	}
-	account := accounts.Bucket([]byte(currencyId))
+	account := getAccountBucketRx(tx, schoolId, currencyId)
 	if account == nil {
 		return decimal.Zero, fmt.Errorf("account does not exist")
 	}
