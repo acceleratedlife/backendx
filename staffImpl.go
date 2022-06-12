@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -519,39 +517,23 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 			continue
 		}
 
-		items := strings.Split(string(v), ",")
-		source := strings.Split(items[1], ":") //this needs to mean from teacher but it does not
-		if source[1] != "\"\"" {
-			continue
+		trans := parseTransactionStudent(v, teacher, teacher.Name)
+
+		studentId := trans.Source
+		if trans.Destination != "" {
+			studentId = trans.Destination
 		}
 
-		time, err := time.Parse(time.RFC3339, string(k))
-		if err != nil {
-			return resp, fmt.Errorf("Cannot parse time")
-		}
-
-		amount := strings.Split(items[5], ":")
-		parseAmount := amount[1][1 : len(amount[1])-1]
-		value, err := strconv.ParseFloat(parseAmount, 32)
-		if err != nil {
-			return resp, fmt.Errorf("Cannot parse float")
-		}
-		float := float32(value)
-
-		descirption := strings.Split(items[8], ":")
-		parseDescription := descirption[1][1 : len(descirption[1])-2]
-		reciever := strings.Split(items[2], ":")
-		parseReciever := reciever[1][1 : len(reciever[1])-1]
-		student, err := getUserInLocalStoreTx(tx, parseReciever)
+		student, err := getUserInLocalStoreTx(tx, studentId)
 		if err != nil {
 			student.FirstName = "Deleted"
 			student.LastName = "Student"
 		}
 
 		slice := openapi.ResponseTransactions{
-			Amount:      float,
-			CreatedAt:   time,
-			Description: parseDescription,
+			Amount:      float32(trans.Net.InexactFloat64()),
+			CreatedAt:   trans.Ts,
+			Description: trans.Reference,
 			Student:     student.FirstName + " " + student.LastName,
 		}
 

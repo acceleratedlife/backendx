@@ -93,9 +93,47 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 
 	return openapi.Response(200, resp), nil
 }
-func (a *StudentApiServiceImpl) SearchBuckTransaction(context.Context, string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *StudentApiServiceImpl) SearchBuckTransaction(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	var resp []openapi.ResponseBuckTransaction
+	err = a.db.View(func(tx *bolt.Tx) error {
+
+		student, err := getStudentBucketRoTx(tx, userDetails.Name)
+		if err != nil {
+			return err
+		}
+
+		bAccounts := student.Bucket([]byte(KeybAccounts))
+		if bAccounts == nil {
+			return fmt.Errorf("failed to get bAccount")
+		}
+
+		resp, err = getStudentTransactionsTx(tx, bAccounts, userDetails)
+		if err != nil {
+			return err
+		}
+
+		return nil
+
+	})
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, resp), nil
+
 }
 func (a *StudentApiServiceImpl) SearchCrypto(context.Context, string) (openapi.ImplResponse, error) {
 	//TODO implement me

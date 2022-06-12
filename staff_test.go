@@ -463,7 +463,7 @@ func TestSearchTransactions(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchTransactions", 8090, "")
 	defer tearDown()
-	numStudents := 50
+	numStudents := 15
 
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, numStudents)
 
@@ -475,6 +475,8 @@ func TestSearchTransactions(t *testing.T) {
 		userDetails, err := getUserInLocalStore(db, student)
 		require.Nil(t, err)
 		err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "pre load")
+		require.Nil(t, err)
+		err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(100), teachers[0], "charge")
 		require.Nil(t, err)
 	}
 
@@ -494,7 +496,7 @@ func TestSearchTransactions(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&respData)
 
-	assert.Equal(t, numStudents, len(respData))
+	assert.Equal(t, numStudents*2, len(respData))
 
 }
 
