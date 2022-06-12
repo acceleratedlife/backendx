@@ -29,6 +29,8 @@ type Transaction struct {
 	AmountDest     decimal.Decimal
 	XRate          decimal.Decimal
 	Reference      string
+	Net            decimal.Decimal `json:"-"`
+	Balance        decimal.Decimal `json:"-"`
 }
 
 // func getClassbyAddCodeTx(tx *bolt.Tx, schoolId, addCode string) (classBucket *bolt.Bucket, err error) {
@@ -616,4 +618,141 @@ func getClassMembershipTx(key []byte, class *bolt.Bucket, userDetails UserInfo) 
 	}
 
 	return
+}
+
+func getStudentTransactionsTx(tx *bolt.Tx, bAccounts *bolt.Bucket, student UserInfo) (resp []openapi.ResponseBuckTransaction, err error) {
+	trans := make([]Transaction, 0)
+
+	c := bAccounts.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+
+		buck := bAccounts.Bucket(k)
+
+		transactions := buck.Bucket([]byte(KeyTransactions))
+		if transactions == nil {
+			return resp, fmt.Errorf("Cannot get transactions")
+		}
+
+		trans, err = getBuckTransactionsTx(transactions, trans, student, string(k))
+		if err != nil {
+			return resp, err
+		}
+	}
+
+	for _, tran := range trans {
+		response, err := transactionToResponseBuckTransactionTx(tx, tran)
+		if err != nil {
+			return resp, err
+		}
+
+		resp = append(resp, response)
+	}
+
+	return
+
+}
+
+func getBuckTransactionsTx(transactions *bolt.Bucket, trans []Transaction, student UserInfo, accountId string) (resp []Transaction, err error) {
+	c := transactions.Cursor()
+	var balance decimal.Decimal
+OUTER:
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		v := transactions.Get(k)
+		newAdd := parseTransactionStudent(v, student, accountId)
+		balance = balance.Add(newAdd.Net)
+		newAdd.Balance = balance
+
+		candidateTime, err := time.Parse(time.RFC3339, string(k))
+		if err != nil {
+			return resp, fmt.Errorf("Cannot parse time")
+		}
+
+		if len(trans) == 0 {
+			trans = append(trans, newAdd)
+			continue
+		}
+
+		for i, residentTime := range trans {
+
+			if candidateTime.After(residentTime.Ts) {
+				trans = insert(trans, i, newAdd)
+				continue OUTER
+			}
+
+		}
+
+		if len(trans) < 50 {
+			trans = append(trans, newAdd)
+		}
+	}
+
+	resp = trans
+
+	return
+
+}
+
+func parseTransactionStudent(transData []byte, user UserInfo, accountId string) (trans Transaction) {
+	err := json.Unmarshal(transData, &trans)
+	if err != nil {
+		lgr.Printf("ERROR cannot unmarshal trans")
+		return
+	}
+
+	if trans.CurrencySource == user.Name { //this is a teacher trans
+		if trans.Destination == "" {
+			trans.Net = trans.AmountSource.Neg()
+		} else {
+			trans.Net = trans.AmountDest
+		}
+	} else if trans.Destination == user.Name && trans.Source == user.Name {
+		if trans.CurrencyDest == accountId {
+			trans.Net = trans.AmountDest
+		} else {
+			trans.Net = trans.AmountSource.Neg()
+		}
+	} else if trans.Destination == user.Name {
+		trans.Net = trans.AmountDest
+	} else {
+		trans.Net = trans.AmountSource.Neg()
+	}
+
+	return
+}
+
+func transactionToResponseBuckTransactionTx(tx *bolt.Tx, trans Transaction) (resp openapi.ResponseBuckTransaction, err error) {
+	xrate, _ := trans.XRate.Float64()
+	amount, _ := trans.Net.Float64()
+	balance, _ := trans.Balance.Float64()
+	var buckName string
+	if trans.CurrencyDest != CurrencyUBuck {
+		user, err := getUserInLocalStoreTx(tx, trans.CurrencyDest)
+		if err != nil {
+			return resp, err
+		}
+
+		buckName = user.LastName + " Buck"
+	} else {
+		buckName = "UBuck"
+	}
+
+	resp = openapi.ResponseBuckTransaction{
+		Balance:     float32(balance),
+		Description: trans.Reference,
+		Conversion:  float32(xrate),
+		Amount:      float32(amount),
+		Name:        buckName,
+		CreatedAt:   trans.Ts,
+	}
+
+	return
+}
+
+func insert(a []Transaction, index int, value Transaction) []Transaction {
+	if len(a) == index { // nil or empty slice or after last element
+		return append(a, value)
+	}
+	a = append(a[:index+1], a[index:]...) // index < len(a)
+	a[index] = value
+	return a
 }

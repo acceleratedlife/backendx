@@ -42,12 +42,10 @@ go/model_inline_response_200_2.go
 go/model_inline_response_200_3.go
 go/model_inline_response_200_3_asset_id.go
 go/model_inline_response_200_4.go
-go/model_inline_response_200_4_asset_id.go
 go/model_inline_response_200_5.go
-go/model_inline_response_200_6.go
-go/model_inline_response_200_6_accounts.go
-go/model_inline_response_200_6_transaction.go
-go/model_inline_response_200_6_transaction_asset_id.go
+go/model_inline_response_200_5_accounts.go
+go/model_inline_response_200_5_transaction.go
+go/model_inline_response_200_5_transaction_asset_id.go
 go/model_inline_response_404.go
 go/model_request_add_class.go
 go/model_request_auction_bid.go
@@ -67,6 +65,7 @@ go/model_response_auction_student_owner_id.go
 go/model_response_auction_student_winner_id.go
 go/model_response_auth2.go
 go/model_response_auth4.go
+go/model_response_buck_transactions.go
 go/model_response_cookie.go
 go/model_response_events.go
 go/model_response_events_owner_id.go

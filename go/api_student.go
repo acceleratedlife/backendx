@@ -201,9 +201,7 @@ func (c *StudentApiController) SearchAuctionsStudent(w http.ResponseWriter, r *h
 
 // SearchBuckTransaction - searches for buck transactions
 func (c *StudentApiController) SearchBuckTransaction(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.SearchBuckTransaction(r.Context(), idParam)
+	result, err := c.service.SearchBuckTransaction(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

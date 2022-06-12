@@ -196,6 +196,14 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 			}
 
 			account.Id = string(k)
+
+			school := School{s.db, userDetails.SchoolId}
+			conversion, err := school.xRateTx(tx, userDetails.SchoolId, CurrencyUBuck, account.Id)
+			if err != nil {
+				return err
+			}
+			account.Conversion = float32(conversion)
+
 			if account.Id == CurrencyUBuck {
 				account.Buck.Name = "UBuck"
 			} else {
@@ -203,7 +211,7 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 				if err != nil {
 					return err
 				}
-				account.Buck.Name = owner.LastName + " Bucks"
+				account.Buck.Name = owner.LastName + " Buck"
 			}
 
 			account, err = getCBaccountDetailsRoTx(tx, userDetails, account)
@@ -270,7 +278,7 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 			nWorth, _ := StudentNetWorthTx(tx, student.Name).Float64()
 			nUser := openapi.UserNoHistory{
 				Id: student.Email,
-				//CollegeEnd:    time.Time{},
+				// CollegeEnd:    time.Time{},
 				//TransitionEnd: time.Time{},
 				FirstName: student.FirstName,
 				LastName:  student.LastName,

@@ -190,7 +190,7 @@ type StudentApiServicer interface {
 	BuckConvert(context.Context, string, TransactionsConversionTransactionBody) (ImplResponse, error)
 	CryptoConvert(context.Context, string, TransactionCryptoTransactionBody) (ImplResponse, error)
 	SearchAuctionsStudent(context.Context) (ImplResponse, error)
-	SearchBuckTransaction(context.Context, string) (ImplResponse, error)
+	SearchBuckTransaction(context.Context) (ImplResponse, error)
 	SearchCrypto(context.Context, string) (ImplResponse, error)
 	SearchCryptoTransaction(context.Context, string) (ImplResponse, error)
 	SearchStudentCrypto(context.Context) (ImplResponse, error)
