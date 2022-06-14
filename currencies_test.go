@@ -185,6 +185,13 @@ func Test_HistoricalRates(t *testing.T) {
 	})
 }
 
+func Test_ubuck2ubuck(t *testing.T) {
+	rx, err := xRateToBaseRx(nil, "werwer", "", "")
+	require.Nil(t, err)
+	require.Equal(t, 1.0, rx.InexactFloat64())
+
+}
+
 func Test_convert(t *testing.T) {
 	type args struct {
 		schoolId string
