@@ -11,8 +11,7 @@
 package openapi
 
 type ResponseAccounts struct {
-
-	Converion float32 `json:"converion,omitempty"`
+	Conversion float32 `json:"converion,omitempty"`
 
 	History []History `json:"history,omitempty"`
 

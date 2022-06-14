@@ -323,6 +323,13 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		return err
 	}
 
+	if currency != CurrencyUBuck {
+		_, err = addStepTx(tx, userInfo.SchoolId, currency, float32(amount.InexactFloat64()))
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

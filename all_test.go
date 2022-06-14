@@ -220,9 +220,9 @@ func TestUserEditNegative(t *testing.T) {
 	assert.Equal(t, body.CareerTransition, v.CareerTransition)
 }
 
-func TestSearchStudentBuck(t *testing.T) {
+func TestSearchStudentBucks(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("searchStudentBuck", 8090, "")
+	db, tearDown := FullStartTestServer("searchStudentBucks", 8090, "")
 	defer tearDown()
 
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 3, 3, 3, 3)
@@ -246,9 +246,43 @@ func TestSearchStudentBuck(t *testing.T) {
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	var data []openapi.ResponseAccounts
+	var data []openapi.ResponseAccount
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
 	assert.Equal(t, data[0].Balance, float32(1000))
+}
+
+func TestSearchStudentBucksUbuck(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("searchStudentBucksUbuck", 8090, "")
+	defer tearDown()
+
+	_, _, _, _, students, err := CreateTestAccounts(db, 3, 3, 3, 3)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), CurrencyUBuck, "daily pay")
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/accounts/all",
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data []openapi.ResponseAccount
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	assert.Equal(t, float32(1000), data[0].Balance)
+	assert.Equal(t, float32(1), data[0].Conversion)
 }

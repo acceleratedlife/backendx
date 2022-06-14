@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
-	"strings"
 )
 
 // calculate rate of currency 'from' comparative to 'base'

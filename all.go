@@ -197,16 +197,15 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 
 			account.Id = string(k)
 
-			school := School{s.db, userDetails.SchoolId}
-			conversion, err := school.xRateTx(tx, userDetails.SchoolId, CurrencyUBuck, account.Id)
-			if err != nil {
-				return err
-			}
-			account.Conversion = float32(conversion)
-
 			if account.Id == CurrencyUBuck {
 				account.Buck.Name = "UBuck"
+				account.Conversion = 1
 			} else {
+				conversion, err := xRateToBaseRx(tx, userDetails.SchoolId, account.Id, "")
+				if err != nil {
+					return err
+				}
+				account.Conversion = float32(conversion.InexactFloat64())
 				owner, err := getUserInLocalStoreTx(tx, account.Id)
 				if err != nil {
 					return err
