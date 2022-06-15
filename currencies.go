@@ -279,13 +279,15 @@ func getCurrencyAccMMARx(account *bolt.Bucket) (decimal.Decimal, error) {
 	return d, nil
 }
 
-func convertRx(tx *bolt.Tx, schoolId, from, to string, amount float64) (float64, error) {
-	rate, err := xRateToBaseRx(tx, schoolId, from, to)
+func convertRx(tx *bolt.Tx, schoolId, from, to string, amount float64) (converted decimal.Decimal, xRate decimal.Decimal, err error) {
+	xRate, err = xRateToBaseRx(tx, schoolId, from, to)
 	if err != nil {
-		return rate.InexactFloat64(), err
+		return converted, xRate, err
 	}
 
-	return rate.InexactFloat64() * amount, nil
+	converted = xRate.Mul(decimal.NewFromFloat(amount))
+
+	return converted, xRate, nil
 
 }
 

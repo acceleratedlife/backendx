@@ -253,6 +253,40 @@ func TestSearchStudentBucks(t *testing.T) {
 	assert.Equal(t, data[0].Balance, float32(1000))
 }
 
+func TestSearchStudentBucksNegative(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("searchStudentBucksNegative", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 3, 3, 3, 3)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "pre load")
+	require.Nil(t, err)
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(1001), teachers[0], "charge")
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/accounts/all",
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data []openapi.ResponseAccount
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	assert.Equal(t, data[0].Balance, float32(1000))
+}
+
 func TestSearchStudentBucksUbuck(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchStudentBucksUbuck", 8090, "")
