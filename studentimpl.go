@@ -73,7 +73,7 @@ func addBuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decim
 
 // addToHolderTx updates balance and adds transaction
 // debit means to remove money
-func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction, direction int) (balance decimal.Decimal, errR error) {
+func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction, direction int, negBlock bool) (balance decimal.Decimal, errR error) {
 	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
 	if err != nil {
 		errR = err
@@ -101,6 +101,10 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 		balance = balance.Add(transaction.AmountDest)
 	} else {
 		balance = balance.Sub(transaction.AmountSource)
+	}
+
+	if balance.Sign() < 0 && negBlock {
+		return
 	}
 
 	balanceB, err = balance.MarshalText()
@@ -159,23 +163,45 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 	if err != nil {
 		return
 	}
+
+	userData, err := getUserInLocalStoreTx(tx, userName)
+	if err != nil {
+		return
+	}
 	accounts := student.Bucket([]byte(KeyAccounts))
 	if accounts == nil {
 		return
 	}
-	ubuck := accounts.Bucket([]byte(CurrencyUBuck))
-	if ubuck == nil {
-		return
+
+	c := accounts.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+
+		account := accounts.Bucket(k)
+		if account == nil {
+			continue
+		}
+
+		balance := account.Get([]byte(KeyBalance))
+		if balance == nil {
+			continue
+		}
+
+		var value decimal.Decimal
+		err = value.UnmarshalText(balance)
+		if err != nil {
+			lgr.Printf("ERROR cannot unmarshal balance for ubuck of %s: %v", userName, err)
+			return decimal.Zero
+		}
+
+		ubuck, err := convertRx(tx, userData.SchoolId, string(k), "", value.InexactFloat64())
+		if err != nil {
+			return
+		}
+
+		res = res.Add(decimal.NewFromFloat(ubuck))
+
 	}
-	ubuckB := ubuck.Get([]byte(KeyBalance))
-	if ubuckB == nil {
-		return
-	}
-	err = res.UnmarshalText(ubuckB)
-	if err != nil {
-		lgr.Printf("ERROR cannot unmarshal balance for ubuck of %s: %v", userName, err)
-		return decimal.Zero
-	}
+
 	return
 }
 
@@ -309,7 +335,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	if err != nil {
 		return err
 	}
-	_, err = addToHolderTx(student, currency, transaction, OperationCredit)
+	_, err = addToHolderTx(student, currency, transaction, OperationCredit, true)
 	if err != nil {
 		return err
 	}
@@ -318,12 +344,12 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	if err != nil {
 		return err
 	}
-	_, err = addToHolderTx(cb, currency, transaction, OperationDebit)
+	_, err = addToHolderTx(cb, currency, transaction, OperationDebit, false)
 	if err != nil {
 		return err
 	}
 
-	if currency != CurrencyUBuck {
+	if currency != CurrencyUBuck && currency != KeyDebt {
 		_, err = addStepTx(tx, userInfo.SchoolId, currency, float32(amount.InexactFloat64()))
 		if err != nil {
 			return err
@@ -365,19 +391,25 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 		return err
 	}
 
-	newBalance, err := addToHolderTx(student, currency, transaction, OperationDebit)
+	newBalance, err := addToHolderTx(student, currency, transaction, OperationDebit, true)
 	if err != nil {
 		return err
 	}
+
 	if newBalance.Sign() < 0 {
-		return fmt.Errorf("ubuck balance for %s is negative", userDetails.Name)
+		err := pay2StudentTx(tx, clock, userDetails, amount, KeyDebt, reference)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	cb, err := getCbTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return err
 	}
-	_, err = addToHolderTx(cb, currency, transaction, OperationCredit)
+	_, err = addToHolderTx(cb, currency, transaction, OperationCredit, false)
 	if err != nil {
 		return err
 	}
@@ -389,7 +421,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 check if the currency exists in given school
 */
 func isCurrencyTx(tx *bolt.Tx, schoolId string, currency string) (bool, error) {
-	if currency == CurrencyUBuck {
+	if currency == CurrencyUBuck || currency == KeyDebt {
 		return true, nil
 	}
 

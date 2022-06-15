@@ -34,6 +34,7 @@ import (
 const (
 	OperationDebit      = 1
 	OperationCredit     = 2
+	KeyDebt             = "debt"
 	CurrencyUBuck       = "ubuck"
 	KeyAuctions         = "auctions"
 	KeyCB               = "cb"

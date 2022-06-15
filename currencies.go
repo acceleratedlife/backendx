@@ -73,7 +73,11 @@ func xRateToBaseHistoricalRx(tx *bolt.Tx, schoolId, from, base string) (rate dec
 // how much 'base' to buy 1 'from'
 // from, base - empty value refers to uBuck
 func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decimal, err error) {
-	if from == base {
+	if from == KeyDebt {
+		return decimal.NewFromInt32(-1), nil
+	}
+
+	if from == base || (from == CurrencyUBuck && base == "") {
 		return decimal.NewFromInt32(1), nil
 	}
 
@@ -275,8 +279,13 @@ func getCurrencyAccMMARx(account *bolt.Bucket) (decimal.Decimal, error) {
 	return d, nil
 }
 
-func convert(schoolId, from, to string, amount float64) (float64, error) {
-	return amount, nil
+func convertRx(tx *bolt.Tx, schoolId, from, to string, amount float64) (float64, error) {
+	rate, err := xRateToBaseRx(tx, schoolId, from, to)
+	if err != nil {
+		return rate.InexactFloat64(), err
+	}
+
+	return rate.InexactFloat64() * amount, nil
 
 }
 
