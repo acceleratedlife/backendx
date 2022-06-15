@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"testing"
 )
 
 func TestSchool_xRateTx(t *testing.T) {
@@ -192,28 +193,29 @@ func Test_ubuck2ubuck(t *testing.T) {
 
 }
 
-func Test_convert(t *testing.T) {
-	type args struct {
-		schoolId string
-		from     string
-		to       string
-		amount   float64
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    float64
-		wantErr assert.ErrorAssertionFunc
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := convert(tt.args.schoolId, tt.args.from, tt.args.to, tt.args.amount)
-			if !tt.wantErr(t, err, fmt.Sprintf("convert(%v, %v, %v, %v)", tt.args.schoolId, tt.args.from, tt.args.to, tt.args.amount)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "convert(%v, %v, %v, %v)", tt.args.schoolId, tt.args.from, tt.args.to, tt.args.amount)
-		})
-	}
+func Test_convertRx(t *testing.T) {
+	clock := AppClock{}
+	db, dbTearDown := OpenTestDB("convertRx")
+	defer dbTearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 3)
+
+	userInfo, _ := getUserInLocalStore(db, students[0])
+	err = addUbuck2Student(db, &clock, userInfo, decimal.NewFromFloat(1.0), "daily payment")
+	require.Nil(t, err)
+
+	balance := StudentNetWorth(db, students[0])
+	require.Equal(t, 1.0, balance.InexactFloat64())
+
+	err = pay2Student(db, &clock, userInfo, decimal.NewFromFloat(0.5), teachers[0], "reward")
+	require.Nil(t, err)
+
+	balance = StudentNetWorth(db, students[0])
+	require.Equal(t, 1.5, balance.InexactFloat64())
+
+	err = pay2Student(db, &clock, userInfo, decimal.NewFromFloat(0.5), teachers[1], "some reason")
+	require.Nil(t, err)
+
+	balance = StudentNetWorth(db, students[0])
+	require.Equal(t, 2.0, balance.InexactFloat64())
 }
