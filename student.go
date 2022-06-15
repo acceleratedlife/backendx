@@ -114,7 +114,7 @@ func (a *StudentApiServiceImpl) SearchBuckTransaction(ctx context.Context) (open
 			return err
 		}
 
-		bAccounts := student.Bucket([]byte(KeybAccounts))
+		bAccounts := student.Bucket([]byte(KeyAccounts))
 		if bAccounts == nil {
 			return fmt.Errorf("failed to get bAccount")
 		}

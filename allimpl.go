@@ -121,12 +121,12 @@ func getCBaccountDetailsRoTx(tx *bolt.Tx, userDetails UserInfo, account openapi.
 		return
 	}
 
-	bAccounts := cb.Bucket([]byte(KeybAccounts))
-	if bAccounts == nil {
+	accounts := cb.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
 		return finalAccount, fmt.Errorf("cannot find cb buck accounts")
 	}
 
-	bAccount := bAccounts.Bucket([]byte(account.Id))
+	bAccount := accounts.Bucket([]byte(account.Id))
 	if bAccount == nil {
 		return finalAccount, fmt.Errorf("cannot find cb buck account")
 	}

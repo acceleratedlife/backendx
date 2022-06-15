@@ -496,12 +496,12 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 		return
 	}
 
-	bAccounts := CB.Bucket([]byte(KeybAccounts))
-	if bAccounts == nil {
+	accounts := CB.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
 		return resp, fmt.Errorf("Cannot find buck accounts bucket")
 	}
 
-	buck := bAccounts.Bucket([]byte(teacher.Name))
+	buck := accounts.Bucket([]byte(teacher.Name))
 	if buck == nil {
 		return resp, fmt.Errorf("Cannot find " + teacher.LastName + " buck bucket")
 	}

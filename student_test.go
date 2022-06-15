@@ -39,7 +39,7 @@ func Test_addUbuck2Student(t *testing.T) {
 		cb, err := getCbRx(tx, schools[0])
 		require.Nil(t, err)
 
-		accounts := cb.Bucket([]byte(KeybAccounts))
+		accounts := cb.Bucket([]byte(KeyAccounts))
 		ub := accounts.Bucket([]byte(CurrencyUBuck))
 		v := ub.Get([]byte(KeyBalance))
 

@@ -74,7 +74,7 @@ func addBuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decim
 // addToHolderTx updates balance and adds transaction
 // debit means to remove money
 func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction, direction int) (balance decimal.Decimal, errR error) {
-	accounts, err := holder.CreateBucketIfNotExists([]byte(KeybAccounts))
+	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
 	if err != nil {
 		errR = err
 		return
@@ -159,7 +159,7 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 	if err != nil {
 		return
 	}
-	accounts := student.Bucket([]byte(KeybAccounts))
+	accounts := student.Bucket([]byte(KeyAccounts))
 	if accounts == nil {
 		return
 	}
@@ -432,12 +432,12 @@ func getStudentUbuckTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.Response
 		return resp, err
 	}
 
-	bAccounts := student.Bucket([]byte(KeybAccounts))
-	if bAccounts == nil {
+	accounts := student.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
 		return resp, fmt.Errorf("cannot find Buck Accounts")
 	}
 
-	ubuck := bAccounts.Bucket([]byte(CurrencyUBuck))
+	ubuck := accounts.Bucket([]byte(CurrencyUBuck))
 	if ubuck == nil {
 		return resp, fmt.Errorf("cannot find ubuck")
 	}

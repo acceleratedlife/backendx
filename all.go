@@ -183,14 +183,14 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 			return err
 		}
 
-		bAccounts := student.Bucket([]byte(KeybAccounts))
-		if bAccounts == nil {
+		accounts := student.Bucket([]byte(KeyAccounts))
+		if accounts == nil {
 			return fmt.Errorf("cannot find students buck accounts")
 		}
 
-		c := bAccounts.Cursor()
+		c := accounts.Cursor()
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			account, err := getStudentBaccountRoTx(tx, bAccounts.Bucket(k))
+			account, err := getStudentBaccountRoTx(tx, accounts.Bucket(k))
 			if err != nil {
 				return err
 			}
