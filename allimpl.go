@@ -99,7 +99,7 @@ func getStudentHistoryTX(tx *bolt.Tx, userName string) (history []openapi.Histor
 	return
 }
 
-func getStudentBaccountRoTx(tx *bolt.Tx, bAccount *bolt.Bucket) (resp openapi.ResponseAccount, err error) {
+func getStudentAccountRx(tx *bolt.Tx, bAccount *bolt.Bucket) (resp openapi.ResponseAccount, err error) {
 	// historyData := bAccount.Get([]byte(KeyHistory))
 	// if historyData == nil {
 	// 	return resp, fmt.Errorf("Failed to get history")
@@ -115,7 +115,7 @@ func getStudentBaccountRoTx(tx *bolt.Tx, bAccount *bolt.Bucket) (resp openapi.Re
 	return
 }
 
-func getCBaccountDetailsRoTx(tx *bolt.Tx, userDetails UserInfo, account openapi.ResponseAccount) (finalAccount openapi.ResponseAccount, err error) {
+func getCBaccountDetailsRx(tx *bolt.Tx, userDetails UserInfo, account openapi.ResponseAccount) (finalAccount openapi.ResponseAccount, err error) {
 	cb, err := getCbRx(tx, userDetails.SchoolId)
 	if err != nil {
 		return

@@ -15,7 +15,7 @@ import "time"
 type ResponseBuckTransaction struct {
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 
-	Balance float32 `json:"balance,omitempty"`
+	Balance float32 `json:"balance"`
 
 	Description string `json:"description,omitempty"`
 

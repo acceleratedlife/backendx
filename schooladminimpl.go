@@ -64,7 +64,7 @@ func CreateSchoolAdmin(db *bolt.DB, body UserInfo) (openapi.ImplResponse, error)
 			return err
 		}
 
-		schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
+		schools, err := tx.CreateBucketIfNotExists([]byte(KeySchools))
 		if err != nil {
 			return err
 		}
@@ -75,7 +75,12 @@ func CreateSchoolAdmin(db *bolt.DB, body UserInfo) (openapi.ImplResponse, error)
 			return fmt.Errorf("school is not created")
 		}
 
-		admins, err := school.CreateBucketIfNotExists([]byte("admins"))
+		admins, err := school.CreateBucketIfNotExists([]byte(KeyAdmins))
+		if err != nil {
+			return err
+		}
+
+		_, err = school.CreateBucketIfNotExists([]byte(KeyStudents))
 		if err != nil {
 			return err
 		}

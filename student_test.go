@@ -395,3 +395,39 @@ func TestSearchBuckTransaction(t *testing.T) {
 	require.Equal(t, float32(-5000), v[0].Amount)
 
 }
+
+func TestSearchBuckTransactionNegative(t *testing.T) {
+	clock := AppClock{}
+	db, tearDown := FullStartTestServer("searchBuckTransactionNegative", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	for _, teach := range teachers {
+		err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teach, "pre load")
+		require.Nil(t, err)
+		err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(50000), teach, "charge")
+		require.Nil(t, err)
+	}
+
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/transactions/buckTransactions", nil)
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v []openapi.ResponseBuckTransaction
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, float32(50000), v[0].Amount)
+
+}
