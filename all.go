@@ -190,7 +190,7 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 
 		c := accounts.Cursor()
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			account, err := getStudentBaccountRoTx(tx, accounts.Bucket(k))
+			account, err := getStudentAccountRx(tx, accounts.Bucket(k))
 			if err != nil {
 				return err
 			}
@@ -200,6 +200,9 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 			if account.Id == CurrencyUBuck {
 				account.Buck.Name = "UBuck"
 				account.Conversion = 1
+			} else if account.Id == KeyDebt {
+				account.Buck.Name = "Debt"
+				account.Conversion = -1
 			} else {
 				conversion, err := xRateToBaseRx(tx, userDetails.SchoolId, account.Id, "")
 				if err != nil {
@@ -213,7 +216,7 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 				account.Buck.Name = owner.LastName + " Buck"
 			}
 
-			account, err = getCBaccountDetailsRoTx(tx, userDetails, account)
+			account, err = getCBaccountDetailsRx(tx, userDetails, account)
 			if err != nil {
 				return err
 			}

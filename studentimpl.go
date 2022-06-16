@@ -370,9 +370,30 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 	ts := clock.Now().Truncate(time.Millisecond)
 
 	target := to
+	toDetails := UserInfo{
+		LastName: "Debt",
+	}
+
+	fromDetails := UserInfo{
+		LastName: "Ubuck",
+	}
+
 	if to == KeyDebt {
 		target = ""
+	} else {
+		toDetails, err = getUserInLocalStoreTx(tx, to)
+		if err != nil {
+			return err
+		}
 	}
+
+	if from != CurrencyUBuck {
+		fromDetails, err = getUserInLocalStoreTx(tx, from)
+		if err != nil {
+			return err
+		}
+	}
+
 	converted, xRate, err := convertRx(tx, userInfo.SchoolId, from, target, amount.InexactFloat64())
 	if err != nil {
 		return err
@@ -387,7 +408,7 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		AmountSource:   amount,
 		AmountDest:     converted,
 		XRate:          xRate,
-		Reference:      "Convert",
+		Reference:      fromDetails.LastName + " to " + toDetails.LastName,
 	}
 
 	student, err := getStudentBucketTx(tx, userInfo.Name)
@@ -829,15 +850,17 @@ func transactionToResponseBuckTransactionTx(tx *bolt.Tx, trans Transaction) (res
 	amount, _ := trans.Net.Float64()
 	balance, _ := trans.Balance.Float64()
 	var buckName string
-	if trans.CurrencyDest != CurrencyUBuck {
+	if trans.CurrencyDest == CurrencyUBuck {
+		buckName = "UBuck"
+	} else if trans.CurrencyDest == KeyDebt {
+		buckName = KeyDebt
+	} else {
 		user, err := getUserInLocalStoreTx(tx, trans.CurrencyDest)
 		if err != nil {
 			return resp, err
 		}
 
 		buckName = user.LastName + " Buck"
-	} else {
-		buckName = "UBuck"
 	}
 
 	resp = openapi.ResponseBuckTransaction{

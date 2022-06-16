@@ -428,6 +428,6 @@ func TestSearchBuckTransactionNegative(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&v)
 	require.Nil(t, err)
-	require.Equal(t, float32(-5000), v[0].Amount)
+	require.Equal(t, float32(50000), v[0].Amount)
 
 }

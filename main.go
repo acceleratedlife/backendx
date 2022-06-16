@@ -195,6 +195,11 @@ func InitDefaultAccounts(db *bolt.DB) {
 		return
 	}
 
+	// err = seedDb(db, schoolId)
+	// if err != nil {
+	// 	lgr.Printf("ERROR seed items were not created: %v", err)
+	// 	return
+	// }
 }
 
 func initAuth(db *bolt.DB, config ServerConfig) *auth.Service {
@@ -277,4 +282,82 @@ func loadConfig() ServerConfig {
 	}
 
 	return config
+}
+
+func seedDb(db *bolt.DB, schoolId string) (err error) {
+	newUser := UserInfo{
+		Name:        "tt@tt.com",
+		FirstName:   "tt",
+		LastName:    "tt",
+		Email:       "tt@tt.com",
+		Confirmed:   true,
+		PasswordSha: EncodePassword("123qwe"),
+		SchoolId:    schoolId,
+		Role:        UserRoleTeacher,
+	}
+
+	err = createTeacher(db, newUser)
+	if err != nil {
+		return err
+	}
+
+	newUser.LastName = "tt2"
+	newUser.Name = "tt2@tt.com"
+	newUser.Email = "tt2@tt.com"
+
+	err = createTeacher(db, newUser)
+	if err != nil {
+		return err
+	}
+
+	newUser.LastName = "tt3"
+	newUser.Name = "tt3@tt.com"
+	newUser.Email = "tt3@tt.com"
+
+	err = createTeacher(db, newUser)
+	if err != nil {
+		return err
+	}
+
+	classId, _, err := CreateClass(db, schoolId, "tt@tt.com", "math", 1)
+	if err != nil {
+		return
+	}
+
+	path := PathId{
+		schoolId:  schoolId,
+		classId:   classId,
+		teacherId: "tt@tt.com",
+	}
+
+	newUser.Role = UserRoleStudent
+	newUser.LastName = "ss"
+	newUser.Name = "ss@ss.com"
+	newUser.Email = "ss@ss.com"
+
+	err = createStudent(db, newUser, path)
+	if err != nil {
+		return err
+	}
+
+	newUser.LastName = "ss1"
+	newUser.Name = "ss1@ss.com"
+	newUser.Email = "ss1@ss.com"
+
+	err = createStudent(db, newUser, path)
+	if err != nil {
+		return err
+	}
+
+	newUser.LastName = "ss2"
+	newUser.Name = "ss2@ss.com"
+	newUser.Email = "ss2@ss.com"
+
+	err = createStudent(db, newUser, path)
+	if err != nil {
+		return err
+	}
+
+	return
+
 }

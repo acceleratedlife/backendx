@@ -284,7 +284,8 @@ func TestSearchStudentBucksNegative(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
-	assert.Equal(t, data[0].Balance, float32(1000))
+	assert.Equal(t, data[0].Balance, float32(1001))
+	assert.Equal(t, data[1].Balance, float32(1000))
 }
 
 func TestSearchStudentBucksUbuck(t *testing.T) {

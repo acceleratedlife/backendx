@@ -11,14 +11,13 @@
 package openapi
 
 type ResponseAccount struct {
-
 	Conversion float32 `json:"conversion,omitempty"`
 
 	History []History `json:"history,omitempty"`
 
 	Buck ResponseAccountBuck `json:"buck,omitempty"`
 
-	Balance float32 `json:"balance,omitempty"`
+	Balance float32 `json:"balance"`
 
 	Id string `json:"_id,omitempty"`
 
