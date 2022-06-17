@@ -65,7 +65,7 @@ go/model_response_auction_student_owner_id.go
 go/model_response_auction_student_winner_id.go
 go/model_response_auth2.go
 go/model_response_auth4.go
-go/model_response_buck_transactions.go
+go/model_response_buck_transaction.go
 go/model_response_cookie.go
 go/model_response_events.go
 go/model_response_events_owner_id.go

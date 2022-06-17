@@ -14,17 +14,9 @@ type Buck struct {
 
 	Id string `json:"_id"`
 
-	OwnerId string `json:"owner_id,omitempty"`
-
-	SchoolId string `json:"school_id,omitempty"`
-
 	Name string `json:"name"`
 
-	TotalCurrency float32 `json:"totalCurrency"`
-
-	FreeCurrency float32 `json:"freeCurrency"`
-
-	History [][]int32 `json:"history"`
+	Ratio float32 `json:"ratio"`
 }
 
 // AssertBuckRequired checks if the required fields are not zero-ed
@@ -32,9 +24,7 @@ func AssertBuckRequired(obj Buck) error {
 	elements := map[string]interface{}{
 		"_id": obj.Id,
 		"name": obj.Name,
-		"totalCurrency": obj.TotalCurrency,
-		"freeCurrency": obj.FreeCurrency,
-		"history": obj.History,
+		"ratio": obj.Ratio,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

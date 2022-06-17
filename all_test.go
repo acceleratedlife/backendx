@@ -321,3 +321,45 @@ func TestSearchStudentBucksUbuck(t *testing.T) {
 	assert.Equal(t, float32(1000), data[0].Balance)
 	assert.Equal(t, float32(1), data[0].Conversion)
 }
+
+func TestSearchAllBucks(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("searchAllBucks", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 3, 1, 1)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), CurrencyUBuck, "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[1], "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[2], "daily pay")
+	require.Nil(t, err)
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge")
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/bucks",
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data []openapi.Buck
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	assert.Equal(t, "Debt", data[3].Name)
+	assert.Equal(t, "UBuck", data[4].Name)
+}

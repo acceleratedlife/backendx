@@ -88,8 +88,8 @@ func (s *StudentApiService) SearchBuckTransaction(ctx context.Context) (ImplResp
 	// TODO - update SearchBuckTransaction with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseBuckTransactions{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseBuckTransactions{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseBuckTransaction{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseBuckTransaction{}), nil
 
 	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
 	//return Response(400, nil),nil

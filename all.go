@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/rand"
 	"sort"
+	"strings"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -166,6 +167,39 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (opena
 	return openapi.Response(200, resp), nil
 }
 
+func (s *AllApiServiceImpl) SearchAllBucks(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	var resp []openapi.Buck
+	err = s.db.View(func(tx *bolt.Tx) error {
+		bucks, err := getCBBucksRx(tx, userDetails.SchoolId)
+		if err != nil {
+			return err
+		}
+
+		resp = bucks
+
+		return nil
+	})
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	sort.Slice(resp, func(i, j int) bool {
+		return strings.ToLower(resp[i].Name) < strings.ToLower(resp[j].Name)
+	})
+
+	return openapi.Response(200, resp), nil
+
+}
+
 func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
@@ -193,6 +227,10 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 			account, err := getStudentAccountRx(tx, accounts.Bucket(k))
 			if err != nil {
 				return err
+			}
+
+			if account.Balance <= 0 {
+				continue
 			}
 
 			account.Id = string(k)
@@ -408,6 +446,56 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		NetWorth:         float32(nWorth),
 	}
 	return openapi.Response(200, resp), nil //this is incomplete
+}
+
+func getCBBucksRx(tx *bolt.Tx, schoolId string) (bucks []openapi.Buck, err error) {
+	cb, err := getCbRx(tx, schoolId)
+	if err != nil {
+		return bucks, err
+	}
+
+	accounts := cb.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
+		return bucks, fmt.Errorf("cannot get CB accounts")
+	}
+
+	c := accounts.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+
+		Id := string(k)
+
+		var teacher UserInfo
+		var ratio float32
+		if CurrencyUBuck == Id {
+			teacher.LastName = "UBuck"
+			ratio = 1
+		} else if KeyDebt == Id {
+			teacher.LastName = "Debt"
+			ratio = -1
+		} else {
+			teacher, err = getUserInLocalStoreTx(tx, Id)
+			if err != nil {
+				return bucks, err
+			}
+
+			teacher.LastName = teacher.LastName + " Buck"
+			rate, err := xRateToBaseRx(tx, schoolId, Id, "")
+			if err != nil {
+				return bucks, err
+			}
+
+			ratio = float32(rate.InexactFloat64())
+
+		}
+
+		bucks = append(bucks, openapi.Buck{
+			Id:    Id,
+			Name:  teacher.LastName,
+			Ratio: ratio,
+		})
+	}
+
+	return
 }
 
 // NewAllApiServiceImpl provides real api

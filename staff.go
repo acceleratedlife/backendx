@@ -359,11 +359,6 @@ func (s *StaffApiServiceImpl) ResetPassword(ctx context.Context, body openapi.Re
 	return openapi.Response(200, resp), nil
 }
 
-func (s StaffApiServiceImpl) SearchAllBucks(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)

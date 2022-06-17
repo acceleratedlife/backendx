@@ -12,7 +12,7 @@ package openapi
 
 type InlineResponse2002 struct {
 
-	Converion float32 `json:"converion,omitempty"`
+	Conversion float32 `json:"conversion,omitempty"`
 
 	Bucks string `json:"bucks,omitempty"`
 

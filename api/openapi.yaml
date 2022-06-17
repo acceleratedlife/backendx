@@ -614,17 +614,8 @@ paths:
       - SysAdmin
   /bucks:
     get:
-      description: by passing in a school ID all bucks for that school are returned
+      description: return all the bucks of the school
       operationId: searchAllBucks
-      parameters:
-      - description: pass the school _id to be searched
-        explode: true
-        in: query
-        name: _id
-        required: true
-        schema:
-          type: string
-        style: form
       responses:
         "200":
           content:
@@ -638,7 +629,7 @@ paths:
           description: No bucks matching that school _id
       summary: searches all bucks
       tags:
-      - Staff
+      - All
   /classes/class:
     delete:
       description: delete a class
@@ -1050,7 +1041,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ResponseBuckTransactions'
+                  $ref: '#/components/schemas/ResponseBuckTransaction'
                 type: array
           description: transaction matching criteria
         "400":
@@ -1573,56 +1564,23 @@ components:
       type: object
     Buck:
       example:
-        freeCurrency: 5565
-        school_id: 613eab19e58cc511801af657
-        owner_id: 613eab19e58cc511801af657
         name: UBuck
-        totalCurrency: 514286.578391947
         _id: 613eab19e58cc511801af657
-        history:
-        - - 0
-          - 0
-        - - 0
-          - 0
+        ratio: 0.8008282
       properties:
         _id:
-          example: 613eab19e58cc511801af657
-          type: string
-        owner_id:
-          example: 613eab19e58cc511801af657
-          type: string
-        school_id:
           example: 613eab19e58cc511801af657
           type: string
         name:
           example: UBuck
           type: string
-        totalCurrency:
-          default: 0
-          example: 514286.578391947
+        ratio:
           format: float
           type: number
-        freeCurrency:
-          default: 0
-          example: 5565
-          format: float
-          type: number
-        history:
-          items:
-            items:
-              type: integer
-            maxItems: 2
-            minItems: 2
-            type: array
-          type: array
       required:
       - _id
-      - freeCurrency
-      - history
       - name
-      - owner
-      - school
-      - totalCurrency
+      - ratio
       type: object
     Class:
       example:
@@ -1825,6 +1783,9 @@ components:
         type_id:
           example: 614290257145de7a9e40c594
           type: string
+      required:
+      - balance
+      - conversion
       type: object
     ResponseAuctionStudent:
       example:
@@ -1915,14 +1876,18 @@ components:
         w_auth:
           type: string
       type: object
-    ResponseBuckTransactions:
+    ResponseBuckTransaction:
       example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
         amount: 123.45
         balance: 123.45
         name: Jay Bucks
         description: Life Event
         conversion: 123.45
       properties:
+        createdAt:
+          format: date-time
+          type: string
         balance:
           example: 123.45
           format: float
@@ -1941,6 +1906,13 @@ components:
         name:
           example: Jay Bucks
           type: string
+      required:
+      - amount
+      - balance
+      - conversion
+      - createdAt
+      - description
+      - name
       type: object
     ResponseEvents:
       example:
@@ -2316,12 +2288,12 @@ components:
         owner_id: 613eab19e58cc511801af657
         assetID: 613eab19e58cc511801af657
         description: Life Event
-        _id: 613eab19e58cc511801af657
+        _id: 2000-01-23T04:56:07.000+00:00
         uBucks: 123.45
         type: Crypto
       properties:
         _id:
-          example: 613eab19e58cc511801af657
+          format: date-time
           type: string
         owner_id:
           example: 613eab19e58cc511801af657
@@ -2612,13 +2584,13 @@ components:
       type: object
     inline_response_200_2:
       example:
-        converion: 123.45
         bucks: Smith Bucks
         balance: 123.45
         type_id: 614290257145de7a9e40c594
         _id: 614290257145de7a9e40c594
+        conversion: 123.45
       properties:
-        converion:
+        conversion:
           example: 123.45
           format: float
           type: number

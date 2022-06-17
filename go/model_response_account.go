@@ -11,7 +11,8 @@
 package openapi
 
 type ResponseAccount struct {
-	Conversion float32 `json:"conversion,omitempty"`
+
+	Conversion float32 `json:"conversion"`
 
 	History []History `json:"history,omitempty"`
 
@@ -26,6 +27,16 @@ type ResponseAccount struct {
 
 // AssertResponseAccountRequired checks if the required fields are not zero-ed
 func AssertResponseAccountRequired(obj ResponseAccount) error {
+	elements := map[string]interface{}{
+		"conversion": obj.Conversion,
+		"balance": obj.Balance,
+	}
+	for name, el := range elements {
+		if isZero := IsZeroValue(el); isZero {
+			return &RequiredError{Field: name}
+		}
+	}
+
 	for _, el := range obj.History {
 		if err := AssertHistoryRequired(el); err != nil {
 			return err
