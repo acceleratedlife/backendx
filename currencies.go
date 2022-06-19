@@ -21,7 +21,7 @@ func xRateToBaseInstantRx(tx *bolt.Tx, schoolId, from, base string) (rate decima
 	fromValue := decimal.Zero
 	baseValue := decimal.Zero
 
-	if from == "" {
+	if from == "" || from == CurrencyUBuck || from == KeyDebt {
 		fromValue, err = getUbuckValueRx(tx, schoolId)
 		if err != nil {
 			return decimal.Zero, err
@@ -33,7 +33,7 @@ func xRateToBaseInstantRx(tx *bolt.Tx, schoolId, from, base string) (rate decima
 		}
 	}
 
-	if base == "" {
+	if base == "" || base == CurrencyUBuck || base == KeyDebt {
 		baseValue, err = getUbuckValueRx(tx, schoolId)
 		if err != nil {
 			return decimal.Zero, err
@@ -73,24 +73,33 @@ func xRateToBaseHistoricalRx(tx *bolt.Tx, schoolId, from, base string) (rate dec
 // how much 'base' to buy 1 'from'
 // from, base - empty value refers to uBuck
 func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decimal, err error) {
-	if from == KeyDebt {
+	if (from == KeyDebt && base == CurrencyUBuck) || (from == KeyDebt && base == "") || (from == CurrencyUBuck && base == KeyDebt) || (from == "" && base == KeyDebt) {
 		return decimal.NewFromInt32(-1), nil
 	}
 
-	if from == base || (from == CurrencyUBuck && base == "") {
+	if from == base || (from == CurrencyUBuck && base == "") || (from == "" && base == CurrencyUBuck) {
 		return decimal.NewFromInt32(1), nil
 	}
 
-	if from == "" || base == "" {
+	if from == "" || from == CurrencyUBuck || base == "" || base == CurrencyUBuck || from == KeyDebt || base == KeyDebt {
 		rate, err = xRateToBaseHistoricalRx(tx, schoolId, from, base)
 		if err == nil {
+			if from == KeyDebt || base == KeyDebt {
+				return rate.Neg(), err
+			}
 			return
 		} else {
 			lgr.Printf("WARN historical xrate calculation failed: %v", err)
 		}
 	}
 
-	return xRateToBaseInstantRx(tx, schoolId, from, base)
+	rate, err = xRateToBaseInstantRx(tx, schoolId, from, base)
+
+	if from == KeyDebt || base == KeyDebt {
+		return rate.Neg(), err
+	}
+
+	return
 }
 
 // updates MMA
@@ -209,7 +218,7 @@ func updateXRatesTx(accounts *bolt.Bucket, clock Clock) error {
 }
 
 func getSavedXRateRx(tx *bolt.Tx, schoolId, currency string) (rate decimal.Decimal, err error) {
-	if currency == "" {
+	if currency == "" || currency == CurrencyUBuck || currency == KeyDebt {
 		return decimal.NewFromInt(1), nil
 	}
 

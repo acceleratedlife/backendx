@@ -99,7 +99,7 @@ func getStudentHistoryTX(tx *bolt.Tx, userName string) (history []openapi.Histor
 	return
 }
 
-func getStudentAccountRx(tx *bolt.Tx, bAccount *bolt.Bucket) (resp openapi.ResponseAccount, err error) {
+func getStudentAccountRx(tx *bolt.Tx, bAccount *bolt.Bucket, id string) (resp openapi.ResponseAccount, err error) {
 	// historyData := bAccount.Get([]byte(KeyHistory))
 	// if historyData == nil {
 	// 	return resp, fmt.Errorf("Failed to get history")
@@ -111,6 +111,7 @@ func getStudentAccountRx(tx *bolt.Tx, bAccount *bolt.Bucket) (resp openapi.Respo
 
 	balanceData := bAccount.Get([]byte(KeyBalance))
 	err = json.Unmarshal(balanceData, &resp.Balance)
+	resp.Id = id
 
 	return
 }
@@ -143,4 +144,21 @@ func getCBaccountDetailsRx(tx *bolt.Tx, userDetails UserInfo, account openapi.Re
 	finalAccount = account
 
 	return
+}
+
+func getBuckNameTx(tx *bolt.Tx, id string) (string, error) {
+	if id == KeyDebt {
+		return "Debt", nil
+	}
+
+	if id == CurrencyUBuck {
+		return "UBuck", nil
+	}
+
+	user, err := getUserInLocalStoreTx(tx, id)
+	if err != nil {
+		return "", err
+	}
+
+	return user.LastName + " Buck", nil
 }

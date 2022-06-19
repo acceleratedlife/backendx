@@ -363,3 +363,198 @@ func TestSearchAllBucks(t *testing.T) {
 	assert.Equal(t, "Debt", data[3].Name)
 	assert.Equal(t, "UBuck", data[4].Name)
 }
+
+func TestExchangeRate(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("exchangeRate", 8090, "")
+	defer tearDown()
+	members := 10
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 3, 3, members)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), CurrencyUBuck, "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(2000), teachers[1], "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[2], "daily pay")
+	require.Nil(t, err)
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge")
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/accounts/exchangeRate?sellCurrency="+teachers[0]+"&buyCurrency="+teachers[1],
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data []openapi.ResponseAccount
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, float32(1000), data[0].Balance)
+	require.Equal(t, float32(2), data[0].Conversion)
+	require.Equal(t, float32(2000), data[1].Balance)
+
+	req, _ = http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/accounts/exchangeRate?sellCurrency="+CurrencyUBuck+"&buyCurrency="+teachers[1],
+		nil)
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	decoder = json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, float32(1000), data[0].Balance)
+	require.Equal(t, float32(1.5), data[0].Conversion)
+	require.Equal(t, float32(2000), data[1].Balance)
+
+}
+
+func TestExchangeRate_ubuck(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("exchangeRate_ubuck", 8090, "")
+	defer tearDown()
+	members := 10
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 3, 3, members)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), CurrencyUBuck, "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(2000), teachers[1], "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[2], "daily pay")
+	require.Nil(t, err)
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge")
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/accounts/exchangeRate?sellCurrency="+CurrencyUBuck+"&buyCurrency="+teachers[1],
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data []openapi.ResponseAccount
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, float32(1000), data[0].Balance)
+	require.Equal(t, float32(1.5), data[0].Conversion)
+	require.Equal(t, float32(2000), data[1].Balance)
+
+}
+
+func TestExchangeRate_debt(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("exchangeRate_debt", 8090, "")
+	defer tearDown()
+	members := 10
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 3, 3, members)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), CurrencyUBuck, "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(2000), teachers[1], "daily pay")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[2], "daily pay")
+	require.Nil(t, err)
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge")
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/accounts/exchangeRate?sellCurrency="+KeyDebt+"&buyCurrency="+CurrencyUBuck,
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data []openapi.ResponseAccount
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, float32(-1), data[0].Conversion)
+
+	req, _ = http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/accounts/exchangeRate?sellCurrency="+CurrencyUBuck+"&buyCurrency="+KeyDebt,
+		nil)
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	decoder = json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, float32(-1), data[0].Conversion)
+
+	req, _ = http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/accounts/exchangeRate?sellCurrency="+KeyDebt+"&buyCurrency="+teachers[1],
+		nil)
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	decoder = json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, float32(-1.5), data[0].Conversion)
+
+	req, _ = http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/accounts/exchangeRate?sellCurrency="+teachers[1]+"&buyCurrency="+KeyDebt,
+		nil)
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	decoder = json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, float32(-.666667), data[0].Conversion)
+
+}
