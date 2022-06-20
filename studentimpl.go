@@ -29,6 +29,7 @@ type Transaction struct {
 	AmountDest     decimal.Decimal
 	XRate          decimal.Decimal
 	Reference      string
+	fromSource     bool
 	Net            decimal.Decimal `json:"-"`
 	Balance        decimal.Decimal `json:"-"`
 }
@@ -414,6 +415,7 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		AmountDest:     converted,
 		XRate:          xRate,
 		Reference:      fromDetails.LastName + " to " + toDetails.LastName,
+		fromSource:     true,
 	}
 
 	student, err := getStudentBucketTx(tx, userInfo.Name)
@@ -427,6 +429,8 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		}
 	}
 
+	transaction.fromSource = false
+
 	_, err = addToHolderTx(student, to, transaction, OperationCredit, true)
 	if err != nil {
 		return err
@@ -437,12 +441,14 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		return err
 	}
 
-	_, err = addToHolderTx(cb, from, transaction, OperationDebit, false)
+	_, err = addToHolderTx(cb, to, transaction, OperationDebit, false)
 	if err != nil {
 		return err
 	}
 
-	_, err = addToHolderTx(cb, to, transaction, OperationDebit, false)
+	transaction.fromSource = true
+
+	_, err = addToHolderTx(cb, from, transaction, OperationDebit, false)
 	if err != nil {
 		return err
 	}
@@ -861,6 +867,13 @@ func transactionToResponseBuckTransactionTx(tx *bolt.Tx, trans Transaction) (res
 		buckName = "UBuck"
 	} else if trans.CurrencyDest == KeyDebt {
 		buckName = KeyDebt
+	} else if trans.fromSource {
+		user, err := getUserInLocalStoreTx(tx, trans.CurrencySource)
+		if err != nil {
+			return resp, err
+		}
+
+		buckName = user.LastName + " Buck"
 	} else {
 		user, err := getUserInLocalStoreTx(tx, trans.CurrencyDest)
 		if err != nil {
