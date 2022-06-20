@@ -377,11 +377,15 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 	}
 
 	fromDetails := UserInfo{
-		LastName: "Ubuck",
+		LastName: "UBuck",
 	}
 
 	if to == KeyDebt {
 		target = ""
+	} else if to == CurrencyUBuck {
+		toDetails = UserInfo{
+			LastName: "UBuck",
+		}
 	} else {
 		toDetails, err = getUserInLocalStoreTx(tx, to)
 		if err != nil {
@@ -422,7 +426,7 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 	if err != nil {
 		return err
 	}
-	if to != KeyDebt {
+	if to != KeyDebt || charge {
 		_, err = addToHolderTx(student, from, transaction, OperationDebit, true)
 		if err != nil {
 			return err
