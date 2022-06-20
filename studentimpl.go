@@ -104,6 +104,7 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	}
 
 	if balance.Sign() < 0 && negBlock {
+		errR = fmt.Errorf("Insufficient funds")
 		return
 	}
 
@@ -359,7 +360,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	return nil
 }
 
-func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, from string, to string) (err error) {
+func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, from string, to string, charge bool) (err error) {
 	if userInfo.Role != UserRoleStudent {
 		return fmt.Errorf("user is not a student")
 	}
@@ -397,6 +398,10 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 	converted, xRate, err := convertRx(tx, userInfo.SchoolId, from, target, amount.InexactFloat64())
 	if err != nil {
 		return err
+	}
+
+	if charge {
+		amount = amount.Mul(decimal.NewFromFloat32(keyCharge))
 	}
 
 	transaction := Transaction{
@@ -477,18 +482,20 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 		return err
 	}
 
-	newBalance, err := addToHolderTx(student, currency, transaction, OperationDebit, true)
+	_, err = addToHolderTx(student, currency, transaction, OperationDebit, true)
 	if err != nil {
-		return err
-	}
+		if err.Error() == "Insufficient funds" {
+			err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, false)
+			if err != nil {
+				return err
+			}
 
-	if newBalance.Sign() < 0 {
-		err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt)
-		if err != nil {
-			return err
+			return nil
+
 		}
 
-		return nil
+		return err
+
 	}
 
 	cb, err := getCbTx(tx, userDetails.SchoolId)

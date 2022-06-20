@@ -46,8 +46,8 @@ func (s *AllApiService) ConfirmEmail(ctx context.Context, token string) (ImplRes
 	// TODO - update ConfirmEmail with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse2003{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse2003{}), nil
+	//TODO: Uncomment the next line to return response Response(200, InlineResponse2004{}) or use other options such as http.Ok ...
+	//return Response(200, InlineResponse2004{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -60,8 +60,8 @@ func (s *AllApiService) ExchangeRate(ctx context.Context, sellCurrency string, b
 	// TODO - update ExchangeRate with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseXRate{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseXRate{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseCurrencyExchange{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseCurrencyExchange{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -189,8 +189,8 @@ func (s *AllApiService) SearchStudentBucks(ctx context.Context) (ImplResponse, e
 	// TODO - update SearchStudentBucks with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseAccount{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseAccount{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseCurrencyExchange{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseCurrencyExchange{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

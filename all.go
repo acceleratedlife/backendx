@@ -64,7 +64,7 @@ func (a AllApiServiceImpl) ExchangeRate(ctx context.Context, from string, to str
 		}), nil
 	}
 
-	var resp []openapi.ResponseAccount
+	var resp []openapi.ResponseCurrencyExchange
 	err = a.db.View(func(tx *bolt.Tx) error {
 		student, err := getStudentBucketRoTx(tx, userDetails.Name)
 		if err != nil {
@@ -93,11 +93,11 @@ func (a AllApiServiceImpl) ExchangeRate(ctx context.Context, from string, to str
 
 		account := accounts.Bucket([]byte(from))
 		if account == nil {
-			resp = append(resp, openapi.ResponseAccount{
+			resp = append(resp, openapi.ResponseCurrencyExchange{
 				Conversion: float32(rate.InexactFloat64()),
 				Balance:    0,
 				Id:         from,
-				Buck: openapi.ResponseAccountBuck{
+				Buck: openapi.ResponseCurrencyExchangeBuck{
 					Name: fromName,
 				},
 			})
@@ -115,10 +115,10 @@ func (a AllApiServiceImpl) ExchangeRate(ctx context.Context, from string, to str
 
 		account = accounts.Bucket([]byte(to))
 		if account == nil {
-			resp = append(resp, openapi.ResponseAccount{
+			resp = append(resp, openapi.ResponseCurrencyExchange{
 				Balance: 0,
 				Id:      from,
-				Buck: openapi.ResponseAccountBuck{
+				Buck: openapi.ResponseCurrencyExchangeBuck{
 					Name: toName,
 				},
 			})
@@ -296,7 +296,7 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 		}), nil
 	}
 
-	var resp []openapi.ResponseAccount
+	var resp []openapi.ResponseCurrencyExchange
 	err = s.db.View(func(tx *bolt.Tx) error {
 		student, err := getStudentBucketRoTx(tx, userDetails.Name)
 		if err != nil {

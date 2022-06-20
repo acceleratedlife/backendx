@@ -21,11 +21,17 @@ func xRateToBaseInstantRx(tx *bolt.Tx, schoolId, from, base string) (rate decima
 	fromValue := decimal.Zero
 	baseValue := decimal.Zero
 
-	if from == "" || from == CurrencyUBuck || from == KeyDebt {
+	if from == "" || from == CurrencyUBuck {
 		fromValue, err = getUbuckValueRx(tx, schoolId)
 		if err != nil {
 			return decimal.Zero, err
 		}
+	} else if from == KeyDebt {
+		fromValue, err = getUbuckValueRx(tx, schoolId)
+		if err != nil {
+			return decimal.Zero, err
+		}
+		fromValue = fromValue.Neg()
 	} else {
 		fromValue, err = getCurrencyMMARx(tx, schoolId, from)
 		if err != nil {
@@ -33,11 +39,17 @@ func xRateToBaseInstantRx(tx *bolt.Tx, schoolId, from, base string) (rate decima
 		}
 	}
 
-	if base == "" || base == CurrencyUBuck || base == KeyDebt {
+	if base == "" || base == CurrencyUBuck {
 		baseValue, err = getUbuckValueRx(tx, schoolId)
 		if err != nil {
 			return decimal.Zero, err
 		}
+	} else if base == KeyDebt {
+		baseValue, err = getUbuckValueRx(tx, schoolId)
+		if err != nil {
+			return decimal.Zero, err
+		}
+		baseValue = baseValue.Neg()
 	} else {
 		baseValue, err = getCurrencyMMARx(tx, schoolId, base)
 		if err != nil {
@@ -84,9 +96,6 @@ func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decim
 	if from == "" || from == CurrencyUBuck || base == "" || base == CurrencyUBuck || from == KeyDebt || base == KeyDebt {
 		rate, err = xRateToBaseHistoricalRx(tx, schoolId, from, base)
 		if err == nil {
-			if from == KeyDebt || base == KeyDebt {
-				return rate.Neg(), err
-			}
 			return
 		} else {
 			lgr.Printf("WARN historical xrate calculation failed: %v", err)
@@ -94,10 +103,6 @@ func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decim
 	}
 
 	rate, err = xRateToBaseInstantRx(tx, schoolId, from, base)
-
-	if from == KeyDebt || base == KeyDebt {
-		return rate.Neg(), err
-	}
 
 	return
 }
@@ -218,8 +223,12 @@ func updateXRatesTx(accounts *bolt.Bucket, clock Clock) error {
 }
 
 func getSavedXRateRx(tx *bolt.Tx, schoolId, currency string) (rate decimal.Decimal, err error) {
-	if currency == "" || currency == CurrencyUBuck || currency == KeyDebt {
+	if currency == "" || currency == CurrencyUBuck {
 		return decimal.NewFromInt(1), nil
+	}
+
+	if currency == KeyDebt {
+		return decimal.NewFromInt(-1), nil
 	}
 
 	bucketRx := getAccountBucketRx(tx, schoolId, currency)

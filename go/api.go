@@ -187,7 +187,7 @@ type StaffApiServicer interface {
 // and updated with the logic required for the API.
 type StudentApiServicer interface { 
 	AuctionBid(context.Context, RequestAuctionBid) (ImplResponse, error)
-	BuckConvert(context.Context, string, TransactionsConversionTransactionBody) (ImplResponse, error)
+	BuckConvert(context.Context, RequestBuckConvert) (ImplResponse, error)
 	CryptoConvert(context.Context, string, TransactionCryptoTransactionBody) (ImplResponse, error)
 	SearchAuctionsStudent(context.Context) (ImplResponse, error)
 	SearchBuckTransaction(context.Context) (ImplResponse, error)
