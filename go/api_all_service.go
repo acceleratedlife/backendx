@@ -60,8 +60,8 @@ func (s *AllApiService) ExchangeRate(ctx context.Context, sellCurrency string, b
 	// TODO - update ExchangeRate with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []InlineResponse2002{}) or use other options such as http.Ok ...
-	//return Response(200, []InlineResponse2002{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseCurrencyExchange{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseCurrencyExchange{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -112,6 +112,20 @@ func (s *AllApiService) SearchAccount(ctx context.Context, id string) (ImplRespo
 	//return Response(404, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchAccount method not implemented")
+}
+
+// SearchAllBucks - searches all bucks
+func (s *AllApiService) SearchAllBucks(ctx context.Context) (ImplResponse, error) {
+	// TODO - update SearchAllBucks with the required logic for this service method.
+	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []Buck{}) or use other options such as http.Ok ...
+	//return Response(200, []Buck{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("SearchAllBucks method not implemented")
 }
 
 // SearchBucks - searches bucks
@@ -175,8 +189,8 @@ func (s *AllApiService) SearchStudentBucks(ctx context.Context) (ImplResponse, e
 	// TODO - update SearchStudentBucks with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseAccount{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseAccount{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseCurrencyExchange{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseCurrencyExchange{}), nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil

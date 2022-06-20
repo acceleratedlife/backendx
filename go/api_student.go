@@ -138,19 +138,18 @@ func (c *StudentApiController) AuctionBid(w http.ResponseWriter, r *http.Request
 
 // BuckConvert - When a student is converting between 2 bucks
 func (c *StudentApiController) BuckConvert(w http.ResponseWriter, r *http.Request) {
-	userIdParam := r.Header.Get("user._id")
-	transactionsConversionTransactionBodyParam := TransactionsConversionTransactionBody{}
+	requestBuckConvertParam := RequestBuckConvert{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&transactionsConversionTransactionBodyParam); err != nil {
+	if err := d.Decode(&requestBuckConvertParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertTransactionsConversionTransactionBodyRequired(transactionsConversionTransactionBodyParam); err != nil {
+	if err := AssertRequestBuckConvertRequired(requestBuckConvertParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.BuckConvert(r.Context(), userIdParam, transactionsConversionTransactionBodyParam)
+	result, err := c.service.BuckConvert(r.Context(), requestBuckConvertParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

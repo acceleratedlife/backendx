@@ -431,3 +431,233 @@ func TestSearchBuckTransactionNegative(t *testing.T) {
 	require.Equal(t, float32(50000), v[0].Amount)
 
 }
+
+func TestBuckConvert(t *testing.T) {
+	clock := AppClock{}
+	db, tearDown := FullStartTestServer("buckConvert", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "pre load")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1), teachers[1], "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuckConvert{
+		AccountFrom: teachers[0],
+		AccountTo:   teachers[1],
+		Amount:      1000,
+	}
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	body = openapi.RequestBuckConvert{
+		AccountFrom: teachers[0],
+		AccountTo:   teachers[1],
+		Amount:      100000,
+	}
+	marshal, _ = json.Marshal(body)
+
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode, resp)
+
+}
+
+func TestBuckConvert_ubuck(t *testing.T) {
+	clock := AppClock{}
+	db, tearDown := FullStartTestServer("buckConvert_ubuck", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "pre load")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1), teachers[1], "pre load")
+	require.Nil(t, err)
+	err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), "daily payment")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuckConvert{
+		AccountFrom: teachers[0],
+		AccountTo:   CurrencyUBuck,
+		Amount:      1000,
+	}
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	body = openapi.RequestBuckConvert{
+		AccountFrom: CurrencyUBuck,
+		AccountTo:   teachers[1],
+		Amount:      100,
+	}
+	marshal, _ = json.Marshal(body)
+
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+}
+
+func TestBuckConvert_debt(t *testing.T) {
+	clock := AppClock{}
+	db, tearDown := FullStartTestServer("buckConvert_debt", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(100), teachers[0], "pre load")
+	require.Nil(t, err)
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "charge")
+	require.Nil(t, err)
+	err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), "daily payment")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuckConvert{
+		AccountFrom: teachers[0],
+		AccountTo:   KeyDebt,
+		Amount:      1000,
+	}
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode, resp)
+
+	body = openapi.RequestBuckConvert{
+		AccountFrom: teachers[0],
+		AccountTo:   KeyDebt,
+		Amount:      50,
+	}
+	marshal, _ = json.Marshal(body)
+
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+}
+
+func TestBuckConvert_debt_ubuck(t *testing.T) {
+	clock := AppClock{}
+	db, tearDown := FullStartTestServer("buckConvert_debt_ubuck", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(100), teachers[0], "pre load")
+	require.Nil(t, err)
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "charge")
+	require.Nil(t, err)
+	err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), "daily payment")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuckConvert{
+		AccountFrom: CurrencyUBuck,
+		AccountTo:   KeyDebt,
+		Amount:      500,
+	}
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	body = openapi.RequestBuckConvert{
+		AccountFrom: CurrencyUBuck,
+		AccountTo:   KeyDebt,
+		Amount:      500,
+	}
+	marshal, _ = json.Marshal(body)
+
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+}

@@ -10,13 +10,13 @@
 
 package openapi
 
-type ResponseAccount struct {
+type ResponseCurrencyExchange struct {
 
 	Conversion float32 `json:"conversion"`
 
 	History []History `json:"history,omitempty"`
 
-	Buck ResponseAccountBuck `json:"buck,omitempty"`
+	Buck ResponseCurrencyExchangeBuck `json:"buck,omitempty"`
 
 	Balance float32 `json:"balance"`
 
@@ -25,8 +25,8 @@ type ResponseAccount struct {
 	TypeId string `json:"type_id,omitempty"`
 }
 
-// AssertResponseAccountRequired checks if the required fields are not zero-ed
-func AssertResponseAccountRequired(obj ResponseAccount) error {
+// AssertResponseCurrencyExchangeRequired checks if the required fields are not zero-ed
+func AssertResponseCurrencyExchangeRequired(obj ResponseCurrencyExchange) error {
 	elements := map[string]interface{}{
 		"conversion": obj.Conversion,
 		"balance": obj.Balance,
@@ -42,20 +42,20 @@ func AssertResponseAccountRequired(obj ResponseAccount) error {
 			return err
 		}
 	}
-	if err := AssertResponseAccountBuckRequired(obj.Buck); err != nil {
+	if err := AssertResponseCurrencyExchangeBuckRequired(obj.Buck); err != nil {
 		return err
 	}
 	return nil
 }
 
-// AssertRecurseResponseAccountRequired recursively checks if required fields are not zero-ed in a nested slice.
-// Accepts only nested slice of ResponseAccount (e.g. [][]ResponseAccount), otherwise ErrTypeAssertionError is thrown.
-func AssertRecurseResponseAccountRequired(objSlice interface{}) error {
+// AssertRecurseResponseCurrencyExchangeRequired recursively checks if required fields are not zero-ed in a nested slice.
+// Accepts only nested slice of ResponseCurrencyExchange (e.g. [][]ResponseCurrencyExchange), otherwise ErrTypeAssertionError is thrown.
+func AssertRecurseResponseCurrencyExchangeRequired(objSlice interface{}) error {
 	return AssertRecurseInterfaceRequired(objSlice, func(obj interface{}) error {
-		aResponseAccount, ok := obj.(ResponseAccount)
+		aResponseCurrencyExchange, ok := obj.(ResponseCurrencyExchange)
 		if !ok {
 			return ErrTypeAssertionError
 		}
-		return AssertResponseAccountRequired(aResponseAccount)
+		return AssertResponseCurrencyExchangeRequired(aResponseCurrencyExchange)
 	})
 }

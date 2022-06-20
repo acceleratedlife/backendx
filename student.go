@@ -8,20 +8,47 @@ import (
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
 type StudentApiServiceImpl struct {
-	db *bolt.DB
+	db    *bolt.DB
+	clock Clock
 }
 
 func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, auctionsPlaceBidBody openapi.RequestAuctionBid) (openapi.ImplResponse, error) {
 	panic("implement me")
 }
 
-func (a *StudentApiServiceImpl) BuckConvert(context.Context, string, openapi.TransactionsConversionTransactionBody) (response openapi.ImplResponse, err error) {
-	//TODO implement me
-	panic("implement me")
+func (a *StudentApiServiceImpl) BuckConvert(ctx context.Context, body openapi.RequestBuckConvert) (response openapi.ImplResponse, err error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		err := studentConvertTx(tx, a.clock, userDetails, decimal.NewFromFloat32(body.Amount), body.AccountFrom, body.AccountTo, true)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
+
 }
 func (a *StudentApiServiceImpl) CryptoConvert(context.Context, string, openapi.TransactionCryptoTransactionBody) (openapi.ImplResponse, error) {
 	//TODO implement me
@@ -87,6 +114,7 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 		}
 		return nil
 	})
+
 	if err != nil {
 		return openapi.Response(400, err), nil
 	}
@@ -257,9 +285,10 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 
 }
 
-func NewStudentApiServiceImpl(db *bolt.DB) openapi.StudentApiServicer {
+func NewStudentApiServiceImpl(db *bolt.DB, clock Clock) openapi.StudentApiServicer {
 	return &StudentApiServiceImpl{
-		db: db,
+		db:    db,
+		clock: clock,
 	}
 }
 

@@ -29,6 +29,7 @@ type Transaction struct {
 	AmountDest     decimal.Decimal
 	XRate          decimal.Decimal
 	Reference      string
+	FromSource     bool
 	Net            decimal.Decimal `json:"-"`
 	Balance        decimal.Decimal `json:"-"`
 }
@@ -104,6 +105,7 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	}
 
 	if balance.Sign() < 0 && negBlock {
+		errR = fmt.Errorf("Insufficient funds")
 		return
 	}
 
@@ -359,7 +361,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	return nil
 }
 
-func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, from string, to string) (err error) {
+func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, from string, to string, charge bool) (err error) {
 	if userInfo.Role != UserRoleStudent {
 		return fmt.Errorf("user is not a student")
 	}
@@ -375,11 +377,15 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 	}
 
 	fromDetails := UserInfo{
-		LastName: "Ubuck",
+		LastName: "UBuck",
 	}
 
 	if to == KeyDebt {
 		target = ""
+	} else if to == CurrencyUBuck {
+		toDetails = UserInfo{
+			LastName: "UBuck",
+		}
 	} else {
 		toDetails, err = getUserInLocalStoreTx(tx, to)
 		if err != nil {
@@ -399,6 +405,10 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		return err
 	}
 
+	if charge {
+		amount = amount.Mul(decimal.NewFromFloat32(keyCharge))
+	}
+
 	transaction := Transaction{
 		Ts:             ts,
 		Source:         userInfo.Name,
@@ -409,17 +419,24 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		AmountDest:     converted,
 		XRate:          xRate,
 		Reference:      fromDetails.LastName + " to " + toDetails.LastName,
+		FromSource:     true,
 	}
 
 	student, err := getStudentBucketTx(tx, userInfo.Name)
 	if err != nil {
 		return err
 	}
-	if to != KeyDebt {
+	if to != KeyDebt || charge {
 		_, err = addToHolderTx(student, from, transaction, OperationDebit, true)
 		if err != nil {
 			return err
 		}
+	}
+
+	transaction.FromSource = false
+
+	if to == KeyDebt && charge {
+		transaction.AmountDest = transaction.AmountDest.Neg()
 	}
 
 	_, err = addToHolderTx(student, to, transaction, OperationCredit, true)
@@ -432,12 +449,14 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		return err
 	}
 
-	_, err = addToHolderTx(cb, from, transaction, OperationDebit, false)
+	_, err = addToHolderTx(cb, to, transaction, OperationDebit, false)
 	if err != nil {
 		return err
 	}
 
-	_, err = addToHolderTx(cb, to, transaction, OperationDebit, false)
+	transaction.FromSource = true
+
+	_, err = addToHolderTx(cb, from, transaction, OperationDebit, false)
 	if err != nil {
 		return err
 	}
@@ -477,18 +496,20 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 		return err
 	}
 
-	newBalance, err := addToHolderTx(student, currency, transaction, OperationDebit, true)
+	_, err = addToHolderTx(student, currency, transaction, OperationDebit, true)
 	if err != nil {
-		return err
-	}
+		if err.Error() == "Insufficient funds" {
+			err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, false)
+			if err != nil {
+				return err
+			}
 
-	if newBalance.Sign() < 0 {
-		err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt)
-		if err != nil {
-			return err
+			return nil
+
 		}
 
-		return nil
+		return err
+
 	}
 
 	cb, err := getCbTx(tx, userDetails.SchoolId)
@@ -850,17 +871,37 @@ func transactionToResponseBuckTransactionTx(tx *bolt.Tx, trans Transaction) (res
 	amount, _ := trans.Net.Float64()
 	balance, _ := trans.Balance.Float64()
 	var buckName string
-	if trans.CurrencyDest == CurrencyUBuck {
-		buckName = "UBuck"
-	} else if trans.CurrencyDest == KeyDebt {
-		buckName = KeyDebt
+
+	if trans.FromSource {
+
+		if trans.CurrencySource == CurrencyUBuck {
+			buckName = "UBuck"
+		} else if trans.CurrencySource == KeyDebt {
+			buckName = KeyDebt
+		} else {
+			user, err := getUserInLocalStoreTx(tx, trans.CurrencySource)
+			if err != nil {
+				return resp, err
+			}
+
+			buckName = user.LastName + " Buck"
+
+		}
 	} else {
-		user, err := getUserInLocalStoreTx(tx, trans.CurrencyDest)
-		if err != nil {
-			return resp, err
+
+		if trans.CurrencyDest == CurrencyUBuck {
+			buckName = "UBuck"
+		} else if trans.CurrencyDest == KeyDebt {
+			buckName = KeyDebt
+		} else {
+			user, err := getUserInLocalStoreTx(tx, trans.CurrencyDest)
+			if err != nil {
+				return resp, err
+			}
+
+			buckName = user.LastName + " Buck"
 		}
 
-		buckName = user.LastName + " Buck"
 	}
 
 	resp = openapi.ResponseBuckTransaction{

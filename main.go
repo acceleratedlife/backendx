@@ -34,6 +34,7 @@ import (
 const (
 	OperationDebit      = 1
 	OperationCredit     = 2
+	keyCharge           = 1.01
 	KeyDebt             = "debt"
 	CurrencyUBuck       = "ubuck"
 	KeyAuctions         = "auctions"
@@ -137,7 +138,7 @@ func createRouter(db *bolt.DB) *mux.Router {
 	teacherApiServiceImpl := NewTeacherApiServiceImpl(db)
 	teacherApiController := openapi.NewTeacherApiController(teacherApiServiceImpl)
 
-	StudentApiServiceImpl := NewStudentApiServiceImpl(db)
+	StudentApiServiceImpl := NewStudentApiServiceImpl(db, clock)
 	StudentApiController := openapi.NewStudentApiController(StudentApiServiceImpl)
 
 	SchoolAdminApiService := NewSchoolAdminServiceImpl(db)

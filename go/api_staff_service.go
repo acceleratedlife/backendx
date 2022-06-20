@@ -167,20 +167,6 @@ func (s *StaffApiService) ResetPassword(ctx context.Context, requestUser Request
 	return Response(http.StatusNotImplemented, nil), errors.New("ResetPassword method not implemented")
 }
 
-// SearchAllBucks - searches all bucks
-func (s *StaffApiService) SearchAllBucks(ctx context.Context, id string) (ImplResponse, error) {
-	// TODO - update SearchAllBucks with the required logic for this service method.
-	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, []Buck{}) or use other options such as http.Ok ...
-	//return Response(200, []Buck{}), nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("SearchAllBucks method not implemented")
-}
-
 // SearchAuctionsTeacher - searches auctions
 func (s *StaffApiService) SearchAuctionsTeacher(ctx context.Context) (ImplResponse, error) {
 	// TODO - update SearchAuctionsTeacher with the required logic for this service method.

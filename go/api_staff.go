@@ -110,12 +110,6 @@ func (c *StaffApiController) Routes() Routes {
 			c.ResetPassword,
 		},
 		{
-			"SearchAllBucks",
-			strings.ToUpper("Get"),
-			"/api/bucks",
-			c.SearchAllBucks,
-		},
-		{
 			"SearchAuctionsTeacher",
 			strings.ToUpper("Get"),
 			"/api/auctions",
@@ -345,21 +339,6 @@ func (c *StaffApiController) ResetPassword(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	result, err := c.service.ResetPassword(r.Context(), requestUserParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// SearchAllBucks - searches all bucks
-func (c *StaffApiController) SearchAllBucks(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.SearchAllBucks(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

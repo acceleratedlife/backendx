@@ -86,6 +86,12 @@ func (c *AllApiController) Routes() Routes {
 			c.SearchAccount,
 		},
 		{
+			"SearchAllBucks",
+			strings.ToUpper("Get"),
+			"/api/bucks",
+			c.SearchAllBucks,
+		},
+		{
 			"SearchBucks",
 			strings.ToUpper("Get"),
 			"/api/bucks/buck",
@@ -217,6 +223,19 @@ func (c *AllApiController) SearchAccount(w http.ResponseWriter, r *http.Request)
 	query := r.URL.Query()
 	idParam := query.Get("_id")
 	result, err := c.service.SearchAccount(r.Context(), idParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SearchAllBucks - searches all bucks
+func (c *AllApiController) SearchAllBucks(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.SearchAllBucks(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

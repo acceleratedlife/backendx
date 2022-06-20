@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/rand"
 	"sort"
+	"strings"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -53,9 +54,95 @@ func (a AllApiServiceImpl) ConfirmEmail(ctx context.Context, s string) (openapi.
 	panic("implement me")
 }
 
-func (a AllApiServiceImpl) ExchangeRate(ctx context.Context, s string, s2 string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a AllApiServiceImpl) ExchangeRate(ctx context.Context, from string, to string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	var resp []openapi.ResponseCurrencyExchange
+	err = a.db.View(func(tx *bolt.Tx) error {
+		student, err := getStudentBucketRoTx(tx, userDetails.Name)
+		if err != nil {
+			return err
+		}
+
+		accounts := student.Bucket([]byte(KeyAccounts))
+		if accounts == nil {
+			return fmt.Errorf("cannot find students accounts")
+		}
+
+		fromName, err := getBuckNameTx(tx, from)
+		if err != nil {
+			return err
+		}
+
+		toName, err := getBuckNameTx(tx, to)
+		if err != nil {
+			return err
+		}
+
+		rate, err := xRateToBaseRx(tx, userDetails.SchoolId, from, to)
+		if err != nil {
+			return err
+		}
+
+		account := accounts.Bucket([]byte(from))
+		if account == nil {
+			resp = append(resp, openapi.ResponseCurrencyExchange{
+				Conversion: float32(rate.InexactFloat64()),
+				Balance:    0,
+				Id:         from,
+				Buck: openapi.ResponseCurrencyExchangeBuck{
+					Name: fromName,
+				},
+			})
+		} else {
+			responseAccount, err := getStudentAccountRx(tx, account, from)
+			if err != nil {
+				return err
+			}
+
+			responseAccount.Conversion = float32(rate.InexactFloat64())
+			responseAccount.Buck.Name = fromName
+
+			resp = append(resp, responseAccount)
+		}
+
+		account = accounts.Bucket([]byte(to))
+		if account == nil {
+			resp = append(resp, openapi.ResponseCurrencyExchange{
+				Balance: 0,
+				Id:      from,
+				Buck: openapi.ResponseCurrencyExchangeBuck{
+					Name: toName,
+				},
+			})
+		} else {
+			responseAccount, err := getStudentAccountRx(tx, account, to)
+			if err != nil {
+				return err
+			}
+
+			responseAccount.Buck.Name = toName
+
+			resp = append(resp, responseAccount)
+		}
+
+		return nil
+
+	})
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, resp), nil
+
 }
 
 func (a AllApiServiceImpl) Logout(ctx context.Context, s string) (openapi.ImplResponse, error) {
@@ -166,6 +253,39 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (opena
 	return openapi.Response(200, resp), nil
 }
 
+func (s *AllApiServiceImpl) SearchAllBucks(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	var resp []openapi.Buck
+	err = s.db.View(func(tx *bolt.Tx) error {
+		bucks, err := getCBBucksRx(tx, userDetails.SchoolId)
+		if err != nil {
+			return err
+		}
+
+		resp = bucks
+
+		return nil
+	})
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	sort.Slice(resp, func(i, j int) bool {
+		return strings.ToLower(resp[i].Name) < strings.ToLower(resp[j].Name)
+	})
+
+	return openapi.Response(200, resp), nil
+
+}
+
 func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
@@ -176,7 +296,7 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 		}), nil
 	}
 
-	var resp []openapi.ResponseAccount
+	var resp []openapi.ResponseCurrencyExchange
 	err = s.db.View(func(tx *bolt.Tx) error {
 		student, err := getStudentBucketRoTx(tx, userDetails.Name)
 		if err != nil {
@@ -190,12 +310,14 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 
 		c := accounts.Cursor()
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			account, err := getStudentAccountRx(tx, accounts.Bucket(k))
+			account, err := getStudentAccountRx(tx, accounts.Bucket(k), string(k))
 			if err != nil {
 				return err
 			}
 
-			account.Id = string(k)
+			if account.Balance <= 0 {
+				continue
+			}
 
 			if account.Id == CurrencyUBuck {
 				account.Buck.Name = "UBuck"
@@ -408,6 +530,56 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		NetWorth:         float32(nWorth),
 	}
 	return openapi.Response(200, resp), nil //this is incomplete
+}
+
+func getCBBucksRx(tx *bolt.Tx, schoolId string) (bucks []openapi.Buck, err error) {
+	cb, err := getCbRx(tx, schoolId)
+	if err != nil {
+		return bucks, err
+	}
+
+	accounts := cb.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
+		return bucks, fmt.Errorf("cannot get CB accounts")
+	}
+
+	c := accounts.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+
+		Id := string(k)
+
+		var teacher UserInfo
+		var ratio float32
+		if CurrencyUBuck == Id {
+			teacher.LastName = "UBuck"
+			ratio = 1
+		} else if KeyDebt == Id {
+			teacher.LastName = "Debt"
+			ratio = -1
+		} else {
+			teacher, err = getUserInLocalStoreTx(tx, Id)
+			if err != nil {
+				return bucks, err
+			}
+
+			teacher.LastName = teacher.LastName + " Buck"
+			rate, err := xRateToBaseRx(tx, schoolId, Id, "")
+			if err != nil {
+				return bucks, err
+			}
+
+			ratio = float32(rate.InexactFloat64())
+
+		}
+
+		bucks = append(bucks, openapi.Buck{
+			Id:    Id,
+			Name:  teacher.LastName,
+			Ratio: ratio,
+		})
+	}
+
+	return
 }
 
 // NewAllApiServiceImpl provides real api
