@@ -419,19 +419,26 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 
 			resp = append(resp, nUser)
 
-			sort.SliceStable(resp, func(i, j int) bool {
-				return resp[i].NetWorth > resp[j].NetWorth
-			})
-
-			for i := 0; i < len(resp); i++ {
-				resp[i].Rank = int32(i + 1)
-			}
 		}
 
 		return nil
+
 	})
 
-	if err != nil {
+	sort.SliceStable(resp, func(i, j int) bool {
+		return resp[i].NetWorth > resp[j].NetWorth
+	})
+
+	for i := 0; i < len(resp); i++ {
+		resp[i].Rank = int32(i + 1)
+	}
+
+	err2 := saveRanks(a.db, resp)
+	if err2 != nil {
+		lgr.Printf("ERROR saving students ranks: %s %v", userDetails.SchoolId, err)
+	}
+
+	if err != nil || err2 != nil {
 		lgr.Printf("ERROR cannot collect students from the school: %s %v", userDetails.SchoolId, err)
 		return openapi.Response(500, "{}"), nil
 	}

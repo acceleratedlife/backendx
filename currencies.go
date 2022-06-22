@@ -279,7 +279,7 @@ func getAccountBucketTx(tx *bolt.Tx, schoolId, currencyId string) (*bolt.Bucket,
 func getCurrencyMMARx(tx *bolt.Tx, schoolId, currencyId string) (decimal.Decimal, error) {
 	account := getAccountBucketRx(tx, schoolId, currencyId)
 	if account == nil {
-		return decimal.Zero, fmt.Errorf("account does not exist")
+		return decimal.Zero, fmt.Errorf("account does not exist, you may need to pay someone first")
 	}
 	return getCurrencyAccMMARx(account)
 }
