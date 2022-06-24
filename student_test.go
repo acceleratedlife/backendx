@@ -783,7 +783,7 @@ func TestAuctionBid(t *testing.T) {
 	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)
-	assert.Equal(t, 400, resp.StatusCode, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
 
 	//good bid but under max student0 max 91 bid 90
 	body = openapi.RequestAuctionBid{
@@ -800,7 +800,7 @@ func TestAuctionBid(t *testing.T) {
 	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)
-	assert.Equal(t, 400, resp.StatusCode, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
 
 	//true outbid student0 max 97 bid 92
 	body = openapi.RequestAuctionBid{
