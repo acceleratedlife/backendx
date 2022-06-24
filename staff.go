@@ -48,7 +48,7 @@ func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, Id string) (ope
 			return err
 		}
 
-		err = auctionsBucket.DeleteBucket([]byte(Id))
+		err = auctionsBucket.Delete([]byte(Id))
 		if err != nil {
 			return err
 		}
@@ -224,7 +224,7 @@ func (a *StaffApiServiceImpl) MakeAuction(ctx context.Context, body openapi.Requ
 		return openapi.Response(401, ""), nil
 	}
 
-	auctions, err := a.MakeAuctionImpl(userDetails, body)
+	auctions, err := MakeAuctionImpl(a.db, userDetails, body)
 	if err != nil {
 		lgr.Printf("ERROR cannot make auctions from the teacher: %s %v", userDetails.Name, err)
 		return openapi.Response(500, "{}"), nil
@@ -386,7 +386,7 @@ func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openap
 		return nil
 	})
 	if err != nil {
-		return openapi.Response(400, ""), err
+		return openapi.Response(400, nil), err
 	}
 
 	return openapi.Response(200, resp), nil
@@ -500,12 +500,10 @@ func auctionsToSlice(auctions *bolt.Bucket) (resp []openapi.Auction) {
 	return
 }
 
-func visibilityToSlice(tx *bolt.Tx, userDetails UserInfo, classIds *bolt.Bucket) (resp []string) {
-	c := classIds.Cursor()
-	for k, _ := c.First(); k != nil; k, _ = c.Next() {
-		key := string(k)
+func visibilityToSlice(tx *bolt.Tx, userDetails UserInfo, classIds []string) (resp []string) {
+	for _, key := range classIds {
 		if key == KeyEntireSchool || key == KeyFreshman || key == KeySophomores || key == KeyJuniors || key == KeySeniors {
-			resp = append(resp, string(k))
+			resp = append(resp, key)
 		} else {
 			classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, key)
 			if err != nil {
@@ -531,7 +529,7 @@ func executeTransaction(db *bolt.DB, clock Clock, value float32, student, owner,
 			return fmt.Errorf("error paying student: %v", err)
 		}
 	} else if amount.Sign() < 0 {
-		err = chargeStudent(db, clock, studentDetails, amount.Abs(), owner, description)
+		err = chargeStudent(db, clock, studentDetails, amount.Abs(), owner, description, false)
 		if err != nil {
 			return fmt.Errorf("error debting student: %v", err)
 		}

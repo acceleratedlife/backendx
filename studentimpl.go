@@ -292,13 +292,13 @@ func getCbRx(tx *bolt.Tx, schoolId string) (cb *bolt.Bucket, err error) {
 	return cb, nil
 }
 
-func chargeStudentUbuck(db *bolt.DB, clock Clock, userDetails UserInfo, amount decimal.Decimal, reference string) (err error) {
+func chargeStudentUbuck(db *bolt.DB, clock Clock, userDetails UserInfo, amount decimal.Decimal, reference string, sPurchase bool) (err error) {
 	return db.Update(func(tx *bolt.Tx) error {
-		return chargeStudentUbuckTx(tx, clock, userDetails, amount, reference)
+		return chargeStudentUbuckTx(tx, clock, userDetails, amount, reference, sPurchase)
 	})
 }
-func chargeStudentUbuckTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount decimal.Decimal, reference string) (err error) {
-	return chargeStudentTx(tx, clock, userDetails, amount, CurrencyUBuck, reference)
+func chargeStudentUbuckTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount decimal.Decimal, reference string, sPurchase bool) (err error) {
+	return chargeStudentTx(tx, clock, userDetails, amount, CurrencyUBuck, reference, sPurchase)
 
 }
 
@@ -464,13 +464,13 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 	return nil
 }
 
-func chargeStudent(db *bolt.DB, clock Clock, userDetails UserInfo, amount decimal.Decimal, currency string, reference string) (err error) {
+func chargeStudent(db *bolt.DB, clock Clock, userDetails UserInfo, amount decimal.Decimal, currency string, reference string, sPurchase bool) (err error) {
 	return db.Update(func(tx *bolt.Tx) error {
-		return chargeStudentTx(tx, clock, userDetails, amount, currency, reference)
+		return chargeStudentTx(tx, clock, userDetails, amount, currency, reference, sPurchase)
 	})
 }
 
-func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount decimal.Decimal, currency string, reference string) (err error) {
+func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount decimal.Decimal, currency string, reference string, sPurchase bool) (err error) {
 	if userDetails.Role != UserRoleStudent {
 		return fmt.Errorf("user is not a student")
 	}
@@ -498,7 +498,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 
 	_, err = addToHolderTx(student, currency, transaction, OperationDebit, true)
 	if err != nil {
-		if err.Error() == "Insufficient funds" {
+		if err.Error() == "Insufficient funds" && !sPurchase {
 			err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, false)
 			if err != nil {
 				return err
@@ -600,18 +600,19 @@ func getStudentAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails 
 	c := auctionsBucket.Cursor()
 
 	for k, v := c.First(); k != nil; k, v = c.Next() {
-		if v != nil {
+		if v == nil {
 			continue
 		}
 
-		auctionBucket := auctionsBucket.Bucket(k)
-		if auctionBucket == nil {
+		auctionData := auctionsBucket.Get(k)
+		if auctionData == nil {
 			return auctions, fmt.Errorf("cannot find auction bucket")
 		}
 
-		visibilityBucket := auctionBucket.Bucket([]byte(KeyVisibility))
-		if visibilityBucket == nil {
-			return auctions, fmt.Errorf("cannot find visibility bucket")
+		var auction openapi.Auction
+		err := json.Unmarshal(auctionData, &auction)
+		if err != nil {
+			return nil, err
 		}
 
 		classes, err := getStudentClassesTx(tx, userDetails)
@@ -619,46 +620,36 @@ func getStudentAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails 
 			return auctions, fmt.Errorf("cannot get student classes %s: %v", userDetails.Name, err)
 		}
 
-		x := visibilityBucket.Cursor()
-		for k, _ := x.First(); k != nil; k, _ = x.Next() {
+		for _, k := range auction.Visibility {
 			for _, class := range classes {
 				if class.Id == string(k) || string(k) == KeyEntireSchool {
 
-					iAuction := openapi.Auction{
-						Id:          string(k),
-						StartDate:   string(auctionBucket.Get([]byte(KeyStartDate))),
-						EndDate:     string(auctionBucket.Get([]byte(KeyEndDate))),
-						Bid:         btoi32(auctionBucket.Get([]byte(KeyBid))),
-						MaxBid:      btoi32(auctionBucket.Get([]byte(KeyMaxBid))),
-						Description: string(auctionBucket.Get([]byte(KeyDescription))),
-					}
-
-					ownerDetails, err := getUserInLocalStoreTx(tx, string(auctionBucket.Get([]byte(KeyOwnerId))))
+					ownerDetails, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
 					if err != nil {
 						return nil, err
 					}
 
-					iAuction.OwnerId = openapi.AuctionOwnerId{
+					auction.OwnerId = openapi.AuctionOwnerId{
 						LastName: ownerDetails.LastName,
 						Id:       ownerDetails.Name,
 					}
 
-					winnerDetails, err := getUserInLocalStoreTx(tx, string(auctionBucket.Get([]byte(KeyWinnerId))))
+					winnerDetails, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
 					if err != nil {
-						iAuction.WinnerId = openapi.AuctionWinnerId{
+						auction.WinnerId = openapi.AuctionWinnerId{
 							FirstName: "nil",
 							LastName:  "nil",
 							Id:        "nil",
 						}
 					} else {
-						iAuction.WinnerId = openapi.AuctionWinnerId{
+						auction.WinnerId = openapi.AuctionWinnerId{
 							FirstName: winnerDetails.FirstName,
 							LastName:  winnerDetails.LastName,
 							Id:        winnerDetails.Name,
 						}
 					}
 
-					auctions = append(auctions, iAuction)
+					auctions = append(auctions, auction)
 					break
 
 				}

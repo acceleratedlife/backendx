@@ -266,10 +266,6 @@ func TestSearchAuctionsStudent(t *testing.T) {
 	_, schools, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 2, 1)
 	require.Nil(t, err)
 
-	s := StaffApiServiceImpl{
-		db: db,
-	}
-
 	teacherClasses := getTeacherClasses(db, schools[0], teachers[0])
 	auctionClasses := make([]string, 0)
 	auctionClasses = append(auctionClasses, teacherClasses[0].Id)
@@ -284,7 +280,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 		Visibility:  auctionClasses,
 	}
 
-	_, err = s.MakeAuctionImpl(UserInfo{
+	_, err = MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
@@ -295,7 +291,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 
 	body.Visibility = auctionClasses
 
-	_, err = s.MakeAuctionImpl(UserInfo{
+	_, err = MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
@@ -377,7 +373,7 @@ func TestSearchBuckTransaction(t *testing.T) {
 	for _, teach := range teachers {
 		err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teach, "pre load")
 		require.Nil(t, err)
-		err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(5000), teach, "charge")
+		err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(5000), teach, "charge", false)
 		require.Nil(t, err)
 	}
 
@@ -413,7 +409,7 @@ func TestSearchBuckTransactionNegative(t *testing.T) {
 	for _, teach := range teachers {
 		err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teach, "pre load")
 		require.Nil(t, err)
-		err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(50000), teach, "charge")
+		err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(50000), teach, "charge", false)
 		require.Nil(t, err)
 	}
 
@@ -563,7 +559,7 @@ func TestBuckConvert_debt(t *testing.T) {
 
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(100), teachers[0], "pre load")
 	require.Nil(t, err)
-	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "charge")
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "charge", false)
 	require.Nil(t, err)
 	err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), "daily payment")
 	require.Nil(t, err)
@@ -621,7 +617,7 @@ func TestBuckConvert_debt_ubuck(t *testing.T) {
 
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(100), teachers[0], "pre load")
 	require.Nil(t, err)
-	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "charge")
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "charge", false)
 	require.Nil(t, err)
 	err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), "daily payment")
 	require.Nil(t, err)
@@ -659,5 +655,189 @@ func TestBuckConvert_debt_ubuck(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
+
+}
+
+func TestAuctionBid(t *testing.T) {
+	clock := AppClock{}
+	db, tearDown := FullStartTestServer("auctionBid", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(teachers[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	student1, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	err = addUbuck2Student(db, &clock, student0, decimal.NewFromFloat(100), "starter")
+	require.Nil(t, err)
+	err = addUbuck2Student(db, &clock, student1, decimal.NewFromFloat(100), "starter")
+	require.Nil(t, err)
+
+	auctions, err := MakeAuctionImpl(db, teacher, openapi.RequestMakeAuction{
+		Bid:         0,
+		MaxBid:      0,
+		Description: "test auc",
+		EndDate:     time.Now().Add(time.Minute),
+		StartDate:   time.Now(),
+		OwnerId:     teacher.Name,
+		Visibility:  classes,
+	})
+	require.Nil(t, err)
+
+	//overdrawn student 0 max 0 bid 0
+	id, _ := time.Parse(KeyTime, auctions[0].Id)
+	body := openapi.RequestAuctionBid{
+		Item: id,
+		Bid:  500,
+	}
+	marshal, _ := json.Marshal(body)
+
+	SetTestLoginUser(students[0])
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/auctions/placeBid",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode, resp)
+
+	//first bid student 0 max 50 bid 1
+
+	body = openapi.RequestAuctionBid{
+		Item: id,
+		Bid:  50,
+	}
+	marshal, _ = json.Marshal(body)
+
+	req, _ = http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/auctions/placeBid",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	//self outbid student0 max 50 bid 1
+	body = openapi.RequestAuctionBid{
+		Item: id,
+		Bid:  51,
+	}
+	marshal, _ = json.Marshal(body)
+
+	req, _ = http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/auctions/placeBid",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode, resp)
+
+	//true outbid student1 max 91 bid 51
+	body = openapi.RequestAuctionBid{
+		Item: id,
+		Bid:  91,
+	}
+	marshal, _ = json.Marshal(body)
+
+	SetTestLoginUser(students[1])
+
+	req, _ = http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/auctions/placeBid",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	//good bid but under max student0 max 91 bid 62
+	body = openapi.RequestAuctionBid{
+		Item: id,
+		Bid:  61,
+	}
+	marshal, _ = json.Marshal(body)
+	SetTestLoginUser(students[0])
+
+	req, _ = http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/auctions/placeBid",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode, resp)
+
+	//good bid but under max student0 max 91 bid 90
+	body = openapi.RequestAuctionBid{
+		Item: id,
+		Bid:  89,
+	}
+	marshal, _ = json.Marshal(body)
+
+	req, _ = http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/auctions/placeBid",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode, resp)
+
+	//true outbid student0 max 97 bid 92
+	body = openapi.RequestAuctionBid{
+		Item: id,
+		Bid:  97,
+	}
+	marshal, _ = json.Marshal(body)
+
+	SetTestLoginUser(students[0])
+
+	req, _ = http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/auctions/placeBid",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	//self outbid student0 max 97 bid 92
+	body = openapi.RequestAuctionBid{
+		Item: id,
+		Bid:  100,
+	}
+	marshal, _ = json.Marshal(body)
+
+	SetTestLoginUser(students[0])
+
+	req, _ = http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/auctions/placeBid",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode, resp)
 
 }

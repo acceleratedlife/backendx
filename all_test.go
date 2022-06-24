@@ -268,7 +268,7 @@ func TestSearchStudentBucksNegative(t *testing.T) {
 	require.Nil(t, err)
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "pre load")
 	require.Nil(t, err)
-	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(1001), teachers[0], "charge")
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(1001), teachers[0], "charge", false)
 
 	req, _ := http.NewRequest(http.MethodGet,
 		"http://127.0.0.1:8090/api/accounts/all",
@@ -343,7 +343,7 @@ func TestSearchAllBucks(t *testing.T) {
 	require.Nil(t, err)
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[2], "daily pay")
 	require.Nil(t, err)
-	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge")
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge", false)
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodGet,
@@ -386,7 +386,7 @@ func TestExchangeRate(t *testing.T) {
 	require.Nil(t, err)
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[2], "daily pay")
 	require.Nil(t, err)
-	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge")
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge", false)
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodGet,
@@ -448,7 +448,7 @@ func TestExchangeRate_ubuck(t *testing.T) {
 	require.Nil(t, err)
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[2], "daily pay")
 	require.Nil(t, err)
-	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge")
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge", false)
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodGet,
@@ -493,7 +493,7 @@ func TestExchangeRate_debt(t *testing.T) {
 	require.Nil(t, err)
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[2], "daily pay")
 	require.Nil(t, err)
-	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge")
+	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "charge", false)
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodGet,

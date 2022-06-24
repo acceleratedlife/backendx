@@ -10,17 +10,18 @@
 
 package openapi
 
-type Auction struct {
+import "time"
 
+type Auction struct {
 	Id string `json:"_id"`
 
 	OwnerId AuctionOwnerId `json:"owner_id,omitempty"`
 
 	WinnerId AuctionWinnerId `json:"winner_id,omitempty"`
 
-	StartDate string `json:"startDate"`
+	StartDate time.Time `json:"startDate"`
 
-	EndDate string `json:"endDate,omitempty"`
+	EndDate time.Time `json:"endDate,omitempty"`
 
 	Bid int32 `json:"bid"`
 
@@ -34,11 +35,11 @@ type Auction struct {
 // AssertAuctionRequired checks if the required fields are not zero-ed
 func AssertAuctionRequired(obj Auction) error {
 	elements := map[string]interface{}{
-		"_id": obj.Id,
-		"startDate": obj.StartDate,
-		"bid": obj.Bid,
+		"_id":         obj.Id,
+		"startDate":   obj.StartDate,
+		"bid":         obj.Bid,
 		"description": obj.Description,
-		"visibility": obj.Visibility,
+		"visibility":  obj.Visibility,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

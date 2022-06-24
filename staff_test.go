@@ -178,10 +178,6 @@ func TestDeleteAuction(t *testing.T) {
 
 	SetTestLoginUser(teachers[0])
 
-	s := StaffApiServiceImpl{
-		db: db,
-	}
-
 	body := openapi.RequestMakeAuction{
 		Bid:         4,
 		MaxBid:      4,
@@ -192,13 +188,13 @@ func TestDeleteAuction(t *testing.T) {
 		Visibility:  classes,
 	}
 
-	auctions, err := s.MakeAuctionImpl(UserInfo{
+	_, err = MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
 	}, body)
 
-	_, err = s.MakeAuctionImpl(UserInfo{
+	auctions, err := MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
@@ -282,10 +278,6 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 
 	SetTestLoginUser(teachers[0])
 
-	s := StaffApiServiceImpl{
-		db: db,
-	}
-
 	body := openapi.RequestMakeAuction{
 		Bid:         4,
 		MaxBid:      4,
@@ -296,7 +288,7 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 		Visibility:  classes,
 	}
 
-	_, err = s.MakeAuctionImpl(UserInfo{
+	_, err = MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
@@ -476,7 +468,7 @@ func TestSearchTransactions(t *testing.T) {
 		require.Nil(t, err)
 		err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "pre load")
 		require.Nil(t, err)
-		err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(100), teachers[0], "charge")
+		err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(100), teachers[0], "charge", false)
 		require.Nil(t, err)
 	}
 

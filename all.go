@@ -483,7 +483,7 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		}
 		if body.College && !userDetails.College {
 			cost := decimal.NewFromFloat(math.Floor(rand.Float64()*(8000-5000) + 8000))
-			err := chargeStudentUbuckTx(tx, a.clock, userDetails, cost, "Paying for College")
+			err := chargeStudentUbuckTx(tx, a.clock, userDetails, cost, "Paying for College", false)
 			if err != nil {
 				return fmt.Errorf("Failed to chargeStudentUbuckTx: %v", err)
 			}
