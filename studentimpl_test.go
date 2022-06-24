@@ -22,12 +22,12 @@ func Test_ubuckFlow(t *testing.T) {
 	balance := StudentNetWorth(db, students[0])
 	require.Equal(t, 1.01, balance.InexactFloat64())
 
-	err = chargeStudentUbuck(db, &clock, userInfo, decimal.NewFromFloat(0.51), "some reason")
+	err = chargeStudentUbuck(db, &clock, userInfo, decimal.NewFromFloat(0.51), "some reason", false)
 
 	balance = StudentNetWorth(db, students[0])
 	require.Equal(t, 0.5, balance.InexactFloat64())
 
-	err = chargeStudentUbuck(db, &clock, userInfo, decimal.NewFromFloat(0.51), "some reason")
+	err = chargeStudentUbuck(db, &clock, userInfo, decimal.NewFromFloat(0.51), "some reason", false)
 	require.Nil(t, err)
 	balance = StudentNetWorth(db, students[0])
 	require.Equal(t, -0.01, balance.InexactFloat64())
@@ -40,7 +40,7 @@ func Test_ubuckFlow(t *testing.T) {
 	err = pay2Student(db, &clock, userInfo, decimal.NewFromFloat(0.01), teachers[1], "some reason")
 	require.Nil(t, err)
 
-	err = chargeStudent(db, &clock, userInfo, decimal.NewFromFloat(1), teachers[1], "some reason")
+	err = chargeStudent(db, &clock, userInfo, decimal.NewFromFloat(1), teachers[1], "some reason", false)
 	require.Nil(t, err)
 	balance = StudentNetWorth(db, students[0])
 	require.Equal(t, -24.01999984, balance.InexactFloat64())

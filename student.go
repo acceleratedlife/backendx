@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -17,8 +19,35 @@ type StudentApiServiceImpl struct {
 	clock Clock
 }
 
-func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, auctionsPlaceBidBody openapi.RequestAuctionBid) (openapi.ImplResponse, error) {
-	panic("implement me")
+func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, body openapi.RequestAuctionBid) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	var message string
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		message, err = placeBidtx(tx, a.clock, userDetails, body.Item, body.Bid)
+		if err != nil {
+			return err
+		}
+
+		return nil
+
+	})
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), fmt.Errorf(message)
 }
 
 func (a *StudentApiServiceImpl) BuckConvert(ctx context.Context, body openapi.RequestBuckConvert) (response openapi.ImplResponse, err error) {
@@ -80,24 +109,15 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 		}
 
 		for _, auction := range auctions {
-			start, err := time.Parse(KeyTime, auction.StartDate)
-			if err != nil {
-				return fmt.Errorf("cannot get start time parse %s: %v", userDetails.Name, err)
-			}
-
-			end, err := time.Parse(KeyTime, auction.EndDate)
-			if err != nil {
-				return fmt.Errorf("cannot get end time parse %s: %v", userDetails.Name, err)
-			}
 
 			now := time.Now()
-			if (start.Before(now) && end.After(now)) || auction.WinnerId.Id == userDetails.Name {
+			if (auction.StartDate.Before(now) && auction.EndDate.After(now)) || auction.WinnerId.Id == userDetails.Name {
 				iAuction := openapi.ResponseAuctionStudent{
 					Id:          auction.Id,
 					Bid:         float32(auction.Bid),
 					Description: auction.Description,
-					EndDate:     end,
-					StartDate:   start,
+					EndDate:     auction.EndDate,
+					StartDate:   auction.StartDate,
 					OwnerId: openapi.ResponseAuctionStudentOwnerId{
 						Id:       auction.OwnerId.Id,
 						LastName: auction.OwnerId.LastName,
@@ -282,6 +302,95 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 		return openapi.Response(500, "{}"), nil
 	}
 	return openapi.Response(200, resp), nil
+
+}
+
+func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, bid int32) (message string, err error) {
+	school, err := getSchoolBucketTx(tx, userDetails)
+	if err != nil {
+		return message, err
+	}
+
+	auctions := school.Bucket([]byte(KeyAuctions))
+	if auctions == nil {
+		return message, fmt.Errorf("cannot get auctions %s: %v", userDetails.Name, err)
+	}
+
+	// item = item.Truncate(time.Millisecond)
+	auctionByte := auctions.Get([]byte(item.String()))
+	if auctionByte == nil {
+		return message, fmt.Errorf("cannot find the auction %s: %v", userDetails.Name, err)
+	}
+
+	var auction openapi.Auction
+	err = json.Unmarshal(auctionByte, &auction)
+	if err != nil {
+		return message, err
+	}
+
+	if auction.WinnerId.Id == userDetails.Name {
+		return message, fmt.Errorf("You are already winning this auction")
+	}
+
+	if auction.EndDate.Sub(time.Now()) <= 0 {
+		return message, fmt.Errorf("Bid not accepted, auction expired")
+	}
+
+	if bid < auction.Bid {
+		return message, fmt.Errorf("Failed to outbid, try refreshing")
+	}
+
+	if bid < auction.MaxBid {
+		auction.Bid = bid + 1
+		marshal, err := json.Marshal(auction)
+		if err != nil {
+			return message, err
+		}
+
+		err = auctions.Put([]byte(item.String()), marshal)
+		if err != nil {
+			return message, err
+		}
+
+		message = "You have been outbid"
+		return message, err
+	}
+
+	err = chargeStudentUbuckTx(tx, clock, userDetails, decimal.NewFromInt32(bid), "Auction Bid "+strconv.Itoa(item.Second()), true)
+	if err != nil {
+		return message, err
+	}
+
+	if auction.WinnerId.Id != "" {
+		loser, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
+		if err != nil {
+			return message, err
+		}
+		err = addUbuck2StudentTx(tx, clock, loser, decimal.NewFromInt32(auction.MaxBid), "Auction Refund"+strconv.Itoa(item.Second()))
+		if err != nil {
+			return message, err
+		}
+	}
+
+	auction.Bid = auction.MaxBid + 1
+	auction.MaxBid = int32(bid)
+	auction.WinnerId.Id = userDetails.Name
+
+	if time.Until(auction.EndDate) < time.Minute {
+		auction.EndDate = auction.EndDate.Add(time.Minute * 2)
+	}
+
+	marshal, err := json.Marshal(auction)
+	if err != nil {
+		return message, err
+	}
+
+	err = auctions.Put([]byte(item.String()), marshal)
+	if err != nil {
+		return message, err
+	}
+
+	return
 
 }
 

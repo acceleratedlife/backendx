@@ -62,13 +62,12 @@ func PopulateClassMembers(tx *bolt.Tx, classBucket *bolt.Bucket) (Members []open
 			return nil, err
 		}
 
-		nWorth, _ := StudentNetWorthTx(tx, user.Email).Float64()
 		nUser := openapi.ClassWithMembersMembers{
 			Id:        user.Email,
 			FirstName: user.FirstName,
 			LastName:  user.LastName,
 			Rank:      user.Rank,
-			NetWorth:  float32(nWorth),
+			NetWorth:  user.NetWorth,
 		}
 		Members = append(Members, nUser)
 	}
@@ -161,4 +160,44 @@ func getBuckNameTx(tx *bolt.Tx, id string) (string, error) {
 	}
 
 	return user.LastName + " Buck", nil
+}
+
+func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		users := tx.Bucket([]byte(KeyUsers))
+		if users == nil {
+			return fmt.Errorf("users not found")
+		}
+
+		for _, student := range students {
+			user := users.Get([]byte(student.Id))
+			if user == nil {
+				return fmt.Errorf("user not found")
+			}
+
+			var userDetails UserInfo
+			err = json.Unmarshal(user, &userDetails)
+			if err != nil {
+				return err
+			}
+
+			userDetails.Rank = student.Rank
+			userDetails.NetWorth = student.NetWorth
+
+			marshal, err := json.Marshal(userDetails)
+			if err != nil {
+				return err
+			}
+
+			err = users.Put([]byte(student.Id), marshal)
+			if err != nil {
+				return err
+			}
+
+		}
+
+		return nil
+	})
+
+	return
 }

@@ -10,13 +10,12 @@
 
 package openapi
 
+import "time"
+
 type RequestAuctionBid struct {
+	Item time.Time `json:"item,omitempty"`
 
-	Item string `json:"item,omitempty"`
-
-	Bid float32 `json:"bid,omitempty"`
-
-	Id string `json:"_id,omitempty"`
+	Bid int32 `json:"bid,omitempty"`
 }
 
 // AssertRequestAuctionBidRequired checks if the required fields are not zero-ed
