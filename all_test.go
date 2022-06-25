@@ -45,7 +45,7 @@ func TestSearchStudents(t *testing.T) {
 	db, tearDown := FullStartTestServer("searchStudents", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, _, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	_, _, teachers, _, _, err := CreateTestAccounts(db, 1, 1, 1, 3)
 
 	SetTestLoginUser(teachers[0])
 

@@ -162,14 +162,15 @@ func getBuckNameTx(tx *bolt.Tx, id string) (string, error) {
 	return user.LastName + " Buck", nil
 }
 
-func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (err error) {
+func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (ranked int, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		users := tx.Bucket([]byte(KeyUsers))
 		if users == nil {
 			return fmt.Errorf("users not found")
 		}
 
-		for _, student := range students {
+		length := float32(len(students))
+		for i, student := range students {
 			user := users.Get([]byte(student.Id))
 			if user == nil {
 				return fmt.Errorf("user not found")
@@ -181,7 +182,46 @@ func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (err error) {
 				return err
 			}
 
-			userDetails.Rank = student.Rank
+			num := float32(i+1) / length
+			userDetails.Rank = 0
+
+			if length <= 60 {
+				if num <= .33334 {
+					userDetails.Rank = student.Rank
+					ranked++
+				}
+			} else if length <= 150 {
+				if num <= .2 {
+					userDetails.Rank = student.Rank
+					ranked++
+				}
+			} else if length <= 500 {
+				if num <= .15 {
+					userDetails.Rank = student.Rank
+					ranked++
+				}
+			} else if length <= 1000 {
+				if num <= .1 {
+					userDetails.Rank = student.Rank
+					ranked++
+				}
+			} else if length <= 2000 {
+				if num <= .0625 {
+					userDetails.Rank = student.Rank
+					ranked++
+				}
+			} else if length <= 4000 {
+				if num <= .05 {
+					userDetails.Rank = student.Rank
+					ranked++
+				}
+			} else if length > 4000 {
+				if i < 200 {
+					userDetails.Rank = student.Rank
+					ranked++
+				}
+			}
+
 			userDetails.NetWorth = student.NetWorth
 
 			marshal, err := json.Marshal(userDetails)

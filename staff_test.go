@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/shopspring/decimal"
@@ -171,7 +172,7 @@ func TestDeleteClass(t *testing.T) {
 
 func TestDeleteAuction(t *testing.T) {
 	db, tearDown := FullStartTestServer("deleteAuction", 8090, "")
-	clock := AppClock{}
+	clock := TestClock{}
 	defer tearDown()
 
 	_, schools, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -182,18 +183,22 @@ func TestDeleteAuction(t *testing.T) {
 		Bid:         4,
 		MaxBid:      4,
 		Description: "Test Auction",
-		EndDate:     clock.Now().Add(500),
+		EndDate:     clock.Now().Add(time.Second * 10),
 		StartDate:   clock.Now(),
 		OwnerId:     teachers[0],
 		Visibility:  classes,
 	}
 
+	//to be deleted
 	_, err = MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
 	}, body)
 
+	body.EndDate = clock.Now().Add(time.Second * -10)
+	body.StartDate = clock.Now().Add(time.Second * -20)
+	//to be de-activated
 	auctions, err := MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
@@ -214,17 +219,39 @@ func TestDeleteAuction(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	defer resp.Body.Close()
 	var respData []openapi.Auction
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&respData)
 
 	assert.Equal(t, 1, len(respData))
+
+	q.Set("_id", auctions[1].Id)
+	u.RawQuery = q.Encode()
+
+	req, err = http.NewRequest(http.MethodDelete,
+		u.String(),
+		nil)
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	decoder = json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, 0, len(respData))
+
+	//I want to test the scenerio where an auction has a bid and it ends, but how can I bid on a auction that is already over.
+	//Also clock in line 254 says I cannot use that kind of clock as it does not implement Clock
+
+	// userDetails, _ := getUserInLocalStore(db, students[0])
+	// placeBid(db, clock, userDetails, body.EndDate, 2)
 
 }
 

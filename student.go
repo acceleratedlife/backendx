@@ -305,6 +305,15 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 
 }
 
+func placeBid(db *bolt.DB, clock Clock, userDetails UserInfo, item time.Time, bid int32) (message string, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		message, err = placeBidtx(tx, clock, userDetails, item, bid)
+		return err
+	})
+
+	return
+}
+
 func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, bid int32) (message string, err error) {
 	school, err := getSchoolBucketTx(tx, userDetails)
 	if err != nil {
@@ -316,7 +325,6 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, 
 		return message, fmt.Errorf("cannot get auctions %s: %v", userDetails.Name, err)
 	}
 
-	// item = item.Truncate(time.Millisecond)
 	auctionByte := auctions.Get([]byte(item.String()))
 	if auctionByte == nil {
 		return message, fmt.Errorf("cannot find the auction %s: %v", userDetails.Name, err)
@@ -332,7 +340,7 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, 
 		return message, fmt.Errorf("You are already winning this auction")
 	}
 
-	if auction.EndDate.Sub(time.Now()) <= 0 {
+	if time.Now().After(auction.EndDate) {
 		return message, fmt.Errorf("Bid not accepted, auction expired")
 	}
 
@@ -362,14 +370,11 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, 
 	}
 
 	if auction.WinnerId.Id != "" {
-		loser, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
+		err = repayLosertx(tx, clock, auction.WinnerId.Id, auction.MaxBid, "Auction Refund"+strconv.Itoa(item.Second()))
 		if err != nil {
 			return message, err
 		}
-		err = addUbuck2StudentTx(tx, clock, loser, decimal.NewFromInt32(auction.MaxBid), "Auction Refund"+strconv.Itoa(item.Second()))
-		if err != nil {
-			return message, err
-		}
+
 	}
 
 	auction.Bid = auction.MaxBid + 1
@@ -392,6 +397,19 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, 
 
 	return
 
+}
+
+func repayLosertx(tx *bolt.Tx, clock Clock, winnerId string, amount int32, message string) (err error) {
+	loser, err := getUserInLocalStoreTx(tx, winnerId)
+	if err != nil {
+		return err
+	}
+	err = addUbuck2StudentTx(tx, clock, loser, decimal.NewFromInt32(amount), message)
+	if err != nil {
+		return err
+	}
+
+	return
 }
 
 func NewStudentApiServiceImpl(db *bolt.DB, clock Clock) openapi.StudentApiServicer {
