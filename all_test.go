@@ -138,7 +138,7 @@ func TestSearchClass(t *testing.T) {
 
 func TestUserEdit(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("userEdit", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServerClock("userEdit", 8090, "test@admin.com", &clock)
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
 	require.Nil(t, err)
