@@ -132,8 +132,13 @@ func main() {
 	log.Fatal(http.ListenAndServe(":5000", router))
 }
 
+// creates routes for prod
 func createRouter(db *bolt.DB) *mux.Router {
 	clock := &AppClock{}
+	return createRouterClock(db, clock)
+}
+
+func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 
 	teacherApiServiceImpl := NewTeacherApiServiceImpl(db)
 	teacherApiController := openapi.NewTeacherApiController(teacherApiServiceImpl)
