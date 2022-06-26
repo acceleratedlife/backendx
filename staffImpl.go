@@ -211,7 +211,7 @@ func getAuctionBucketTx(tx *bolt.Tx, schoolBucket *bolt.Bucket, auctionId string
 
 	auctionByte = auctionsBucket.Get([]byte(auctionId))
 	if auctionByte == nil {
-		return auctionsBucket, auctionByte, fmt.Errorf("cannot find auction bucket")
+		return auctionsBucket, auctionByte, fmt.Errorf("cannot find auction bucket, auction: " + auctionId)
 	}
 
 	return
@@ -423,7 +423,7 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 		Id:          auctionId.String(),
 		Active:      true,
 		StartDate:   request.StartDate.Truncate(time.Millisecond),
-		EndDate:     request.EndDate.Truncate(time.Millisecond),
+		EndDate:     auctionId,
 		Bid:         int32(request.MaxBid),
 		MaxBid:      int32(request.MaxBid),
 		Description: request.Description,

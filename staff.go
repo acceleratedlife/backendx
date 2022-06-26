@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -56,7 +55,7 @@ func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, Id string) (ope
 			return err
 		}
 
-		if time.Now().Before(auction.EndDate) {
+		if a.clock.Now().Before(auction.EndDate) {
 			if auction.WinnerId.Id != "" {
 				err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid, "Canceled Auction: "+strconv.Itoa(auction.EndDate.Second()))
 				if err != nil {
@@ -71,9 +70,11 @@ func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, Id string) (ope
 
 		} else {
 			if auction.WinnerId.Id != "" {
-				err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid-auction.Bid, "Won auction return: "+strconv.Itoa(auction.EndDate.Second()))
-				if err != nil {
-					return err
+				if auction.MaxBid > auction.Bid {
+					err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid-auction.Bid, "Won auction return: "+strconv.Itoa(auction.EndDate.Second()))
+					if err != nil {
+						return err
+					}
 				}
 
 				auction.Active = false

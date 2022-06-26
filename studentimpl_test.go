@@ -9,7 +9,7 @@ import (
 
 func Test_ubuckFlow(t *testing.T) {
 
-	clock := AppClock{}
+	clock := TestClock{}
 	db, dbTearDown := OpenTestDB("")
 	defer dbTearDown()
 

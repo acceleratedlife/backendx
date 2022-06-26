@@ -15,7 +15,6 @@ import (
 )
 
 type ResponseAuctionStudent struct {
-
 	Id string `json:"_id,omitempty"`
 
 	Bid float32 `json:"bid,omitempty"`
@@ -29,6 +28,8 @@ type ResponseAuctionStudent struct {
 	OwnerId ResponseAuctionStudentOwnerId `json:"owner_id,omitempty"`
 
 	WinnerId ResponseAuctionStudentWinnerId `json:"winner_id,omitempty"`
+
+	Active bool `json:"active,omitempty"`
 }
 
 // AssertResponseAuctionStudentRequired checks if the required fields are not zero-ed

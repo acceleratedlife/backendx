@@ -194,7 +194,7 @@ func Test_ubuck2ubuck(t *testing.T) {
 }
 
 func Test_convertRx(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, dbTearDown := OpenTestDB("convertRx")
 	defer dbTearDown()
 

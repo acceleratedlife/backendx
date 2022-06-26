@@ -10,10 +10,8 @@
 
 package openapi
 
-import "time"
-
 type RequestAuctionBid struct {
-	Item time.Time `json:"item,omitempty"`
+	Item string `json:"item,omitempty"`
 
 	Bid int32 `json:"bid,omitempty"`
 }

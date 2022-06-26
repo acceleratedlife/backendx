@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -110,10 +109,11 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 
 		for _, auction := range auctions {
 
-			now := time.Now()
+			now := a.clock.Now()
 			if (auction.StartDate.Before(now) && auction.EndDate.After(now)) || auction.WinnerId.Id == userDetails.Name {
 				iAuction := openapi.ResponseAuctionStudent{
 					Id:          auction.Id,
+					Active:      auction.Active,
 					Bid:         float32(auction.Bid),
 					Description: auction.Description,
 					EndDate:     auction.EndDate,
@@ -305,7 +305,7 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 
 }
 
-func placeBid(db *bolt.DB, clock Clock, userDetails UserInfo, item time.Time, bid int32) (message string, err error) {
+func placeBid(db *bolt.DB, clock Clock, userDetails UserInfo, item string, bid int32) (message string, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		message, err = placeBidtx(tx, clock, userDetails, item, bid)
 		return err
@@ -314,7 +314,7 @@ func placeBid(db *bolt.DB, clock Clock, userDetails UserInfo, item time.Time, bi
 	return
 }
 
-func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, bid int32) (message string, err error) {
+func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid int32) (message string, err error) {
 	school, err := getSchoolBucketTx(tx, userDetails)
 	if err != nil {
 		return message, err
@@ -325,9 +325,9 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, 
 		return message, fmt.Errorf("cannot get auctions %s: %v", userDetails.Name, err)
 	}
 
-	auctionByte := auctions.Get([]byte(item.String()))
+	auctionByte := auctions.Get([]byte(item))
 	if auctionByte == nil {
-		return message, fmt.Errorf("cannot find the auction %s: %v", userDetails.Name, err)
+		return message, fmt.Errorf("cannot find the auction %s: %v", item, err)
 	}
 
 	var auction openapi.Auction
@@ -340,7 +340,7 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, 
 		return message, fmt.Errorf("You are already winning this auction")
 	}
 
-	if time.Now().After(auction.EndDate) {
+	if clock.Now().After(auction.EndDate) {
 		return message, fmt.Errorf("Bid not accepted, auction expired")
 	}
 
@@ -355,7 +355,7 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, 
 			return message, err
 		}
 
-		err = auctions.Put([]byte(item.String()), marshal)
+		err = auctions.Put([]byte(item), marshal)
 		if err != nil {
 			return message, err
 		}
@@ -364,13 +364,29 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, 
 		return message, err
 	}
 
-	err = chargeStudentUbuckTx(tx, clock, userDetails, decimal.NewFromInt32(bid), "Auction Bid "+strconv.Itoa(item.Second()), true)
+	if bid == auction.MaxBid {
+		auction.Bid = auction.MaxBid
+		marshal, err := json.Marshal(auction)
+		if err != nil {
+			return message, err
+		}
+
+		err = auctions.Put([]byte(item), marshal)
+		if err != nil {
+			return message, err
+		}
+
+		message = "You have not outbid the MaxBid"
+		return message, err
+	}
+
+	err = chargeStudentUbuckTx(tx, clock, userDetails, decimal.NewFromInt32(bid), "Auction Bid "+item, true)
 	if err != nil {
 		return message, err
 	}
 
 	if auction.WinnerId.Id != "" {
-		err = repayLosertx(tx, clock, auction.WinnerId.Id, auction.MaxBid, "Auction Refund"+strconv.Itoa(item.Second()))
+		err = repayLosertx(tx, clock, auction.WinnerId.Id, auction.MaxBid, "Auction Refund "+item)
 		if err != nil {
 			return message, err
 		}
@@ -390,7 +406,7 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item time.Time, 
 		return message, err
 	}
 
-	err = auctions.Put([]byte(item.String()), marshal)
+	err = auctions.Put([]byte(item), marshal)
 	if err != nil {
 		return message, err
 	}
