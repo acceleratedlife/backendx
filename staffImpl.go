@@ -203,15 +203,15 @@ func getAuctionBucket(db *bolt.DB, schoolBucket *bolt.Bucket, auctionId string) 
 	return
 }
 
-func getAuctionBucketTx(tx *bolt.Tx, schoolBucket *bolt.Bucket, auctionId string) (auctionsBucket *bolt.Bucket, auctionBucket []byte, err error) {
+func getAuctionBucketTx(tx *bolt.Tx, schoolBucket *bolt.Bucket, auctionId string) (auctionsBucket *bolt.Bucket, auctionByte []byte, err error) {
 	auctionsBucket = schoolBucket.Bucket([]byte(KeyAuctions))
 	if auctionsBucket == nil {
-		return auctionsBucket, auctionBucket, fmt.Errorf("cannot find auctions bucket")
+		return auctionsBucket, auctionByte, fmt.Errorf("cannot find auctions bucket")
 	}
 
-	auctionBucket = auctionsBucket.Get([]byte(auctionId))
-	if auctionBucket == nil {
-		return auctionsBucket, auctionBucket, fmt.Errorf("cannot find auction bucket")
+	auctionByte = auctionsBucket.Get([]byte(auctionId))
+	if auctionByte == nil {
+		return auctionsBucket, auctionByte, fmt.Errorf("cannot find auction bucket, auction: " + auctionId)
 	}
 
 	return
@@ -285,6 +285,9 @@ func getTeacherAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails 
 			}
 
 			auctions = append(auctions, auction)
+			if len(auctions) > 49 {
+				break
+			}
 		}
 
 	}
@@ -418,8 +421,9 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 
 	auction := openapi.Auction{
 		Id:          auctionId.String(),
+		Active:      true,
 		StartDate:   request.StartDate.Truncate(time.Millisecond),
-		EndDate:     request.EndDate.Truncate(time.Millisecond),
+		EndDate:     auctionId,
 		Bid:         int32(request.MaxBid),
 		MaxBid:      int32(request.MaxBid),
 		Description: request.Description,
@@ -479,7 +483,8 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 
 	buck := accounts.Bucket([]byte(teacher.Name))
 	if buck == nil {
-		return resp, fmt.Errorf("Cannot find " + teacher.LastName + " buck bucket")
+		lgr.Printf("Cannot find " + teacher.LastName + " buck bucket")
+		return resp, nil
 	}
 
 	transactions := buck.Bucket([]byte(KeyTransactions))

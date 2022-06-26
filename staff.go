@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -43,14 +44,56 @@ func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, Id string) (ope
 			return err
 		}
 
-		auctionsBucket, _, err := getAuctionBucketTx(tx, schoolBucket, Id)
+		auctionsBucket, auctionData, err := getAuctionBucketTx(tx, schoolBucket, Id)
 		if err != nil {
 			return err
 		}
 
-		err = auctionsBucket.Delete([]byte(Id))
+		var auction openapi.Auction
+		err = json.Unmarshal(auctionData, &auction)
 		if err != nil {
 			return err
+		}
+
+		if a.clock.Now().Before(auction.EndDate) {
+			if auction.WinnerId.Id != "" {
+				err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid, "Canceled Auction: "+strconv.Itoa(auction.EndDate.Second()))
+				if err != nil {
+					return err
+				}
+			}
+
+			err = auctionsBucket.Delete([]byte(Id))
+			if err != nil {
+				return err
+			}
+
+		} else {
+			if auction.WinnerId.Id != "" {
+				if auction.MaxBid > auction.Bid {
+					err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid-auction.Bid, "Won auction return: "+strconv.Itoa(auction.EndDate.Second()))
+					if err != nil {
+						return err
+					}
+				}
+
+				auction.Active = false
+				marshal, err := json.Marshal(auction)
+				if err != nil {
+					return err
+				}
+
+				err = auctionsBucket.Put([]byte(Id), marshal)
+				if err != nil {
+					return err
+				}
+			} else {
+				err = auctionsBucket.Delete([]byte(Id))
+				if err != nil {
+					return err
+				}
+			}
+
 		}
 
 		auctions, err = getTeacherAuctionsTx(tx, auctionsBucket, userDetails)

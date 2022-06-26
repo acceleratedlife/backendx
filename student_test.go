@@ -16,7 +16,7 @@ import (
 )
 
 func Test_addUbuck2Student(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, dbTearDown := OpenTestDB("")
 	defer dbTearDown()
 
@@ -229,7 +229,7 @@ func TestStudentAddClass_InvalidCode(t *testing.T) {
 }
 
 func TestSearchStudentUbuck(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchStudentUbuck", 8090, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -260,8 +260,8 @@ func TestSearchStudentUbuck(t *testing.T) {
 }
 
 func TestSearchAuctionsStudent(t *testing.T) {
-	clock := AppClock{}
-	db, tearDown := FullStartTestServer("searchAuctionsStudent", 8090, "test@admin.com")
+	clock := TestClock{}
+	db, tearDown := FullStartTestServerClock("searchAuctionsStudent", 8090, "test@admin.com", &clock)
 	defer tearDown()
 	_, schools, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 2, 1)
 	require.Nil(t, err)
@@ -357,7 +357,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 }
 
 func TestSearchBuckTransaction(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchBuckTransaction", 8090, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
@@ -393,7 +393,7 @@ func TestSearchBuckTransaction(t *testing.T) {
 }
 
 func TestSearchBuckTransactionNegative(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchBuckTransactionNegative", 8090, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
@@ -429,7 +429,7 @@ func TestSearchBuckTransactionNegative(t *testing.T) {
 }
 
 func TestBuckConvert(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, tearDown := FullStartTestServer("buckConvert", 8090, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
@@ -485,7 +485,7 @@ func TestBuckConvert(t *testing.T) {
 }
 
 func TestBuckConvert_ubuck(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, tearDown := FullStartTestServer("buckConvert_ubuck", 8090, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
@@ -543,7 +543,7 @@ func TestBuckConvert_ubuck(t *testing.T) {
 }
 
 func TestBuckConvert_debt(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, tearDown := FullStartTestServer("buckConvert_debt", 8090, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
@@ -601,7 +601,7 @@ func TestBuckConvert_debt(t *testing.T) {
 }
 
 func TestBuckConvert_debt_ubuck(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, tearDown := FullStartTestServer("buckConvert_debt_ubuck", 8090, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
@@ -659,7 +659,7 @@ func TestBuckConvert_debt_ubuck(t *testing.T) {
 }
 
 func TestAuctionBid(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, tearDown := FullStartTestServer("auctionBid", 8090, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 2)
@@ -694,9 +694,8 @@ func TestAuctionBid(t *testing.T) {
 	require.Nil(t, err)
 
 	//overdrawn student 0 max 0 bid 0
-	id, _ := time.Parse(KeyTime, auctions[0].Id)
 	body := openapi.RequestAuctionBid{
-		Item: id,
+		Item: auctions[0].Id,
 		Bid:  500,
 	}
 	marshal, _ := json.Marshal(body)
@@ -716,7 +715,7 @@ func TestAuctionBid(t *testing.T) {
 	//first bid student 0 max 50 bid 1
 
 	body = openapi.RequestAuctionBid{
-		Item: id,
+		Item: auctions[0].Id,
 		Bid:  50,
 	}
 	marshal, _ = json.Marshal(body)
@@ -733,7 +732,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//self outbid student0 max 50 bid 1
 	body = openapi.RequestAuctionBid{
-		Item: id,
+		Item: auctions[0].Id,
 		Bid:  51,
 	}
 	marshal, _ = json.Marshal(body)
@@ -750,7 +749,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//true outbid student1 max 91 bid 51
 	body = openapi.RequestAuctionBid{
-		Item: id,
+		Item: auctions[0].Id,
 		Bid:  91,
 	}
 	marshal, _ = json.Marshal(body)
@@ -769,7 +768,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//good bid but under max student0 max 91 bid 62
 	body = openapi.RequestAuctionBid{
-		Item: id,
+		Item: auctions[0].Id,
 		Bid:  61,
 	}
 	marshal, _ = json.Marshal(body)
@@ -787,7 +786,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//good bid but under max student0 max 91 bid 90
 	body = openapi.RequestAuctionBid{
-		Item: id,
+		Item: auctions[0].Id,
 		Bid:  89,
 	}
 	marshal, _ = json.Marshal(body)
@@ -804,7 +803,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//true outbid student0 max 97 bid 92
 	body = openapi.RequestAuctionBid{
-		Item: id,
+		Item: auctions[0].Id,
 		Bid:  97,
 	}
 	marshal, _ = json.Marshal(body)
@@ -823,7 +822,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//self outbid student0 max 97 bid 92
 	body = openapi.RequestAuctionBid{
-		Item: id,
+		Item: auctions[0].Id,
 		Bid:  100,
 	}
 	marshal, _ = json.Marshal(body)

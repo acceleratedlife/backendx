@@ -30,7 +30,7 @@ type UserInfo struct {
 	Income           float32   `json:",omitempty"`
 	LastIncomePaid   time.Time `json:",omitempty"`
 	Children         int32
-	Rank             int32
+	Rank             int32 `json:",omitempty"`
 	NetWorth         float32
 }
 

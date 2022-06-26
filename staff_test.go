@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/shopspring/decimal"
@@ -170,11 +171,11 @@ func TestDeleteClass(t *testing.T) {
 }
 
 func TestDeleteAuction(t *testing.T) {
-	db, tearDown := FullStartTestServer("deleteAuction", 8090, "")
-	clock := AppClock{}
+	clock := TestClock{}
+	db, tearDown := FullStartTestServerClock("deleteAuction", 8090, "", &clock)
 	defer tearDown()
 
-	_, schools, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -182,23 +183,16 @@ func TestDeleteAuction(t *testing.T) {
 		Bid:         4,
 		MaxBid:      4,
 		Description: "Test Auction",
-		EndDate:     clock.Now().Add(500),
+		EndDate:     clock.Now().Add(time.Second * 10),
 		StartDate:   clock.Now(),
 		OwnerId:     teachers[0],
 		Visibility:  classes,
 	}
 
-	_, err = MakeAuctionImpl(db, UserInfo{
-		Name:     teachers[0],
-		SchoolId: schools[0],
-		Role:     UserRoleTeacher,
-	}, body)
+	teacherDetails, err := getUserInLocalStore(db, teachers[0])
 
-	auctions, err := MakeAuctionImpl(db, UserInfo{
-		Name:     teachers[0],
-		SchoolId: schools[0],
-		Role:     UserRoleTeacher,
-	}, body)
+	//to be deleted
+	auctions, err := MakeAuctionImpl(db, teacherDetails, body)
 
 	require.Nil(t, err)
 
@@ -214,14 +208,65 @@ func TestDeleteAuction(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var respData []openapi.Auction
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, 0, len(respData))
+
+	//to be deleted
+	auctions, err = MakeAuctionImpl(db, teacherDetails, body)
+
+	userDetails, _ := getUserInLocalStore(db, students[0])
+	addUbuck2Student(db, &clock, userDetails, decimal.NewFromInt32(100), "loading")
+
+	_, err = placeBid(db, &clock, userDetails, auctions[0].Id, 20)
+	require.Nil(t, err)
+
+	q.Set("_id", auctions[0].Id)
+	u.RawQuery = q.Encode()
+
+	req, err = http.NewRequest(http.MethodDelete,
+		u.String(),
+		nil)
+
+	resp, err = client.Do(req)
 	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
+	decoder = json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, 0, len(respData))
+
+	//to be de-activated
+	auctions, err = MakeAuctionImpl(db, teacherDetails, body)
+	require.Nil(t, err)
+
+	_, err = placeBid(db, &clock, userDetails, auctions[0].Id, 20)
+	require.Nil(t, err)
+	clock.TickOne(time.Hour * 1)
+
+	q.Set("_id", auctions[0].Id)
+	u.RawQuery = q.Encode()
+
+	req, err = http.NewRequest(http.MethodDelete,
+		u.String(),
+		nil)
+
+	resp, err = client.Do(req)
 	defer resp.Body.Close()
-	var respData []openapi.Auction
-	decoder := json.NewDecoder(resp.Body)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	decoder = json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&respData)
 
 	assert.Equal(t, 1, len(respData))
@@ -229,7 +274,7 @@ func TestDeleteAuction(t *testing.T) {
 }
 
 func TestMakeAuction(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, teardown := FullStartTestServer("makeClass", 8090, "")
 	defer teardown()
 
@@ -270,7 +315,7 @@ func TestMakeAuction(t *testing.T) {
 }
 
 func TestSearchAuctionsTeacher(t *testing.T) {
-	clock := AppClock{}
+	clock := TestClock{}
 	db, teardown := FullStartTestServer("searchAuctionsTeacher", 8090, "")
 	defer teardown()
 

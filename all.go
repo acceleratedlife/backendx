@@ -433,7 +433,7 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 		resp[i].Rank = int32(i + 1)
 	}
 
-	err2 := saveRanks(a.db, resp)
+	ranked, err2 := saveRanks(a.db, resp)
 	if err2 != nil {
 		lgr.Printf("ERROR saving students ranks: %s %v", userDetails.SchoolId, err)
 	}
@@ -442,7 +442,7 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 		lgr.Printf("ERROR cannot collect students from the school: %s %v", userDetails.SchoolId, err)
 		return openapi.Response(500, "{}"), nil
 	}
-	return openapi.Response(200, resp), nil
+	return openapi.Response(200, resp[:ranked]), nil
 }
 
 func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUserBody) (openapi.ImplResponse, error) {

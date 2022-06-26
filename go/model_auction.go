@@ -30,6 +30,8 @@ type Auction struct {
 	Description string `json:"description"`
 
 	Visibility []string `json:"visibility"`
+
+	Active bool `json:"active,omitempty"`
 }
 
 // AssertAuctionRequired checks if the required fields are not zero-ed
