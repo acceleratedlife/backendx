@@ -55,9 +55,9 @@ var testLoginUser string
 func SetTestLoginUser(username string) {
 	testLoginUser = username
 }
-func InitTestServer(port int, db *bolt.DB, userName string) (teardown func()) {
+func InitTestServer(port int, db *bolt.DB, userName string, clock Clock) (teardown func()) {
 	SetTestLoginUser(userName)
-	mux := createRouter(db)
+	mux := createRouterClock(db, clock)
 	mux.Use(func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			user := token.User{
@@ -80,9 +80,12 @@ func InitTestServer(port int, db *bolt.DB, userName string) (teardown func()) {
 }
 
 func FullStartTestServer(dbSuffix string, port int, userName string) (db *bolt.DB, teardown func()) {
+	return FullStartTestServerClock(dbSuffix, port, userName, &TestClock{})
+}
+func FullStartTestServerClock(dbSuffix string, port int, userName string, clock Clock) (db *bolt.DB, teardown func()) {
 	db, dbTearDown := OpenTestDB(dbSuffix)
 	InitDefaultAccounts(db)
-	netTearDown := InitTestServer(port, db, userName)
+	netTearDown := InitTestServer(port, db, userName, clock)
 
 	return db, func() {
 		dbTearDown()
