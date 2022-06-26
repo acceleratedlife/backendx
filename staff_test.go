@@ -171,8 +171,8 @@ func TestDeleteClass(t *testing.T) {
 }
 
 func TestDeleteAuction(t *testing.T) {
-	db, tearDown := FullStartTestServer("deleteAuction", 8090, "")
 	clock := TestClock{}
+	db, tearDown := FullStartTestServerClock("deleteAuction", 8090, "", &clock)
 	defer tearDown()
 
 	_, _, teachers, classes, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -246,13 +246,12 @@ func TestDeleteAuction(t *testing.T) {
 	assert.Equal(t, 0, len(respData))
 
 	//to be de-activated
-	body.EndDate = clock.Now().Add(time.Hour * -5)
-	body.StartDate = clock.Now().Add(time.Hour * -20)
 	auctions, err = MakeAuctionImpl(db, teacherDetails, body)
 	require.Nil(t, err)
 
 	_, err = placeBid(db, &clock, userDetails, auctions[0].Id, 20)
 	require.Nil(t, err)
+	clock.TickOne(time.Hour * 1)
 
 	q.Set("_id", auctions[0].Id)
 	u.RawQuery = q.Encode()

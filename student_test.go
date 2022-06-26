@@ -261,7 +261,7 @@ func TestSearchStudentUbuck(t *testing.T) {
 
 func TestSearchAuctionsStudent(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("searchAuctionsStudent", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServerClock("searchAuctionsStudent", 8090, "test@admin.com", &clock)
 	defer tearDown()
 	_, schools, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 2, 1)
 	require.Nil(t, err)
