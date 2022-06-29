@@ -2,17 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"math"
-	"math/rand"
 	"sort"
 	"strings"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
-	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -367,78 +363,24 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 	}
 
 	if userDetails.Role == UserRoleStudent {
+		CollegeIfNeeded(a.db, a.clock, userDetails)
+		CareerIfNeeded(a.db, a.clock, userDetails)
 		DailyPayIfNeeded(a.db, a.clock, userDetails)
+		EventIfNeeded(a.db, a.clock, userDetails)
 	}
 
-	resp := make([]openapi.UserNoHistory, 0)
-	err = a.db.View(func(tx *bolt.Tx) error {
-		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+	var resp []openapi.UserNoHistory
+	var ranked int
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		resp, ranked, err = getSchoolStudentsTx(tx, userDetails)
 		if err != nil {
 			return err
 		}
 
-		students := school.Bucket([]byte(KeyStudents))
-		if students == nil {
-			return fmt.Errorf("cannot find students bucket")
-		}
-
-		c := students.Cursor()
-
-		users := tx.Bucket([]byte(KeyUsers))
-
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			studentData := users.Get([]byte(k))
-			var student UserInfo
-			err = json.Unmarshal(studentData, &student)
-			if err != nil {
-				lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
-				continue
-			}
-			if student.Role != UserRoleStudent {
-				lgr.Printf("ERROR student %s has role %s", k, userData.Role)
-				continue
-			}
-
-			nWorth, _ := StudentNetWorthTx(tx, student.Name).Float64()
-			nUser := openapi.UserNoHistory{
-				Id: student.Email,
-				// CollegeEnd:    time.Time{},
-				//TransitionEnd: time.Time{},
-				FirstName: student.FirstName,
-				LastName:  student.LastName,
-				// Email:     student.Email,
-				// Confirmed: student.Confirmed,
-				// SchoolId:  student.SchoolId,
-				//College:       false,
-				//Children:      0,
-				// Income:   10,
-				// Role:     student.Role,
-				Rank:     student.Rank,
-				NetWorth: float32(nWorth),
-			}
-
-			resp = append(resp, nUser)
-
-		}
-
 		return nil
-
 	})
 
-	sort.SliceStable(resp, func(i, j int) bool {
-		return resp[i].NetWorth > resp[j].NetWorth
-	})
-
-	for i := 0; i < len(resp); i++ {
-		resp[i].Rank = int32(i + 1)
-	}
-
-	ranked, err2 := saveRanks(a.db, resp)
-	if err2 != nil {
-		lgr.Printf("ERROR saving students ranks: %s %v", userDetails.SchoolId, err)
-	}
-
-	if err != nil || err2 != nil {
+	if err != nil {
 		lgr.Printf("ERROR cannot collect students from the school: %s %v", userDetails.SchoolId, err)
 		return openapi.Response(500, "{}"), nil
 	}
@@ -456,51 +398,7 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		users := tx.Bucket([]byte(KeyUsers))
-		if users == nil {
-			return fmt.Errorf("users do not exist")
-		}
-
-		user := users.Get([]byte(userData.Name))
-
-		if user == nil {
-			return fmt.Errorf("user does not exist")
-		}
-
-		if body.FirstName != "" {
-			userDetails.FirstName = body.FirstName
-		}
-		if body.LastName != "" {
-			userDetails.LastName = body.LastName
-		}
-		if len(body.Password) > 5 {
-			userDetails.PasswordSha = EncodePassword(body.Password)
-		}
-		if body.CareerTransition && !userDetails.CareerTransition {
-			userDetails.CareerTransition = true
-			userDetails.TransitionEnd = a.clock.Now().AddDate(0, 0, 7) //7 days
-			userDetails.Income = userDetails.Income / 2
-		}
-		if body.College && !userDetails.College {
-			cost := decimal.NewFromFloat(math.Floor(rand.Float64()*(8000-5000) + 8000))
-			err := chargeStudentUbuckTx(tx, a.clock, userDetails, cost, "Paying for College", false)
-			if err != nil {
-				return fmt.Errorf("Failed to chargeStudentUbuckTx: %v", err)
-			}
-			userDetails.College = true
-			userDetails.CollegeEnd = a.clock.Now().AddDate(0, 0, 28) //28 days
-			userDetails.Income = userDetails.Income / 2
-		}
-
-		marshal, err := json.Marshal(userDetails)
-		if err != nil {
-			return fmt.Errorf("Failed to Marshal userDetails")
-		}
-		err = users.Put([]byte(userData.Name), marshal)
-		if err != nil {
-			return fmt.Errorf("Failed to Put userDetails")
-		}
-		return nil
+		return userEditTx(tx, a.clock, userDetails, body)
 	})
 
 	if err != nil {

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -33,18 +34,6 @@ type Transaction struct {
 	Net            decimal.Decimal `json:"-"`
 	Balance        decimal.Decimal `json:"-"`
 }
-
-// func getClassbyAddCodeTx(tx *bolt.Tx, schoolId, addCode string) (classBucket *bolt.Bucket, err error) {
-// 	schools := tx.Bucket([]byte(KeySchools))
-// 	if schools == nil {
-// 		return nil, fmt.Errorf("schools not found")
-// 	}
-// 	school := schools.Bucket([]byte(schoolId))
-// 	if school == nil {
-// 		return nil, fmt.Errorf("school not found")
-// 	}
-// 	schoolClass :=
-// }
 
 // adds ubucks from CB
 //creates order, transaction into student account, update account balance, update ubuck balance
@@ -270,6 +259,314 @@ func IsDailyPayNeeded(student *bolt.Bucket, clock Clock) bool {
 		return true
 	}
 	return false
+}
+
+func CollegeIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
+	if userDetails.Role != UserRoleStudent {
+		return false
+	}
+
+	needToAdd := false
+	_ = db.View(func(tx *bolt.Tx) error {
+		users := tx.Bucket([]byte(KeyUsers))
+		if users == nil {
+			return nil
+		}
+
+		studentData := users.Get([]byte(userDetails.Name))
+		if studentData == nil {
+			return nil
+		}
+
+		needToAdd, _, _ = IsCollegeNeeded(studentData, clock)
+		return nil
+	})
+
+	if !needToAdd {
+		return false
+	}
+	err := db.Update(func(tx *bolt.Tx) error {
+		users := tx.Bucket([]byte(KeyUsers))
+		if users == nil {
+			return nil
+		}
+
+		studentData := users.Get([]byte(userDetails.Name))
+		if studentData == nil {
+			return nil
+		}
+
+		needToAdd, student, err := IsCollegeNeeded(studentData, clock)
+		if err != nil {
+			return err
+		}
+
+		if !needToAdd {
+			return nil
+		}
+
+		diff := decimal.NewFromInt32(834 - 208)
+		low := decimal.NewFromInt32(208)
+		random := decimal.NewFromFloat32(rand.Float32())
+
+		student.Income = float32(random.Mul(diff).Add(low).Floor().InexactFloat64())
+		student.CollegeEnd = time.Time{}
+		marshal, err := json.Marshal(student)
+		if err != nil {
+			return err
+		}
+
+		err = users.Put([]byte(userDetails.Name), marshal)
+		if err != nil {
+			return fmt.Errorf("cannot save event date: %v", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR checking college on %s: %v", userDetails.Name, err)
+		return false
+	}
+	return needToAdd
+}
+
+func IsCollegeNeeded(studentData []byte, clock Clock) (needed bool, student openapi.User, err error) {
+	err = json.Unmarshal(studentData, &student)
+	if err != nil {
+		return false, student, err
+	}
+	if !student.CollegeEnd.IsZero() && clock.Now().Truncate(24*time.Hour).After(student.CollegeEnd) {
+		return true, student, err
+	}
+
+	return false, student, err
+
+}
+
+func CareerIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
+	if userDetails.Role != UserRoleStudent {
+		return false
+	}
+
+	needToAdd := false
+	_ = db.View(func(tx *bolt.Tx) error {
+		users := tx.Bucket([]byte(KeyUsers))
+		if users == nil {
+			return nil
+		}
+
+		studentData := users.Get([]byte(userDetails.Name))
+		if studentData == nil {
+			return nil
+		}
+
+		needToAdd, _, _ = IsCareerNeeded(studentData, clock)
+		return nil
+	})
+
+	if !needToAdd {
+		return false
+	}
+	err := db.Update(func(tx *bolt.Tx) error {
+		users := tx.Bucket([]byte(KeyUsers))
+		if users == nil {
+			return nil
+		}
+
+		studentData := users.Get([]byte(userDetails.Name))
+		if studentData == nil {
+			return nil
+		}
+
+		needToAdd, student, err := IsCareerNeeded(studentData, clock)
+		if err != nil {
+			return err
+		}
+
+		if !needToAdd {
+			return nil
+		}
+
+		if student.College && student.CollegeEnd.IsZero() {
+			diff := decimal.NewFromInt32(834 - 208)
+			low := decimal.NewFromInt32(208)
+			random := decimal.NewFromFloat32(rand.Float32())
+			student.Income = float32(random.Mul(diff).Add(low).Floor().InexactFloat64())
+		} else {
+			diff := decimal.NewFromInt32(335 - 104)
+			low := decimal.NewFromInt32(104)
+			random := decimal.NewFromFloat32(rand.Float32())
+			student.Income = float32(random.Mul(diff).Add(low).Floor().InexactFloat64())
+		}
+
+		student.TransitionEnd = time.Time{}
+		student.CareerTransition = false
+		marshal, err := json.Marshal(student)
+		if err != nil {
+			return err
+		}
+
+		err = users.Put([]byte(userDetails.Name), marshal)
+		if err != nil {
+			return fmt.Errorf("cannot save event date: %v", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR checking college on %s: %v", userDetails.Name, err)
+		return false
+	}
+	return needToAdd
+}
+
+func IsCareerNeeded(studentData []byte, clock Clock) (needed bool, student openapi.User, err error) {
+	err = json.Unmarshal(studentData, &student)
+	if err != nil {
+		return false, student, err
+	}
+	if student.CareerTransition && !student.TransitionEnd.IsZero() && clock.Now().Truncate(24*time.Hour).After(student.TransitionEnd) {
+		return true, student, err
+	}
+
+	return false, student, err
+
+}
+
+func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
+	if userDetails.Role != UserRoleStudent {
+		return false
+	}
+
+	needToAdd := false
+	_ = db.View(func(tx *bolt.Tx) error {
+		student, _ := getStudentBucketRoTx(tx, userDetails.Name)
+		if student == nil {
+			return nil
+		}
+
+		needToAdd, _ = IsEventNeeded(student, clock, false)
+		return nil
+	})
+
+	if !needToAdd {
+		return false
+	}
+	err := db.Update(func(tx *bolt.Tx) error {
+		student, err := getStudentBucketTx(tx, userDetails.Name)
+		if err != nil {
+			return err
+		}
+
+		needToAdd, err = IsEventNeeded(student, clock, true)
+		if err != nil {
+			return err
+		}
+
+		if !needToAdd {
+			return nil
+		}
+
+		days := (rand.Int31n(5) + 4) * 24
+		daysInHours := time.Duration(days)
+
+		eventDate, err := clock.Now().Add(time.Hour * daysInHours).Truncate(24 * time.Hour).MarshalText()
+		if err != nil {
+			return err
+		}
+		err = student.Put([]byte(KeyDayEvent), eventDate)
+		if err != nil {
+			return fmt.Errorf("cannot save event date: %v", err)
+		}
+
+		students, _, err := getSchoolStudentsTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		change, err := makeEvent(students, userDetails)
+		if err != nil {
+			return err
+		}
+
+		if change.IsPositive() {
+			return addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getPositiveEvent())
+		}
+		return chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getNegativeEvent(), false)
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR daily payment not added to %s: %v", userDetails.Name, err)
+		return false
+	}
+	return needToAdd
+}
+
+func getPositiveEvent() (description string) {
+	return "Positive Event"
+}
+
+func getNegativeEvent() (description string) {
+	return "Negative Event"
+}
+
+func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change decimal.Decimal, err error) {
+	multiplier := decimal.NewFromFloat(.3)
+	one := decimal.NewFromInt(1)
+	random := decimal.NewFromFloat32(rand.Float32())
+	count := len(students)
+	for i := range students {
+		if students[i].Id == userDetails.Name {
+			var topNetWorth decimal.Decimal
+			if count >= 4 {
+				topNetWorth = decimal.NewFromFloat32((students[0].NetWorth + students[1].NetWorth + students[2].NetWorth + students[3].NetWorth) / 4)
+			} else {
+				topNetWorth = decimal.NewFromFloat32(students[0].NetWorth)
+			}
+
+			chance := decimal.NewFromFloat32(float32((i + 1)) / float32(count)) //higher chance means better good events
+			max := topNetWorth.Mul(multiplier).Mul(chance)
+			min := topNetWorth.Mul(multiplier).Mul(chance.Sub(one))
+			change = max.Sub(min).Mul(random).Add(min).Floor()
+			return
+		}
+	}
+
+	return change, fmt.Errorf("did not find student in slice")
+}
+
+func IsEventNeeded(student *bolt.Bucket, clock Clock, tx bool) (bool, error) {
+	dayB := student.Get([]byte(KeyDayEvent))
+	if dayB == nil && tx {
+		futureDay := time.Duration((rand.Int31n(4) + 4) * 24)
+
+		eventDate, err := clock.Now().Add(time.Hour * futureDay).Truncate(24 * time.Hour).MarshalText()
+		if err != nil {
+			return false, err
+		}
+		err = student.Put([]byte(KeyDayEvent), eventDate)
+		if err != nil {
+			return false, fmt.Errorf("cannot save event date: %v", err)
+		}
+
+		return false, nil
+	}
+
+	if dayB == nil && !tx {
+		return true, nil
+	}
+
+	var day time.Time
+	err := day.UnmarshalText(dayB)
+	if err != nil {
+		return true, err
+	}
+	if clock.Now().Truncate(24 * time.Hour).After(day) {
+		return true, nil
+	}
+	return false, nil
 }
 
 func getCbTx(tx *bolt.Tx, schoolId string) (cb *bolt.Bucket, err error) {

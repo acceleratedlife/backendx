@@ -85,7 +85,6 @@ func TestDailyPayment(t *testing.T) {
 	student, _ := getUserInLocalStore(db, students[0])
 
 	r := DailyPayIfNeeded(db, &clock, student)
-
 	require.True(t, r)
 
 	require.Equal(t, float64(student.Income), StudentNetWorth(db, student.Name).InexactFloat64())
