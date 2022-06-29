@@ -53,6 +53,7 @@ const (
 	KeyCity             = "city"
 	KeyZip              = "zip"
 	KeyDayPayment       = "dayPayment"
+	KeyDayEvent         = "dayEvent"
 	KeyPeriod           = "period"
 	KeyAdmins           = "admins"
 	KeyEmail            = "Email"

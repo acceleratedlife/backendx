@@ -3,8 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/rand"
+	"sort"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -162,82 +167,212 @@ func getBuckNameTx(tx *bolt.Tx, id string) (string, error) {
 	return user.LastName + " Buck", nil
 }
 
-func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (ranked int, err error) {
-	err = db.Update(func(tx *bolt.Tx) error {
-		users := tx.Bucket([]byte(KeyUsers))
-		if users == nil {
-			return fmt.Errorf("users not found")
+func saveRanksTx(tx *bolt.Tx, students []openapi.UserNoHistory) (ranked int, err error) {
+	users := tx.Bucket([]byte(KeyUsers))
+	if users == nil {
+		return ranked, fmt.Errorf("users not found")
+	}
+
+	length := float32(len(students))
+	for i, student := range students {
+		user := users.Get([]byte(student.Id))
+		if user == nil {
+			return ranked, fmt.Errorf("user not found")
 		}
 
-		length := float32(len(students))
-		for i, student := range students {
-			user := users.Get([]byte(student.Id))
-			if user == nil {
-				return fmt.Errorf("user not found")
+		var userDetails UserInfo
+		err = json.Unmarshal(user, &userDetails)
+		if err != nil {
+			return ranked, err
+		}
+
+		num := float32(i+1) / length
+		userDetails.Rank = 0
+
+		if length <= 60 {
+			if num <= .33334 {
+				userDetails.Rank = student.Rank
+				ranked++
 			}
-
-			var userDetails UserInfo
-			err = json.Unmarshal(user, &userDetails)
-			if err != nil {
-				return err
+		} else if length <= 150 {
+			if num <= .2 {
+				userDetails.Rank = student.Rank
+				ranked++
 			}
-
-			num := float32(i+1) / length
-			userDetails.Rank = 0
-
-			if length <= 60 {
-				if num <= .33334 {
-					userDetails.Rank = student.Rank
-					ranked++
-				}
-			} else if length <= 150 {
-				if num <= .2 {
-					userDetails.Rank = student.Rank
-					ranked++
-				}
-			} else if length <= 500 {
-				if num <= .15 {
-					userDetails.Rank = student.Rank
-					ranked++
-				}
-			} else if length <= 1000 {
-				if num <= .1 {
-					userDetails.Rank = student.Rank
-					ranked++
-				}
-			} else if length <= 2000 {
-				if num <= .0625 {
-					userDetails.Rank = student.Rank
-					ranked++
-				}
-			} else if length <= 4000 {
-				if num <= .05 {
-					userDetails.Rank = student.Rank
-					ranked++
-				}
-			} else if length > 4000 {
-				if i < 200 {
-					userDetails.Rank = student.Rank
-					ranked++
-				}
+		} else if length <= 500 {
+			if num <= .15 {
+				userDetails.Rank = student.Rank
+				ranked++
 			}
-
-			userDetails.NetWorth = student.NetWorth
-
-			marshal, err := json.Marshal(userDetails)
-			if err != nil {
-				return err
+		} else if length <= 1000 {
+			if num <= .1 {
+				userDetails.Rank = student.Rank
+				ranked++
 			}
-
-			err = users.Put([]byte(student.Id), marshal)
-			if err != nil {
-				return err
+		} else if length <= 2000 {
+			if num <= .0625 {
+				userDetails.Rank = student.Rank
+				ranked++
 			}
+		} else if length <= 4000 {
+			if num <= .05 {
+				userDetails.Rank = student.Rank
+				ranked++
+			}
+		} else if length > 4000 {
+			if i < 200 {
+				userDetails.Rank = student.Rank
+				ranked++
+			}
+		}
 
+		userDetails.NetWorth = student.NetWorth
+
+		marshal, err := json.Marshal(userDetails)
+		if err != nil {
+			return ranked, err
+		}
+
+		err = users.Put([]byte(student.Id), marshal)
+		if err != nil {
+			return ranked, err
+		}
+
+	}
+
+	return ranked, err
+
+}
+
+func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (ranked int, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		ranked, err = saveRanksTx(tx, students)
+		if err != nil {
+			return err
 		}
 
 		return nil
 	})
 
 	return
+}
+
+func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
+	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+	if err != nil {
+		return
+	}
+
+	students := school.Bucket([]byte(KeyStudents))
+	if students == nil {
+		return resp, ranked, fmt.Errorf("cannot find students bucket")
+	}
+
+	c := students.Cursor()
+
+	users := tx.Bucket([]byte(KeyUsers))
+
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		studentData := users.Get([]byte(k))
+		var student UserInfo
+		err = json.Unmarshal(studentData, &student)
+		if err != nil {
+			lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+			continue
+		}
+		if student.Role != UserRoleStudent {
+			lgr.Printf("ERROR student %s has role %d", k, student.Role)
+			continue
+		}
+
+		nWorth, _ := StudentNetWorthTx(tx, student.Name).Float64()
+		nUser := openapi.UserNoHistory{
+			Id: student.Email,
+			// CollegeEnd:    time.Time{},
+			//TransitionEnd: time.Time{},
+			FirstName: student.FirstName,
+			LastName:  student.LastName,
+			// Email:     student.Email,
+			// Confirmed: student.Confirmed,
+			// SchoolId:  student.SchoolId,
+			//College:       false,
+			//Children:      0,
+			// Income:   10,
+			// Role:     student.Role,
+			Rank:     student.Rank,
+			NetWorth: float32(nWorth),
+		}
+
+		resp = append(resp, nUser)
+
+	}
+
+	sort.SliceStable(resp, func(i, j int) bool {
+		return resp[i].NetWorth > resp[j].NetWorth
+	})
+
+	for i := 0; i < len(resp); i++ {
+		resp[i].Rank = int32(i + 1)
+	}
+
+	ranked, err = saveRanksTx(tx, resp)
+	if err != nil {
+		return resp, ranked, fmt.Errorf("ERROR saving students ranks: %s %v", userDetails.SchoolId, err)
+	}
+
+	return
+}
+
+func userEdit(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.UsersUserBody) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		return userEditTx(tx, clock, userDetails, body)
+	})
+}
+
+func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.UsersUserBody) error {
+	users := tx.Bucket([]byte(KeyUsers))
+	if users == nil {
+		return fmt.Errorf("users do not exist")
+	}
+
+	user := users.Get([]byte(userDetails.Name))
+
+	if user == nil {
+		return fmt.Errorf("user does not exist")
+	}
+
+	if body.FirstName != "" {
+		userDetails.FirstName = body.FirstName
+	}
+	if body.LastName != "" {
+		userDetails.LastName = body.LastName
+	}
+	if len(body.Password) > 5 {
+		userDetails.PasswordSha = EncodePassword(body.Password)
+	}
+	if body.CareerTransition && !userDetails.CareerTransition && userDetails.CollegeEnd.IsZero() {
+		userDetails.CareerTransition = true
+		userDetails.TransitionEnd = clock.Now().AddDate(0, 0, 7) //7 days
+		userDetails.Income = userDetails.Income / 2
+	}
+	if body.College && !userDetails.College {
+		cost := decimal.NewFromFloat(math.Floor(rand.Float64()*(8000-5000) + 8000))
+		err := chargeStudentUbuckTx(tx, clock, userDetails, cost, "Paying for College", false)
+		if err != nil {
+			return fmt.Errorf("Failed to chargeStudentUbuckTx: %v", err)
+		}
+		userDetails.College = true
+		userDetails.CollegeEnd = clock.Now().AddDate(0, 0, 28) //28 days
+		userDetails.Income = userDetails.Income / 2
+	}
+
+	marshal, err := json.Marshal(userDetails)
+	if err != nil {
+		return fmt.Errorf("Failed to Marshal userDetails")
+	}
+	err = users.Put([]byte(userDetails.Name), marshal)
+	if err != nil {
+		return fmt.Errorf("Failed to Put userDetails")
+	}
+	return nil
 }
