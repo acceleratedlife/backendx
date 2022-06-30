@@ -157,7 +157,7 @@ func (a *StudentApiServiceImpl) SearchBuckTransaction(ctx context.Context) (open
 	var resp []openapi.ResponseBuckTransaction
 	err = a.db.View(func(tx *bolt.Tx) error {
 
-		student, err := getStudentBucketRoTx(tx, userDetails.Name)
+		student, err := getStudentBucketRx(tx, userDetails.Name)
 		if err != nil {
 			return err
 		}

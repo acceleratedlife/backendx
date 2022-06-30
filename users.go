@@ -153,8 +153,17 @@ func getStudentBucketTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	return student, nil
 }
 
+func getStudentBucket(db *bolt.DB, userName string) (student *bolt.Bucket, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		student, err = getStudentBucketRx(tx, userName)
+		return err
+	})
+
+	return
+}
+
 //get bucket, throw if it does not exist, use with view
-func getStudentBucketRoTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
+func getStudentBucketRx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	userInfo, err := getUserInLocalStoreTx(tx, userName)
 	if err != nil {
 		return nil, err

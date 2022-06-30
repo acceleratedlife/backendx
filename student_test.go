@@ -8,7 +8,6 @@ import (
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
-	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -72,42 +71,6 @@ func Test_addUbuck2Student(t *testing.T) {
 //		})
 //	}
 //}
-
-func TestDailyPayment(t *testing.T) {
-
-	lgr.Printf("INFO TestDailyPayment")
-	t.Log("INFO TestDailyPayment")
-	clock := TestClock{}
-	db, dbTearDown := OpenTestDB("-pay")
-	defer dbTearDown()
-	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
-
-	student, _ := getUserInLocalStore(db, students[0])
-
-	r := DailyPayIfNeeded(db, &clock, student)
-	require.True(t, r)
-
-	require.Equal(t, float64(student.Income), StudentNetWorth(db, student.Name).InexactFloat64())
-
-	r = DailyPayIfNeeded(db, &clock, student)
-	require.False(t, r)
-
-	clock.Tick()
-	r = DailyPayIfNeeded(db, &clock, student)
-	require.False(t, r)
-
-	clock.TickOne(24 * time.Hour)
-	r = DailyPayIfNeeded(db, &clock, student)
-	require.True(t, r)
-
-	netWorth := decimal.Zero
-	_ = db.View(func(tx *bolt.Tx) error {
-		netWorth = StudentNetWorthTx(tx, students[0])
-		return nil
-	})
-
-	require.True(t, netWorth.GreaterThan(decimal.NewFromInt(200)))
-}
 
 func TestStudentAddClass_Teachers(t *testing.T) {
 	db, tearDown := FullStartTestServer("studentAddClass_Teachers", 8090, "test@admin.com")

@@ -150,7 +150,7 @@ func StudentNetWorth(db *bolt.DB, userName string) (res decimal.Decimal) {
 }
 func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 	res = decimal.Zero
-	student, err := getStudentBucketRoTx(tx, userName)
+	student, err := getStudentBucketRx(tx, userName)
 	if err != nil {
 		return
 	}
@@ -203,7 +203,7 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 
 	needToAdd := false
 	_ = db.View(func(tx *bolt.Tx) error {
-		student, _ := getStudentBucketRoTx(tx, userDetails.Name)
+		student, _ := getStudentBucketRx(tx, userDetails.Name)
 		if student == nil {
 			needToAdd = true
 			return nil
@@ -225,6 +225,12 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
+		pay := decimal.NewFromFloat32(userDetails.Income)
+		haveDebt, _, _, err := IsDebtNeeded(student, clock)
+		if err != nil {
+			return err
+		}
+
 		payDate, err := clock.Now().Truncate(24 * time.Hour).MarshalText()
 		if err != nil {
 			return err
@@ -233,7 +239,17 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		if err != nil {
 			return fmt.Errorf("cannot save daily payment date: %v", err)
 		}
-		pay := decimal.NewFromFloat32(userDetails.Income)
+
+		if haveDebt {
+			garnish := pay.Mul(decimal.NewFromFloat32(.3))
+			pay = pay.Mul(decimal.NewFromFloat32(.7))
+			err = chargeStudentTx(tx, clock, userDetails, garnish, KeyDebt, "Paycheck Garnishment", false)
+			if err != nil {
+				return err
+			}
+			return addUbuck2StudentTx(tx, clock, userDetails, pay, "daily payment")
+		}
+
 		return addUbuck2StudentTx(tx, clock, userDetails, pay, "daily payment")
 	})
 
@@ -336,7 +352,7 @@ func IsCollegeNeeded(studentData []byte, clock Clock) (needed bool, student open
 	if err != nil {
 		return false, student, err
 	}
-	if !student.CollegeEnd.IsZero() && clock.Now().Truncate(24*time.Hour).After(student.CollegeEnd) {
+	if !student.CollegeEnd.IsZero() && clock.Now().After(student.CollegeEnd) {
 		return true, student, err
 	}
 
@@ -427,12 +443,98 @@ func IsCareerNeeded(studentData []byte, clock Clock) (needed bool, student opena
 	if err != nil {
 		return false, student, err
 	}
-	if student.CareerTransition && !student.TransitionEnd.IsZero() && clock.Now().Truncate(24*time.Hour).After(student.TransitionEnd) {
+	if student.CareerTransition && !student.TransitionEnd.IsZero() && clock.Now().After(student.TransitionEnd) {
 		return true, student, err
 	}
 
 	return false, student, err
 
+}
+
+func DebtIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
+	if userDetails.Role != UserRoleStudent {
+		return false
+	}
+
+	needToAdd := false
+	_ = db.View(func(tx *bolt.Tx) error {
+		student, err := getStudentBucketRx(tx, userDetails.Name)
+		if err != nil {
+			return nil
+		}
+
+		needToAdd, _, _, _ = IsDebtNeeded(student, clock)
+		return nil
+	})
+
+	if !needToAdd {
+		return false
+	}
+	err := db.Update(func(tx *bolt.Tx) error {
+		student, err := getStudentBucketRx(tx, userDetails.Name)
+		if err != nil {
+			return err
+		}
+
+		needToAdd, day, balance, err := IsDebtNeeded(student, clock)
+
+		if !needToAdd {
+			return nil
+		}
+
+		days := decimal.NewFromFloat32(float32(clock.Now().Truncate(24*time.Hour).Sub(day).Hours() / 24))
+		interest := decimal.NewFromFloat32(1.06)
+		compoundedInterest := interest.Pow(days)
+		compoundedInterest = compoundedInterest.Sub(decimal.NewFromInt32(1))
+		change := balance.Mul(compoundedInterest)
+		err = pay2StudentTx(tx, clock, userDetails, change, KeyDebt, days.String()+" days compound interest")
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR checking debt on %s: %v", userDetails.Name, err)
+		return false
+	}
+	return needToAdd
+}
+
+func IsDebtNeeded(student *bolt.Bucket, clock Clock) (needed bool, day time.Time, balance decimal.Decimal, err error) {
+	accounts := student.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
+		return false, day, balance, err
+	}
+
+	debt := accounts.Bucket([]byte(KeyDebt))
+	if debt == nil {
+		return false, day, balance, err
+	}
+
+	balanceb := debt.Get([]byte(KeyBalance))
+	err = balance.UnmarshalText(balanceb)
+	if err != nil {
+		return
+	}
+
+	if balance.IsZero() {
+		return
+	}
+
+	dayB := student.Get([]byte(KeyDayPayment))
+
+	err = day.UnmarshalText(dayB)
+	if err != nil {
+		return
+	}
+
+	if clock.Now().Truncate(24 * time.Hour).After(day) {
+		return true, day, balance, err
+	}
+
+	return
 }
 
 func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
@@ -442,7 +544,7 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 
 	needToAdd := false
 	_ = db.View(func(tx *bolt.Tx) error {
-		student, _ := getStudentBucketRoTx(tx, userDetails.Name)
+		student, _ := getStudentBucketRx(tx, userDetails.Name)
 		if student == nil {
 			return nil
 		}
@@ -498,7 +600,7 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 	})
 
 	if err != nil {
-		lgr.Printf("ERROR daily payment not added to %s: %v", userDetails.Name, err)
+		lgr.Printf("ERROR event not added to %s: %v", userDetails.Name, err)
 		return false
 	}
 	return needToAdd
@@ -863,7 +965,7 @@ func getStudentUbuck(db *bolt.DB, userDetails UserInfo) (uBucks openapi.Response
 }
 
 func getStudentUbuckTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseSearchStudentUbuck, err error) {
-	student, err := getStudentBucketRoTx(tx, userDetails.Name)
+	student, err := getStudentBucketRx(tx, userDetails.Name)
 	if student == nil {
 		return resp, err
 	}

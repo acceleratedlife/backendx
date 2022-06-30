@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 	"math/rand"
 	"sort"
 
@@ -87,7 +86,7 @@ func getStudentHistory(db *bolt.DB, userName string, schoolId string) (history [
 	return
 }
 func getStudentHistoryTX(tx *bolt.Tx, userName string) (history []openapi.History, err error) {
-	student, err := getStudentBucketRoTx(tx, userName)
+	student, err := getStudentBucketRx(tx, userName)
 	if err == nil {
 		return nil, err
 	}
@@ -100,6 +99,15 @@ func getStudentHistoryTX(tx *bolt.Tx, userName string) (history []openapi.Histor
 	if err != nil {
 		return nil, fmt.Errorf("ERROR cannot unmarshal History")
 	}
+	return
+}
+
+func getStudentAccount(db *bolt.DB, bAccount *bolt.Bucket, id string) (resp openapi.ResponseCurrencyExchange, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getStudentAccountRx(tx, bAccount, id)
+		return err
+	})
+
 	return
 }
 
@@ -356,7 +364,11 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 		userDetails.Income = userDetails.Income / 2
 	}
 	if body.College && !userDetails.College {
-		cost := decimal.NewFromFloat(math.Floor(rand.Float64()*(8000-5000) + 8000))
+		diff := decimal.NewFromInt32(8000 - 5000)
+		low := decimal.NewFromInt32(5000)
+		random := decimal.NewFromFloat32(rand.Float32())
+
+		cost := random.Mul(diff).Add(low).Floor()
 		err := chargeStudentUbuckTx(tx, clock, userDetails, cost, "Paying for College", false)
 		if err != nil {
 			return fmt.Errorf("Failed to chargeStudentUbuckTx: %v", err)
