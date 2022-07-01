@@ -33,7 +33,7 @@ func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, body openapi.Req
 
 	var message string
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		message, err = placeBidtx(tx, a.clock, userDetails, body.Item, body.Bid)
+		message, err = placeBidtx(tx, a.clock, userDetails, body.Item, int32(body.Bid))
 		if err != nil {
 			return err
 		}
@@ -183,17 +183,70 @@ func (a *StudentApiServiceImpl) SearchBuckTransaction(ctx context.Context) (open
 	return openapi.Response(200, resp), nil
 
 }
-func (a *StudentApiServiceImpl) SearchCrypto(context.Context, string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *StudentApiServiceImpl) SearchCrypto(ctx context.Context, crypto string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	var resp openapi.ResponseCrypto
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		resp, err = getCryptoTx(tx, userDetails, crypto)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR cannot get Cryptos for: %s %v", userDetails.Name, err)
+		return openapi.Response(500, "{}"), err
+	}
+	return openapi.Response(200, resp), nil
+
+	var resp openapi.ResponseCrypto
 }
 func (a *StudentApiServiceImpl) SearchCryptoTransaction(context.Context, string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
-func (a *StudentApiServiceImpl) SearchStudentCrypto(context.Context) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *StudentApiServiceImpl) SearchStudentCrypto(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	var resp []openapi.Account
+	err = a.db.View(func(tx *bolt.Tx) error {
+		resp, err = getStudentCryptosRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR cannot get Cryptos for: %s %v", userDetails.Name, err)
+		return openapi.Response(500, "{}"), err
+	}
+	return openapi.Response(200, resp), nil
+
 }
 func (a *StudentApiServiceImpl) SearchStudentUbuck(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)

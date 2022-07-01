@@ -38,13 +38,12 @@ go/model_event.go
 go/model_history.go
 go/model_inline_response_200.go
 go/model_inline_response_200_1.go
+go/model_inline_response_200_1_asset_id.go
 go/model_inline_response_200_2.go
-go/model_inline_response_200_2_asset_id.go
+go/model_inline_response_200_2_accounts.go
+go/model_inline_response_200_2_transaction.go
+go/model_inline_response_200_2_transaction_asset_id.go
 go/model_inline_response_200_3.go
-go/model_inline_response_200_3_accounts.go
-go/model_inline_response_200_3_transaction.go
-go/model_inline_response_200_3_transaction_asset_id.go
-go/model_inline_response_200_4.go
 go/model_inline_response_404.go
 go/model_request_add_class.go
 go/model_request_auction_bid.go
@@ -65,6 +64,7 @@ go/model_response_auth2.go
 go/model_response_auth4.go
 go/model_response_buck_transaction.go
 go/model_response_cookie.go
+go/model_response_crypto.go
 go/model_response_currency_exchange.go
 go/model_response_currency_exchange_buck.go
 go/model_response_events.go

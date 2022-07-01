@@ -1314,3 +1314,125 @@ func insert(a []Transaction, index int, value Transaction) []Transaction {
 	a[index] = value
 	return a
 }
+
+func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.Account, err error) {
+	studentBucket, err := getStudentBucketRx(tx, userDetails.Name)
+	if err != nil {
+		return
+	}
+
+	accountsBucket := studentBucket.Bucket([]byte(KeyAccounts))
+	if accountsBucket == nil {
+		return resp, fmt.Errorf("Cannot find accounts bucket")
+	}
+
+	c := accountsBucket.Cursor()
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+
+		if v == nil {
+			continue
+		}
+
+		var crypto openapi.Account
+		err := json.Unmarshal(v, &crypto)
+		if err != nil {
+
+		}
+
+		resp = append(resp, openapi.Account{
+			Id:    crypto.Id,
+			Value: crypto.Value,
+			Basis: crypto.Basis,
+		})
+
+	}
+
+	return
+}
+
+func getStudentCryptoRx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp openapi.Account, err error) {
+	studentBucket, err := getStudentBucketRx(tx, userDetails.Name)
+	if err != nil {
+		return
+	}
+
+	accountsBucket := studentBucket.Bucket([]byte(KeyAccounts))
+	if accountsBucket == nil {
+		return resp, fmt.Errorf("Cannot find accounts bucket")
+	}
+
+	accountData := accountsBucket.Get([]byte(crypto))
+	if accountData == nil {
+		return
+	}
+
+	err = json.Unmarshal(accountData, &resp)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func getCryptoTx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp openapi.ResponseCrypto, err error) {
+	cryptos, err := tx.CreateBucketIfNotExists([]byte(KeyCryptos))
+	if err != nil {
+		return
+	}
+
+	var cryptoInfo openapi.Crypto
+	cryptoData := cryptos.Get([]byte(crypto))
+	if cryptoData == nil {
+		usd, err := getCryptoLatest(crypto)
+		if err != nil {
+			return
+		}
+
+		cryptoInfo.Usd = usd
+		cryptoInfo.UpdatedAt = time.Now().Truncate(time.Second)
+		marshal, err := json.Marshal(cryptoInfo)
+		err = cryptos.Put([]byte(crypto), marshal)
+		if err != nil {
+			return
+		}
+	}
+
+	err = json.Unmarshal(cryptoData, &cryptoInfo)
+	if err != nil {
+		return
+	}
+
+	if time.Now().Sub(cryptoInfo.UpdatedAt) > time.Minute {
+		usd, err := getCryptoLatest(crypto)
+		if err != nil {
+			return
+		}
+
+		cryptoInfo.Usd = usd
+		cryptoInfo.UpdatedAt = time.Now().Truncate(time.Second)
+		marshal, err := json.Marshal(cryptoInfo)
+		err = cryptos.Put([]byte(crypto), marshal)
+		if err != nil {
+			return
+		}
+	}
+
+	ubuck, err := getStudentUbuckTx(tx, userDetails)
+	if err != nil {
+		return
+	}
+
+	studendCrypto, err := getStudentCryptoRx(tx, userDetails, crypto)
+	if err != nil {
+		return
+	}
+
+	resp = openapi.ResponseCrypto{
+		Searched: crypto,
+		Usd:      cryptoInfo.Usd,
+		Owned:    studendCrypto.Value,
+		UBuck:    ubuck.Value,
+	}
+
+	return
+}

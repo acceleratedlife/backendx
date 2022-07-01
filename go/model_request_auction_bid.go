@@ -11,9 +11,10 @@
 package openapi
 
 type RequestAuctionBid struct {
+
 	Item string `json:"item,omitempty"`
 
-	Bid int32 `json:"bid,omitempty"`
+	Bid float32 `json:"bid,omitempty"`
 }
 
 // AssertRequestAuctionBidRequired checks if the required fields are not zero-ed

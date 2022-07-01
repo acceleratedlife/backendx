@@ -41,6 +41,7 @@ const (
 	KeyCB               = "cb"
 	KeyUsers            = "users"
 	KeyAccounts         = "accounts"
+	KeyCryptos          = "cryptos"
 	KeyConversion       = "conversion"
 	KeyBalance          = "balance"
 	KeyTransactions     = "transactions"

@@ -657,7 +657,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//overdrawn student 0 max 0 bid 0
 	body := openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  500,
 	}
 	marshal, _ := json.Marshal(body)
@@ -677,7 +677,7 @@ func TestAuctionBid(t *testing.T) {
 	//first bid student 0 max 50 bid 1
 
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  50,
 	}
 	marshal, _ = json.Marshal(body)
@@ -694,7 +694,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//self outbid student0 max 50 bid 1
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  51,
 	}
 	marshal, _ = json.Marshal(body)
@@ -711,7 +711,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//true outbid student1 max 91 bid 51
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  91,
 	}
 	marshal, _ = json.Marshal(body)
@@ -730,7 +730,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//good bid but under max student0 max 91 bid 62
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  61,
 	}
 	marshal, _ = json.Marshal(body)
@@ -748,7 +748,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//good bid but under max student0 max 91 bid 90
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  89,
 	}
 	marshal, _ = json.Marshal(body)
@@ -765,7 +765,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//true outbid student0 max 97 bid 92
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  97,
 	}
 	marshal, _ = json.Marshal(body)
@@ -784,7 +784,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//self outbid student0 max 97 bid 92
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  100,
 	}
 	marshal, _ = json.Marshal(body)
@@ -800,5 +800,35 @@ func TestAuctionBid(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode, resp)
+}
 
+func TestSearchStudentCrypto(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("searchStudentCrypto", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/accounts/account/student", nil)
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v openapi.ResponseSearchStudentUbuck
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, float32(10000), v.Value)
 }

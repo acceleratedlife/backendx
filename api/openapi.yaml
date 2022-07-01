@@ -298,7 +298,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_1'
+                $ref: '#/components/schemas/ResponseCrypto'
           description: information regarding the requested crypto
         "404":
           content:
@@ -508,12 +508,6 @@ paths:
               $ref: '#/components/schemas/RequestAuctionBid'
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ResponseAuctionStudent'
-                type: array
           description: updated auctions that are relevant to the student
         "400":
           description: your bid is not greater than the current bid or the auction
@@ -1068,7 +1062,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_2'
+                $ref: '#/components/schemas/inline_response_200_1'
           description: transaction matching criteria
         "404":
           description: No transaction found with that data
@@ -1168,7 +1162,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_3'
+                $ref: '#/components/schemas/inline_response_200_2'
           description: return all crypto accounts with value greater than 0 and the
             most recent transaction
         "404":
@@ -1430,7 +1424,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_4'
+                $ref: '#/components/schemas/inline_response_200_3'
           description: students matching criteria
         "404":
           description: No user found with that data
@@ -1496,7 +1490,7 @@ components:
         visibility:
         - 613eab19e58cc511801af657
         - 613eab19e58cc511801af657
-        endDate: endDate
+        endDate: 2000-01-23T04:56:07.000+00:00
         owner_id:
           lastName: Jones
           _id: ou812
@@ -1506,20 +1500,23 @@ components:
           lastName: Jones
           _id: ou812
         description: Candy Bar
-        _id: 613eab19e58cc511801af657
+        active: true
+        _id: 2000-01-23T04:56:07.000+00:00
         bid: 4
-        startDate: startDate
+        startDate: 2000-01-23T04:56:07.000+00:00
       properties:
         _id:
-          example: 613eab19e58cc511801af657
+          format: date-time
           type: string
         owner_id:
           $ref: '#/components/schemas/Auction_owner_id'
         winner_id:
           $ref: '#/components/schemas/Auction_winner_id'
         startDate:
+          format: date-time
           type: string
         endDate:
+          format: date-time
           type: string
         bid:
           default: 0
@@ -1537,15 +1534,17 @@ components:
             example: 613eab19e58cc511801af657
             type: string
           type: array
+        active:
+          type: boolean
       required:
-      - EndDate
       - _id
       - bid
       - description
-      - owner
+      - endDate
+      - ownerId
       - startDate
       - visibility
-      - winner
+      - winnerId
       type: object
     Buck:
       example:
@@ -1735,22 +1734,25 @@ components:
         owner_id:
           lastName: Boy
           _id: 61be17e2f5691463b0fc972d
+        active: true
         description: Candy Bar
         winner_id:
           firstName: Tommy
           lastName: Boy
           _id: 61be17e2f5691463b0fc972d
-        _id: 61be17e2f5691463b0fc972d
+        _id: 2000-01-23T04:56:07.000+00:00
         bid: 123.45
         startDate: 2000-01-23T04:56:07.000+00:00
       properties:
         _id:
-          example: 61be17e2f5691463b0fc972d
+          format: date-time
           type: string
         bid:
           example: 123.45
           format: float
           type: number
+        active:
+          type: boolean
         description:
           example: Candy Bar
           type: string
@@ -1898,6 +1900,29 @@ components:
       required:
       - balance
       - conversion
+      type: object
+    ResponseCrypto:
+      example:
+        searched: cardano
+        owned: 123.45
+        usd: 123.45
+        UBuck: 123.45
+      properties:
+        searched:
+          example: cardano
+          type: string
+        usd:
+          example: 123.45
+          format: float
+          type: number
+        owned:
+          example: 123.45
+          format: float
+          type: number
+        UBuck:
+          example: 123.45
+          format: float
+          type: number
       type: object
     ResponseEvents:
       example:
@@ -2061,20 +2086,15 @@ components:
       type: object
     RequestAuctionBid:
       example:
-        item: 24d54dD
-        _id: 61be17e2f5691463b0fc972d
+        item: item
         bid: 123.45
       properties:
         item:
-          example: 24d54dD
           type: string
         bid:
           example: 123.45
           format: float
           type: number
-        _id:
-          example: 61be17e2f5691463b0fc972d
-          type: string
       type: object
     RequestBuckConvert:
       example:
@@ -2539,29 +2559,6 @@ components:
           format: float
           type: number
       type: object
-    inline_response_200_1:
-      example:
-        searched: cardano
-        owned: 123.45
-        usd: 123.45
-        UBuck: 123.45
-      properties:
-        searched:
-          example: cardano
-          type: string
-        usd:
-          example: 123.45
-          format: float
-          type: number
-        owned:
-          example: 123.45
-          format: float
-          type: number
-        UBuck:
-          example: 123.45
-          format: float
-          type: number
-      type: object
     inline_response_404:
       properties:
         searchSuccess:
@@ -2616,7 +2613,7 @@ components:
           example: 613eab19e58cc511801af657
           type: string
       type: object
-    inline_response_200_2:
+    inline_response_200_1:
       example:
         owner: 613eab19e58cc511801af657
         conversionRatio: 123.45
@@ -2658,7 +2655,7 @@ components:
           example: Crypto
           type: string
         assetID:
-          $ref: '#/components/schemas/inline_response_200_2_assetID'
+          $ref: '#/components/schemas/inline_response_200_1_assetID'
       type: object
     transaction_cryptoTransaction_body:
       properties:
@@ -2674,7 +2671,7 @@ components:
           format: float
           type: number
       type: object
-    inline_response_200_3:
+    inline_response_200_2:
       example:
         accounts:
         - quantity: 123.45
@@ -2699,10 +2696,10 @@ components:
           account: 61c4af5cce0e75f0214cbab1
       properties:
         transaction:
-          $ref: '#/components/schemas/inline_response_200_3_transaction'
+          $ref: '#/components/schemas/inline_response_200_2_transaction'
         accounts:
           items:
-            $ref: '#/components/schemas/inline_response_200_3_accounts'
+            $ref: '#/components/schemas/inline_response_200_2_accounts'
           type: array
       type: object
     users_user_body:
@@ -2727,7 +2724,7 @@ components:
           example: true
           type: boolean
       type: object
-    inline_response_200_4:
+    inline_response_200_3:
       example:
         success: true
       properties:
@@ -2845,7 +2842,7 @@ components:
           example: Leno
           type: string
       type: object
-    inline_response_200_2_assetID:
+    inline_response_200_1_assetID:
       example:
         name: Cardano
       properties:
@@ -2853,7 +2850,7 @@ components:
           example: Cardano
           type: string
       type: object
-    inline_response_200_3_transaction_assetID:
+    inline_response_200_2_transaction_assetID:
       example:
         name: vechain
         _id: 61c4af57ce0e75f0214cbaaa
@@ -2865,7 +2862,7 @@ components:
           example: 61c4af57ce0e75f0214cbaaa
           type: string
       type: object
-    inline_response_200_3_transaction:
+    inline_response_200_2_transaction:
       example:
         conversionRatio: 123.45
         owner: 6170a4aff8437c84920b7ff1
@@ -2908,9 +2905,9 @@ components:
           format: float
           type: number
         assetID:
-          $ref: '#/components/schemas/inline_response_200_3_transaction_assetID'
+          $ref: '#/components/schemas/inline_response_200_2_transaction_assetID'
       type: object
-    inline_response_200_3_accounts:
+    inline_response_200_2_accounts:
       example:
         quantity: 123.45
         name: vechain

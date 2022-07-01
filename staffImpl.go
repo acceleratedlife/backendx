@@ -37,7 +37,7 @@ func deleteStudentTx(tx *bolt.Tx, studentId string) (err error) {
 	for _, c := range auctions {
 		if c.OwnerId.Id == studentInfo.Name {
 			// repayAuctionLoser()
-			err := auctionsBucket.DeleteBucket([]byte(c.Id))
+			err := auctionsBucket.DeleteBucket([]byte(c.Id.String()))
 			if err != nil {
 				return err
 			}
@@ -420,7 +420,7 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 	}
 
 	auction := openapi.Auction{
-		Id:          auctionId.String(),
+		Id:          auctionId,
 		Active:      true,
 		StartDate:   request.StartDate.Truncate(time.Millisecond),
 		EndDate:     auctionId,
@@ -438,7 +438,7 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 		return
 	}
 
-	err = bucket.Put([]byte(auction.Id), marshal)
+	err = bucket.Put([]byte(auction.Id.String()), marshal)
 	if err != nil {
 		return
 	}
