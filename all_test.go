@@ -8,6 +8,7 @@ import (
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/shopspring/decimal"
+	bolt "go.etcd.io/bbolt"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -180,7 +181,6 @@ func TestUserEdit(t *testing.T) {
 	assert.Equal(t, body.CareerTransition, v.CareerTransition)
 }
 
-// The test should pass but it won't as negatives are not currently allowed.
 func TestUserEditNegative(t *testing.T) {
 	db, tearDown := FullStartTestServer("userEditNegative", 8090, "test@admin.com")
 	defer tearDown()
@@ -198,7 +198,7 @@ func TestUserEditNegative(t *testing.T) {
 		LastName:         "user",
 		Password:         "123qwe",
 		College:          true,
-		CareerTransition: true,
+		CareerTransition: false,
 	}
 
 	marshal, _ := json.Marshal(body)
@@ -218,6 +218,30 @@ func TestUserEditNegative(t *testing.T) {
 	assert.Equal(t, body.LastName, v.LastName)
 	assert.Equal(t, body.College, v.College)
 	assert.Equal(t, body.CareerTransition, v.CareerTransition)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	require.NotEqual(t, student.Name, "")
+
+	var account openapi.ResponseCurrencyExchange
+	err = db.View(func(tx *bolt.Tx) error {
+		studentBucket, err := getStudentBucketRx(tx, student.Name)
+		if err != nil {
+			return err
+		}
+		accounts := studentBucket.Bucket([]byte(KeyAccounts))
+		debt := accounts.Bucket([]byte(KeyDebt))
+		account, err = getStudentAccountRx(tx, debt, student.Name)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	require.Nil(t, err)
+
+	require.Greater(t, account.Balance, float32(5000))
+	require.Less(t, account.Balance, float32(8000))
 }
 
 func TestSearchStudentBucks(t *testing.T) {

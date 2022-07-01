@@ -62,7 +62,7 @@ func (a AllApiServiceImpl) ExchangeRate(ctx context.Context, from string, to str
 
 	var resp []openapi.ResponseCurrencyExchange
 	err = a.db.View(func(tx *bolt.Tx) error {
-		student, err := getStudentBucketRoTx(tx, userDetails.Name)
+		student, err := getStudentBucketRx(tx, userDetails.Name)
 		if err != nil {
 			return err
 		}
@@ -244,7 +244,7 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (opena
 
 	if err != nil {
 		lgr.Printf("ERROR cannot find the user: %s %v", Id, err)
-		return openapi.Response(500, "{}"), nil
+		return openapi.Response(500, "{}"), err
 	}
 	return openapi.Response(200, resp), nil
 }
@@ -294,7 +294,7 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 
 	var resp []openapi.ResponseCurrencyExchange
 	err = s.db.View(func(tx *bolt.Tx) error {
-		student, err := getStudentBucketRoTx(tx, userDetails.Name)
+		student, err := getStudentBucketRx(tx, userDetails.Name)
 		if err != nil {
 			return err
 		}
@@ -365,6 +365,7 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 	if userDetails.Role == UserRoleStudent {
 		CollegeIfNeeded(a.db, a.clock, userDetails)
 		CareerIfNeeded(a.db, a.clock, userDetails)
+		DebtIfNeeded(a.db, a.clock, userDetails)
 		DailyPayIfNeeded(a.db, a.clock, userDetails)
 		EventIfNeeded(a.db, a.clock, userDetails)
 	}
