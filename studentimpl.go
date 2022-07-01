@@ -347,7 +347,7 @@ func CollegeIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 	return needToAdd
 }
 
-func IsCollegeNeeded(studentData []byte, clock Clock) (needed bool, student openapi.User, err error) {
+func IsCollegeNeeded(studentData []byte, clock Clock) (needed bool, student UserInfo, err error) {
 	err = json.Unmarshal(studentData, &student)
 	if err != nil {
 		return false, student, err
@@ -438,7 +438,7 @@ func CareerIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 	return needToAdd
 }
 
-func IsCareerNeeded(studentData []byte, clock Clock) (needed bool, student openapi.User, err error) {
+func IsCareerNeeded(studentData []byte, clock Clock) (needed bool, student UserInfo, err error) {
 	err = json.Unmarshal(studentData, &student)
 	if err != nil {
 		return false, student, err

@@ -124,6 +124,10 @@ func TestCollege(t *testing.T) {
 
 	r = CollegeIfNeeded(db, &clock, student)
 	require.False(t, r)
+
+	student, err = getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	require.NotEqual(t, student.Name, "")
 }
 
 func TestCareer(t *testing.T) {
@@ -157,6 +161,10 @@ func TestCareer(t *testing.T) {
 
 	r = CareerIfNeeded(db, &clock, student)
 	require.False(t, r)
+
+	student, err = getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	require.NotEqual(t, student.Name, "")
 }
 
 func TestDailyPayment(t *testing.T) {

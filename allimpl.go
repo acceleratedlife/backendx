@@ -374,7 +374,7 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 			return fmt.Errorf("Failed to chargeStudentUbuckTx: %v", err)
 		}
 		userDetails.College = true
-		userDetails.CollegeEnd = clock.Now().AddDate(0, 0, 28) //28 days
+		userDetails.CollegeEnd = clock.Now().AddDate(0, 0, 14) //14 days
 		userDetails.Income = userDetails.Income / 2
 	}
 
