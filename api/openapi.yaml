@@ -270,7 +270,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/Account'
+                  $ref: '#/components/schemas/Crypto'
                 type: array
           description: accounts matching criteria
         "404":
@@ -1139,35 +1139,22 @@ paths:
   /transaction/cryptoTransaction:
     post:
       description: Find crypto, uBuck and both accounts. Get latest crypto price and
-        save it to crypto doc. Also add or subtract from total crypto. If there is
-        no account for the crypto then make one. Make transaction, burn buck, central
-        bank and new account balances. Update account basis if buying.
+        save it to crypto doc. If there is no account for the crypto then make one.
+        Make transaction, central bank and new account balances. Update account basis
+        if buying.
       operationId: cryptoConvert
-      parameters:
-      - description: pass the _id to be searched
-        explode: false
-        in: header
-        name: user._id
-        required: true
-        schema:
-          type: string
-        style: simple
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/transaction_cryptoTransaction_body'
+              $ref: '#/components/schemas/RequestCryptoConvert'
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inline_response_200_2'
           description: return all crypto accounts with value greater than 0 and the
             most recent transaction
         "404":
           description: transactions cannot be made with that data
-      summary: When a student is converting between 2 uBucks and Cryptos
+      summary: When a student is converting between uBucks and Cryptos
       tags:
       - Student
   /users:
@@ -1424,7 +1411,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_3'
+                $ref: '#/components/schemas/inline_response_200_2'
           description: students matching criteria
         "404":
           description: No user found with that data
@@ -1652,26 +1639,35 @@ components:
       - period
       type: object
     Crypto:
+      example:
+        quantity: 1.4658129805029452
+        name: name
+        currentPrice: 6.0274563
+        basis: 0.8008282
       properties:
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-        name:
-          example: Cardano
-          type: string
-        totalCount:
-          default: 0
-          example: 514.57
+        basis:
           format: float
           type: number
+        currentPrice:
+          format: float
+          type: number
+        name:
+          type: string
+        quantity:
+          format: decimal
+          type: number
+      type: object
+    CryptoCB:
+      properties:
+        updatedAt:
+          format: date-time
+          type: string
         usd:
           example: 12.45
           format: float
           type: number
       required:
-      - _id
-      - name
-      - totalCount
+      - updatedAt
       - usd
       type: object
     Event:
@@ -2109,6 +2105,24 @@ components:
           example: 614290257145de7a9e40c58d
           type: string
         amount:
+          example: 123.45
+          format: float
+          type: number
+      type: object
+    RequestCryptoConvert:
+      example:
+        buy: 123.45
+        sell: 123.45
+        name: cardano
+      properties:
+        name:
+          example: cardano
+          type: string
+        buy:
+          example: 123.45
+          format: float
+          type: number
+        sell:
           example: 123.45
           format: float
           type: number
@@ -2657,51 +2671,6 @@ components:
         assetID:
           $ref: '#/components/schemas/inline_response_200_1_assetID'
       type: object
-    transaction_cryptoTransaction_body:
-      properties:
-        name:
-          example: cardano
-          type: string
-        buy:
-          example: 123.45
-          format: float
-          type: number
-        sell:
-          example: 123.45
-          format: float
-          type: number
-      type: object
-    inline_response_200_2:
-      example:
-        accounts:
-        - quantity: 123.45
-          name: vechain
-          currentPrice: 1.255
-          basis: 0.124
-        - quantity: 123.45
-          name: vechain
-          currentPrice: 1.255
-          basis: 0.124
-        transaction:
-          conversionRatio: 123.45
-          owner: 6170a4aff8437c84920b7ff1
-          amount: 123.45
-          balance: 123.45
-          assetID:
-            name: vechain
-            _id: 61c4af57ce0e75f0214cbaaa
-          description: Conversion to this account
-          type: Crypto
-          uBucks: 0.0925
-          account: 61c4af5cce0e75f0214cbab1
-      properties:
-        transaction:
-          $ref: '#/components/schemas/inline_response_200_2_transaction'
-        accounts:
-          items:
-            $ref: '#/components/schemas/inline_response_200_2_accounts'
-          type: array
-      type: object
     users_user_body:
       properties:
         email:
@@ -2724,7 +2693,7 @@ components:
           example: true
           type: boolean
       type: object
-    inline_response_200_3:
+    inline_response_200_2:
       example:
         success: true
       properties:
@@ -2849,84 +2818,4 @@ components:
         name:
           example: Cardano
           type: string
-      type: object
-    inline_response_200_2_transaction_assetID:
-      example:
-        name: vechain
-        _id: 61c4af57ce0e75f0214cbaaa
-      properties:
-        name:
-          example: vechain
-          type: string
-        _id:
-          example: 61c4af57ce0e75f0214cbaaa
-          type: string
-      type: object
-    inline_response_200_2_transaction:
-      example:
-        conversionRatio: 123.45
-        owner: 6170a4aff8437c84920b7ff1
-        amount: 123.45
-        balance: 123.45
-        assetID:
-          name: vechain
-          _id: 61c4af57ce0e75f0214cbaaa
-        description: Conversion to this account
-        type: Crypto
-        uBucks: 0.0925
-        account: 61c4af5cce0e75f0214cbab1
-      properties:
-        account:
-          example: 61c4af5cce0e75f0214cbab1
-          type: string
-        amount:
-          example: 123.45
-          format: float
-          type: number
-        balance:
-          example: 123.45
-          format: float
-          type: number
-        conversionRatio:
-          example: 123.45
-          format: float
-          type: number
-        description:
-          example: Conversion to this account
-          type: string
-        owner:
-          example: 6170a4aff8437c84920b7ff1
-          type: string
-        type:
-          example: Crypto
-          type: string
-        uBucks:
-          example: 0.0925
-          format: float
-          type: number
-        assetID:
-          $ref: '#/components/schemas/inline_response_200_2_transaction_assetID'
-      type: object
-    inline_response_200_2_accounts:
-      example:
-        quantity: 123.45
-        name: vechain
-        currentPrice: 1.255
-        basis: 0.124
-      properties:
-        basis:
-          example: 0.124
-          format: float
-          type: number
-        currentPrice:
-          example: 1.255
-          format: float
-          type: number
-        name:
-          example: vechain
-          type: string
-        quantity:
-          example: 123.45
-          format: float
-          type: number
       type: object

@@ -44,6 +44,7 @@ const (
 	KeyCryptos          = "cryptos"
 	KeyConversion       = "conversion"
 	KeyBalance          = "balance"
+	KeyBasis            = "basis"
 	KeyTransactions     = "transactions"
 	KeyTeachers         = "teachers"
 	KeySchools          = "schools"

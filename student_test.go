@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -831,4 +832,80 @@ func TestSearchStudentCrypto(t *testing.T) {
 	err = decoder.Decode(&v)
 	require.Nil(t, err)
 	require.Equal(t, float32(10000), v.Value)
+}
+
+func TestSearchCrypto(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("searchCrypto", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	// initialize http client
+	client := &http.Client{}
+
+	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/accounts/crypto")
+	q := u.Query()
+	q.Set("name", "cardano")
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest(http.MethodGet,
+		u.String(),
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v openapi.ResponseCrypto
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, float32(0), v.Owned)
+	require.Equal(t, "cardano", v.Searched)
+	require.Greater(t, v.Usd, float32(0))
+}
+
+func TestCryptoConvert(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("cryptoConvert", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.RequestCryptoConvert{
+		Name: "CarDano",
+		Buy:  0,
+		Sell: 3,
+	}
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transaction/cryptoTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
 }

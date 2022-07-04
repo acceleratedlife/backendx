@@ -78,9 +78,26 @@ func (a *StudentApiServiceImpl) BuckConvert(ctx context.Context, body openapi.Re
 	return openapi.Response(200, nil), nil
 
 }
-func (a *StudentApiServiceImpl) CryptoConvert(context.Context, string, openapi.TransactionCryptoTransactionBody) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a *StudentApiServiceImpl) CryptoConvert(ctx context.Context, body openapi.RequestCryptoConvert) (resp openapi.ImplResponse, err error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = cryptoTransaction(a.db, a.clock, userDetails, body)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
 }
 func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
@@ -197,14 +214,7 @@ func (a *StudentApiServiceImpl) SearchCrypto(ctx context.Context, crypto string)
 	}
 
 	var resp openapi.ResponseCrypto
-	err = a.db.Update(func(tx *bolt.Tx) error {
-		resp, err = getCryptoTx(tx, userDetails, crypto)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
+	resp, err = getCrypto(a.db, userDetails, crypto)
 
 	if err != nil {
 		lgr.Printf("ERROR cannot get Cryptos for: %s %v", userDetails.Name, err)
@@ -212,7 +222,6 @@ func (a *StudentApiServiceImpl) SearchCrypto(ctx context.Context, crypto string)
 	}
 	return openapi.Response(200, resp), nil
 
-	var resp openapi.ResponseCrypto
 }
 func (a *StudentApiServiceImpl) SearchCryptoTransaction(context.Context, string) (openapi.ImplResponse, error) {
 	//TODO implement me
@@ -231,7 +240,7 @@ func (a *StudentApiServiceImpl) SearchStudentCrypto(ctx context.Context) (openap
 		return openapi.Response(401, ""), nil
 	}
 
-	var resp []openapi.Account
+	var resp []openapi.Crypto
 	err = a.db.View(func(tx *bolt.Tx) error {
 		resp, err = getStudentCryptosRx(tx, userDetails)
 		if err != nil {
@@ -487,16 +496,3 @@ func NewStudentApiServiceImpl(db *bolt.DB, clock Clock) openapi.StudentApiServic
 		clock: clock,
 	}
 }
-
-//How to calculate netWorth
-//givens:
-//student accounts:
-//uBucks 0, Kirill Bucks 5
-//
-//uBuck total currency: 1000
-//Kirill Bucks total currency: 100
-//conversion ratio 1000/100 = 10
-//10 ubucks = 1 kirill buck
-//networth = uBucks + Kirill bucks *10
-//50 = 0 + (5*10)
-//networth = 50

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"math"
 	"testing"
 	"time"
@@ -281,4 +282,101 @@ func TestDebtInterest(t *testing.T) {
 	require.Nil(t, err)
 
 	require.Greater(t, account.Balance, float32(2000))
+}
+
+func TestGetCrypto(t *testing.T) {
+
+	lgr.Printf("INFO TestGetCrypto")
+	t.Log("INFO TestGetCrypto")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("getCrypto")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	resp, err := getCrypto(db, student, "bitCoin")
+	require.Nil(t, err)
+
+	resp2, err := getCrypto(db, student, "bitCoin")
+	require.Nil(t, err)
+	require.Equal(t, resp.Usd, resp2.Usd)
+
+	clock.TickOne(time.Minute * 2)
+
+	resp, err = getCrypto(db, student, "bitCoin")
+
+	var bitcoin openapi.CryptoCb
+	err = db.View(func(tx *bolt.Tx) error {
+		cryptos := tx.Bucket([]byte(KeyCryptos))
+		bitcoinData := cryptos.Get([]byte("bitcoin"))
+		err = json.Unmarshal(bitcoinData, &bitcoin)
+
+		return err
+	})
+
+	require.Nil(t, err)
+
+	require.Less(t, time.Now().Truncate(time.Second).Sub(bitcoin.UpdatedAt), time.Second*5)
+}
+
+func TestCryptoTransaction(t *testing.T) {
+
+	lgr.Printf("INFO TestCryptoTransaction")
+	t.Log("INFO TestCryptoTransaction")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("cryptoTransaction")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestCryptoConvert{
+		Name: "cardano",
+		Buy:  10,
+		Sell: 0,
+	}
+
+	resp, err := getCrypto(db, student, "Cardano")
+	require.Nil(t, err)
+	require.Equal(t, float32(0), resp.Owned)
+
+	err = cryptoTransaction(db, &clock, student, body)
+
+	resp, err = getCrypto(db, student, "Cardano")
+	require.Nil(t, err)
+	require.Equal(t, float32(10), resp.Owned)
+
+	resp2, _, err := getStudentCrypto(db, student, "cardano")
+	require.Nil(t, err)
+	require.NotZero(t, resp2.Basis)
+
+	clock.TickOne(time.Minute * 2)
+
+	body.Buy = 0
+	body.Sell = 11
+
+	err = cryptoTransaction(db, &clock, student, body)
+	require.NotNil(t, err)
+
+	body.Sell = 5
+
+	err = cryptoTransaction(db, &clock, student, body)
+	require.Nil(t, err)
+	resp, err = getCrypto(db, student, "Cardano")
+	require.Nil(t, err)
+	require.Equal(t, float32(5), resp.Owned)
+
+	err = cryptoTransaction(db, &clock, student, body)
+	require.Nil(t, err)
+	resp, err = getCrypto(db, student, "Cardano")
+	require.Nil(t, err)
+	require.Equal(t, float32(0), resp.Owned)
+
 }

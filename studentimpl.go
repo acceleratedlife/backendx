@@ -3,7 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
+	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -18,6 +22,11 @@ type Order struct {
 	Currency    string
 	Amount      decimal.Decimal
 	Reference   string // reason
+}
+
+type Gecko struct {
+	name string
+	usd  float32
 }
 
 type Transaction struct {
@@ -63,7 +72,7 @@ func addBuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decim
 
 // addToHolderTx updates balance and adds transaction
 // debit means to remove money
-func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction, direction int, negBlock bool) (balance decimal.Decimal, errR error) {
+func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction, direction int, negBlock bool) (balance decimal.Decimal, basis decimal.Decimal, errR error) {
 	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
 	if err != nil {
 		errR = err
@@ -87,10 +96,41 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 		balance = decimal.Zero
 	}
 
+	basisB := accountBucket.Get([]byte(KeyBasis))
+	if basisB != nil {
+		err = basis.UnmarshalText(basisB)
+		if err != nil {
+			errR = fmt.Errorf("cannot extract basis for the account %s: %v", account, err)
+			return
+		}
+	} else {
+		basis = decimal.Zero
+	}
+
 	if direction == OperationCredit {
+		basisValue := basis.Mul(balance)
+		buyValue := transaction.AmountDest.Mul(transaction.XRate)
+		numerator := basisValue.Add(buyValue)
+		denominator := balance.Add(transaction.AmountDest)
+		basis = numerator.Div(denominator)
 		balance = balance.Add(transaction.AmountDest)
 	} else {
 		balance = balance.Sub(transaction.AmountSource)
+	}
+
+	if balance.IsZero() {
+		basis = decimal.Zero
+	}
+
+	basisB, err = basis.MarshalText()
+	if err != nil {
+		errR = err
+		return
+	}
+	err = accountBucket.Put([]byte(KeyBasis), basisB)
+	if err != nil {
+		errR = err
+		return
 	}
 
 	if balance.Sign() < 0 && negBlock {
@@ -736,7 +776,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	if err != nil {
 		return err
 	}
-	_, err = addToHolderTx(student, currency, transaction, OperationCredit, true)
+	_, _, err = addToHolderTx(student, currency, transaction, OperationCredit, true)
 	if err != nil {
 		return err
 	}
@@ -745,7 +785,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	if err != nil {
 		return err
 	}
-	_, err = addToHolderTx(cb, currency, transaction, OperationDebit, false)
+	_, _, err = addToHolderTx(cb, currency, transaction, OperationDebit, false)
 	if err != nil {
 		return err
 	}
@@ -826,7 +866,7 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		return err
 	}
 	if to != KeyDebt || charge {
-		_, err = addToHolderTx(student, from, transaction, OperationDebit, true)
+		_, _, err = addToHolderTx(student, from, transaction, OperationDebit, true)
 		if err != nil {
 			return err
 		}
@@ -838,7 +878,7 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		transaction.AmountDest = transaction.AmountDest.Neg()
 	}
 
-	_, err = addToHolderTx(student, to, transaction, OperationCredit, true)
+	_, _, err = addToHolderTx(student, to, transaction, OperationCredit, true)
 	if err != nil {
 		return err
 	}
@@ -848,14 +888,14 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		return err
 	}
 
-	_, err = addToHolderTx(cb, to, transaction, OperationDebit, false)
+	_, _, err = addToHolderTx(cb, to, transaction, OperationDebit, false)
 	if err != nil {
 		return err
 	}
 
 	transaction.FromSource = true
 
-	_, err = addToHolderTx(cb, from, transaction, OperationDebit, false)
+	_, _, err = addToHolderTx(cb, from, transaction, OperationDebit, false)
 	if err != nil {
 		return err
 	}
@@ -895,7 +935,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 		return err
 	}
 
-	_, err = addToHolderTx(student, currency, transaction, OperationDebit, true)
+	_, _, err = addToHolderTx(student, currency, transaction, OperationDebit, true)
 	if err != nil {
 		if err.Error() == "Insufficient funds" && !sPurchase {
 			err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, false)
@@ -915,7 +955,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 	if err != nil {
 		return err
 	}
-	_, err = addToHolderTx(cb, currency, transaction, OperationCredit, false)
+	_, _, err = addToHolderTx(cb, currency, transaction, OperationCredit, false)
 	if err != nil {
 		return err
 	}
@@ -954,7 +994,7 @@ func isCurrencyTx(tx *bolt.Tx, schoolId string, currency string) (bool, error) {
 
 func getStudentUbuck(db *bolt.DB, userDetails UserInfo) (uBucks openapi.ResponseSearchStudentUbuck, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		uBucks, err = getStudentUbuckTx(tx, userDetails)
+		uBucks, err = getStudentUbuckRx(tx, userDetails)
 		if err != nil {
 			return err
 		}
@@ -964,7 +1004,7 @@ func getStudentUbuck(db *bolt.DB, userDetails UserInfo) (uBucks openapi.Response
 	return
 }
 
-func getStudentUbuckTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseSearchStudentUbuck, err error) {
+func getStudentUbuckRx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseSearchStudentUbuck, err error) {
 	student, err := getStudentBucketRx(tx, userDetails.Name)
 	if student == nil {
 		return resp, err
@@ -1315,7 +1355,7 @@ func insert(a []Transaction, index int, value Transaction) []Transaction {
 	return a
 }
 
-func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.Account, err error) {
+func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.Crypto, err error) {
 	studentBucket, err := getStudentBucketRx(tx, userDetails.Name)
 	if err != nil {
 		return
@@ -1333,106 +1373,357 @@ func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.Acco
 			continue
 		}
 
-		var crypto openapi.Account
-		err := json.Unmarshal(v, &crypto)
+		var crypto openapi.Crypto
+		err = json.Unmarshal(v, &crypto)
 		if err != nil {
 
 		}
 
-		resp = append(resp, openapi.Account{
-			Id:    crypto.Id,
-			Value: crypto.Value,
-			Basis: crypto.Basis,
-		})
-
+		if crypto.Quantity.IsPositive() {
+			crypto.Name = string(k)
+			usd, err := getCryptoLatest(string(k))
+			if err != nil {
+				return resp, err
+			}
+			crypto.CurrentPrice = usd
+			resp = append(resp, crypto)
+		}
 	}
 
 	return
 }
 
-func getStudentCryptoRx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp openapi.Account, err error) {
+func getStudentCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.Crypto, accountsBucket *bolt.Bucket, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, accountsBucket, err = getStudentCryptoRx(tx, userDetails, crypto)
+		return err
+	})
+
+	return
+}
+
+func getStudentCryptoRx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp openapi.Crypto, accountsBucket *bolt.Bucket, err error) {
 	studentBucket, err := getStudentBucketRx(tx, userDetails.Name)
 	if err != nil {
 		return
 	}
 
-	accountsBucket := studentBucket.Bucket([]byte(KeyAccounts))
+	accountsBucket = studentBucket.Bucket([]byte(KeyAccounts))
 	if accountsBucket == nil {
-		return resp, fmt.Errorf("Cannot find accounts bucket")
+		return resp, accountsBucket, fmt.Errorf("Cannot find accounts bucket")
 	}
 
-	accountData := accountsBucket.Get([]byte(crypto))
+	accountData := accountsBucket.Bucket([]byte(crypto))
 	if accountData == nil {
 		return
 	}
 
-	err = json.Unmarshal(accountData, &resp)
+	resp.Name = crypto
+	var basis decimal.Decimal
+	var balance decimal.Decimal
+	basisData := accountData.Get([]byte(KeyBasis))
+	err = json.Unmarshal(basisData, &basis)
 	if err != nil {
 		return
+	}
+
+	balanceData := accountData.Get([]byte(KeyBalance))
+	err = json.Unmarshal(balanceData, &balance)
+	if err != nil {
+		return
+	}
+
+	resp.Basis = basis
+	resp.Quantity = balance
+
+	return
+}
+
+func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.ResponseCrypto, err error) {
+	crypto = strings.ToLower(crypto)
+	needToAdd := false
+	err = db.View(func(tx *bolt.Tx) error {
+		toUpdate, cryptoInfo, err := isCryptoNeeded(tx, crypto)
+		if err != nil {
+			return err
+		}
+		if toUpdate {
+			needToAdd = true
+			return nil
+		}
+
+		ubuck, err := getStudentUbuckRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		studendCrypto, _, err := getStudentCryptoRx(tx, userDetails, crypto)
+		if err != nil {
+			return err
+		}
+
+		resp = openapi.ResponseCrypto{
+			Searched: crypto,
+			Usd:      float32(cryptoInfo.Usd.InexactFloat64()),
+			Owned:    float32(studendCrypto.Quantity.InexactFloat64()),
+			UBuck:    ubuck.Value,
+		}
+
+		return nil
+	})
+
+	if !needToAdd || err != nil {
+		return resp, err
+	}
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		cryptos, err := tx.CreateBucketIfNotExists([]byte(KeyCryptos))
+		if err != nil {
+			return err
+		}
+
+		var cryptoInfo openapi.CryptoCb
+
+		usd, err := getCryptoLatest(crypto)
+		if err != nil {
+			return err
+		}
+
+		cryptoInfo.Usd = usd
+		cryptoInfo.UpdatedAt = time.Now().Truncate(time.Second)
+		marshal, err := json.Marshal(cryptoInfo)
+		if err != nil {
+			return err
+		}
+		err = cryptos.Put([]byte(crypto), marshal)
+		if err != nil {
+			return err
+		}
+
+		ubuck, err := getStudentUbuckRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		studendCrypto, _, err := getStudentCryptoRx(tx, userDetails, crypto)
+		if err != nil {
+			return err
+		}
+
+		resp = openapi.ResponseCrypto{
+			Searched: crypto,
+			Usd:      float32(cryptoInfo.Usd.InexactFloat64()),
+			Owned:    float32(studendCrypto.Quantity.InexactFloat64()),
+			UBuck:    ubuck.Value,
+		}
+
+		return nil
+
+	})
+
+	return
+}
+
+func isCryptoNeeded(tx *bolt.Tx, crypto string) (needToAdd bool, cryptoInfo openapi.CryptoCb, err error) {
+	cryptos := tx.Bucket([]byte(KeyCryptos))
+	if cryptos == nil {
+		return true, cryptoInfo, nil
+	}
+
+	cryptoData := cryptos.Get([]byte(crypto))
+	if cryptoData == nil {
+		return true, cryptoInfo, nil
+	}
+
+	err = json.Unmarshal(cryptoData, &cryptoInfo)
+	if err != nil {
+		return false, cryptoInfo, err
+	}
+
+	if time.Now().Sub(cryptoInfo.UpdatedAt) > time.Minute {
+		return true, cryptoInfo, nil
 	}
 
 	return
 }
 
-func getCryptoTx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp openapi.ResponseCrypto, err error) {
-	cryptos, err := tx.CreateBucketIfNotExists([]byte(KeyCryptos))
+func getCryptoLatest(crypto string) (usd decimal.Decimal, err error) {
+	resp, err := http.Get("https://api.coingecko.com/api/v3/simple/price?ids=" + crypto + "&vs_currencies=usd")
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
 
-	var cryptoInfo openapi.Crypto
-	cryptoData := cryptos.Get([]byte(crypto))
-	if cryptoData == nil {
-		usd, err := getCryptoLatest(crypto)
-		if err != nil {
-			return
-		}
+	bodyString := string(body)
 
-		cryptoInfo.Usd = usd
-		cryptoInfo.UpdatedAt = time.Now().Truncate(time.Second)
-		marshal, err := json.Marshal(cryptoInfo)
-		err = cryptos.Put([]byte(crypto), marshal)
-		if err != nil {
-			return
-		}
+	if string(bodyString) == "{}" {
+		return usd, fmt.Errorf("No crypto was found for " + crypto)
 	}
 
-	err = json.Unmarshal(cryptoData, &cryptoInfo)
+	split := strings.SplitAfter(bodyString, "usd\":")
+	final := strings.TrimRight(split[1], "}")
+	value, err := strconv.ParseFloat(final, 32)
 	if err != nil {
 		return
 	}
+	usd = decimal.NewFromFloat(value)
 
-	if time.Now().Sub(cryptoInfo.UpdatedAt) > time.Minute {
-		usd, err := getCryptoLatest(crypto)
-		if err != nil {
-			return
-		}
+	return
+}
 
-		cryptoInfo.Usd = usd
-		cryptoInfo.UpdatedAt = time.Now().Truncate(time.Second)
-		marshal, err := json.Marshal(cryptoInfo)
-		err = cryptos.Put([]byte(crypto), marshal)
-		if err != nil {
-			return
-		}
-	}
+func cryptoTransaction(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestCryptoConvert) (err error) {
+	return db.Update(func(tx *bolt.Tx) error {
+		return cryptoTransactionTx(tx, clock, userDetails, body)
+	})
 
-	ubuck, err := getStudentUbuckTx(tx, userDetails)
-	if err != nil {
-		return
-	}
+}
 
-	studendCrypto, err := getStudentCryptoRx(tx, userDetails, crypto)
-	if err != nil {
-		return
-	}
-
-	resp = openapi.ResponseCrypto{
-		Searched: crypto,
-		Usd:      cryptoInfo.Usd,
-		Owned:    studendCrypto.Value,
-		UBuck:    ubuck.Value,
+func cryptoTransactionTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.RequestCryptoConvert) (err error) {
+	buy := decimal.NewFromFloat32(body.Buy)
+	sell := decimal.NewFromFloat32(body.Sell)
+	if body.Buy > 0 {
+		err = ubuckToCrypto(tx, clock, userDetails, buy, body.Name)
+	} else {
+		err = cryptoToUbuck(tx, clock, userDetails, sell, body.Name)
 	}
 
 	return
+}
+
+func ubuckToCrypto(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, to string) (err error) {
+	if userInfo.Role != UserRoleStudent {
+		return fmt.Errorf("user is not a student")
+	}
+	if amount.Sign() <= 0 {
+		return fmt.Errorf("amount must be positive")
+	}
+
+	ts := clock.Now().Truncate(time.Millisecond)
+
+	usd, err := getCryptoLatest(to)
+	if err != nil {
+		return err
+	}
+
+	ubuck := amount.Mul(usd).Mul(decimal.NewFromFloat(keyCharge))
+
+	transaction := Transaction{
+		Ts:             ts,
+		Source:         userInfo.Name,
+		Destination:    userInfo.Name,
+		CurrencySource: CurrencyUBuck,
+		CurrencyDest:   to,
+		AmountSource:   ubuck,
+		AmountDest:     amount,
+		XRate:          usd,
+		Reference:      "Ubuck to " + to,
+		FromSource:     true,
+	}
+
+	student, err := getStudentBucketTx(tx, userInfo.Name)
+	if err != nil {
+		return err
+	}
+	_, _, err = addToHolderTx(student, CurrencyUBuck, transaction, OperationDebit, true)
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = false
+
+	_, _, err = addToHolderTx(student, to, transaction, OperationCredit, true)
+	if err != nil {
+		return err
+	}
+
+	cb, err := getCbTx(tx, userInfo.SchoolId)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = addToHolderTx(cb, to, transaction, OperationDebit, false)
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = true
+
+	_, _, err = addToHolderTx(cb, CurrencyUBuck, transaction, OperationDebit, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, from string) (err error) {
+	if userInfo.Role != UserRoleStudent {
+		return fmt.Errorf("user is not a student")
+	}
+	if amount.Sign() <= 0 {
+		return fmt.Errorf("amount must be positive")
+	}
+
+	ts := clock.Now().Truncate(time.Millisecond)
+
+	usd, err := getCryptoLatest(from)
+	if err != nil {
+		return err
+	}
+
+	charge := 1 - (keyCharge - 1)
+
+	ubuck := amount.Mul(usd).Mul(decimal.NewFromFloat(charge))
+
+	transaction := Transaction{
+		Ts:             ts,
+		Source:         userInfo.Name,
+		Destination:    userInfo.Name,
+		CurrencySource: from,
+		CurrencyDest:   CurrencyUBuck,
+		AmountSource:   amount,
+		AmountDest:     ubuck,
+		XRate:          usd,
+		Reference:      from + " to Ubuck",
+		FromSource:     true,
+	}
+
+	student, err := getStudentBucketTx(tx, userInfo.Name)
+	if err != nil {
+		return err
+	}
+	_, _, err = addToHolderTx(student, from, transaction, OperationDebit, true)
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = false
+
+	_, _, err = addToHolderTx(student, CurrencyUBuck, transaction, OperationCredit, true)
+	if err != nil {
+		return err
+	}
+
+	cb, err := getCbTx(tx, userInfo.SchoolId)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = addToHolderTx(cb, CurrencyUBuck, transaction, OperationDebit, false)
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = true
+
+	_, _, err = addToHolderTx(cb, from, transaction, OperationDebit, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

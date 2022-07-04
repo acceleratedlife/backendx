@@ -10,26 +10,20 @@
 
 package openapi
 
-import "time"
+import "github.com/shopspring/decimal"
 
 type Crypto struct {
-	UpdatedAt time.Time `json:"updatedAt"`
+	Basis decimal.Decimal `json:"basis,omitempty"`
 
-	Usd float32 `json:"usd"`
+	CurrentPrice decimal.Decimal `json:"currentPrice,omitempty"`
+
+	Name string `json:"name,omitempty"`
+
+	Quantity decimal.Decimal `json:"quantity,omitempty"`
 }
 
 // AssertCryptoRequired checks if the required fields are not zero-ed
 func AssertCryptoRequired(obj Crypto) error {
-	elements := map[string]interface{}{
-		"updatedAt": obj.UpdatedAt,
-		"usd":       obj.Usd,
-	}
-	for name, el := range elements {
-		if isZero := IsZeroValue(el); isZero {
-			return &RequiredError{Field: name}
-		}
-	}
-
 	return nil
 }
 
