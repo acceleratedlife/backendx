@@ -108,11 +108,14 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	}
 
 	if direction == OperationCredit {
-		basisValue := basis.Mul(balance)
-		buyValue := transaction.AmountDest.Mul(transaction.XRate)
-		numerator := basisValue.Add(buyValue)
-		denominator := balance.Add(transaction.AmountDest)
-		basis = numerator.Div(denominator)
+		if transaction.AmountDest.IsPositive() {
+			basisValue := basis.Mul(balance)
+			buyValue := transaction.AmountDest.Mul(transaction.XRate)
+			numerator := basisValue.Add(buyValue)
+			denominator := balance.Add(transaction.AmountDest)
+			basis = numerator.Div(denominator)
+		}
+
 		balance = balance.Add(transaction.AmountDest)
 	} else {
 		balance = balance.Sub(transaction.AmountSource)
@@ -1367,25 +1370,46 @@ func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.Cryp
 	}
 
 	c := accountsBucket.Cursor()
-	for k, v := c.First(); k != nil; k, v = c.Next() {
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
 
-		if v == nil {
+		if string(k) == CurrencyUBuck || string(k) == KeyDebt || strings.Contains(string(k), "@") {
 			continue
 		}
 
-		var crypto openapi.Crypto
-		err = json.Unmarshal(v, &crypto)
-		if err != nil {
+		account := accountsBucket.Bucket(k)
 
+		var balance decimal.Decimal
+		balanceB := account.Get([]byte(KeyBalance))
+		if balanceB != nil {
+			err = balance.UnmarshalText(balanceB)
+			if err != nil {
+				return resp, err
+			}
+		} else {
+			balance = decimal.Zero
 		}
 
-		if crypto.Quantity.IsPositive() {
+		var basis decimal.Decimal
+		basisB := account.Get([]byte(KeyBasis))
+		if basisB != nil {
+			err = basis.UnmarshalText(basisB)
+			if err != nil {
+				return resp, err
+			}
+		} else {
+			basis = decimal.Zero
+		}
+
+		if balance.IsPositive() {
+			var crypto openapi.Crypto
 			crypto.Name = string(k)
 			usd, err := getCryptoLatest(string(k))
 			if err != nil {
 				return resp, err
 			}
-			crypto.CurrentPrice = usd
+			crypto.CurrentPrice = usd.Round(4)
+			crypto.Basis = basis.Round(4)
+			crypto.Quantity = balance.Round(4)
 			resp = append(resp, crypto)
 		}
 	}
@@ -1457,7 +1481,7 @@ func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.R
 			return err
 		}
 
-		studendCrypto, _, err := getStudentCryptoRx(tx, userDetails, crypto)
+		studentCrypto, _, err := getStudentCryptoRx(tx, userDetails, crypto)
 		if err != nil {
 			return err
 		}
@@ -1465,8 +1489,9 @@ func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.R
 		resp = openapi.ResponseCrypto{
 			Searched: crypto,
 			Usd:      float32(cryptoInfo.Usd.InexactFloat64()),
-			Owned:    float32(studendCrypto.Quantity.InexactFloat64()),
+			Owned:    float32(studentCrypto.Quantity.InexactFloat64()),
 			UBuck:    ubuck.Value,
+			Basis:    float32(studentCrypto.Basis.InexactFloat64()),
 		}
 
 		return nil
@@ -1670,14 +1695,35 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 
 	ts := clock.Now().Truncate(time.Millisecond)
 
+	student, err := getStudentBucketTx(tx, userInfo.Name)
+	if err != nil {
+		return err
+	}
+
 	usd, err := getCryptoLatest(from)
+	if err != nil {
+		return err
+	}
+
+	basis, err := getStudentCryptoBasisTx(student, from)
 	if err != nil {
 		return err
 	}
 
 	charge := 1 - (keyCharge - 1)
 
-	ubuck := amount.Mul(usd).Mul(decimal.NewFromFloat(charge))
+	gains := usd.Sub(basis).IsPositive()
+	var newPercent decimal.Decimal
+	if gains {
+		percentChange := usd.Div(basis).Sub(decimal.NewFromInt32(1))
+		adjustedChange := percentChange.Mul(decimal.NewFromInt32(3))
+		newPercent = adjustedChange.Add(decimal.NewFromInt32(1))
+	} else {
+		percentChange := usd.Div(basis)
+		newPercent = percentChange.Pow(decimal.NewFromInt32(3))
+	}
+
+	ubuck := newPercent.Mul(basis).Mul(amount).Mul(decimal.NewFromFloat(charge))
 
 	transaction := Transaction{
 		Ts:             ts,
@@ -1692,10 +1738,6 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		FromSource:     true,
 	}
 
-	student, err := getStudentBucketTx(tx, userInfo.Name)
-	if err != nil {
-		return err
-	}
 	_, _, err = addToHolderTx(student, from, transaction, OperationDebit, true)
 	if err != nil {
 		return err
@@ -1726,4 +1768,29 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	}
 
 	return nil
+}
+
+func getStudentCryptoBasisTx(holder *bolt.Bucket, from string) (basis decimal.Decimal, err error) {
+	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
+	if err != nil {
+		return
+	}
+
+	accountBucket, err := accounts.CreateBucketIfNotExists([]byte(from))
+	if err != nil {
+		return
+	}
+
+	basisB := accountBucket.Get([]byte(KeyBasis))
+	if basisB != nil {
+		err = basis.UnmarshalText(basisB)
+		if err != nil {
+			err = fmt.Errorf("cannot extract basis for the account %s: %v", from, err)
+			return
+		}
+	} else {
+		basis = decimal.Zero
+	}
+
+	return
 }

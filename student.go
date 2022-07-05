@@ -224,8 +224,7 @@ func (a *StudentApiServiceImpl) SearchCrypto(ctx context.Context, crypto string)
 
 }
 func (a *StudentApiServiceImpl) SearchCryptoTransaction(context.Context, string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	return openapi.Response(200, nil), nil
 }
 func (a *StudentApiServiceImpl) SearchStudentCrypto(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)

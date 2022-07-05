@@ -597,7 +597,6 @@ func TestBuckConvert_debt_ubuck(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
@@ -815,23 +814,34 @@ func TestSearchStudentCrypto(t *testing.T) {
 	// initialize http client
 	client := &http.Client{}
 
+	body := openapi.RequestCryptoConvert{
+		Name: "cardano",
+		Buy:  10,
+		Sell: 0,
+	}
+
 	userDetails, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
-	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/accounts/account/student", nil)
+	err = cryptoTransaction(db, &clock, userDetails, body)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/accounts/allCrypto", nil)
+
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
-	var v openapi.ResponseSearchStudentUbuck
+	var v []openapi.Crypto
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&v)
 	require.Nil(t, err)
-	require.Equal(t, float32(10000), v.Value)
+	require.Equal(t, float64(10), v[0].Quantity.InexactFloat64())
+	require.NotEqual(t, float64(0), v[0].Basis.InexactFloat64())
+	require.NotEqual(t, float64(0), v[0].CurrentPrice.InexactFloat64())
 }
 
 func TestSearchCrypto(t *testing.T) {
@@ -894,8 +904,8 @@ func TestCryptoConvert(t *testing.T) {
 
 	body := openapi.RequestCryptoConvert{
 		Name: "CarDano",
-		Buy:  0,
-		Sell: 3,
+		Buy:  3,
+		Sell: 0,
 	}
 	marshal, _ := json.Marshal(body)
 
