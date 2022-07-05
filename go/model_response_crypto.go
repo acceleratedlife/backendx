@@ -11,6 +11,7 @@
 package openapi
 
 type ResponseCrypto struct {
+
 	Searched string `json:"searched,omitempty"`
 
 	Usd float32 `json:"usd,omitempty"`

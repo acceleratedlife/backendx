@@ -1048,21 +1048,14 @@ paths:
         for type of Crypto and account in accounts from account query. Populate assetID
         with name, sort by createdAt descending and limit to 25 records.
       operationId: searchCryptoTransaction
-      parameters:
-      - description: pass the _id to be searched
-        explode: true
-        in: query
-        name: _id
-        required: true
-        schema:
-          type: string
-        style: form
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200_1'
+                items:
+                  $ref: '#/components/schemas/ResponseCryptoTransaction'
+                type: array
           description: transaction matching criteria
         "404":
           description: No transaction found with that data
@@ -1136,7 +1129,7 @@ paths:
       summary: When a student is converting between 2 bucks
       tags:
       - Student
-  /transaction/cryptoTransaction:
+  /transactions/cryptoTransaction:
     post:
       description: Find crypto, uBuck and both accounts. Get latest crypto price and
         save it to crypto doc. If there is no account for the crypto then make one.
@@ -1150,6 +1143,10 @@ paths:
               $ref: '#/components/schemas/RequestCryptoConvert'
       responses:
         "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
           description: return all crypto accounts with value greater than 0 and the
             most recent transaction
         "404":
@@ -1640,22 +1637,19 @@ components:
       type: object
     Crypto:
       example:
-        quantity: 1.4658129805029452
-        name: name
-        currentPrice: 6.0274563
-        basis: 0.8008282
+        usd: 12.45
+        updatedAt: 2000-01-23T04:56:07.000+00:00
       properties:
-        basis:
-          format: float
-          type: number
-        currentPrice:
-          format: float
-          type: number
-        name:
+        updatedAt:
+          format: date-time
           type: string
-        quantity:
-          format: decimal
+        usd:
+          example: 12.45
+          format: float
           type: number
+      required:
+      - updatedAt
+      - usd
       type: object
     CryptoCB:
       properties:
@@ -1902,6 +1896,7 @@ components:
         searched: cardano
         owned: 123.45
         usd: 123.45
+        basis: 0.8008282
         UBuck: 123.45
       properties:
         searched:
@@ -1916,6 +1911,45 @@ components:
           format: float
           type: number
         UBuck:
+          example: 123.45
+          format: float
+          type: number
+        basis:
+          format: float
+          type: number
+      type: object
+    ResponseCryptoTransaction:
+      example:
+        conversionRatio: 123.45
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        amount: 123.45
+        balance: 123.45
+        name: 613eab19e58cc511801af657
+        description: Life Event
+        uBucks: 123.45
+      properties:
+        name:
+          example: 613eab19e58cc511801af657
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        balance:
+          example: 123.45
+          format: float
+          type: number
+        description:
+          example: Life Event
+          type: string
+        conversionRatio:
+          example: 123.45
+          format: float
+          type: number
+        amount:
+          example: 123.45
+          format: float
+          type: number
+        uBucks:
           example: 123.45
           format: float
           type: number
@@ -2629,47 +2663,34 @@ components:
       type: object
     inline_response_200_1:
       example:
-        owner: 613eab19e58cc511801af657
-        conversionRatio: 123.45
-        amount: 123.45
-        balance: 123.45
-        assetID:
-          name: Cardano
-        description: Life Event
-        uBucks: 123.45
-        type: Crypto
-        account: 613eab19e58cc511801af657
+        accounts:
+        - quantity: 123.45
+          name: vechain
+          currentPrice: 1.255
+          basis: 0.124
+        - quantity: 123.45
+          name: vechain
+          currentPrice: 1.255
+          basis: 0.124
+        transaction:
+          conversionRatio: 123.45
+          owner: 6170a4aff8437c84920b7ff1
+          amount: 123.45
+          balance: 123.45
+          assetID:
+            name: vechain
+            _id: 61c4af57ce0e75f0214cbaaa
+          description: Conversion to this account
+          type: Crypto
+          uBucks: 0.0925
+          account: 61c4af5cce0e75f0214cbab1
       properties:
-        account:
-          example: 613eab19e58cc511801af657
-          type: string
-        owner:
-          example: 613eab19e58cc511801af657
-          type: string
-        balance:
-          example: 123.45
-          format: float
-          type: number
-        description:
-          example: Life Event
-          type: string
-        conversionRatio:
-          example: 123.45
-          format: float
-          type: number
-        amount:
-          example: 123.45
-          format: float
-          type: number
-        uBucks:
-          example: 123.45
-          format: float
-          type: number
-        type:
-          example: Crypto
-          type: string
-        assetID:
-          $ref: '#/components/schemas/inline_response_200_1_assetID'
+        transaction:
+          $ref: '#/components/schemas/inline_response_200_1_transaction'
+        accounts:
+          items:
+            $ref: '#/components/schemas/inline_response_200_1_accounts'
+          type: array
       type: object
     users_user_body:
       properties:
@@ -2811,11 +2832,83 @@ components:
           example: Leno
           type: string
       type: object
-    inline_response_200_1_assetID:
+    inline_response_200_1_transaction_assetID:
       example:
-        name: Cardano
+        name: vechain
+        _id: 61c4af57ce0e75f0214cbaaa
       properties:
         name:
-          example: Cardano
+          example: vechain
           type: string
+        _id:
+          example: 61c4af57ce0e75f0214cbaaa
+          type: string
+      type: object
+    inline_response_200_1_transaction:
+      example:
+        conversionRatio: 123.45
+        owner: 6170a4aff8437c84920b7ff1
+        amount: 123.45
+        balance: 123.45
+        assetID:
+          name: vechain
+          _id: 61c4af57ce0e75f0214cbaaa
+        description: Conversion to this account
+        type: Crypto
+        uBucks: 0.0925
+        account: 61c4af5cce0e75f0214cbab1
+      properties:
+        account:
+          example: 61c4af5cce0e75f0214cbab1
+          type: string
+        amount:
+          example: 123.45
+          format: float
+          type: number
+        balance:
+          example: 123.45
+          format: float
+          type: number
+        conversionRatio:
+          example: 123.45
+          format: float
+          type: number
+        description:
+          example: Conversion to this account
+          type: string
+        owner:
+          example: 6170a4aff8437c84920b7ff1
+          type: string
+        type:
+          example: Crypto
+          type: string
+        uBucks:
+          example: 0.0925
+          format: float
+          type: number
+        assetID:
+          $ref: '#/components/schemas/inline_response_200_1_transaction_assetID'
+      type: object
+    inline_response_200_1_accounts:
+      example:
+        quantity: 123.45
+        name: vechain
+        currentPrice: 1.255
+        basis: 0.124
+      properties:
+        basis:
+          example: 0.124
+          format: float
+          type: number
+        currentPrice:
+          example: 1.255
+          format: float
+          type: number
+        name:
+          example: vechain
+          type: string
+        quantity:
+          example: 123.45
+          format: float
+          type: number
       type: object

@@ -192,7 +192,7 @@ type StudentApiServicer interface {
 	SearchAuctionsStudent(context.Context) (ImplResponse, error)
 	SearchBuckTransaction(context.Context) (ImplResponse, error)
 	SearchCrypto(context.Context, string) (ImplResponse, error)
-	SearchCryptoTransaction(context.Context, string) (ImplResponse, error)
+	SearchCryptoTransaction(context.Context) (ImplResponse, error)
 	SearchStudentCrypto(context.Context) (ImplResponse, error)
 	SearchStudentUbuck(context.Context) (ImplResponse, error)
 	StudentAddClass(context.Context, RequestAddClass) (ImplResponse, error)

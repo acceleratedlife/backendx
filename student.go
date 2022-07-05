@@ -223,8 +223,31 @@ func (a *StudentApiServiceImpl) SearchCrypto(ctx context.Context, crypto string)
 	return openapi.Response(200, resp), nil
 
 }
-func (a *StudentApiServiceImpl) SearchCryptoTransaction(context.Context, string) (openapi.ImplResponse, error) {
-	return openapi.Response(200, nil), nil
+func (a *StudentApiServiceImpl) SearchCryptoTransaction(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	var resp []openapi.ResponseCryptoTransaction
+	err = a.db.View(func(tx *bolt.Tx) error {
+		resp, err = getStudentCryptoTransactionsRx(tx, userDetails)
+		return err
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR cannot get transactions for: %s %v", userDetails.Name, err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, resp), nil
 }
 func (a *StudentApiServiceImpl) SearchStudentCrypto(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)

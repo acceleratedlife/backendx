@@ -42,6 +42,7 @@ type Transaction struct {
 	FromSource     bool
 	Net            decimal.Decimal `json:"-"`
 	Balance        decimal.Decimal `json:"-"`
+	Ubuck          decimal.Decimal `json:"-"`
 }
 
 // adds ubucks from CB
@@ -1205,6 +1206,10 @@ func getStudentTransactionsTx(tx *bolt.Tx, bAccounts *bolt.Bucket, student UserI
 	c := bAccounts.Cursor()
 	for k, _ := c.First(); k != nil; k, _ = c.Next() {
 
+		if string(k) != CurrencyUBuck && string(k) != KeyDebt && !strings.Contains(string(k), "@") {
+			continue
+		}
+
 		buck := bAccounts.Bucket(k)
 
 		transactions := buck.Bucket([]byte(KeyTransactions))
@@ -1287,8 +1292,10 @@ func parseTransactionStudent(transData []byte, user UserInfo, accountId string) 
 	} else if trans.Destination == user.Name && trans.Source == user.Name {
 		if trans.CurrencyDest == accountId {
 			trans.Net = trans.AmountDest
+			trans.Ubuck = trans.AmountSource
 		} else {
 			trans.Net = trans.AmountSource.Neg()
+			trans.Ubuck = trans.AmountDest
 		}
 	} else if trans.Destination == user.Name {
 		trans.Net = trans.AmountDest
@@ -1311,7 +1318,7 @@ func transactionToResponseBuckTransactionTx(tx *bolt.Tx, trans Transaction) (res
 			buckName = "UBuck"
 		} else if trans.CurrencySource == KeyDebt {
 			buckName = KeyDebt
-		} else {
+		} else if strings.Contains(trans.CurrencySource, "@") {
 			user, err := getUserInLocalStoreTx(tx, trans.CurrencySource)
 			if err != nil {
 				return resp, err
@@ -1319,6 +1326,8 @@ func transactionToResponseBuckTransactionTx(tx *bolt.Tx, trans Transaction) (res
 
 			buckName = user.LastName + " Buck"
 
+		} else {
+			buckName = trans.CurrencySource
 		}
 	} else {
 
@@ -1326,13 +1335,15 @@ func transactionToResponseBuckTransactionTx(tx *bolt.Tx, trans Transaction) (res
 			buckName = "UBuck"
 		} else if trans.CurrencyDest == KeyDebt {
 			buckName = KeyDebt
-		} else {
+		} else if strings.Contains(trans.CurrencyDest, "@") {
 			user, err := getUserInLocalStoreTx(tx, trans.CurrencyDest)
 			if err != nil {
 				return resp, err
 			}
 
 			buckName = user.LastName + " Buck"
+		} else {
+			buckName = trans.CurrencyDest
 		}
 
 	}
@@ -1530,7 +1541,7 @@ func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.R
 			return err
 		}
 
-		studendCrypto, _, err := getStudentCryptoRx(tx, userDetails, crypto)
+		studentCrypto, _, err := getStudentCryptoRx(tx, userDetails, crypto)
 		if err != nil {
 			return err
 		}
@@ -1538,8 +1549,9 @@ func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.R
 		resp = openapi.ResponseCrypto{
 			Searched: crypto,
 			Usd:      float32(cryptoInfo.Usd.InexactFloat64()),
-			Owned:    float32(studendCrypto.Quantity.InexactFloat64()),
+			Owned:    float32(studentCrypto.Quantity.InexactFloat64()),
 			UBuck:    ubuck.Value,
+			Basis:    float32(studentCrypto.Basis.InexactFloat64()),
 		}
 
 		return nil
@@ -1620,6 +1632,7 @@ func cryptoTransactionTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body op
 }
 
 func ubuckToCrypto(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, to string) (err error) {
+	to = strings.ToLower(to)
 	if userInfo.Role != UserRoleStudent {
 		return fmt.Errorf("user is not a student")
 	}
@@ -1686,6 +1699,7 @@ func ubuckToCrypto(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 }
 
 func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, from string) (err error) {
+	from = strings.ToLower(from)
 	if userInfo.Role != UserRoleStudent {
 		return fmt.Errorf("user is not a student")
 	}
@@ -1729,7 +1743,7 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		Ts:             ts,
 		Source:         userInfo.Name,
 		Destination:    userInfo.Name,
-		CurrencySource: from,
+		CurrencySource: strings.ToLower(from),
 		CurrencyDest:   CurrencyUBuck,
 		AmountSource:   amount,
 		AmountDest:     ubuck,
@@ -1790,6 +1804,103 @@ func getStudentCryptoBasisTx(holder *bolt.Bucket, from string) (basis decimal.De
 		}
 	} else {
 		basis = decimal.Zero
+	}
+
+	return
+}
+
+func getStudentCryptoTransactionsRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.ResponseCryptoTransaction, err error) {
+	student, err := getStudentBucketRx(tx, userDetails.Name)
+	if err != nil {
+		return
+	}
+
+	trans := make([]Transaction, 0)
+	accounts := student.Bucket([]byte(KeyAccounts))
+	c := accounts.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		if string(k) == CurrencyUBuck || string(k) == KeyDebt || strings.Contains(string(k), "@") {
+			continue
+		}
+
+		account := accounts.Bucket(k)
+		if account == nil {
+			continue
+		}
+
+		transactions := account.Bucket([]byte(KeyTransactions))
+		if transactions == nil {
+			return resp, fmt.Errorf("Cannot get transactions")
+		}
+
+		trans, err = getBuckTransactionsTx(transactions, trans, userDetails, string(k))
+		if err != nil {
+			return resp, err
+		}
+	}
+
+	for _, tran := range trans {
+		response, err := transactionToResponseCryptoTransactionRx(tx, tran)
+		if err != nil {
+			return resp, err
+		}
+
+		resp = append(resp, response)
+	}
+
+	return
+}
+
+func transactionToResponseCryptoTransactionRx(tx *bolt.Tx, trans Transaction) (resp openapi.ResponseCryptoTransaction, err error) {
+	xrate, _ := trans.XRate.Float64()
+	amount, _ := trans.Net.Float64()
+	balance, _ := trans.Balance.Float64()
+	var buckName string
+
+	if trans.FromSource {
+
+		if trans.CurrencySource == CurrencyUBuck {
+			buckName = "UBuck"
+		} else if trans.CurrencySource == KeyDebt {
+			buckName = KeyDebt
+		} else if strings.Contains(trans.CurrencySource, "@") {
+			user, err := getUserInLocalStoreTx(tx, trans.CurrencySource)
+			if err != nil {
+				return resp, err
+			}
+
+			buckName = user.LastName + " Buck"
+
+		} else {
+			buckName = trans.CurrencySource
+		}
+	} else {
+
+		if trans.CurrencyDest == CurrencyUBuck {
+			buckName = "UBuck"
+		} else if trans.CurrencyDest == KeyDebt {
+			buckName = KeyDebt
+		} else if strings.Contains(trans.CurrencyDest, "@") {
+			user, err := getUserInLocalStoreTx(tx, trans.CurrencyDest)
+			if err != nil {
+				return resp, err
+			}
+
+			buckName = user.LastName + " Buck"
+		} else {
+			buckName = trans.CurrencyDest
+		}
+
+	}
+
+	resp = openapi.ResponseCryptoTransaction{
+		Balance:         float32(balance),
+		Description:     trans.Reference,
+		ConversionRatio: float32(xrate),
+		Amount:          float32(amount),
+		Name:            buckName,
+		CreatedAt:       trans.Ts,
+		UBucks:          float32(trans.Ubuck.InexactFloat64()),
 	}
 
 	return
