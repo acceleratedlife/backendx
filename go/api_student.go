@@ -64,7 +64,7 @@ func (c *StudentApiController) Routes() Routes {
 		{
 			"CryptoConvert",
 			strings.ToUpper("Post"),
-			"/api/transaction/cryptoTransaction",
+			"/api/transactions/cryptoTransaction",
 			c.CryptoConvert,
 		},
 		{
@@ -160,21 +160,20 @@ func (c *StudentApiController) BuckConvert(w http.ResponseWriter, r *http.Reques
 
 }
 
-// CryptoConvert - When a student is converting between 2 uBucks and Cryptos
+// CryptoConvert - When a student is converting between uBucks and Cryptos
 func (c *StudentApiController) CryptoConvert(w http.ResponseWriter, r *http.Request) {
-	userIdParam := r.Header.Get("user._id")
-	transactionCryptoTransactionBodyParam := TransactionCryptoTransactionBody{}
+	requestCryptoConvertParam := RequestCryptoConvert{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&transactionCryptoTransactionBodyParam); err != nil {
+	if err := d.Decode(&requestCryptoConvertParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertTransactionCryptoTransactionBodyRequired(transactionCryptoTransactionBodyParam); err != nil {
+	if err := AssertRequestCryptoConvertRequired(requestCryptoConvertParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.CryptoConvert(r.Context(), userIdParam, transactionCryptoTransactionBodyParam)
+	result, err := c.service.CryptoConvert(r.Context(), requestCryptoConvertParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -228,9 +227,7 @@ func (c *StudentApiController) SearchCrypto(w http.ResponseWriter, r *http.Reque
 
 // SearchCryptoTransaction - searches for Crypto transactions
 func (c *StudentApiController) SearchCryptoTransaction(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.SearchCryptoTransaction(r.Context(), idParam)
+	result, err := c.service.SearchCryptoTransaction(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

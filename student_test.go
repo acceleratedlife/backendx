@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -596,7 +597,6 @@ func TestBuckConvert_debt_ubuck(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
@@ -657,7 +657,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//overdrawn student 0 max 0 bid 0
 	body := openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  500,
 	}
 	marshal, _ := json.Marshal(body)
@@ -677,7 +677,7 @@ func TestAuctionBid(t *testing.T) {
 	//first bid student 0 max 50 bid 1
 
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  50,
 	}
 	marshal, _ = json.Marshal(body)
@@ -694,7 +694,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//self outbid student0 max 50 bid 1
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  51,
 	}
 	marshal, _ = json.Marshal(body)
@@ -711,7 +711,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//true outbid student1 max 91 bid 51
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  91,
 	}
 	marshal, _ = json.Marshal(body)
@@ -730,7 +730,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//good bid but under max student0 max 91 bid 62
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  61,
 	}
 	marshal, _ = json.Marshal(body)
@@ -748,7 +748,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//good bid but under max student0 max 91 bid 90
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  89,
 	}
 	marshal, _ = json.Marshal(body)
@@ -765,7 +765,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//true outbid student0 max 97 bid 92
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  97,
 	}
 	marshal, _ = json.Marshal(body)
@@ -784,7 +784,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//self outbid student0 max 97 bid 92
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id,
+		Item: auctions[0].Id.String(),
 		Bid:  100,
 	}
 	marshal, _ = json.Marshal(body)
@@ -800,5 +800,165 @@ func TestAuctionBid(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode, resp)
+}
 
+func TestSearchStudentCrypto(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("searchStudentCrypto", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.RequestCryptoConvert{
+		Name: "cardano",
+		Buy:  10,
+		Sell: 0,
+	}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	err = cryptoTransaction(db, &clock, userDetails, body)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/accounts/allCrypto", nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v []openapi.Crypto
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, float64(10), v[0].Quantity.InexactFloat64())
+	require.NotEqual(t, float64(0), v[0].Basis.InexactFloat64())
+	require.NotEqual(t, float64(0), v[0].CurrentPrice.InexactFloat64())
+}
+
+func TestSearchCrypto(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("searchCrypto", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	// initialize http client
+	client := &http.Client{}
+
+	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/accounts/crypto")
+	q := u.Query()
+	q.Set("name", "cardano")
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest(http.MethodGet,
+		u.String(),
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v openapi.ResponseCrypto
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, float32(0), v.Owned)
+	require.Equal(t, "cardano", v.Searched)
+	require.Greater(t, v.Usd, float32(0))
+}
+
+func TestCryptoConvert(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("cryptoConvert", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.RequestCryptoConvert{
+		Name: "CarDano",
+		Buy:  3,
+		Sell: 0,
+	}
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/cryptoTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+}
+
+func TestSearchCryptoTransactions(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("searchCryptoTransactions", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.RequestCryptoConvert{
+		Name: "CarDano",
+		Buy:  3,
+		Sell: 0,
+	}
+
+	student, err := getUserInLocalStore(db, students[0])
+	err = cryptoTransaction(db, &clock, student, body)
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/transactions/cryptoTransactions", nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v []openapi.ResponseCryptoTransaction
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, float32(3), v[0].Amount)
+	require.Equal(t, float32(3), v[0].Balance)
 }

@@ -200,7 +200,7 @@ func TestDeleteAuction(t *testing.T) {
 
 	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/auctions/auction")
 	q := u.Query()
-	q.Set("_id", auctions[0].Id)
+	q.Set("_id", auctions[0].Id.String())
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequest(http.MethodDelete,
@@ -224,10 +224,10 @@ func TestDeleteAuction(t *testing.T) {
 	userDetails, _ := getUserInLocalStore(db, students[0])
 	addUbuck2Student(db, &clock, userDetails, decimal.NewFromInt32(100), "loading")
 
-	_, err = placeBid(db, &clock, userDetails, auctions[0].Id, 20)
+	_, err = placeBid(db, &clock, userDetails, auctions[0].Id.String(), 20)
 	require.Nil(t, err)
 
-	q.Set("_id", auctions[0].Id)
+	q.Set("_id", auctions[0].Id.String())
 	u.RawQuery = q.Encode()
 
 	req, err = http.NewRequest(http.MethodDelete,
@@ -249,11 +249,11 @@ func TestDeleteAuction(t *testing.T) {
 	auctions, err = MakeAuctionImpl(db, teacherDetails, body)
 	require.Nil(t, err)
 
-	_, err = placeBid(db, &clock, userDetails, auctions[0].Id, 20)
+	_, err = placeBid(db, &clock, userDetails, auctions[0].Id.String(), 20)
 	require.Nil(t, err)
 	clock.TickOne(time.Hour * 1)
 
-	q.Set("_id", auctions[0].Id)
+	q.Set("_id", auctions[0].Id.String())
 	u.RawQuery = q.Encode()
 
 	req, err = http.NewRequest(http.MethodDelete,

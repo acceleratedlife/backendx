@@ -305,7 +305,10 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 		}
 
 		c := accounts.Cursor()
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if v != nil {
+				continue
+			}
 			account, err := getStudentAccountRx(tx, accounts.Bucket(k), string(k))
 			if err != nil {
 				return err

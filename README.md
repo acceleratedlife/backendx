@@ -90,3 +90,9 @@ go tool cover -html cover.out
 
 "orders"
   datetime: OrderInfo
+
+"cryptos"
+    [crypto] (crypto name)
+        -UpdateAt: dateTime
+        -usd: float32
+
