@@ -43,12 +43,24 @@ func TestAuth(t *testing.T) {
 }
 
 func TestSearchStudents(t *testing.T) {
+	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchStudents", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, _, err := CreateTestAccounts(db, 1, 1, 1, 3)
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 3)
 
 	SetTestLoginUser(teachers[0])
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(15000), CurrencyUBuck, "pre load")
+	body := openapi.RequestCryptoConvert{
+		Name: "cardano",
+		Buy:  10,
+		Sell: 0,
+	}
+	err = cryptoTransaction(db, &clock, userDetails, body)
+	require.Nil(t, err)
 
 	client := &http.Client{}
 
@@ -67,6 +79,7 @@ func TestSearchStudents(t *testing.T) {
 	_ = decoder.Decode(&data)
 
 	require.Equal(t, 1, len(data))
+	require.NotZero(t, data[0].NetWorth)
 }
 
 func TestSearchStudent(t *testing.T) {
