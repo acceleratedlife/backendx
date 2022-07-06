@@ -379,9 +379,7 @@ func (c *StaffApiController) SearchClasses(w http.ResponseWriter, r *http.Reques
 
 // SearchEvents - returns all of todays events for the users school
 func (c *StaffApiController) SearchEvents(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.SearchEvents(r.Context(), idParam)
+	result, err := c.service.SearchEvents(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

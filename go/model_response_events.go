@@ -10,28 +10,19 @@
 
 package openapi
 
-import (
-	"time"
-)
-
 type ResponseEvents struct {
 
 	Value int32 `json:"value,omitempty"`
 
-	CreatedAt time.Time `json:"createdAt,omitempty"`
-
 	Description string `json:"description,omitempty"`
 
-	TransactionId string `json:"transaction_id,omitempty"`
+	FirstName string `json:"firstName,omitempty"`
 
-	OwnerId ResponseEventsOwnerId `json:"owner_id,omitempty"`
+	LastName string `json:"lastName,omitempty"`
 }
 
 // AssertResponseEventsRequired checks if the required fields are not zero-ed
 func AssertResponseEventsRequired(obj ResponseEvents) error {
-	if err := AssertResponseEventsOwnerIdRequired(obj.OwnerId); err != nil {
-		return err
-	}
 	return nil
 }
 

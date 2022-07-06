@@ -176,7 +176,7 @@ type StaffApiServicer interface {
 	ResetPassword(context.Context, RequestUser) (ImplResponse, error)
 	SearchAuctionsTeacher(context.Context) (ImplResponse, error)
 	SearchClasses(context.Context, string) (ImplResponse, error)
-	SearchEvents(context.Context, string) (ImplResponse, error)
+	SearchEvents(context.Context) (ImplResponse, error)
 	SearchTransactions(context.Context, string) (ImplResponse, error)
 }
 

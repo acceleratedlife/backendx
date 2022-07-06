@@ -196,7 +196,7 @@ func (s *StaffApiService) SearchClasses(ctx context.Context, id string) (ImplRes
 }
 
 // SearchEvents - returns all of todays events for the users school
-func (s *StaffApiService) SearchEvents(ctx context.Context, id string) (ImplResponse, error) {
+func (s *StaffApiService) SearchEvents(ctx context.Context) (ImplResponse, error) {
 	// TODO - update SearchEvents with the required logic for this service method.
 	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 

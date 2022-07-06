@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -523,6 +524,62 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 			break
 		}
 	}
+
+	return
+}
+
+func getEventsTeacher(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []openapi.ResponseEvents, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		cb, err := getCbRx(tx, userDetails.SchoolId)
+		if err != nil {
+			return err
+		}
+
+		accounts := cb.Bucket([]byte(KeyAccounts))
+
+		ubuck := accounts.Bucket([]byte(CurrencyUBuck))
+		transactions := ubuck.Bucket([]byte(KeyTransactions))
+
+		c := transactions.Cursor()
+		var trans Transaction
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+
+			transTime, err := time.Parse(time.RFC3339, string(k))
+			if err != nil {
+				return err
+			}
+
+			if transTime.Before(clock.Now().Truncate(time.Hour * 24)) {
+				break
+			}
+
+			transData := transactions.Get(k)
+			err = json.Unmarshal(transData, &trans)
+			if err != nil {
+				return err
+			}
+
+			if !strings.Contains(trans.Reference, "Event: ") {
+				continue
+			}
+
+			var student UserInfo
+			if trans.Source != "" {
+				student, err = getUserInLocalStoreTx(tx, trans.Source)
+			} else {
+				student, err = getUserInLocalStoreTx(tx, trans.Destination)
+			}
+
+			resp = append(resp, openapi.ResponseEvents{
+				Value:       int32(trans.AmountSource.IntPart()),
+				Description: trans.Reference,
+				FirstName:   student.FirstName,
+				LastName:    student.LastName,
+			})
+		}
+
+		return nil
+	})
 
 	return
 }

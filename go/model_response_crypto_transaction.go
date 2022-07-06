@@ -15,6 +15,7 @@ import (
 )
 
 type ResponseCryptoTransaction struct {
+
 	Name string `json:"name,omitempty"`
 
 	CreatedAt time.Time `json:"createdAt,omitempty"`
@@ -32,6 +33,15 @@ type ResponseCryptoTransaction struct {
 
 // AssertResponseCryptoTransactionRequired checks if the required fields are not zero-ed
 func AssertResponseCryptoTransactionRequired(obj ResponseCryptoTransaction) error {
+	elements := map[string]interface{}{
+		"balance": obj.Balance,
+	}
+	for name, el := range elements {
+		if isZero := IsZeroValue(el); isZero {
+			return &RequiredError{Field: name}
+		}
+	}
+
 	return nil
 }
 

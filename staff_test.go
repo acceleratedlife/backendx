@@ -591,3 +591,47 @@ func TestResetPassword(t *testing.T) {
 
 	require.Equal(t, 6, len(data.Password))
 }
+
+func TestSearchEvents(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("searchEvents", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+
+	for _, student := range students {
+		userDetails, err := getUserInLocalStore(db, student)
+		require.Nil(t, err)
+		err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "pre load")
+		require.Nil(t, err)
+		EventIfNeeded(db, &clock, userDetails)
+	}
+
+	clock.TickOne(time.Hour * 240)
+
+	for _, student := range students {
+		userDetails, err := getUserInLocalStore(db, student)
+		require.Nil(t, err)
+		EventIfNeeded(db, &clock, userDetails)
+	}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/events", nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var respData []openapi.ResponseEvents
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.NotZero(t, respData[0].Value)
+
+}

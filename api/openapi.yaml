@@ -919,15 +919,6 @@ paths:
         then get all the events that are today or greater and the owner_id is from
         the list of users found previously
       operationId: searchEvents
-      parameters:
-      - description: pass the school _id to be searched
-        explode: true
-        in: query
-        name: _id
-        required: true
-        schema:
-          type: string
-        style: form
       responses:
         "200":
           content:
@@ -1637,19 +1628,24 @@ components:
       type: object
     Crypto:
       example:
-        usd: 12.45
-        updatedAt: 2000-01-23T04:56:07.000+00:00
+        quantity: 1.4658129805029452
+        name: name
+        currentPrice: 6.027456183070403
+        basis: 0.8008281904610115
       properties:
-        updatedAt:
-          format: date-time
+        basis:
+          type: number
+        currentPrice:
+          type: number
+        name:
           type: string
-        usd:
-          example: 12.45
-          format: float
+        quantity:
           type: number
       required:
-      - updatedAt
-      - usd
+      - basis
+      - currentPrice
+      - name
+      - quantity
       type: object
     CryptoCB:
       properties:
@@ -1658,7 +1654,6 @@ components:
           type: string
         usd:
           example: 12.45
-          format: float
           type: number
       required:
       - updatedAt
@@ -1953,31 +1948,28 @@ components:
           example: 123.45
           format: float
           type: number
+      required:
+      - balance
       type: object
     ResponseEvents:
       example:
-        transaction_id: 613eab19e58cc511801af657
-        createdAt: 2000-01-23T04:56:07.000+00:00
-        owner_id:
-          firstName: Jay
-          lastName: Leno
+        firstName: Jay
+        lastName: Leno
         description: on time
         value: 123
       properties:
         value:
           example: 123
           type: integer
-        createdAt:
-          format: date-time
-          type: string
         description:
           example: on time
           type: string
-        transaction_id:
-          example: 613eab19e58cc511801af657
+        firstName:
+          example: Jay
           type: string
-        owner_id:
-          $ref: '#/components/schemas/ResponseEvents_owner_id'
+        lastName:
+          example: Leno
+          type: string
       type: object
     ResponseKickClass:
       properties:
@@ -2818,18 +2810,6 @@ components:
           type: array
         name:
           example: Jones Bucks
-          type: string
-      type: object
-    ResponseEvents_owner_id:
-      example:
-        firstName: Jay
-        lastName: Leno
-      properties:
-        firstName:
-          example: Jay
-          type: string
-        lastName:
-          example: Leno
           type: string
       type: object
     inline_response_200_1_transaction_assetID:

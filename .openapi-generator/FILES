@@ -69,7 +69,6 @@ go/model_response_crypto_transaction.go
 go/model_response_currency_exchange.go
 go/model_response_currency_exchange_buck.go
 go/model_response_events.go
-go/model_response_events_owner_id.go
 go/model_response_kick_class.go
 go/model_response_login2.go
 go/model_response_login4.go
