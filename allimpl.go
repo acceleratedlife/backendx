@@ -295,20 +295,11 @@ func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.User
 
 		nWorth, _ := StudentNetWorthTx(tx, student.Name).Float64()
 		nUser := openapi.UserNoHistory{
-			Id: student.Email,
-			// CollegeEnd:    time.Time{},
-			//TransitionEnd: time.Time{},
+			Id:        student.Email,
 			FirstName: student.FirstName,
 			LastName:  student.LastName,
-			// Email:     student.Email,
-			// Confirmed: student.Confirmed,
-			// SchoolId:  student.SchoolId,
-			//College:       false,
-			//Children:      0,
-			// Income:   10,
-			// Role:     student.Role,
-			Rank:     student.Rank,
-			NetWorth: float32(nWorth),
+			Rank:      student.Rank,
+			NetWorth:  float32(nWorth),
 		}
 
 		resp = append(resp, nUser)

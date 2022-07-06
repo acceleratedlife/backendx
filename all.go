@@ -309,6 +309,11 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 			if v != nil {
 				continue
 			}
+
+			if string(k) != CurrencyUBuck && string(k) != KeyDebt && !strings.Contains(string(k), "@") {
+				continue
+			}
+
 			account, err := getStudentAccountRx(tx, accounts.Bucket(k), string(k))
 			if err != nil {
 				return err

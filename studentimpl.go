@@ -228,9 +228,28 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 			return decimal.Zero
 		}
 
-		ubuck, _, err := convertRx(tx, userData.SchoolId, string(k), "", value.InexactFloat64())
-		if err != nil {
-			return
+		var ubuck decimal.Decimal
+		if string(k) != CurrencyUBuck && string(k) != KeyDebt && !strings.Contains(string(k), "@") {
+			usd, err := getCryptoLatest(string(k))
+			if err != nil {
+				lgr.Printf("ERROR cannot get crytpo to ubuck of %s: %v", userName, err)
+				return decimal.Zero
+			}
+
+			basis, err := getStudentCryptoBasisRx(student, string(k))
+			if err != nil {
+				lgr.Printf("ERROR cannot get crytpo basis of %s: %v", userName, err)
+				return decimal.Zero
+			}
+			ubuck = cryptoConvert(basis, usd, value)
+			if err != nil {
+				return
+			}
+		} else {
+			ubuck, _, err = convertRx(tx, userData.SchoolId, string(k), "", value.InexactFloat64())
+			if err != nil {
+				return
+			}
 		}
 
 		res = res.Add(ubuck)
@@ -1719,25 +1738,14 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		return err
 	}
 
-	basis, err := getStudentCryptoBasisTx(student, from)
+	basis, err := getStudentCryptoBasisRx(student, from)
 	if err != nil {
 		return err
 	}
 
+	ubuck := cryptoConvert(basis, usd, amount)
 	charge := 1 - (keyCharge - 1)
-
-	gains := usd.Sub(basis).IsPositive()
-	var newPercent decimal.Decimal
-	if gains {
-		percentChange := usd.Div(basis).Sub(decimal.NewFromInt32(1))
-		adjustedChange := percentChange.Mul(decimal.NewFromInt32(3))
-		newPercent = adjustedChange.Add(decimal.NewFromInt32(1))
-	} else {
-		percentChange := usd.Div(basis)
-		newPercent = percentChange.Pow(decimal.NewFromInt32(3))
-	}
-
-	ubuck := newPercent.Mul(basis).Mul(amount).Mul(decimal.NewFromFloat(charge))
+	ubuck = ubuck.Mul(decimal.NewFromFloat(charge))
 
 	transaction := Transaction{
 		Ts:             ts,
@@ -1784,14 +1792,16 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	return nil
 }
 
-func getStudentCryptoBasisTx(holder *bolt.Bucket, from string) (basis decimal.Decimal, err error) {
-	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
-	if err != nil {
+func getStudentCryptoBasisRx(holder *bolt.Bucket, from string) (basis decimal.Decimal, err error) {
+	accounts := holder.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
+		basis = decimal.Zero
 		return
 	}
 
-	accountBucket, err := accounts.CreateBucketIfNotExists([]byte(from))
-	if err != nil {
+	accountBucket := accounts.Bucket([]byte(from))
+	if accountBucket == nil {
+		basis = decimal.Zero
 		return
 	}
 
@@ -1904,4 +1914,20 @@ func transactionToResponseCryptoTransactionRx(tx *bolt.Tx, trans Transaction) (r
 	}
 
 	return
+}
+
+func cryptoConvert(basis, usd, amount decimal.Decimal) decimal.Decimal {
+
+	gains := usd.Sub(basis).IsPositive()
+	var newPercent decimal.Decimal
+	if gains {
+		percentChange := usd.Div(basis).Sub(decimal.NewFromInt32(1))
+		adjustedChange := percentChange.Mul(decimal.NewFromInt32(3))
+		newPercent = adjustedChange.Add(decimal.NewFromInt32(1))
+	} else {
+		percentChange := usd.Div(basis)
+		newPercent = percentChange.Pow(decimal.NewFromInt32(3))
+	}
+
+	return newPercent.Mul(basis).Mul(amount)
 }
