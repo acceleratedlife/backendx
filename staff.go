@@ -10,7 +10,6 @@ import (
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
-	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -326,11 +325,24 @@ func (s *StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.R
 			Error:  true,
 		}), nil
 	}
+
 	if userDetails.Role == UserRoleStudent {
-		return openapi.Response(401, ""), nil
+		err = executeStudentTransaction(s.db, s.clock, body.Amount, body.Student, userDetails, body.Description)
+		if err != nil {
+			return openapi.Response(400, ""), err
+		}
+	} else if userDetails.Role == UserRoleTeacher {
+		err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
+		if err != nil {
+			return openapi.Response(400, ""), err
+		}
+	} else {
+		err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
+		if err != nil {
+			return openapi.Response(400, ""), err
+		}
 	}
 
-	err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
 	if err != nil {
 		return openapi.Response(400, ""), err
 	}
@@ -575,26 +587,4 @@ func visibilityToSlice(tx *bolt.Tx, userDetails UserInfo, classIds []string) (re
 		}
 	}
 	return
-}
-
-func executeTransaction(db *bolt.DB, clock Clock, value float32, student, owner, description string) error {
-	amount := decimal.NewFromFloat32(value)
-	studentDetails, err := getUserInLocalStore(db, student)
-	if err != nil {
-		return fmt.Errorf("error finding student: %v", err)
-	}
-
-	if amount.Sign() > 0 {
-		err = addBuck2Student(db, clock, studentDetails, amount, owner, description)
-		if err != nil {
-			return fmt.Errorf("error paying student: %v", err)
-		}
-	} else if amount.Sign() < 0 {
-		err = chargeStudent(db, clock, studentDetails, amount.Abs(), owner, description, false)
-		if err != nil {
-			return fmt.Errorf("error debting student: %v", err)
-		}
-	}
-
-	return nil
 }
