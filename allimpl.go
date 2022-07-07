@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
@@ -102,16 +103,16 @@ func getStudentHistoryTX(tx *bolt.Tx, userName string) (history []openapi.Histor
 	return
 }
 
-func getStudentAccount(db *bolt.DB, bAccount *bolt.Bucket, id string) (resp openapi.ResponseCurrencyExchange, err error) {
+func getStudentAccount(db *bolt.DB, bAccount *bolt.Bucket, accountId string) (resp openapi.ResponseCurrencyExchange, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		resp, err = getStudentAccountRx(tx, bAccount, id)
+		resp, err = getStudentAccountRx(tx, bAccount, accountId)
 		return err
 	})
 
 	return
 }
 
-func getStudentAccountRx(tx *bolt.Tx, bAccount *bolt.Bucket, id string) (resp openapi.ResponseCurrencyExchange, err error) {
+func getStudentAccountRx(tx *bolt.Tx, bAccount *bolt.Bucket, accountId string) (resp openapi.ResponseCurrencyExchange, err error) {
 	// historyData := bAccount.Get([]byte(KeyHistory))
 	// if historyData == nil {
 	// 	return resp, fmt.Errorf("Failed to get history")
@@ -123,7 +124,7 @@ func getStudentAccountRx(tx *bolt.Tx, bAccount *bolt.Bucket, id string) (resp op
 
 	balanceData := bAccount.Get([]byte(KeyBalance))
 	err = json.Unmarshal(balanceData, &resp.Balance)
-	resp.Id = id
+	resp.Id = accountId
 
 	return
 }
@@ -377,5 +378,127 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 	if err != nil {
 		return fmt.Errorf("Failed to Put userDetails")
 	}
+	return nil
+}
+
+func executeTransaction(db *bolt.DB, clock Clock, value float32, student, owner, description string) error {
+	amount := decimal.NewFromFloat32(value)
+	studentDetails, err := getUserInLocalStore(db, student)
+	if err != nil {
+		return fmt.Errorf("error finding student: %v", err)
+	}
+
+	if amount.Sign() > 0 {
+		err = addBuck2Student(db, clock, studentDetails, amount, owner, description)
+		if err != nil {
+			return fmt.Errorf("error paying student: %v", err)
+		}
+	} else if amount.Sign() < 0 {
+		err = chargeStudent(db, clock, studentDetails, amount.Abs(), owner, description, false)
+		if err != nil {
+			return fmt.Errorf("error debting student: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func executeStudentTransaction(db *bolt.DB, clock Clock, value float32, student string, owner UserInfo, description string) error {
+	if student == owner.Name {
+		return fmt.Errorf("You can't pay yourself")
+	}
+
+	amount := decimal.NewFromFloat32(value)
+
+	if amount.LessThanOrEqual(decimal.Zero) {
+		return fmt.Errorf("Students can't deduct Ubucks")
+	}
+
+	ubucks, err := getStudentUbuck(db, owner)
+	if err != nil {
+		return err
+	}
+
+	if decimal.NewFromFloat32(ubucks.Value).LessThan(amount.Mul(decimal.NewFromFloat32(1.01))) {
+		return fmt.Errorf("Hey kid you don't have that much Ubucks, don't forget about 1%% charge")
+	}
+
+	studentDetails, err := getUserInLocalStore(db, student)
+	if err != nil {
+		return fmt.Errorf("error finding student: %v", err)
+	}
+
+	err = studentPayStudent(db, clock, amount, studentDetails, owner, description)
+	if err != nil {
+		return fmt.Errorf("error paying student: %v", err)
+	}
+
+	return nil
+}
+
+func studentPayStudent(db *bolt.DB, clock Clock, amount decimal.Decimal, reciever, sender UserInfo, description string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		return studentPayStudentTx(tx, clock, amount, reciever, sender, description)
+	})
+}
+
+func studentPayStudentTx(tx *bolt.Tx, clock Clock, amount decimal.Decimal, reciever, sender UserInfo, description string) error {
+	if reciever.Role != UserRoleStudent || sender.Role != UserRoleStudent {
+		return fmt.Errorf("user is not a student")
+	}
+	if amount.Sign() <= 0 {
+		return fmt.Errorf("amount must be positive")
+	}
+
+	ts := clock.Now().Truncate(time.Millisecond)
+
+	transaction := Transaction{
+		Ts:             ts,
+		Source:         sender.Name,
+		Destination:    reciever.Name,
+		CurrencySource: CurrencyUBuck,
+		CurrencyDest:   CurrencyUBuck,
+		AmountSource:   amount.Mul(decimal.NewFromFloat32(1.01)),
+		AmountDest:     amount,
+		XRate:          decimal.NewFromFloat32(1.0),
+		Reference:      description,
+		FromSource:     true,
+	}
+
+	studentSender, err := getStudentBucketTx(tx, sender.Name)
+	if err != nil {
+		return err
+	}
+	_, _, err = addToHolderTx(studentSender, CurrencyUBuck, transaction, OperationDebit, true)
+	if err != nil {
+		return err
+	}
+
+	cb, err := getCbTx(tx, reciever.SchoolId)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = addToHolderTx(cb, CurrencyUBuck, transaction, OperationCredit, false)
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = false
+
+	studentReciever, err := getStudentBucketTx(tx, reciever.Name)
+	if err != nil {
+		return err
+	}
+	_, _, err = addToHolderTx(studentReciever, CurrencyUBuck, transaction, OperationCredit, true)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = addToHolderTx(cb, CurrencyUBuck, transaction, OperationDebit, false)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
