@@ -62,6 +62,12 @@ func (c *AllApiController) Routes() Routes {
 			c.ConfirmEmail,
 		},
 		{
+			"DeleteAuction",
+			strings.ToUpper("Delete"),
+			"/api/auctions/auction",
+			c.DeleteAuction,
+		},
+		{
 			"ExchangeRate",
 			strings.ToUpper("Get"),
 			"/api/accounts/exchangeRate",
@@ -78,6 +84,18 @@ func (c *AllApiController) Routes() Routes {
 			strings.ToUpper("Get"),
 			"/api/users/logout",
 			c.Logout,
+		},
+		{
+			"MakeAuction",
+			strings.ToUpper("Post"),
+			"/api/auctions",
+			c.MakeAuction,
+		},
+		{
+			"PayTransaction",
+			strings.ToUpper("Post"),
+			"/api/transactions/payTransaction",
+			c.PayTransaction,
 		},
 		{
 			"SearchAccount",
@@ -102,6 +120,12 @@ func (c *AllApiController) Routes() Routes {
 			strings.ToUpper("Get"),
 			"/api/classes/class",
 			c.SearchClass,
+		},
+		{
+			"SearchClasses",
+			strings.ToUpper("Get"),
+			"/api/classes",
+			c.SearchClasses,
 		},
 		{
 			"SearchSchool",
@@ -154,6 +178,21 @@ func (c *AllApiController) ConfirmEmail(w http.ResponseWriter, r *http.Request) 
 	query := r.URL.Query()
 	tokenParam := query.Get("token")
 	result, err := c.service.ConfirmEmail(r.Context(), tokenParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// DeleteAuction - delete auction
+func (c *AllApiController) DeleteAuction(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.DeleteAuction(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -218,6 +257,54 @@ func (c *AllApiController) Logout(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// MakeAuction - make a new auction
+func (c *AllApiController) MakeAuction(w http.ResponseWriter, r *http.Request) {
+	requestMakeAuctionParam := RequestMakeAuction{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMakeAuctionParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMakeAuctionRequired(requestMakeAuctionParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MakeAuction(r.Context(), requestMakeAuctionParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// PayTransaction - When a teacher or admin is paying/debting a student with their own bucks
+func (c *AllApiController) PayTransaction(w http.ResponseWriter, r *http.Request) {
+	requestPayTransactionParam := RequestPayTransaction{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestPayTransactionParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestPayTransactionRequired(requestPayTransactionParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.PayTransaction(r.Context(), requestPayTransactionParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
 // SearchAccount - searches for a account
 func (c *AllApiController) SearchAccount(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
@@ -266,6 +353,19 @@ func (c *AllApiController) SearchClass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := query.Get("_id")
 	result, err := c.service.SearchClass(r.Context(), idParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SearchClasses - searches for users classes
+func (c *AllApiController) SearchClasses(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.SearchClasses(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

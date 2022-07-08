@@ -113,44 +113,36 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 	}
 
 	var resp []openapi.ResponseAuctionStudent
-	err = a.db.View(func(tx *bolt.Tx) error {
-		auctionsBucket, err := getAuctionsTx(tx, userDetails)
-		if err != nil {
-			return err
-		}
+	auctions, err := getStudentAuctions(a.db, userDetails)
+	if err != nil {
+		return openapi.Response(400, err), nil
+	}
 
-		auctions, err := getStudentAuctionsTx(tx, auctionsBucket, userDetails)
-		if err != nil {
-			return err
-		}
+	for _, auction := range auctions {
 
-		for _, auction := range auctions {
-
-			now := a.clock.Now()
-			if (auction.StartDate.Before(now) && auction.EndDate.After(now)) || auction.WinnerId.Id == userDetails.Name {
-				iAuction := openapi.ResponseAuctionStudent{
-					Id:          auction.Id,
-					Active:      auction.Active,
-					Bid:         float32(auction.Bid),
-					Description: auction.Description,
-					EndDate:     auction.EndDate,
-					StartDate:   auction.StartDate,
-					OwnerId: openapi.ResponseAuctionStudentOwnerId{
-						Id:       auction.OwnerId.Id,
-						LastName: auction.OwnerId.LastName,
-					},
-					WinnerId: openapi.ResponseAuctionStudentWinnerId{
-						Id:        auction.WinnerId.Id,
-						FirstName: auction.WinnerId.FirstName,
-						LastName:  auction.WinnerId.LastName,
-					},
-				}
-
-				resp = append(resp, iAuction)
+		now := a.clock.Now()
+		if (auction.StartDate.Before(now) && auction.EndDate.After(now) && auction.OwnerId.Id != userDetails.Name) || auction.WinnerId.Id == userDetails.Name {
+			iAuction := openapi.ResponseAuctionStudent{
+				Id:          auction.Id,
+				Active:      auction.Active,
+				Bid:         float32(auction.Bid),
+				Description: auction.Description,
+				EndDate:     auction.EndDate,
+				StartDate:   auction.StartDate,
+				OwnerId: openapi.ResponseAuctionStudentOwnerId{
+					Id:       auction.OwnerId.Id,
+					LastName: auction.OwnerId.LastName,
+				},
+				WinnerId: openapi.ResponseAuctionStudentWinnerId{
+					Id:        auction.WinnerId.Id,
+					FirstName: auction.WinnerId.FirstName,
+					LastName:  auction.WinnerId.LastName,
+				},
 			}
+
+			resp = append(resp, iAuction)
 		}
-		return nil
-	})
+	}
 
 	if err != nil {
 		return openapi.Response(400, err), nil
@@ -408,6 +400,13 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid
 	if auctions == nil {
 		return message, fmt.Errorf("cannot get auctions %s: %v", userDetails.Name, err)
 	}
+
+	newTime, err := time.Parse(time.RFC3339, item)
+	if err != nil {
+		return
+	}
+
+	item = newTime.Truncate(time.Millisecond).String()
 
 	auctionByte := auctions.Get([]byte(item))
 	if auctionByte == nil {

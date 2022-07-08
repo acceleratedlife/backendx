@@ -12,21 +12,20 @@ package openapi
 
 import (
 	"time"
-
-	"github.com/shopspring/decimal"
 )
 
 type CryptoCb struct {
+
 	UpdatedAt time.Time `json:"updatedAt"`
 
-	Usd decimal.Decimal `json:"usd"`
+	Usd float32 `json:"usd"`
 }
 
 // AssertCryptoCbRequired checks if the required fields are not zero-ed
 func AssertCryptoCbRequired(obj CryptoCb) error {
 	elements := map[string]interface{}{
 		"updatedAt": obj.UpdatedAt,
-		"usd":       obj.Usd,
+		"usd": obj.Usd,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

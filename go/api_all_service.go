@@ -55,6 +55,20 @@ func (s *AllApiService) ConfirmEmail(ctx context.Context, token string) (ImplRes
 	return Response(http.StatusNotImplemented, nil), errors.New("ConfirmEmail method not implemented")
 }
 
+// DeleteAuction - delete auction
+func (s *AllApiService) DeleteAuction(ctx context.Context, id string) (ImplResponse, error) {
+	// TODO - update DeleteAuction with the required logic for this service method.
+	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("DeleteAuction method not implemented")
+}
+
 // ExchangeRate - returns exchange rate between 2 buck accounts
 func (s *AllApiService) ExchangeRate(ctx context.Context, sellCurrency string, buyCurrency string) (ImplResponse, error) {
 	// TODO - update ExchangeRate with the required logic for this service method.
@@ -98,6 +112,34 @@ func (s *AllApiService) Logout(ctx context.Context, id string) (ImplResponse, er
 	//return Response(404, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("Logout method not implemented")
+}
+
+// MakeAuction - make a new auction
+func (s *AllApiService) MakeAuction(ctx context.Context, requestMakeAuction RequestMakeAuction) (ImplResponse, error) {
+	// TODO - update MakeAuction with the required logic for this service method.
+	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MakeAuction method not implemented")
+}
+
+// PayTransaction - When a teacher or admin is paying/debting a student with their own bucks
+func (s *AllApiService) PayTransaction(ctx context.Context, requestPayTransaction RequestPayTransaction) (ImplResponse, error) {
+	// TODO - update PayTransaction with the required logic for this service method.
+	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("PayTransaction method not implemented")
 }
 
 // SearchAccount - searches for a account
@@ -154,6 +196,20 @@ func (s *AllApiService) SearchClass(ctx context.Context, id string) (ImplRespons
 	//return Response(404, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchClass method not implemented")
+}
+
+// SearchClasses - searches for users classes
+func (s *AllApiService) SearchClasses(ctx context.Context) (ImplResponse, error) {
+	// TODO - update SearchClasses with the required logic for this service method.
+	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []Class{}) or use other options such as http.Ok ...
+	//return Response(200, []Class{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("SearchClasses method not implemented")
 }
 
 // SearchSchool - searches for a school
