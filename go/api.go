@@ -23,13 +23,17 @@ import (
 type AllApiRouter interface { 
 	AuthUser(http.ResponseWriter, *http.Request)
 	ConfirmEmail(http.ResponseWriter, *http.Request)
+	DeleteAuction(http.ResponseWriter, *http.Request)
 	ExchangeRate(http.ResponseWriter, *http.Request)
 	Login(http.ResponseWriter, *http.Request)
 	Logout(http.ResponseWriter, *http.Request)
+	MakeAuction(http.ResponseWriter, *http.Request)
+	PayTransaction(http.ResponseWriter, *http.Request)
 	SearchAccount(http.ResponseWriter, *http.Request)
 	SearchAllBucks(http.ResponseWriter, *http.Request)
 	SearchBucks(http.ResponseWriter, *http.Request)
 	SearchClass(http.ResponseWriter, *http.Request)
+	SearchClasses(http.ResponseWriter, *http.Request)
 	SearchSchool(http.ResponseWriter, *http.Request)
 	SearchStudent(http.ResponseWriter, *http.Request)
 	SearchStudentBucks(http.ResponseWriter, *http.Request)
@@ -55,18 +59,14 @@ type SchoolAdminApiRouter interface {
 // The StaffApiRouter implementation should parse necessary information from the http request,
 // pass the data to a StaffApiServicer to perform the required actions, then write the service results to the http response.
 type StaffApiRouter interface { 
-	DeleteAuction(http.ResponseWriter, *http.Request)
 	DeleteStudent(http.ResponseWriter, *http.Request)
 	Deleteclass(http.ResponseWriter, *http.Request)
 	EditClass(http.ResponseWriter, *http.Request)
 	KickClass(http.ResponseWriter, *http.Request)
-	MakeAuction(http.ResponseWriter, *http.Request)
 	MakeClass(http.ResponseWriter, *http.Request)
-	PayTransaction(http.ResponseWriter, *http.Request)
 	PayTransactions(http.ResponseWriter, *http.Request)
 	ResetPassword(http.ResponseWriter, *http.Request)
 	SearchAuctionsTeacher(http.ResponseWriter, *http.Request)
-	SearchClasses(http.ResponseWriter, *http.Request)
 	SearchEvents(http.ResponseWriter, *http.Request)
 	SearchTransactions(http.ResponseWriter, *http.Request)
 }
@@ -123,13 +123,17 @@ type UnregisteredApiRouter interface {
 type AllApiServicer interface { 
 	AuthUser(context.Context) (ImplResponse, error)
 	ConfirmEmail(context.Context, string) (ImplResponse, error)
+	DeleteAuction(context.Context, string) (ImplResponse, error)
 	ExchangeRate(context.Context, string, string) (ImplResponse, error)
 	Login(context.Context, RequestLogin) (ImplResponse, error)
 	Logout(context.Context, string) (ImplResponse, error)
+	MakeAuction(context.Context, RequestMakeAuction) (ImplResponse, error)
+	PayTransaction(context.Context, RequestPayTransaction) (ImplResponse, error)
 	SearchAccount(context.Context, string) (ImplResponse, error)
 	SearchAllBucks(context.Context) (ImplResponse, error)
 	SearchBucks(context.Context, string) (ImplResponse, error)
 	SearchClass(context.Context, string) (ImplResponse, error)
+	SearchClasses(context.Context) (ImplResponse, error)
 	SearchSchool(context.Context, string) (ImplResponse, error)
 	SearchStudent(context.Context, string) (ImplResponse, error)
 	SearchStudentBucks(context.Context) (ImplResponse, error)
@@ -164,18 +168,14 @@ type SchoolAdminApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type StaffApiServicer interface { 
-	DeleteAuction(context.Context, string) (ImplResponse, error)
 	DeleteStudent(context.Context, string) (ImplResponse, error)
 	Deleteclass(context.Context, string) (ImplResponse, error)
 	EditClass(context.Context, RequestEditClass) (ImplResponse, error)
 	KickClass(context.Context, RequestKickClass) (ImplResponse, error)
-	MakeAuction(context.Context, RequestMakeAuction) (ImplResponse, error)
 	MakeClass(context.Context, RequestMakeClass) (ImplResponse, error)
-	PayTransaction(context.Context, RequestPayTransaction) (ImplResponse, error)
 	PayTransactions(context.Context, RequestPayTransactions) (ImplResponse, error)
 	ResetPassword(context.Context, RequestUser) (ImplResponse, error)
 	SearchAuctionsTeacher(context.Context) (ImplResponse, error)
-	SearchClasses(context.Context, string) (ImplResponse, error)
 	SearchEvents(context.Context) (ImplResponse, error)
 	SearchTransactions(context.Context, string) (ImplResponse, error)
 }

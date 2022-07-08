@@ -50,12 +50,6 @@ func NewStaffApiController(s StaffApiServicer, opts ...StaffApiOption) Router {
 func (c *StaffApiController) Routes() Routes {
 	return Routes{
 		{
-			"DeleteAuction",
-			strings.ToUpper("Delete"),
-			"/api/auctions/auction",
-			c.DeleteAuction,
-		},
-		{
 			"DeleteStudent",
 			strings.ToUpper("Delete"),
 			"/api/users/user",
@@ -80,22 +74,10 @@ func (c *StaffApiController) Routes() Routes {
 			c.KickClass,
 		},
 		{
-			"MakeAuction",
-			strings.ToUpper("Post"),
-			"/api/auctions",
-			c.MakeAuction,
-		},
-		{
 			"MakeClass",
 			strings.ToUpper("Post"),
 			"/api/classes/class",
 			c.MakeClass,
-		},
-		{
-			"PayTransaction",
-			strings.ToUpper("Post"),
-			"/api/transactions/payTransaction",
-			c.PayTransaction,
 		},
 		{
 			"PayTransactions",
@@ -116,12 +98,6 @@ func (c *StaffApiController) Routes() Routes {
 			c.SearchAuctionsTeacher,
 		},
 		{
-			"SearchClasses",
-			strings.ToUpper("Get"),
-			"/api/classes",
-			c.SearchClasses,
-		},
-		{
 			"SearchEvents",
 			strings.ToUpper("Get"),
 			"/api/events",
@@ -134,21 +110,6 @@ func (c *StaffApiController) Routes() Routes {
 			c.SearchTransactions,
 		},
 	}
-}
-
-// DeleteAuction - delete auction
-func (c *StaffApiController) DeleteAuction(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.DeleteAuction(r.Context(), idParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
 }
 
 // DeleteStudent - delete student
@@ -229,30 +190,6 @@ func (c *StaffApiController) KickClass(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// MakeAuction - make a new auction
-func (c *StaffApiController) MakeAuction(w http.ResponseWriter, r *http.Request) {
-	requestMakeAuctionParam := RequestMakeAuction{}
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(&requestMakeAuctionParam); err != nil {
-		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-		return
-	}
-	if err := AssertRequestMakeAuctionRequired(requestMakeAuctionParam); err != nil {
-		c.errorHandler(w, r, err, nil)
-		return
-	}
-	result, err := c.service.MakeAuction(r.Context(), requestMakeAuctionParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
 // MakeClass - make a new class
 func (c *StaffApiController) MakeClass(w http.ResponseWriter, r *http.Request) {
 	requestMakeClassParam := RequestMakeClass{}
@@ -267,30 +204,6 @@ func (c *StaffApiController) MakeClass(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result, err := c.service.MakeClass(r.Context(), requestMakeClassParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// PayTransaction - When a teacher or admin is paying/debting a student with their own bucks
-func (c *StaffApiController) PayTransaction(w http.ResponseWriter, r *http.Request) {
-	requestPayTransactionParam := RequestPayTransaction{}
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(&requestPayTransactionParam); err != nil {
-		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-		return
-	}
-	if err := AssertRequestPayTransactionRequired(requestPayTransactionParam); err != nil {
-		c.errorHandler(w, r, err, nil)
-		return
-	}
-	result, err := c.service.PayTransaction(r.Context(), requestPayTransactionParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -352,21 +265,6 @@ func (c *StaffApiController) ResetPassword(w http.ResponseWriter, r *http.Reques
 // SearchAuctionsTeacher - searches auctions
 func (c *StaffApiController) SearchAuctionsTeacher(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.SearchAuctionsTeacher(r.Context())
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// SearchClasses - searches for users classes
-func (c *StaffApiController) SearchClasses(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.SearchClasses(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

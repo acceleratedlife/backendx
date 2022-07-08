@@ -13,17 +13,29 @@ package openapi
 import "github.com/shopspring/decimal"
 
 type Crypto struct {
-	Basis decimal.Decimal `json:"basis,omitempty"`
+	Basis decimal.Decimal `json:"basis"`
 
-	CurrentPrice decimal.Decimal `json:"currentPrice,omitempty"`
+	CurrentPrice decimal.Decimal `json:"currentPrice"`
 
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 
-	Quantity decimal.Decimal `json:"quantity,omitempty"`
+	Quantity decimal.Decimal `json:"quantity"`
 }
 
 // AssertCryptoRequired checks if the required fields are not zero-ed
 func AssertCryptoRequired(obj Crypto) error {
+	elements := map[string]interface{}{
+		"basis":        obj.Basis,
+		"currentPrice": obj.CurrentPrice,
+		"name":         obj.Name,
+		"quantity":     obj.Quantity,
+	}
+	for name, el := range elements {
+		if isZero := IsZeroValue(el); isZero {
+			return &RequiredError{Field: name}
+		}
+	}
+
 	return nil
 }
 

@@ -381,18 +381,12 @@ paths:
         style: form
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Auction'
-                type: array
-          description: auctions matching criteria
+          description: successful deletion
         "404":
           description: Auction not found
       summary: delete auction
       tags:
-      - Staff
+      - All
     get:
       description: by passing in a auction ID that auction is returned
       operationId: searchAuctions
@@ -459,18 +453,12 @@ paths:
               $ref: '#/components/schemas/RequestMakeAuction'
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Auction'
-                type: array
-          description: auctions matching criteria
+          description: auctions created
         "400":
           description: Auction cannot be made with that data
       summary: make a new auction
       tags:
-      - Staff
+      - All
   /auctions/student:
     get:
       description: given a student id find every class that they are a member of.
@@ -757,15 +745,6 @@ paths:
     get:
       description: By passing in a user_id you can find classes. Sort by period ascending.
       operationId: searchClasses
-      parameters:
-      - description: pass the user_id to be searched
-        explode: true
-        in: query
-        name: _id
-        required: true
-        schema:
-          type: string
-        style: form
       responses:
         "200":
           content:
@@ -779,7 +758,7 @@ paths:
           description: No classes found
       summary: searches for users classes
       tags:
-      - Staff
+      - All
   /classes/member:
     get:
       description: By passing in a _id you can find classes. Populate owner with firstName,
@@ -1073,7 +1052,7 @@ paths:
       summary: When a teacher or admin is paying/debting a student with their own
         bucks
       tags:
-      - Staff
+      - All
   /transactions/payTransactions:
     post:
       description: Make a new transaction. Find the associated buck and account. If

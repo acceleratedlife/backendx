@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
-	"strconv"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -39,94 +37,6 @@ func (s *StaffApiServiceImpl) SearchEvents(ctx context.Context) (openapi.ImplRes
 	}
 
 	return openapi.Response(200, resp), nil
-}
-
-func (a *StaffApiServiceImpl) DeleteAuction(ctx context.Context, Id string) (openapi.ImplResponse, error) {
-	userData := ctx.Value("user").(token.User)
-	userDetails, err := getUserInLocalStore(a.db, userData.Name)
-	if err != nil {
-		return openapi.Response(404, openapi.ResponseAuth{
-			IsAuth: false,
-			Error:  true,
-		}), nil
-	}
-	if userDetails.Role == UserRoleStudent {
-		return openapi.Response(401, ""), nil
-	}
-
-	auctions := make([]openapi.Auction, 0)
-	err = a.db.Update(func(tx *bolt.Tx) error {
-		schoolBucket, err := getSchoolBucketTx(tx, userDetails)
-		if err != nil {
-			return err
-		}
-
-		auctionsBucket, auctionData, err := getAuctionBucketTx(tx, schoolBucket, Id)
-		if err != nil {
-			return err
-		}
-
-		var auction openapi.Auction
-		err = json.Unmarshal(auctionData, &auction)
-		if err != nil {
-			return err
-		}
-
-		if a.clock.Now().Before(auction.EndDate) {
-			if auction.WinnerId.Id != "" {
-				err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid, "Canceled Auction: "+strconv.Itoa(auction.EndDate.Second()))
-				if err != nil {
-					return err
-				}
-			}
-
-			err = auctionsBucket.Delete([]byte(Id))
-			if err != nil {
-				return err
-			}
-
-		} else {
-			if auction.WinnerId.Id != "" {
-				if auction.MaxBid > auction.Bid {
-					err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid-auction.Bid, "Won auction return: "+strconv.Itoa(auction.EndDate.Second()))
-					if err != nil {
-						return err
-					}
-				}
-
-				auction.Active = false
-				marshal, err := json.Marshal(auction)
-				if err != nil {
-					return err
-				}
-
-				err = auctionsBucket.Put([]byte(Id), marshal)
-				if err != nil {
-					return err
-				}
-			} else {
-				err = auctionsBucket.Delete([]byte(Id))
-				if err != nil {
-					return err
-				}
-			}
-
-		}
-
-		auctions, err = getTeacherAuctionsTx(tx, auctionsBucket, userDetails)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		lgr.Printf("ERROR cannot delete auction from the school: %s %v", userDetails.SchoolId, err)
-		return openapi.Response(500, "{}"), nil
-	}
-
-	return openapi.Response(200, auctions), nil
 }
 
 func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, Id string) (openapi.ImplResponse, error) {
@@ -271,28 +181,6 @@ func (a *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.Reques
 	return openapi.Response(200, nil), nil
 }
 
-func (a *StaffApiServiceImpl) MakeAuction(ctx context.Context, body openapi.RequestMakeAuction) (openapi.ImplResponse, error) {
-	userData := ctx.Value("user").(token.User)
-	userDetails, err := getUserInLocalStore(a.db, userData.Name)
-	if err != nil {
-		return openapi.Response(404, openapi.ResponseAuth{
-			IsAuth: false,
-			Error:  true,
-		}), nil
-	}
-	if userDetails.Role == UserRoleStudent {
-		return openapi.Response(401, ""), nil
-	}
-
-	auctions, err := MakeAuctionImpl(a.db, userDetails, body)
-	if err != nil {
-		lgr.Printf("ERROR cannot make auctions from the teacher: %s %v", userDetails.Name, err)
-		return openapi.Response(500, "{}"), nil
-	}
-
-	return openapi.Response(200, auctions), nil
-}
-
 func (s *StaffApiServiceImpl) MakeClass(ctx context.Context, request openapi.RequestMakeClass) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
@@ -314,40 +202,6 @@ func (s *StaffApiServiceImpl) MakeClass(ctx context.Context, request openapi.Req
 	}
 
 	return openapi.Response(200, classes), nil
-}
-
-func (s *StaffApiServiceImpl) PayTransaction(ctx context.Context, body openapi.RequestPayTransaction) (openapi.ImplResponse, error) {
-	userData := ctx.Value("user").(token.User)
-	userDetails, err := getUserInLocalStore(s.db, userData.Name)
-	if err != nil {
-		return openapi.Response(404, openapi.ResponseAuth{
-			IsAuth: false,
-			Error:  true,
-		}), nil
-	}
-
-	if userDetails.Role == UserRoleStudent {
-		err = executeStudentTransaction(s.db, s.clock, body.Amount, body.Student, userDetails, body.Description)
-		if err != nil {
-			return openapi.Response(400, ""), err
-		}
-	} else if userDetails.Role == UserRoleTeacher {
-		err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
-		if err != nil {
-			return openapi.Response(400, ""), err
-		}
-	} else {
-		err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
-		if err != nil {
-			return openapi.Response(400, ""), err
-		}
-	}
-
-	if err != nil {
-		return openapi.Response(400, ""), err
-	}
-
-	return openapi.Response(200, ""), nil
 }
 
 func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.RequestPayTransactions) (openapi.ImplResponse, error) {
@@ -441,8 +295,21 @@ func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openap
 			Error:  true,
 		}), nil
 	}
+
 	if userDetails.Role == UserRoleStudent {
-		return openapi.Response(401, ""), nil
+		auctions, err := getStudentAuctions(s.db, userDetails)
+		if err != nil {
+			return openapi.Response(401, ""), err
+		}
+		var studentAuctions []openapi.Auction
+		for i := range auctions {
+			if auctions[i].OwnerId.Id == userDetails.Name {
+				auctions[i].Visibility = visibilityToSlice(s.db, userDetails, auctions[i].Visibility)
+				studentAuctions = append(studentAuctions, auctions[i])
+			}
+		}
+
+		return openapi.Response(200, studentAuctions), nil
 	}
 
 	var resp []openapi.Auction
@@ -452,7 +319,7 @@ func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openap
 			return err
 		}
 
-		resp, err = getTeacherAuctionsTx(tx, auctionsBucket, userDetails)
+		resp, err = getTeacherAuctionsRx(tx, auctionsBucket, userDetails)
 		if err != nil {
 			return err
 		}
@@ -463,38 +330,6 @@ func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openap
 	}
 
 	return openapi.Response(200, resp), nil
-}
-
-func (s *StaffApiServiceImpl) SearchClasses(ctx context.Context, Id string) (openapi.ImplResponse, error) {
-	userData := ctx.Value("user").(token.User)
-	userDetails, err := getUserInLocalStore(s.db, userData.Name)
-	if err != nil {
-		return openapi.Response(404, openapi.ResponseAuth{
-			IsAuth: false,
-			Error:  true,
-		}), nil
-	}
-	if userDetails.Role == UserRoleStudent {
-		return openapi.Response(401, ""), nil
-	}
-
-	var data []openapi.Class
-	if userDetails.Role == UserRoleTeacher {
-		data = getTeacherClasses(s.db, userDetails.SchoolId, userDetails.Name)
-	} else if userDetails.Role == UserRoleAdmin {
-		data = getSchoolClasses(s.db, userDetails.SchoolId)
-	}
-
-	if data == nil {
-		return openapi.ImplResponse{}, err
-	}
-
-	sort.Slice(data, func(i, j int) bool {
-		return data[i].Period < data[j].Period
-	})
-	return openapi.Response(200,
-		data), nil
-
 }
 
 func (s *StaffApiServiceImpl) SearchTransactions(ctx context.Context, teacherId string) (openapi.ImplResponse, error) {
@@ -573,7 +408,17 @@ func auctionsToSlice(auctions *bolt.Bucket) (resp []openapi.Auction) {
 	return
 }
 
-func visibilityToSlice(tx *bolt.Tx, userDetails UserInfo, classIds []string) (resp []string) {
+func visibilityToSlice(db *bolt.DB, userDetails UserInfo, classIds []string) (resp []string) {
+	_ = db.View(func(tx *bolt.Tx) error {
+		resp = visibilityToSliceRx(tx, userDetails, classIds)
+
+		return nil
+	})
+
+	return
+}
+
+func visibilityToSliceRx(tx *bolt.Tx, userDetails UserInfo, classIds []string) (resp []string) {
 	for _, key := range classIds {
 		if key == KeyEntireSchool || key == KeyFreshman || key == KeySophomores || key == KeyJuniors || key == KeySeniors {
 			resp = append(resp, key)

@@ -27,20 +27,6 @@ func NewStaffApiService() StaffApiServicer {
 	return &StaffApiService{}
 }
 
-// DeleteAuction - delete auction
-func (s *StaffApiService) DeleteAuction(ctx context.Context, id string) (ImplResponse, error) {
-	// TODO - update DeleteAuction with the required logic for this service method.
-	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, []Auction{}) or use other options such as http.Ok ...
-	//return Response(200, []Auction{}), nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("DeleteAuction method not implemented")
-}
-
 // DeleteStudent - delete student
 func (s *StaffApiService) DeleteStudent(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update DeleteStudent with the required logic for this service method.
@@ -97,20 +83,6 @@ func (s *StaffApiService) KickClass(ctx context.Context, requestKickClass Reques
 	return Response(http.StatusNotImplemented, nil), errors.New("KickClass method not implemented")
 }
 
-// MakeAuction - make a new auction
-func (s *StaffApiService) MakeAuction(ctx context.Context, requestMakeAuction RequestMakeAuction) (ImplResponse, error) {
-	// TODO - update MakeAuction with the required logic for this service method.
-	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, []Auction{}) or use other options such as http.Ok ...
-	//return Response(200, []Auction{}), nil
-
-	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
-	//return Response(400, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("MakeAuction method not implemented")
-}
-
 // MakeClass - make a new class
 func (s *StaffApiService) MakeClass(ctx context.Context, requestMakeClass RequestMakeClass) (ImplResponse, error) {
 	// TODO - update MakeClass with the required logic for this service method.
@@ -123,20 +95,6 @@ func (s *StaffApiService) MakeClass(ctx context.Context, requestMakeClass Reques
 	//return Response(404, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("MakeClass method not implemented")
-}
-
-// PayTransaction - When a teacher or admin is paying/debting a student with their own bucks
-func (s *StaffApiService) PayTransaction(ctx context.Context, requestPayTransaction RequestPayTransaction) (ImplResponse, error) {
-	// TODO - update PayTransaction with the required logic for this service method.
-	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
-	//return Response(200, nil),nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("PayTransaction method not implemented")
 }
 
 // PayTransactions - When a teacher or admin is paying/debting an entire class
@@ -179,20 +137,6 @@ func (s *StaffApiService) SearchAuctionsTeacher(ctx context.Context) (ImplRespon
 	//return Response(404, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchAuctionsTeacher method not implemented")
-}
-
-// SearchClasses - searches for users classes
-func (s *StaffApiService) SearchClasses(ctx context.Context, id string) (ImplResponse, error) {
-	// TODO - update SearchClasses with the required logic for this service method.
-	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, []Class{}) or use other options such as http.Ok ...
-	//return Response(200, []Class{}), nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("SearchClasses method not implemented")
 }
 
 // SearchEvents - returns all of todays events for the users school

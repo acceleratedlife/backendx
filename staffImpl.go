@@ -30,7 +30,7 @@ func deleteStudentTx(tx *bolt.Tx, studentId string) (err error) {
 		return err
 	}
 
-	auctions, err := getStudentAuctionsTx(tx, auctionsBucket, studentInfo)
+	auctions, err := getStudentAuctionsRx(tx, studentInfo)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func deleteStudentTx(tx *bolt.Tx, studentId string) (err error) {
 		}
 	}
 
-	classes, err := getStudentClassesTx(tx, studentInfo)
+	classes, err := getStudentClassesRx(tx, studentInfo)
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,22 @@ func getSchoolBucketTx(tx *bolt.Tx, userDetails UserInfo) (school *bolt.Bucket, 
 	return
 }
 
-func getTeacherAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails UserInfo) ([]openapi.Auction, error) {
+func getTeacherAuctions(db *bolt.DB, userDetails UserInfo) (auctions []openapi.Auction, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		school, err := getSchoolBucketTx(tx, userDetails)
+		auctionsBucket := school.Bucket([]byte(KeyAuctions))
+		auctions, err = getTeacherAuctionsRx(tx, auctionsBucket, userDetails)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+}
+
+func getTeacherAuctionsRx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails UserInfo) ([]openapi.Auction, error) {
 	auctions := make([]openapi.Auction, 0)
 
 	c := auctionsBucket.Cursor()
@@ -264,7 +279,7 @@ func getTeacherAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails 
 		}
 
 		if auction.OwnerId.Id == userDetails.Name {
-			auction.Visibility = visibilityToSlice(tx, userDetails, auction.Visibility)
+			auction.Visibility = visibilityToSliceRx(tx, userDetails, auction.Visibility)
 
 			ownerDetails, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
 			if err != nil {
@@ -372,16 +387,16 @@ func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int)
 	return
 }
 
-func MakeAuctionImpl(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (auctions []openapi.Auction, err error) {
-	_, auctions, err = CreateAuction(db, userDetails, request)
+func MakeAuctionImpl(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (err error) {
+	_, err = CreateAuction(db, userDetails, request)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create auction")
+		return fmt.Errorf("cannot create auction")
 	}
 
-	return auctions, err
+	return err
 }
 
-func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (auctionId time.Time, auctions []openapi.Auction, err error) {
+func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (auctionId time.Time, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 		if err != nil {
@@ -397,16 +412,11 @@ func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMak
 			return fmt.Errorf("Problem adding auctions details: %v", err)
 		}
 
-		auctions, err = getTeacherAuctionsTx(tx, auctionsBucket, userDetails)
-		if err != nil {
-			return fmt.Errorf("Problem finding teacher auctions: %v", err)
-		}
-
 		return nil
 	})
 
 	if err != nil {
-		return auctionId, nil, err
+		return auctionId, err
 	}
 
 	return

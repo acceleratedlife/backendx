@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -48,6 +52,96 @@ func (a *AllApiServiceImpl) AuthUser(ctx context.Context) (user openapi.ImplResp
 func (a AllApiServiceImpl) ConfirmEmail(ctx context.Context, s string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (a *AllApiServiceImpl) DeleteAuction(ctx context.Context, Id string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	newTime, err := time.Parse(time.RFC3339, Id)
+	if err != nil {
+		return openapi.Response(500, "{}"), err
+	}
+
+	Id = newTime.Truncate(time.Millisecond).String()
+
+	err = a.db.Update(func(tx *bolt.Tx) error {
+		schoolBucket, err := getSchoolBucketTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		auctionsBucket, auctionData, err := getAuctionBucketTx(tx, schoolBucket, Id)
+		if err != nil {
+			return err
+		}
+
+		var auction openapi.Auction
+		err = json.Unmarshal(auctionData, &auction)
+		if err != nil {
+			return err
+		}
+
+		if a.clock.Now().Before(auction.EndDate) {
+			if auction.WinnerId.Id != "" {
+				err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid, "Canceled Auction: "+strconv.Itoa(auction.EndDate.Second()))
+				if err != nil {
+					return err
+				}
+			}
+
+			err = auctionsBucket.Delete([]byte(Id))
+			if err != nil {
+				return err
+			}
+
+		} else {
+			if auction.WinnerId.Id != "" {
+				if auction.MaxBid > auction.Bid {
+					err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid-auction.Bid, "Won auction return: "+strconv.Itoa(auction.EndDate.Minute()))
+					if err != nil {
+						return err
+					}
+				}
+
+				auction.Active = false
+				marshal, err := json.Marshal(auction)
+				if err != nil {
+					return err
+				}
+
+				err = auctionsBucket.Put([]byte(Id), marshal)
+				if err != nil {
+					return err
+				}
+
+				if userDetails.Role == UserRoleStudent && auction.OwnerId.Id == userDetails.Name {
+					addUbuck2StudentTx(tx, a.clock, userDetails, decimal.NewFromInt32(auction.Bid).Mul(decimal.NewFromFloat32(.99)), "Auction sold: "+strconv.Itoa(auction.EndDate.Minute()))
+				}
+			} else {
+				err = auctionsBucket.Delete([]byte(Id))
+				if err != nil {
+					return err
+				}
+			}
+
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR cannot delete auction from the school: %s %v", userDetails.SchoolId, err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, nil), nil
 }
 
 func (a AllApiServiceImpl) ExchangeRate(ctx context.Context, from string, to string) (openapi.ImplResponse, error) {
@@ -146,6 +240,25 @@ func (a AllApiServiceImpl) Logout(ctx context.Context, s string) (openapi.ImplRe
 	panic("implement me")
 }
 
+func (a *AllApiServiceImpl) MakeAuction(ctx context.Context, body openapi.RequestMakeAuction) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	err = MakeAuctionImpl(a.db, userDetails, body)
+	if err != nil {
+		lgr.Printf("ERROR cannot make auctions from : %s %v", userDetails.Name, err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, nil), nil
+}
+
 func (a AllApiServiceImpl) SearchAccount(ctx context.Context, s string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
@@ -188,6 +301,40 @@ func (a *AllApiServiceImpl) SearchClass(ctx context.Context, Id string) (openapi
 		return openapi.Response(500, "{}"), nil
 	}
 	return openapi.Response(200, resp), nil
+}
+
+func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.RequestPayTransaction) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role == UserRoleStudent {
+		err = executeStudentTransaction(s.db, s.clock, body.Amount, body.Student, userDetails, body.Description)
+		if err != nil {
+			return openapi.Response(400, ""), err
+		}
+	} else if userDetails.Role == UserRoleTeacher {
+		err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
+		if err != nil {
+			return openapi.Response(400, ""), err
+		}
+	} else {
+		err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
+		if err != nil {
+			return openapi.Response(400, ""), err
+		}
+	}
+
+	if err != nil {
+		return openapi.Response(400, ""), err
+	}
+
+	return openapi.Response(200, ""), nil
 }
 
 func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.ImplResponse, error) {
@@ -279,6 +426,37 @@ func (s *AllApiServiceImpl) SearchAllBucks(ctx context.Context) (openapi.ImplRes
 	})
 
 	return openapi.Response(200, resp), nil
+
+}
+
+func (s *AllApiServiceImpl) SearchClasses(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	var data []openapi.Class
+	if userDetails.Role == UserRoleTeacher {
+		data = getTeacherClasses(s.db, userDetails.SchoolId, userDetails.Name)
+	} else if userDetails.Role == UserRoleAdmin {
+		data = getSchoolClasses(s.db, userDetails.SchoolId)
+	} else {
+		data, err = getStudentClasses(s.db, userDetails)
+	}
+
+	if data == nil {
+		return openapi.ImplResponse{}, err
+	}
+
+	sort.Slice(data, func(i, j int) bool {
+		return data[i].Period < data[j].Period
+	})
+	return openapi.Response(200,
+		data), nil
 
 }
 

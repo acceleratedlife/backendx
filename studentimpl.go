@@ -1057,7 +1057,24 @@ func getStudentUbuckRx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.Response
 	return
 }
 
-func getStudentAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails UserInfo) (auctions []openapi.Auction, err error) {
+func getStudentAuctions(db *bolt.DB, userDetails UserInfo) (auctions []openapi.Auction, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		auctions, err = getStudentAuctionsRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+}
+
+func getStudentAuctionsRx(tx *bolt.Tx, userDetails UserInfo) (auctions []openapi.Auction, err error) {
+	auctionsBucket, err := getAuctionsTx(tx, userDetails)
+	if err != nil {
+		return
+	}
 
 	c := auctionsBucket.Cursor()
 
@@ -1077,7 +1094,7 @@ func getStudentAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails 
 			return nil, err
 		}
 
-		classes, err := getStudentClassesTx(tx, userDetails)
+		classes, err := getStudentClassesRx(tx, userDetails)
 		if err != nil {
 			return auctions, fmt.Errorf("cannot get student classes %s: %v", userDetails.Name, err)
 		}
@@ -1123,7 +1140,20 @@ func getStudentAuctionsTx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails 
 	return auctions, nil
 }
 
-func getStudentClassesTx(tx *bolt.Tx, userDetails UserInfo) (classes []openapi.Class, err error) {
+func getStudentClasses(db *bolt.DB, userDetails UserInfo) (classes []openapi.Class, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		classes, err = getStudentClassesRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+}
+
+func getStudentClassesRx(tx *bolt.Tx, userDetails UserInfo) (classes []openapi.Class, err error) {
 	school, err := getSchoolBucketTx(tx, userDetails)
 	if err != nil {
 		return classes, fmt.Errorf("cannot get schools %s: %v", userDetails.Name, err)
@@ -1518,7 +1548,7 @@ func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.R
 
 		resp = openapi.ResponseCrypto{
 			Searched: crypto,
-			Usd:      float32(cryptoInfo.Usd.InexactFloat64()),
+			Usd:      cryptoInfo.Usd,
 			Owned:    float32(studentCrypto.Quantity.InexactFloat64()),
 			UBuck:    ubuck.Value,
 			Basis:    float32(studentCrypto.Basis.InexactFloat64()),
@@ -1544,7 +1574,7 @@ func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.R
 			return err
 		}
 
-		cryptoInfo.Usd = usd
+		cryptoInfo.Usd = float32(usd.InexactFloat64())
 		cryptoInfo.UpdatedAt = time.Now().Truncate(time.Second)
 		marshal, err := json.Marshal(cryptoInfo)
 		if err != nil {
@@ -1567,7 +1597,7 @@ func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.R
 
 		resp = openapi.ResponseCrypto{
 			Searched: crypto,
-			Usd:      float32(cryptoInfo.Usd.InexactFloat64()),
+			Usd:      cryptoInfo.Usd,
 			Owned:    float32(studentCrypto.Quantity.InexactFloat64()),
 			UBuck:    ubuck.Value,
 			Basis:    float32(studentCrypto.Basis.InexactFloat64()),

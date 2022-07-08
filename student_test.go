@@ -243,7 +243,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 		Visibility:  auctionClasses,
 	}
 
-	_, err = MakeAuctionImpl(db, UserInfo{
+	err = MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
@@ -254,7 +254,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 
 	body.Visibility = auctionClasses
 
-	_, err = MakeAuctionImpl(db, UserInfo{
+	err = MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
@@ -644,7 +644,7 @@ func TestAuctionBid(t *testing.T) {
 	err = addUbuck2Student(db, &clock, student1, decimal.NewFromFloat(100), "starter")
 	require.Nil(t, err)
 
-	auctions, err := MakeAuctionImpl(db, teacher, openapi.RequestMakeAuction{
+	err = MakeAuctionImpl(db, teacher, openapi.RequestMakeAuction{
 		Bid:         0,
 		MaxBid:      0,
 		Description: "test auc",
@@ -655,9 +655,14 @@ func TestAuctionBid(t *testing.T) {
 	})
 	require.Nil(t, err)
 
+	auctions, err := getTeacherAuctions(db, teacher)
+	require.Nil(t, err)
+
 	//overdrawn student 0 max 0 bid 0
+	timeId := auctions[0].Id.Format(time.RFC3339Nano)
+
 	body := openapi.RequestAuctionBid{
-		Item: auctions[0].Id.String(),
+		Item: timeId,
 		Bid:  500,
 	}
 	marshal, _ := json.Marshal(body)
@@ -677,7 +682,7 @@ func TestAuctionBid(t *testing.T) {
 	//first bid student 0 max 50 bid 1
 
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id.String(),
+		Item: timeId,
 		Bid:  50,
 	}
 	marshal, _ = json.Marshal(body)
@@ -694,7 +699,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//self outbid student0 max 50 bid 1
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id.String(),
+		Item: timeId,
 		Bid:  51,
 	}
 	marshal, _ = json.Marshal(body)
@@ -711,7 +716,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//true outbid student1 max 91 bid 51
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id.String(),
+		Item: timeId,
 		Bid:  91,
 	}
 	marshal, _ = json.Marshal(body)
@@ -730,7 +735,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//good bid but under max student0 max 91 bid 62
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id.String(),
+		Item: timeId,
 		Bid:  61,
 	}
 	marshal, _ = json.Marshal(body)
@@ -748,7 +753,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//good bid but under max student0 max 91 bid 90
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id.String(),
+		Item: timeId,
 		Bid:  89,
 	}
 	marshal, _ = json.Marshal(body)
@@ -765,7 +770,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//true outbid student0 max 97 bid 92
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id.String(),
+		Item: timeId,
 		Bid:  97,
 	}
 	marshal, _ = json.Marshal(body)
@@ -784,7 +789,7 @@ func TestAuctionBid(t *testing.T) {
 
 	//self outbid student0 max 97 bid 92
 	body = openapi.RequestAuctionBid{
-		Item: auctions[0].Id.String(),
+		Item: timeId,
 		Bid:  100,
 	}
 	marshal, _ = json.Marshal(body)
