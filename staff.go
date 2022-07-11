@@ -387,26 +387,26 @@ func studentsToSlice(students *bolt.Bucket) ([]string, error) {
 	return Members, nil
 }
 
-func auctionsToSlice(auctions *bolt.Bucket) (resp []openapi.Auction) {
-	cAuctions := auctions.Cursor()
-	for k, v := cAuctions.First(); k != nil; k, v = cAuctions.Next() {
-		if v == nil {
-			return
-		}
+// func auctionsToSlice(auctions *bolt.Bucket) (resp []openapi.Auction) {
+// 	cAuctions := auctions.Cursor()
+// 	for k, v := cAuctions.First(); k != nil; k, v = cAuctions.Next() {
+// 		if v == nil {
+// 			return
+// 		}
 
-		auctionByte := auctions.Get(k)
+// 		auctionByte := auctions.Get(k)
 
-		var auction openapi.Auction
-		err := json.Unmarshal(auctionByte, &auction)
-		if err != nil {
-			lgr.Printf("ERROR cannot unmarshal auction for %s", k)
-			continue
-		}
+// 		var auction openapi.Auction
+// 		err := json.Unmarshal(auctionByte, &auction)
+// 		if err != nil {
+// 			lgr.Printf("ERROR cannot unmarshal auction for %s", k)
+// 			continue
+// 		}
 
-		resp = append(resp, auction)
-	}
-	return
-}
+// 		resp = append(resp, auction)
+// 	}
+// 	return
+// }
 
 func visibilityToSlice(db *bolt.DB, userDetails UserInfo, classIds []string) (resp []string) {
 	_ = db.View(func(tx *bolt.Tx) error {

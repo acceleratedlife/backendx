@@ -188,6 +188,54 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 
 }
 
+func TestSearchAuctionsTeacherStudent(t *testing.T) {
+	clock := TestClock{}
+	db, teardown := FullStartTestServer("searchAuctionsTeacherStudent", 8090, "")
+	defer teardown()
+
+	_, schools, _, classes, students, err := CreateTestAccounts(db, 1, 1, 2, 2)
+
+	SetTestLoginUser(students[0])
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(500),
+		StartDate:   clock.Now(),
+		OwnerId:     students[0],
+		Visibility:  classes,
+	}
+
+	err = MakeAuctionImpl(db, UserInfo{
+		Name:     students[0],
+		SchoolId: schools[0],
+		Role:     UserRoleStudent,
+	}, body)
+
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/auctions",
+		nil)
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	defer resp.Body.Close()
+	var respData []openapi.Auction
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, 1, len(respData))
+	assert.Equal(t, len(classes), len(respData[0].Visibility))
+
+}
+
 func TestSearchTransactions(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchTransactions", 8090, "")

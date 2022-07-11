@@ -395,7 +395,7 @@ func TestBuckConvert(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("buckConvert", 8090, "test@admin.com")
 	defer tearDown()
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
 	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])
@@ -444,6 +444,60 @@ func TestBuckConvert(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode, resp)
+
+}
+
+func TestBuckConvertNewCurrency(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("buckConvertNewCurrency", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	otherStudent, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, otherStudent, decimal.NewFromFloat(10000), teachers[0], "pre load")
+	require.Nil(t, err)
+	err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), "daily payment")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuckConvert{
+		AccountFrom: CurrencyUBuck,
+		AccountTo:   teachers[0],
+		Amount:      900,
+	}
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	_ = db.View(func(tx *bolt.Tx) error {
+		student, err := getStudentBucketRx(tx, students[0])
+		require.Nil(t, err)
+		accounts := student.Bucket([]byte(KeyAccounts))
+		account := accounts.Bucket([]byte(teachers[0]))
+		balanceData := account.Get([]byte(KeyBalance))
+		var balance float32
+		_ = json.Unmarshal(balanceData, &balance)
+		require.Equal(t, float32(900), balance)
+		return nil
+	})
 
 }
 

@@ -140,7 +140,7 @@ func createTeacher(db *bolt.DB, newUser UserInfo) (err error) {
 }
 
 func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
-	newUser.Income = float32(math.Floor(rand.Float64()*(335-104) + 104))
+	newUser.Income = float32(math.Floor(rand.Float64()*(335.0-104.0) + 104.0))
 	newUser.CareerTransition = false
 	err = db.Update(func(tx *bolt.Tx) error {
 		err = AddUserTx(tx, newUser)
