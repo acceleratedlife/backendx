@@ -207,7 +207,7 @@ func (a AllApiServiceImpl) ExchangeRate(ctx context.Context, from string, to str
 		if account == nil {
 			resp = append(resp, openapi.ResponseCurrencyExchange{
 				Balance: 0,
-				Id:      from,
+				Id:      to,
 				Buck: openapi.ResponseCurrencyExchangeBuck{
 					Name: toName,
 				},

@@ -62,6 +62,14 @@ func (a *StudentApiServiceImpl) BuckConvert(ctx context.Context, body openapi.Re
 		return openapi.Response(401, ""), nil
 	}
 
+	if body.AccountFrom == body.AccountTo {
+		return openapi.Response(400, nil), fmt.Errorf("Can't convert same bucks")
+	}
+
+	if body.AccountFrom == KeyDebt {
+		return openapi.Response(400, nil), fmt.Errorf("Can't convert from debt account")
+	}
+
 	err = a.db.Update(func(tx *bolt.Tx) error {
 		err := studentConvertTx(tx, a.clock, userDetails, decimal.NewFromFloat32(body.Amount), body.AccountFrom, body.AccountTo, true)
 		if err != nil {
