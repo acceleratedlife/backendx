@@ -83,14 +83,13 @@ func getUserInLocalStore(db *bolt.DB, userId string) (user UserInfo, err error) 
 func getUserInLocalStoreTx(tx *bolt.Tx, userId string) (user UserInfo, err error) {
 	users := tx.Bucket([]byte(KeyUsers))
 	if users == nil {
-		err = fmt.Errorf("user does not exist")
+		err = fmt.Errorf("users bucket does not exist")
 		return
 	}
 
 	userBuf := users.Get([]byte(userId))
-
 	if userBuf == nil {
-		err = fmt.Errorf("user does not exist")
+		err = fmt.Errorf("user does not exist: " + userId)
 		return
 	}
 

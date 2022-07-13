@@ -324,7 +324,7 @@ func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.Req
 			return openapi.Response(400, ""), err
 		}
 	} else {
-		err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
+		err = executeAdminTransaction(s.db, s.clock, body.Amount, body.Student, body.Description)
 		if err != nil {
 			return openapi.Response(400, ""), err
 		}
@@ -345,7 +345,7 @@ func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.
 
 func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
-	_, err := getUserInLocalStore(a.db, userData.Name)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
 		return openapi.Response(404, openapi.ResponseAuth{
 			IsAuth: false,
@@ -360,12 +360,10 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (opena
 			return err
 		}
 
-		history, err := getStudentHistoryTX(tx, user.Name)
-		if err != nil {
-			return err
+		nWorth := 0.0
+		if userDetails.Role == UserRoleStudent {
+			nWorth, _ = StudentNetWorthTx(tx, user.Email).Float64()
 		}
-
-		nWorth, _ := StudentNetWorthTx(tx, user.Email).Float64()
 		nUser := openapi.User{
 			Id:               user.Email,
 			CollegeEnd:       user.CollegeEnd,
@@ -378,9 +376,8 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (opena
 			College:          user.College,
 			Children:         user.Children,
 			Income:           user.Income,
-			Role:             0,
+			Role:             user.Role,
 			Rank:             user.Rank,
-			History:          history,
 			CareerTransition: user.CareerTransition,
 			NetWorth:         float32(nWorth),
 		}
@@ -405,6 +402,7 @@ func (s *AllApiServiceImpl) SearchAllBucks(ctx context.Context) (openapi.ImplRes
 			Error:  true,
 		}), nil
 	}
+
 	var resp []openapi.Buck
 	err = s.db.View(func(tx *bolt.Tx) error {
 		bucks, err := getCBBucksRx(tx, userDetails.SchoolId)
@@ -597,12 +595,11 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		return openapi.Response(500, nil), err
 	}
 
-	history, err := getStudentHistory(a.db, userDetails.Name, userDetails.SchoolId)
-	if err != nil {
-		return openapi.Response(500, nil), err
+	nWorth := 0.0
+	if userDetails.Role == 0 {
+		nWorth, _ = StudentNetWorth(a.db, userDetails.Name).Float64()
 	}
 
-	nWorth, _ := StudentNetWorth(a.db, userDetails.Name).Float64()
 	resp := openapi.User{
 		Id:               userDetails.Name,
 		Email:            userDetails.Email,
@@ -610,7 +607,6 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		TransitionEnd:    userDetails.TransitionEnd,
 		FirstName:        userDetails.FirstName,
 		LastName:         userDetails.LastName,
-		History:          history,
 		Confirmed:        userDetails.Confirmed,
 		SchoolId:         userDetails.SchoolId,
 		CareerTransition: userDetails.CareerTransition,
@@ -639,6 +635,10 @@ func getCBBucksRx(tx *bolt.Tx, schoolId string) (bucks []openapi.Buck, err error
 	for k, _ := c.First(); k != nil; k, _ = c.Next() {
 
 		Id := string(k)
+
+		if Id != CurrencyUBuck && Id != KeyDebt && !strings.Contains(Id, "@") {
+			continue
+		}
 
 		var teacher UserInfo
 		var ratio float32

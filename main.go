@@ -38,6 +38,7 @@ const (
 	KeyDebt             = "debt"
 	CurrencyUBuck       = "ubuck"
 	KeyAuctions         = "auctions"
+	KeyTeacherAdmin     = "teacher@admin.com"
 	KeyCB               = "cb"
 	KeyUsers            = "users"
 	KeyAccounts         = "accounts"
@@ -129,6 +130,8 @@ func main() {
 
 	// backup
 	router.Handle("/admin/backup", backUpHandler(db))
+	//makeSchool & admin
+	// router.Handle("/admin/createSchool", createSchool(db))
 
 	router.Use(buildAuthMiddleware(m))
 
@@ -203,6 +206,12 @@ func InitDefaultAccounts(db *bolt.DB) {
 		lgr.Printf("ERROR school admin is not created: %v", err)
 		return
 	}
+
+	admin.Role = UserRoleTeacher
+	admin.Name = "teacher@admin.com"
+	admin.Email = "teacher@admin.com"
+
+	createTeacher(db, admin)
 
 	// err = seedDb(db, schoolId)
 	// if err != nil {
