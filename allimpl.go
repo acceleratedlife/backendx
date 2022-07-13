@@ -352,7 +352,7 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 	}
 	if body.CareerTransition && !userDetails.CareerTransition && userDetails.CollegeEnd.IsZero() {
 		userDetails.CareerTransition = true
-		userDetails.TransitionEnd = clock.Now().AddDate(0, 0, 7) //7 days
+		userDetails.TransitionEnd = clock.Now().AddDate(0, 0, 4) //4 days
 		userDetails.Income = userDetails.Income / 2
 	}
 	if body.College && !userDetails.College {
@@ -395,6 +395,28 @@ func executeTransaction(db *bolt.DB, clock Clock, value float32, student, owner,
 		}
 	} else if amount.Sign() < 0 {
 		err = chargeStudent(db, clock, studentDetails, amount.Abs(), owner, description, false)
+		if err != nil {
+			return fmt.Errorf("error debting student: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func executeAdminTransaction(db *bolt.DB, clock Clock, value float32, student, description string) error {
+	amount := decimal.NewFromFloat32(value)
+	studentDetails, err := getUserInLocalStore(db, student)
+	if err != nil {
+		return fmt.Errorf("error finding student: %v", err)
+	}
+
+	if amount.Sign() > 0 {
+		err = addBuck2Student(db, clock, studentDetails, amount, KeyTeacherAdmin, description)
+		if err != nil {
+			return fmt.Errorf("error paying student: %v", err)
+		}
+	} else if amount.Sign() < 0 {
+		err = chargeStudent(db, clock, studentDetails, amount.Abs(), KeyTeacherAdmin, description, false)
 		if err != nil {
 			return fmt.Errorf("error debting student: %v", err)
 		}

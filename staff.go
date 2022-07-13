@@ -218,12 +218,23 @@ func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.
 	}
 
 	errors := make([]openapi.ResponsePayTransactions, 0)
-	for _, student := range body.Students {
-		err = executeTransaction(s.db, s.clock, body.Amount, student, body.Owner, body.Description)
-		if err != nil {
-			errors = append(errors, openapi.ResponsePayTransactions{
-				Message: student + " was not paid, error: " + err.Error(),
-			})
+	if userDetails.Role == UserRoleTeacher {
+		for _, student := range body.Students {
+			err = executeTransaction(s.db, s.clock, body.Amount, student, body.Owner, body.Description)
+			if err != nil {
+				errors = append(errors, openapi.ResponsePayTransactions{
+					Message: student + " was not paid, error: " + err.Error(),
+				})
+			}
+		}
+	} else {
+		for _, student := range body.Students {
+			err = executeAdminTransaction(s.db, s.clock, body.Amount, student, body.Description)
+			if err != nil {
+				errors = append(errors, openapi.ResponsePayTransactions{
+					Message: student + " was not paid, error: " + err.Error(),
+				})
+			}
 		}
 	}
 	if len(errors) != 0 {
@@ -352,9 +363,17 @@ func (s *StaffApiServiceImpl) SearchTransactions(ctx context.Context, teacherId 
 
 	var resp []openapi.ResponseTransactions
 	err = s.db.View(func(tx *bolt.Tx) error {
-		resp, err = getTeacherTransactionsTx(tx, teacherDetails)
-		if err != nil {
-			return err
+		if userDetails.Role == UserRoleTeacher {
+			resp, err = getTeacherTransactionsTx(tx, teacherDetails)
+			if err != nil {
+				return err
+			}
+		} else {
+			teacherDetails.Name = KeyTeacherAdmin
+			resp, err = getTeacherTransactionsTx(tx, teacherDetails)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -386,27 +405,6 @@ func studentsToSlice(students *bolt.Bucket) ([]string, error) {
 	}
 	return Members, nil
 }
-
-// func auctionsToSlice(auctions *bolt.Bucket) (resp []openapi.Auction) {
-// 	cAuctions := auctions.Cursor()
-// 	for k, v := cAuctions.First(); k != nil; k, v = cAuctions.Next() {
-// 		if v == nil {
-// 			return
-// 		}
-
-// 		auctionByte := auctions.Get(k)
-
-// 		var auction openapi.Auction
-// 		err := json.Unmarshal(auctionByte, &auction)
-// 		if err != nil {
-// 			lgr.Printf("ERROR cannot unmarshal auction for %s", k)
-// 			continue
-// 		}
-
-// 		resp = append(resp, auction)
-// 	}
-// 	return
-// }
 
 func visibilityToSlice(db *bolt.DB, userDetails UserInfo, classIds []string) (resp []string) {
 	_ = db.View(func(tx *bolt.Tx) error {
