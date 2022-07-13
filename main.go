@@ -130,6 +130,7 @@ func main() {
 
 	// backup
 	router.Handle("/admin/backup", backUpHandler(db))
+	router.Handle("/admin/new-school", newSchoolHandler(db))
 	//makeSchool & admin
 	// router.Handle("/admin/createSchool", createSchool(db))
 
