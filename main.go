@@ -216,9 +216,12 @@ func createNewSchool(db *bolt.DB, newSchoolRequest NewSchoolRequest, adminPasswo
 		return err
 	}
 
+	tEmail := newSchoolRequest.Email[:1] + "." + newSchoolRequest.Email[1:]
+	lgr.Printf("INFO teacher's email: %s", tEmail)
+
 	teacher := UserInfo{
-		Name:        "t_" + newSchoolRequest.Email,
-		Email:       "t_" + newSchoolRequest.Email,
+		Name:        tEmail,
+		Email:       tEmail,
 		PasswordSha: EncodePassword(adminPassword),
 		FirstName:   newSchoolRequest.FirstName,
 		LastName:    newSchoolRequest.LastName,
