@@ -115,8 +115,6 @@ func main() {
 	}
 	defer db.Close()
 
-	// InitDefaultAccounts(db)
-
 	// ***
 
 	authService := initAuth(db, config)
@@ -184,8 +182,18 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 }
 
 func InitDefaultAccounts(db *bolt.DB) {
+	newSchoolRequest := NewSchoolRequest{
+		School:    "test school",
+		FirstName: "test",
+		LastName:  "admin",
+		Email:     "test@admin.com",
+	}
+	_ = createNewSchool(db, newSchoolRequest, "123qwe")
+}
 
-	schoolId, err := FindOrCreateSchool(db, "test school", "no city", 0)
+func createNewSchool(db *bolt.DB, newSchoolRequest NewSchoolRequest, adminPassword string) error {
+
+	schoolId, err := FindOrCreateSchool(db, newSchoolRequest.School, "no city", 0)
 	if err != nil {
 		lgr.Printf("ERROR school does not exist: %v", err)
 	}
@@ -193,11 +201,11 @@ func InitDefaultAccounts(db *bolt.DB) {
 	lgr.Printf("INFO test school id - %s", schoolId)
 
 	admin := UserInfo{
-		Name:        "test@admin.com",
-		Email:       "test@admin.com",
-		PasswordSha: EncodePassword("123qwe"),
-		FirstName:   "test",
-		LastName:    "admin",
+		Name:        newSchoolRequest.Email,
+		Email:       newSchoolRequest.Email,
+		PasswordSha: EncodePassword(adminPassword),
+		FirstName:   newSchoolRequest.FirstName,
+		LastName:    newSchoolRequest.LastName,
 		Role:        UserRoleAdmin,
 		SchoolId:    schoolId,
 	}
@@ -205,20 +213,25 @@ func InitDefaultAccounts(db *bolt.DB) {
 	_, err = CreateSchoolAdmin(db, admin)
 	if err != nil {
 		lgr.Printf("ERROR school admin is not created: %v", err)
-		return
+		return err
 	}
 
-	admin.Role = UserRoleTeacher
-	admin.Name = "teacher@admin.com"
-	admin.Email = "teacher@admin.com"
+	teacher := UserInfo{
+		Name:        "t_" + newSchoolRequest.Email,
+		Email:       "t_" + newSchoolRequest.Email,
+		PasswordSha: EncodePassword(adminPassword),
+		FirstName:   newSchoolRequest.FirstName,
+		LastName:    newSchoolRequest.LastName,
+		Role:        UserRoleTeacher,
+		SchoolId:    schoolId,
+	}
 
-	createTeacher(db, admin)
+	err = createTeacher(db, teacher)
+	if err != nil {
+		lgr.Printf("ERROR teacher user is not created")
+	}
 
-	// err = seedDb(db, schoolId)
-	// if err != nil {
-	// 	lgr.Printf("ERROR seed items were not created: %v", err)
-	// 	return
-	// }
+	return nil
 }
 
 func initAuth(db *bolt.DB, config ServerConfig) *auth.Service {

@@ -37,45 +37,50 @@ type NewSchoolResponse struct {
 
 func newSchoolHandler(db *bolt.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := db.Update(func(tx *bolt.Tx) error {
+		var request NewSchoolRequest
+		defer r.Body.Close()
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&request)
+		if err != nil {
+			err = fmt.Errorf("cannot parse request body: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-			var request NewSchoolRequest
-			defer r.Body.Close()
-			decoder := json.NewDecoder(r.Body)
-			err := decoder.Decode(&request)
-			if err != nil {
-				return fmt.Errorf("cannot parse request body: %v", err)
-			}
+		lgr.Printf("INFO new school request: %v", request)
 
-			lgr.Printf("INFO new school request: %v", request)
+		if request.Email == "" {
+			err = fmt.Errorf("email is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if request.LastName == "" {
+			err = fmt.Errorf("lastname is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-			if request.Email == "" {
-				return fmt.Errorf("email is mandatory")
-			}
-			if request.LastName == "" {
-				return fmt.Errorf("lastname is mandatory")
-			}
+		/////////////////////////////
+		// custom logic to create a new school
 
-			/////////////////////////////
-			// custom logic to create a new school
-
-			response := NewSchoolResponse{
-				AdminPassword: RandomString(8),
-			}
-			lgr.Printf("INFO new school NOT created")
-			///////////////////////////
-
-			w.Header().Set("Content-Type", "application/json")
-			encoder := json.NewEncoder(w)
-			err = encoder.Encode(response)
-			if err != nil {
-				lgr.Printf("ERROR failed to send")
-			}
-
-			return nil
-		})
+		response := NewSchoolResponse{
+			AdminPassword: RandomString(8),
+		}
+		err = createNewSchool(db, request, response.AdminPassword)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+
+		lgr.Printf("INFO new school %s created", request.School)
+		///////////////////////////
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err = encoder.Encode(response)
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
 	})
 }
