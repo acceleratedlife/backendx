@@ -115,7 +115,7 @@ func main() {
 	}
 	defer db.Close()
 
-	InitDefaultAccounts(db)
+	// InitDefaultAccounts(db)
 
 	// ***
 
