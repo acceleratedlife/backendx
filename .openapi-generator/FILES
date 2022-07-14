@@ -13,8 +13,6 @@ go/api_student.go
 go/api_student_service.go
 go/api_sys_admin.go
 go/api_sys_admin_service.go
-go/api_teacher.go
-go/api_teacher_service.go
 go/api_unregistered.go
 go/api_unregistered_service.go
 go/error.go
@@ -87,5 +85,6 @@ go/model_schools_school_body_1.go
 go/model_transaction.go
 go/model_user.go
 go/model_user_no_history.go
+go/model_user_no_history_job.go
 go/model_users_user_body.go
 go/routers.go

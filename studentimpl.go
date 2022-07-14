@@ -384,11 +384,14 @@ func CollegeIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
-		diff := decimal.NewFromInt32(834 - 208)
-		low := decimal.NewFromInt32(208)
+		student.Job = getJobIdRx(tx, KeyCollegeJobs)
+		jobDetails := getJobRx(tx, KeyCollegeJobs, student.Job)
+		max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
+		min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
+		diff := max.Sub(min)
 		random := decimal.NewFromFloat32(rand.Float32())
 
-		student.Income = float32(random.Mul(diff).Add(low).Floor().InexactFloat64())
+		student.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 		student.CollegeEnd = time.Time{}
 		marshal, err := json.Marshal(student)
 		if err != nil {
@@ -468,15 +471,21 @@ func CareerIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		if student.College && student.CollegeEnd.IsZero() {
-			diff := decimal.NewFromInt32(834 - 208)
-			low := decimal.NewFromInt32(208)
+			student.Job = getJobIdRx(tx, KeyCollegeJobs)
+			jobDetails := getJobRx(tx, KeyCollegeJobs, student.Job)
+			max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
+			min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
+			diff := max.Sub(min)
 			random := decimal.NewFromFloat32(rand.Float32())
-			student.Income = float32(random.Mul(diff).Add(low).Floor().InexactFloat64())
+			student.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 		} else {
-			diff := decimal.NewFromInt32(335 - 104)
-			low := decimal.NewFromInt32(104)
+			student.Job = getJobIdRx(tx, KeyJobs)
+			jobDetails := getJobRx(tx, KeyJobs, student.Job)
+			max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
+			min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
+			diff := max.Sub(min)
 			random := decimal.NewFromFloat32(rand.Float32())
-			student.Income = float32(random.Mul(diff).Add(low).Floor().InexactFloat64())
+			student.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 		}
 
 		student.TransitionEnd = time.Time{}

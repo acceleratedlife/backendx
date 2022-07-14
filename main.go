@@ -37,6 +37,8 @@ const (
 	keyCharge           = 1.01
 	KeyDebt             = "debt"
 	CurrencyUBuck       = "ubuck"
+	KeyCollegeJobs      = "collegeJobs"
+	KeyJobs             = "jobs"
 	KeyAuctions         = "auctions"
 	KeyTeacherAdmin     = "teacher@admin.com"
 	KeyCB               = "cb"
@@ -130,8 +132,6 @@ func main() {
 
 	// backup
 	router.Handle("/admin/backup", backUpHandler(db))
-	//makeSchool & admin
-	// router.Handle("/admin/createSchool", createSchool(db))
 
 	router.Use(buildAuthMiddleware(m))
 
@@ -145,9 +145,6 @@ func createRouter(db *bolt.DB) *mux.Router {
 }
 
 func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
-
-	teacherApiServiceImpl := NewTeacherApiServiceImpl(db)
-	teacherApiController := openapi.NewTeacherApiController(teacherApiServiceImpl)
 
 	StudentApiServiceImpl := NewStudentApiServiceImpl(db, clock)
 	StudentApiController := openapi.NewStudentApiController(StudentApiServiceImpl)
@@ -177,8 +174,7 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 		schoolApiController,
 		staffApiController,
 		unregisteredApiController,
-		StudentApiController,
-		teacherApiController)
+		StudentApiController)
 
 }
 

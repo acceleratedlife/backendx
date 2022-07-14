@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"time"
 
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
@@ -146,6 +148,40 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 		}
 		return fmt.Errorf("Invalid Add Code")
 	})
+
+	return
+}
+
+func getJobId(db *bolt.DB, key string) (job time.Time) {
+	_ = db.View(func(tx *bolt.Tx) error {
+		job = getJobIdRx(tx, key)
+		return nil
+	})
+
+	return job
+}
+
+func getJobIdRx(tx *bolt.Tx, key string) (job time.Time) {
+	jobs := tx.Bucket([]byte(key))
+	bucketStats := jobs.Stats()
+	pick := rand.Intn(bucketStats.KeyN)
+	c := jobs.Cursor()
+	i := 0
+	for k, _ := c.First(); k != nil && i < pick; k, _ = c.Next() {
+		if i != pick {
+			i++
+			continue
+		}
+
+		i++
+		time, err := time.Parse(time.RFC3339, string(k))
+		if err != nil {
+			return
+		}
+
+		job = time
+
+	}
 
 	return
 }

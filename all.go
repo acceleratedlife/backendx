@@ -361,8 +361,15 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (opena
 		}
 
 		nWorth := 0.0
+		job := openapi.UserNoHistoryJob{}
 		if userDetails.Role == UserRoleStudent {
 			nWorth, _ = StudentNetWorthTx(tx, user.Email).Float64()
+			if userDetails.College && userDetails.CollegeEnd.IsZero() {
+				job = getJobRx(tx, KeyCollegeJobs, userDetails.Job)
+			} else {
+				job = getJobRx(tx, KeyJobs, userDetails.Job)
+			}
+
 		}
 		nUser := openapi.User{
 			Id:               user.Email,
@@ -380,6 +387,7 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (opena
 			Rank:             user.Rank,
 			CareerTransition: user.CareerTransition,
 			NetWorth:         float32(nWorth),
+			Job:              job,
 		}
 		resp = nUser
 

@@ -16,8 +16,6 @@ tags:
   name: SysAdmin
 - description: Operations available to SchoolAdmin
   name: SchoolAdmin
-- description: Operations available to Teacher
-  name: Teacher
 - description: Operations available to Student
   name: Student
 - description: Operations available to Unregistered
@@ -840,31 +838,6 @@ paths:
       summary: remove self from class
       tags:
       - AllSchool
-  /classes/addAdmin:
-    put:
-      description: When a teacher adds themselves to a class. member _id needs to
-        be added to class member list. Make sure the role of this user is the role
-        of a teacher(1). Otherwise it is a student trying to add to the wrong group.
-      operationId: teacherAddClass
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestAddClass'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ResponseMemberClass'
-                type: array
-          description: return classes where this user is a member
-        "404":
-          description: Cannot add to class with that data
-      summary: teacher adding self to class
-      tags:
-      - Teacher
   /classes/addClass:
     put:
       description: When a student adds themselves to a class. member _id needs to
@@ -2428,6 +2401,10 @@ components:
         netWorth: 123.45
         rank: 2
         _id: 613eab19e58cc511801af657
+        job:
+          pay: 0.8008281904610115
+          description: description
+          title: title
         email: ss@ss.com
         transitionEnd: 2000-01-23T04:56:07.000+00:00
       properties:
@@ -2486,6 +2463,8 @@ components:
           example: 123.45
           format: float
           type: number
+        job:
+          $ref: '#/components/schemas/UserNoHistory_job'
       required:
       - _id
       - careerTransition
@@ -2495,6 +2474,7 @@ components:
       - email
       - firstName
       - income
+      - job
       - lastName
       - netWorth
       - rank
@@ -2789,6 +2769,19 @@ components:
           type: array
         name:
           example: Jones Bucks
+          type: string
+      type: object
+    UserNoHistory_job:
+      example:
+        pay: 0.8008281904610115
+        description: description
+        title: title
+      properties:
+        title:
+          type: string
+        pay:
+          type: number
+        description:
           type: string
       type: object
     inline_response_200_1_transaction_assetID:
