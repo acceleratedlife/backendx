@@ -324,7 +324,8 @@ func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.Req
 			return openapi.Response(400, ""), err
 		}
 	} else {
-		err = executeAdminTransaction(s.db, s.clock, body.Amount, body.Student, body.Description)
+		body.OwnerId = body.OwnerId[:1] + "." + body.OwnerId[1:]
+		err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
 		if err != nil {
 			return openapi.Response(400, ""), err
 		}

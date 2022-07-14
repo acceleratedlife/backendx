@@ -218,23 +218,15 @@ func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.
 	}
 
 	errors := make([]openapi.ResponsePayTransactions, 0)
-	if userDetails.Role == UserRoleTeacher {
-		for _, student := range body.Students {
-			err = executeTransaction(s.db, s.clock, body.Amount, student, body.Owner, body.Description)
-			if err != nil {
-				errors = append(errors, openapi.ResponsePayTransactions{
-					Message: student + " was not paid, error: " + err.Error(),
-				})
-			}
-		}
-	} else {
-		for _, student := range body.Students {
-			err = executeAdminTransaction(s.db, s.clock, body.Amount, student, body.Description)
-			if err != nil {
-				errors = append(errors, openapi.ResponsePayTransactions{
-					Message: student + " was not paid, error: " + err.Error(),
-				})
-			}
+	if userDetails.Role == UserRoleAdmin {
+		body.Owner = body.Owner[:1] + "." + body.Owner[1:]
+	}
+	for _, student := range body.Students {
+		err = executeTransaction(s.db, s.clock, body.Amount, student, body.Owner, body.Description)
+		if err != nil {
+			errors = append(errors, openapi.ResponsePayTransactions{
+				Message: student + " was not paid, error: " + err.Error(),
+			})
 		}
 	}
 	if len(errors) != 0 {
@@ -369,7 +361,7 @@ func (s *StaffApiServiceImpl) SearchTransactions(ctx context.Context, teacherId 
 				return err
 			}
 		} else {
-			teacherDetails.Name = KeyTeacherAdmin
+			teacherDetails.Name = teacherId[:1] + "." + teacherId[1:]
 			resp, err = getTeacherTransactionsTx(tx, teacherDetails)
 			if err != nil {
 				return err
