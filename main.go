@@ -131,6 +131,12 @@ func main() {
 	router.Handle("/admin/backup", backUpHandler(db))
 	//new school
 	router.Handle("/admin/new-school", newSchoolHandler(db))
+	//reset staff password
+	router.Handle("/admin/resetPassword", resetPasswordHandler(db))
+	//add job details
+	router.Handle("/admin/jobDetails", jobDetailsHandler(db))
+	//add life event
+	router.Handle("/admin/eventDetails", eventDetailsHandler(db))
 
 	router.Use(buildAuthMiddleware(m))
 

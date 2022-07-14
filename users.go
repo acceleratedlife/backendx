@@ -40,6 +40,7 @@ type Job struct {
 	Title       string
 	Pay         int32
 	Description string
+	College     bool `json:"-"`
 }
 
 type PathId struct {

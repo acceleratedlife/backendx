@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -255,31 +254,8 @@ func (s *StaffApiServiceImpl) ResetPassword(ctx context.Context, body openapi.Re
 
 	var resp openapi.ResponseResetPassword
 	err = s.db.Update(func(tx *bolt.Tx) error {
-		users := tx.Bucket([]byte(KeyUsers))
-		if users == nil {
-			return fmt.Errorf("users do not exist")
-		}
-
-		user := users.Get([]byte(studentDetails.Name))
-
-		if user == nil {
-			return fmt.Errorf("user does not exist")
-		}
-
-		resp.Password = RandomString(6)
-		studentDetails.PasswordSha = EncodePassword(resp.Password)
-
-		marshal, err := json.Marshal(studentDetails)
-		if err != nil {
-			return fmt.Errorf("Failed to Marshal userDetails")
-		}
-
-		err = users.Put([]byte(studentDetails.Name), marshal)
-		if err != nil {
-			return fmt.Errorf("Failed to Put studendDetails")
-		}
-
-		return nil
+		resp, err = resetPasswordTx(tx, studentDetails)
+		return err
 	})
 
 	if err != nil {
