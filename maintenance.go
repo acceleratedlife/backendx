@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-pkgz/lgr"
-	bolt "go.etcd.io/bbolt"
 	"net/http"
 	"strconv"
+
+	"github.com/go-pkgz/lgr"
+	bolt "go.etcd.io/bbolt"
 )
 
 func backUpHandler(db *bolt.DB) http.Handler {
@@ -29,6 +30,8 @@ type NewSchoolRequest struct {
 	FirstName string
 	LastName  string
 	Email     string
+	City      string
+	Zip       int
 }
 
 type NewSchoolResponse struct {

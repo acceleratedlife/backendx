@@ -38,7 +38,6 @@ const (
 	KeyDebt             = "debt"
 	CurrencyUBuck       = "ubuck"
 	KeyAuctions         = "auctions"
-	KeyTeacherAdmin     = "teacher@admin.com"
 	KeyCB               = "cb"
 	KeyUsers            = "users"
 	KeyAccounts         = "accounts"
@@ -187,13 +186,15 @@ func InitDefaultAccounts(db *bolt.DB) {
 		FirstName: "test",
 		LastName:  "admin",
 		Email:     "test@admin.com",
+		City:      "Stockton",
+		Zip:       95336,
 	}
 	_ = createNewSchool(db, newSchoolRequest, "123qwe")
 }
 
 func createNewSchool(db *bolt.DB, newSchoolRequest NewSchoolRequest, adminPassword string) error {
 
-	schoolId, err := FindOrCreateSchool(db, newSchoolRequest.School, "no city", 0)
+	schoolId, err := FindOrCreateSchool(db, newSchoolRequest.School, newSchoolRequest.City, newSchoolRequest.Zip)
 	if err != nil {
 		lgr.Printf("ERROR school does not exist: %v", err)
 	}

@@ -403,28 +403,6 @@ func executeTransaction(db *bolt.DB, clock Clock, value float32, student, owner,
 	return nil
 }
 
-func executeAdminTransaction(db *bolt.DB, clock Clock, value float32, student, description string) error {
-	amount := decimal.NewFromFloat32(value)
-	studentDetails, err := getUserInLocalStore(db, student)
-	if err != nil {
-		return fmt.Errorf("error finding student: %v", err)
-	}
-
-	if amount.Sign() > 0 {
-		err = addBuck2Student(db, clock, studentDetails, amount, KeyTeacherAdmin, description)
-		if err != nil {
-			return fmt.Errorf("error paying student: %v", err)
-		}
-	} else if amount.Sign() < 0 {
-		err = chargeStudent(db, clock, studentDetails, amount.Abs(), KeyTeacherAdmin, description, false)
-		if err != nil {
-			return fmt.Errorf("error debting student: %v", err)
-		}
-	}
-
-	return nil
-}
-
 func executeStudentTransaction(db *bolt.DB, clock Clock, value float32, student string, owner UserInfo, description string) error {
 	if student == owner.Name {
 		return fmt.Errorf("You can't pay yourself")
