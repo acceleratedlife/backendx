@@ -72,7 +72,6 @@ func TestAddStudent(t *testing.T) {
 	}
 
 	job := Job{
-		Title:       "Teacher",
 		Pay:         53000,
 		Description: "Teach Stuff",
 		College:     true,
@@ -80,11 +79,10 @@ func TestAddStudent(t *testing.T) {
 
 	marshal, err := json.Marshal(job)
 
-	err = createJobOrEvent(db, marshal, KeyCollegeJobs)
+	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
 	require.Nil(t, err)
 
 	job2 := Job{
-		Title:       "Teacher",
 		Pay:         53000,
 		Description: "Teach Stuff",
 		College:     false,
@@ -92,7 +90,7 @@ func TestAddStudent(t *testing.T) {
 
 	marshal, err = json.Marshal(job2)
 
-	err = createJobOrEvent(db, marshal, KeyJobs)
+	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
 	require.Nil(t, err)
 
 	_, err = s.Register(nil, openapi.RequestRegister{
