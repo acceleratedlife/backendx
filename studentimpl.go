@@ -744,11 +744,13 @@ func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change d
 func IsEventNeeded(student *bolt.Bucket, clock Clock, tx bool) (bool, error) {
 	dayB := student.Get([]byte(KeyDayEvent))
 	if dayB == nil && tx {
-		futureDay := time.Duration((rand.Int31n(4) + 4) * 24)
+		days := rand.Intn(5) + 4
 
-		eventDate, err := clock.Now().Add(time.Hour * futureDay).Truncate(24 * time.Hour).MarshalText()
+		eventTime := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour)
+		lgr.Printf("event %v", eventTime.String())
+		eventDate, err := eventTime.MarshalText()
 		if err != nil {
-			return false, err
+			return true, err
 		}
 		err = student.Put([]byte(KeyDayEvent), eventDate)
 		if err != nil {
