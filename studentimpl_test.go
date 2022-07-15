@@ -64,6 +64,28 @@ func TestEvents(t *testing.T) {
 
 	student, _ := getUserInLocalStore(db, students[0])
 
+	event := eventRequest{
+		Positive:    false,
+		Description: "Pay Taxes",
+		Title:       "Taxes",
+	}
+
+	marshal, _ := json.Marshal(event)
+
+	err := createJobOrEvent(db, marshal, KeyNEvents, "Teacher")
+	require.Nil(t, err)
+
+	event = eventRequest{
+		Positive:    true,
+		Description: "Pay Taxes",
+		Title:       "Taxes",
+	}
+
+	marshal, _ = json.Marshal(event)
+
+	err = createJobOrEvent(db, marshal, KeyPEvents, "Teacher")
+	require.Nil(t, err)
+
 	for _, student := range students {
 		studentDetails, _ := getUserInLocalStore(db, student)
 		err := addUbuck2Student(db, &clock, studentDetails, decimal.NewFromFloat(100), "pre load")
@@ -106,7 +128,6 @@ func TestCollege(t *testing.T) {
 	student, _ := getUserInLocalStore(db, students[0])
 
 	job := Job{
-		Title:       "Teacher",
 		Pay:         53000,
 		Description: "Teach Stuff",
 		College:     true,
@@ -114,7 +135,7 @@ func TestCollege(t *testing.T) {
 
 	marshal, err := json.Marshal(job)
 
-	err = createJobOrEvent(db, marshal, KeyCollegeJobs)
+	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
 	require.Nil(t, err)
 
 	r := CollegeIfNeeded(db, &clock, student)
@@ -155,7 +176,6 @@ func TestCareer(t *testing.T) {
 	student, _ := getUserInLocalStore(db, students[0])
 
 	job := Job{
-		Title:       "Teacher",
 		Pay:         53000,
 		Description: "Teach Stuff",
 		College:     true,
@@ -163,11 +183,10 @@ func TestCareer(t *testing.T) {
 
 	marshal, err := json.Marshal(job)
 
-	err = createJobOrEvent(db, marshal, KeyCollegeJobs)
+	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
 	require.Nil(t, err)
 
 	job2 := Job{
-		Title:       "Teacher",
 		Pay:         53000,
 		Description: "Teach Stuff",
 		College:     false,
@@ -175,7 +194,7 @@ func TestCareer(t *testing.T) {
 
 	marshal, err = json.Marshal(job2)
 
-	err = createJobOrEvent(db, marshal, KeyJobs)
+	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
 	require.Nil(t, err)
 
 	r := CareerIfNeeded(db, &clock, student)

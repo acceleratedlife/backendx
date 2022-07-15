@@ -665,9 +665,9 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		if change.IsPositive() {
-			return addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getPositiveEvent())
+			return addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getEventRx(tx, KeyPEvents))
 		}
-		return chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getNegativeEvent(), false)
+		return chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getEventRx(tx, KeyNEvents), false)
 	})
 
 	if err != nil {
@@ -677,12 +677,40 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 	return needToAdd
 }
 
-func getPositiveEvent() (description string) {
-	return "Positive Event"
+func getEvent(db *bolt.DB, key string) (description string) {
+	_ = db.View(func(tx *bolt.Tx) error {
+		description = getEventRx(tx, key)
+		return nil
+	})
+
+	return
 }
 
-func getNegativeEvent() (description string) {
-	return "Negative Event"
+func getEventRx(tx *bolt.Tx, key string) string {
+	events := tx.Bucket([]byte(key))
+	bucketStats := events.Stats()
+	pick := rand.Intn(bucketStats.KeyN)
+	c := events.Cursor()
+	i := 0
+	for k, _ := c.First(); k != nil && i <= pick; k, _ = c.Next() {
+		if i != pick {
+			i++
+			continue
+		}
+
+		i++
+
+		var event eventRequest
+		err := json.Unmarshal(events.Get(k), &event)
+		if err != nil {
+			return ""
+		}
+
+		return event.Description
+
+	}
+
+	return ""
 }
 
 func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change decimal.Decimal, err error) {

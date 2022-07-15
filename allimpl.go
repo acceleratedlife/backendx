@@ -486,14 +486,16 @@ func studentPayStudentTx(tx *bolt.Tx, clock Clock, amount decimal.Decimal, recie
 	return nil
 }
 
-func getJobRx(tx *bolt.Tx, key string, jobId time.Time) (job openapi.UserNoHistoryJob) {
+func getJobRx(tx *bolt.Tx, key string, jobId string) (job openapi.UserNoHistoryJob) {
 	jobs := tx.Bucket([]byte(key))
-	jobData := jobs.Get([]byte(jobId.String()))
+	jobData := jobs.Get([]byte(jobId))
 
 	err := json.Unmarshal(jobData, &job)
 	if err != nil {
 		return
 	}
+
+	job.Title = jobId
 
 	return job
 }

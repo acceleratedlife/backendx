@@ -136,9 +136,11 @@ func main() {
 	//reset staff password
 	router.Handle("/admin/resetPassword", resetPasswordHandler(db))
 	//add job details
-	router.Handle("/admin/jobDetails", jobDetailsHandler(db))
+	router.Handle("/admin/addJob", addJobHandler(db))
 	//add life event
-	router.Handle("/admin/eventDetails", eventDetailsHandler(db))
+	router.Handle("/admin/addEvent", addEventHandler(db))
+	//add admin
+	router.Handle("/admin/addAdmin", addAdminHandler(db))
 
 	router.Use(buildAuthMiddleware(m))
 

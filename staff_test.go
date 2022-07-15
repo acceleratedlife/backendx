@@ -343,6 +343,28 @@ func TestSearchEvents(t *testing.T) {
 
 	client := &http.Client{}
 
+	event := eventRequest{
+		Positive:    false,
+		Description: "Pay Taxes",
+		Title:       "Taxes",
+	}
+
+	marshal, _ := json.Marshal(event)
+
+	err = createJobOrEvent(db, marshal, KeyNEvents, "Teacher")
+	require.Nil(t, err)
+
+	event = eventRequest{
+		Positive:    true,
+		Description: "Pay Taxes",
+		Title:       "Taxes",
+	}
+
+	marshal, _ = json.Marshal(event)
+
+	err = createJobOrEvent(db, marshal, KeyPEvents, "Teacher")
+	require.Nil(t, err)
+
 	for _, student := range students {
 		userDetails, err := getUserInLocalStore(db, student)
 		require.Nil(t, err)
