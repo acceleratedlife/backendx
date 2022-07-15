@@ -643,9 +643,12 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
+		lgr.Printf("+++ %s", clock.Now().String())
 		days := rand.Intn(5) + 4
 
-		eventDate, err := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour).MarshalText()
+		eventTime := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour)
+		lgr.Printf("event %v", eventTime.String())
+		eventDate, err := eventTime.MarshalText()
 		if err != nil {
 			return err
 		}
