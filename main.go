@@ -39,6 +39,8 @@ const (
 	CurrencyUBuck       = "ubuck"
 	KeyCollegeJobs      = "collegeJobs"
 	KeyJobs             = "jobs"
+	KeyPEvents          = "positiveEvents"
+	KeyNEvents          = "negativeEvents"
 	KeyAuctions         = "auctions"
 	KeyCB               = "cb"
 	KeyUsers            = "users"

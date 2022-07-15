@@ -36,7 +36,6 @@ type UserInfo struct {
 }
 
 type Job struct {
-	Id          time.Time
 	Title       string
 	Pay         int32
 	Description string

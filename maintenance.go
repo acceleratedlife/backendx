@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
@@ -40,6 +41,11 @@ type NewSchoolResponse struct {
 
 type resetPasswordRequest struct {
 	Email string
+}
+
+type eventsRequest struct {
+	Positive    bool `json:"-"`
+	Description string
 }
 
 func newSchoolHandler(db *bolt.DB) http.Handler {
@@ -168,19 +174,31 @@ func jobDetailsHandler(db *bolt.DB) http.Handler {
 			return
 		}
 
-		if request.College {
-			createJob(db, request, KeyCollegeJobs)
-		} else {
-			createJob(db, request, KeyJobs)
+		marshal, err := json.Marshal(request)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
-		response, err := resetPassword(db, user)
+		if request.College {
+			err = createJobOrEvent(db, marshal, KeyCollegeJobs)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			err = createJobOrEvent(db, marshal, KeyJobs)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
 
-		lgr.Printf("Password reset for %s ", request.Email)
+		lgr.Printf("job created for %s ", request.Title)
 
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
-		err = encoder.Encode(response)
+		err = encoder.Encode("success")
 		if err != nil {
 			lgr.Printf("ERROR failed to send")
 		}
@@ -190,7 +208,7 @@ func jobDetailsHandler(db *bolt.DB) http.Handler {
 
 func eventDetailsHandler(db *bolt.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var request resetPasswordRequest
+		var request eventsRequest
 		defer r.Body.Close()
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&request)
@@ -202,32 +220,51 @@ func eventDetailsHandler(db *bolt.DB) http.Handler {
 
 		lgr.Printf("INFO new school request: %v", request)
 
-		if request.Email == "" {
-			err = fmt.Errorf("email is mandatory")
+		if request.Description == "" {
+			err = fmt.Errorf("description is mandatory")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		/////////////////////////////
-		// custom logic to reset a password
-
-		user, err := getUserInLocalStore(db, request.Email)
+		marshal, err := json.Marshal(request)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		response, err := resetPassword(db, user)
+		if request.Positive {
+			err = createJobOrEvent(db, marshal, KeyPEvents)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			err = createJobOrEvent(db, marshal, KeyNEvents)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
 
-		lgr.Printf("Password reset for %s ", request.Email)
-		///////////////////////////
+		lgr.Printf("Event created for %s ", request.Description)
 
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
-		err = encoder.Encode(response)
+		err = encoder.Encode("success")
 		if err != nil {
 			lgr.Printf("ERROR failed to send")
 		}
 
+	})
+}
+
+func createJobOrEvent(db *bolt.DB, marshal []byte, key string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		EJ, err := tx.CreateBucketIfNotExists([]byte(key))
+		if err != nil {
+			return err
+		}
+		err = EJ.Put([]byte(time.Now().Truncate(time.Millisecond).String()), marshal)
+		return err
 	})
 }

@@ -105,6 +105,18 @@ func TestCollege(t *testing.T) {
 
 	student, _ := getUserInLocalStore(db, students[0])
 
+	job := Job{
+		Title:       "Teacher",
+		Pay:         53000,
+		Description: "Teach Stuff",
+		College:     true,
+	}
+
+	marshal, err := json.Marshal(job)
+
+	err = createJobOrEvent(db, marshal, KeyCollegeJobs)
+	require.Nil(t, err)
+
 	r := CollegeIfNeeded(db, &clock, student)
 	require.False(t, r)
 
@@ -112,7 +124,7 @@ func TestCollege(t *testing.T) {
 		College: true,
 	}
 
-	err := userEdit(db, &clock, student, body)
+	err = userEdit(db, &clock, student, body)
 	require.Nil(t, err)
 
 	r = CollegeIfNeeded(db, &clock, student)
@@ -142,6 +154,30 @@ func TestCareer(t *testing.T) {
 
 	student, _ := getUserInLocalStore(db, students[0])
 
+	job := Job{
+		Title:       "Teacher",
+		Pay:         53000,
+		Description: "Teach Stuff",
+		College:     true,
+	}
+
+	marshal, err := json.Marshal(job)
+
+	err = createJobOrEvent(db, marshal, KeyCollegeJobs)
+	require.Nil(t, err)
+
+	job2 := Job{
+		Title:       "Teacher",
+		Pay:         53000,
+		Description: "Teach Stuff",
+		College:     false,
+	}
+
+	marshal, err = json.Marshal(job2)
+
+	err = createJobOrEvent(db, marshal, KeyJobs)
+	require.Nil(t, err)
+
 	r := CareerIfNeeded(db, &clock, student)
 	require.False(t, r)
 
@@ -149,7 +185,7 @@ func TestCareer(t *testing.T) {
 		CareerTransition: true,
 	}
 
-	err := userEdit(db, &clock, student, body)
+	err = userEdit(db, &clock, student, body)
 	require.Nil(t, err)
 
 	r = CareerIfNeeded(db, &clock, student)

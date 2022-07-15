@@ -616,6 +616,7 @@ func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseRe
 	}
 
 	Password := RandomString(6)
+	resp.Password = Password
 	userDetails.PasswordSha = EncodePassword(Password)
 
 	marshal, err := json.Marshal(userDetails)
