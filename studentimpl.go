@@ -643,10 +643,9 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
-		days := (rand.Int31n(5) + 4) * 24
-		daysInHours := time.Duration(days)
+		days := rand.Intn(5) + 4
 
-		eventDate, err := clock.Now().Add(time.Hour * daysInHours).Truncate(24 * time.Hour).MarshalText()
+		eventDate, err := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour).MarshalText()
 		if err != nil {
 			return err
 		}
