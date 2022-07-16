@@ -552,7 +552,7 @@ func getEventsTeacher(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []op
 
 		c := transactions.Cursor()
 		var trans Transaction
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		for k, _ := c.Last(); k != nil; k, _ = c.Prev() {
 
 			transTime, err := time.Parse(time.RFC3339, string(k))
 			if err != nil {
@@ -590,6 +590,44 @@ func getEventsTeacher(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []op
 
 		return nil
 	})
+
+	return
+}
+
+func resetPassword(db *bolt.DB, userDetails UserInfo) (resp openapi.ResponseResetPassword, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		resp, err = resetPasswordTx(tx, userDetails)
+		return err
+	})
+
+	return
+}
+
+func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseResetPassword, err error) {
+	users := tx.Bucket([]byte(KeyUsers))
+	if users == nil {
+		return resp, fmt.Errorf("users do not exist")
+	}
+
+	user := users.Get([]byte(userDetails.Name))
+
+	if user == nil {
+		return resp, fmt.Errorf("user does not exist")
+	}
+
+	Password := RandomString(6)
+	resp.Password = Password
+	userDetails.PasswordSha = EncodePassword(Password)
+
+	marshal, err := json.Marshal(userDetails)
+	if err != nil {
+		return resp, fmt.Errorf("Failed to Marshal userDetails")
+	}
+
+	err = users.Put([]byte(userDetails.Name), marshal)
+	if err != nil {
+		return resp, fmt.Errorf("Failed to Put studendDetails")
+	}
 
 	return
 }

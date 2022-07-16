@@ -64,6 +64,28 @@ func TestEvents(t *testing.T) {
 
 	student, _ := getUserInLocalStore(db, students[0])
 
+	event := eventRequest{
+		Positive:    false,
+		Description: "Pay Taxes",
+		Title:       "Taxes",
+	}
+
+	marshal, _ := json.Marshal(event)
+
+	err := createJobOrEvent(db, marshal, KeyNEvents, "Teacher")
+	require.Nil(t, err)
+
+	event = eventRequest{
+		Positive:    true,
+		Description: "Pay Taxes",
+		Title:       "Taxes",
+	}
+
+	marshal, _ = json.Marshal(event)
+
+	err = createJobOrEvent(db, marshal, KeyPEvents, "Teacher")
+	require.Nil(t, err)
+
 	for _, student := range students {
 		studentDetails, _ := getUserInLocalStore(db, student)
 		err := addUbuck2Student(db, &clock, studentDetails, decimal.NewFromFloat(100), "pre load")
@@ -105,6 +127,17 @@ func TestCollege(t *testing.T) {
 
 	student, _ := getUserInLocalStore(db, students[0])
 
+	job := Job{
+		Pay:         53000,
+		Description: "Teach Stuff",
+		College:     true,
+	}
+
+	marshal, err := json.Marshal(job)
+
+	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
+	require.Nil(t, err)
+
 	r := CollegeIfNeeded(db, &clock, student)
 	require.False(t, r)
 
@@ -112,7 +145,7 @@ func TestCollege(t *testing.T) {
 		College: true,
 	}
 
-	err := userEdit(db, &clock, student, body)
+	err = userEdit(db, &clock, student, body)
 	require.Nil(t, err)
 
 	r = CollegeIfNeeded(db, &clock, student)
@@ -142,6 +175,28 @@ func TestCareer(t *testing.T) {
 
 	student, _ := getUserInLocalStore(db, students[0])
 
+	job := Job{
+		Pay:         53000,
+		Description: "Teach Stuff",
+		College:     true,
+	}
+
+	marshal, err := json.Marshal(job)
+
+	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
+	require.Nil(t, err)
+
+	job2 := Job{
+		Pay:         53000,
+		Description: "Teach Stuff",
+		College:     false,
+	}
+
+	marshal, err = json.Marshal(job2)
+
+	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
+	require.Nil(t, err)
+
 	r := CareerIfNeeded(db, &clock, student)
 	require.False(t, r)
 
@@ -149,7 +204,7 @@ func TestCareer(t *testing.T) {
 		CareerTransition: true,
 	}
 
-	err := userEdit(db, &clock, student, body)
+	err = userEdit(db, &clock, student, body)
 	require.Nil(t, err)
 
 	r = CareerIfNeeded(db, &clock, student)

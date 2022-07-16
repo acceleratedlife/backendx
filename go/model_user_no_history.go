@@ -45,6 +45,8 @@ type UserNoHistory struct {
 	Rank int32 `json:"rank"`
 
 	NetWorth float32 `json:"netWorth"`
+
+	Job UserNoHistoryJob `json:"job"`
 }
 
 // AssertUserNoHistoryRequired checks if the required fields are not zero-ed
@@ -62,6 +64,7 @@ func AssertUserNoHistoryRequired(obj UserNoHistory) error {
 		"role": obj.Role,
 		"rank": obj.Rank,
 		"netWorth": obj.NetWorth,
+		"job": obj.Job,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {
@@ -69,6 +72,9 @@ func AssertUserNoHistoryRequired(obj UserNoHistory) error {
 		}
 	}
 
+	if err := AssertUserNoHistoryJobRequired(obj.Job); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -32,6 +32,14 @@ type UserInfo struct {
 	Children         int32
 	Rank             int32 `json:",omitempty"`
 	NetWorth         float32
+	Job              string
+}
+
+type Job struct {
+	Title       string `json:",omitempty"`
+	Pay         int32
+	Description string
+	College     bool `json:",omitempty"`
 }
 
 type PathId struct {

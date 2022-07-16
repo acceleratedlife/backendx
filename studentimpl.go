@@ -384,11 +384,14 @@ func CollegeIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
-		diff := decimal.NewFromInt32(834 - 208)
-		low := decimal.NewFromInt32(208)
+		student.Job = getJobIdRx(tx, KeyCollegeJobs)
+		jobDetails := getJobRx(tx, KeyCollegeJobs, student.Job)
+		max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
+		min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
+		diff := max.Sub(min)
 		random := decimal.NewFromFloat32(rand.Float32())
 
-		student.Income = float32(random.Mul(diff).Add(low).Floor().InexactFloat64())
+		student.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 		student.CollegeEnd = time.Time{}
 		marshal, err := json.Marshal(student)
 		if err != nil {
@@ -468,15 +471,21 @@ func CareerIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		if student.College && student.CollegeEnd.IsZero() {
-			diff := decimal.NewFromInt32(834 - 208)
-			low := decimal.NewFromInt32(208)
+			student.Job = getJobIdRx(tx, KeyCollegeJobs)
+			jobDetails := getJobRx(tx, KeyCollegeJobs, student.Job)
+			max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
+			min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
+			diff := max.Sub(min)
 			random := decimal.NewFromFloat32(rand.Float32())
-			student.Income = float32(random.Mul(diff).Add(low).Floor().InexactFloat64())
+			student.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 		} else {
-			diff := decimal.NewFromInt32(335 - 104)
-			low := decimal.NewFromInt32(104)
+			student.Job = getJobIdRx(tx, KeyJobs)
+			jobDetails := getJobRx(tx, KeyJobs, student.Job)
+			max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
+			min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
+			diff := max.Sub(min)
 			random := decimal.NewFromFloat32(rand.Float32())
-			student.Income = float32(random.Mul(diff).Add(low).Floor().InexactFloat64())
+			student.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 		}
 
 		student.TransitionEnd = time.Time{}
@@ -634,10 +643,10 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
-		days := (rand.Int31n(5) + 4) * 24
-		daysInHours := time.Duration(days)
+		days := rand.Intn(5) + 4
 
-		eventDate, err := clock.Now().Add(time.Hour * daysInHours).Truncate(24 * time.Hour).MarshalText()
+		eventTime := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour)
+		eventDate, err := eventTime.MarshalText()
 		if err != nil {
 			return err
 		}
@@ -657,9 +666,9 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		if change.IsPositive() {
-			return addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getPositiveEvent())
+			return addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getEventRx(tx, KeyPEvents))
 		}
-		return chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getNegativeEvent(), false)
+		return chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getEventRx(tx, KeyNEvents), false)
 	})
 
 	if err != nil {
@@ -669,12 +678,40 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 	return needToAdd
 }
 
-func getPositiveEvent() (description string) {
-	return "Positive Event"
+func getEvent(db *bolt.DB, key string) (description string) {
+	_ = db.View(func(tx *bolt.Tx) error {
+		description = getEventRx(tx, key)
+		return nil
+	})
+
+	return
 }
 
-func getNegativeEvent() (description string) {
-	return "Negative Event"
+func getEventRx(tx *bolt.Tx, key string) string {
+	events := tx.Bucket([]byte(key))
+	bucketStats := events.Stats()
+	pick := rand.Intn(bucketStats.KeyN)
+	c := events.Cursor()
+	i := 0
+	for k, _ := c.First(); k != nil && i <= pick; k, _ = c.Next() {
+		if i != pick {
+			i++
+			continue
+		}
+
+		i++
+
+		var event eventRequest
+		err := json.Unmarshal(events.Get(k), &event)
+		if err != nil {
+			return ""
+		}
+
+		return event.Description
+
+	}
+
+	return ""
 }
 
 func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change decimal.Decimal, err error) {
@@ -705,11 +742,11 @@ func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change d
 func IsEventNeeded(student *bolt.Bucket, clock Clock, tx bool) (bool, error) {
 	dayB := student.Get([]byte(KeyDayEvent))
 	if dayB == nil && tx {
-		futureDay := time.Duration((rand.Int31n(4) + 4) * 24)
-
-		eventDate, err := clock.Now().Add(time.Hour * futureDay).Truncate(24 * time.Hour).MarshalText()
+		days := rand.Intn(5) + 4
+		eventTime := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour)
+		eventDate, err := eventTime.MarshalText()
 		if err != nil {
-			return false, err
+			return true, err
 		}
 		err = student.Put([]byte(KeyDayEvent), eventDate)
 		if err != nil {

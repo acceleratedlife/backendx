@@ -71,7 +71,29 @@ func TestAddStudent(t *testing.T) {
 		db: db,
 	}
 
-	_, err := s.Register(nil, openapi.RequestRegister{
+	job := Job{
+		Pay:         53000,
+		Description: "Teach Stuff",
+		College:     true,
+	}
+
+	marshal, err := json.Marshal(job)
+
+	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
+	require.Nil(t, err)
+
+	job2 := Job{
+		Pay:         53000,
+		Description: "Teach Stuff",
+		College:     false,
+	}
+
+	marshal, err = json.Marshal(job2)
+
+	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
+	require.Nil(t, err)
+
+	_, err = s.Register(nil, openapi.RequestRegister{
 		Email:     "testaddstu@teacher.com",
 		Password:  "123",
 		AddCode:   "123123",

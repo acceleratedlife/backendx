@@ -113,14 +113,6 @@ func getStudentAccount(db *bolt.DB, bAccount *bolt.Bucket, accountId string) (re
 }
 
 func getStudentAccountRx(tx *bolt.Tx, bAccount *bolt.Bucket, accountId string) (resp openapi.ResponseCurrencyExchange, err error) {
-	// historyData := bAccount.Get([]byte(KeyHistory))
-	// if historyData == nil {
-	// 	return resp, fmt.Errorf("Failed to get history")
-	// }
-	// err = json.Unmarshal(historyData, &resp.History)
-	// if err != nil {
-	// 	return resp, fmt.Errorf("ERROR cannot unmarshal History")
-	// }
 
 	balanceData := bAccount.Get([]byte(KeyBalance))
 	err = json.Unmarshal(balanceData, &resp.Balance)
@@ -144,15 +136,6 @@ func getCBaccountDetailsRx(tx *bolt.Tx, userDetails UserInfo, account openapi.Re
 	if bAccount == nil {
 		return finalAccount, fmt.Errorf("cannot find cb buck account")
 	}
-
-	// historyData := bAccount.Get([]byte(KeyHistory))
-	// if historyData == nil {
-	// 	return finalAccount, fmt.Errorf("Failed to get history")
-	// }
-	// err = json.Unmarshal(historyData, &account.History)
-	// if err != nil {
-	// 	return finalAccount, fmt.Errorf("ERROR cannot unmarshal History")
-	// }
 
 	finalAccount = account
 
@@ -501,4 +484,27 @@ func studentPayStudentTx(tx *bolt.Tx, clock Clock, amount decimal.Decimal, recie
 	}
 
 	return nil
+}
+
+func getJob(db *bolt.DB, key string, jobId string) (job openapi.UserNoHistoryJob) {
+	_ = db.View(func(tx *bolt.Tx) error {
+		job = getJobRx(tx, key, jobId)
+		return nil
+	})
+
+	return
+}
+
+func getJobRx(tx *bolt.Tx, key string, jobId string) (job openapi.UserNoHistoryJob) {
+	jobs := tx.Bucket([]byte(key))
+	jobData := jobs.Get([]byte(jobId))
+
+	err := json.Unmarshal(jobData, &job)
+	if err != nil {
+		return
+	}
+
+	job.Title = jobId
+
+	return job
 }

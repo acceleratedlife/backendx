@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	openapi "github.com/acceleratedlife/backend/go"
 	bolt "go.etcd.io/bbolt"
 )
@@ -56,6 +57,7 @@ func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register open
 			PasswordSha: EncodePassword(register.Password),
 			SchoolId:    pathId.schoolId,
 			Role:        role,
+			Job:         getJobId(u.db, KeyJobs),
 		}
 		err = createStudent(u.db, newUser, pathId)
 

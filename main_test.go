@@ -1,13 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/go-pkgz/auth/token"
-	"github.com/go-pkgz/lgr"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	bolt "go.etcd.io/bbolt"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +12,13 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/go-pkgz/auth/token"
+	"github.com/go-pkgz/lgr"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	bolt "go.etcd.io/bbolt"
 )
 
 type TestClock struct {
@@ -105,6 +109,20 @@ func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudent
 	classes = make([]string, 0)
 	mandatoryClasses := make([]string, 0)
 
+	job2 := Job{
+		Pay:         53000,
+		Description: "Teach Stuff",
+		College:     false,
+	}
+
+	marshal, err := json.Marshal(job2)
+
+	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
+	if err != nil {
+		lgr.Printf("ERROR school admin is not created: %v", err)
+		return
+	}
+
 	for s := 0; s < noSchools; s++ {
 		schoolId, err := FindOrCreateSchool(db, fmt.Sprintf("scool %d", s), "sc, ca", s)
 		if err != nil {
@@ -173,6 +191,7 @@ func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudent
 						LastName:    "admin",
 						Role:        UserRoleStudent,
 						SchoolId:    schoolId,
+						Job:         getJobId(db, KeyJobs),
 					}
 					errE = createStudent(db, student, PathId{
 						schoolId:  schoolId,
@@ -392,5 +411,365 @@ func TestBackupSecured(t *testing.T) {
 	require.Nil(t, err, fmt.Sprintf("backup failed: %v", err))
 	assert.NotNil(t, get)
 	assert.Equal(t, 401, get.StatusCode)
+
+}
+
+func TestNewSchoolSecured(t *testing.T) {
+
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/new-school", newSchoolHandler(db))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	client := &http.Client{}
+
+	body := NewSchoolRequest{
+		School:    "THS",
+		FirstName: "Admin",
+		LastName:  "Super",
+		Email:     "aa@aa.com",
+		City:      "town",
+		Zip:       97554,
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/new-school",
+		bytes.NewBuffer(marshal))
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data NewSchoolResponse
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, 8, len(data.AdminPassword))
+
+}
+
+func TestResetPasswordSecured(t *testing.T) {
+
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/resetPassword", resetPasswordHandler(db))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	client := &http.Client{}
+
+	admins, _, _, _, _, _ := CreateTestAccounts(db, 1, 0, 0, 0)
+
+	body := resetPasswordRequest{
+		Email: admins[0],
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/resetPassword",
+		bytes.NewBuffer(marshal))
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.ResponseResetPassword
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, 6, len(data.Password))
+
+}
+
+func TestAddJobCollegeSecured(t *testing.T) {
+
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/addJob", addJobHandler(db))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	client := &http.Client{}
+
+	body := Job{
+		Title:       "Teacher",
+		Pay:         200,
+		Description: "Teach",
+		College:     true,
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/addJob",
+		bytes.NewBuffer(marshal))
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	job := getJobId(db, KeyCollegeJobs)
+	require.Equal(t, "Teacher", job)
+
+}
+
+func TestAddJobSecured(t *testing.T) {
+
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/addJob", addJobHandler(db))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	client := &http.Client{}
+
+	body := Job{
+		Title:       "Teacher",
+		Pay:         200,
+		Description: "Teach",
+		College:     false,
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/addJob",
+		bytes.NewBuffer(marshal))
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	job := getJobId(db, KeyJobs)
+	require.Equal(t, "Teacher", job)
+
+}
+
+func TestAddEventPositiveSecured(t *testing.T) {
+
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/addEvent", addEventHandler(db))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	client := &http.Client{}
+
+	body := eventRequest{
+		Positive:    true,
+		Description: "Lottery",
+		Title:       "Winner",
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/addEvent",
+		bytes.NewBuffer(marshal))
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	event := getEvent(db, KeyPEvents)
+	require.Equal(t, "Lottery", event)
+
+}
+
+func TestAddEventNegativeSecured(t *testing.T) {
+
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/addEvent", addEventHandler(db))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	client := &http.Client{}
+
+	body := eventRequest{
+		Positive:    false,
+		Description: "Pay Taxes",
+		Title:       "Taxes",
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/addEvent",
+		bytes.NewBuffer(marshal))
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	event := getEvent(db, KeyNEvents)
+	require.Equal(t, "Pay Taxes", event)
+
+}
+
+func TestAddAdminSecured(t *testing.T) {
+
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/addAdmin", addAdminHandler(db))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	client := &http.Client{}
+
+	_, schools, _, _, _, _ := CreateTestAccounts(db, 1, 0, 0, 0)
+
+	body := UserInfo{
+		Email:     "test@test.com",
+		SchoolId:  schools[0],
+		FirstName: "first",
+		LastName:  "last",
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/addAdmin",
+		bytes.NewBuffer(marshal))
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.ResponseResetPassword
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, 8, len(data.Password))
 
 }

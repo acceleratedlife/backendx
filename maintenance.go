@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
 )
@@ -36,6 +37,16 @@ type NewSchoolRequest struct {
 
 type NewSchoolResponse struct {
 	AdminPassword string
+}
+
+type resetPasswordRequest struct {
+	Email string
+}
+
+type eventRequest struct {
+	Positive    bool `json:",omitempty"`
+	Description string
+	Title       string `json:",omitempty"`
 }
 
 func newSchoolHandler(db *bolt.DB) http.Handler {
@@ -85,5 +96,273 @@ func newSchoolHandler(db *bolt.DB) http.Handler {
 			lgr.Printf("ERROR failed to send")
 		}
 
+	})
+}
+
+func resetPasswordHandler(db *bolt.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request resetPasswordRequest
+		defer r.Body.Close()
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&request)
+		if err != nil {
+			err = fmt.Errorf("cannot parse request body: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if request.Email == "" {
+			err = fmt.Errorf("email is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		user, err := getUserInLocalStore(db, request.Email)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response, err := resetPassword(db, user)
+
+		lgr.Printf("Password reset for %s ", request.Email)
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err = encoder.Encode(response)
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
+func addJobHandler(db *bolt.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request Job
+		defer r.Body.Close()
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&request)
+		if err != nil {
+			err = fmt.Errorf("cannot parse request body: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO new job request: %v", request)
+
+		if request.Title == "" {
+			err = fmt.Errorf("title is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if request.Pay == 0 {
+			err = fmt.Errorf("pay is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if request.Description == "" {
+			err = fmt.Errorf("description is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		title := request.Title
+		request.Title = ""
+
+		if request.College {
+			request.College = false
+			marshal, err := json.Marshal(request)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			err = createJobOrEvent(db, marshal, KeyCollegeJobs, title)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			marshal, err := json.Marshal(request)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			err = createJobOrEvent(db, marshal, KeyJobs, title)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		lgr.Printf("job created for %s ", request.Title)
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err = encoder.Encode("success")
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
+func addEventHandler(db *bolt.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request eventRequest
+		defer r.Body.Close()
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&request)
+		if err != nil {
+			err = fmt.Errorf("cannot parse request body: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO new event request: %v", request)
+
+		if request.Description == "" {
+			err = fmt.Errorf("description is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if request.Title == "" {
+			err = fmt.Errorf("title is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		title := request.Title
+		request.Title = ""
+
+		if request.Positive {
+			request.Positive = false
+			marshal, err := json.Marshal(request)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			err = createJobOrEvent(db, marshal, KeyPEvents, title)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			marshal, err := json.Marshal(request)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			err = createJobOrEvent(db, marshal, KeyNEvents, title)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		lgr.Printf("Event created for %s ", request.Description)
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err = encoder.Encode("success")
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
+func addAdminHandler(db *bolt.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request UserInfo
+		defer r.Body.Close()
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&request)
+		if err != nil {
+			err = fmt.Errorf("cannot parse request body: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO new admin request: %v", request)
+
+		if request.Email == "" {
+			err = fmt.Errorf("Email is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if request.FirstName == "" {
+			err = fmt.Errorf("FirstName is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if request.LastName == "" {
+			err = fmt.Errorf("LastName is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if request.SchoolId == "" {
+			err = fmt.Errorf("SchoolId is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		request.Role = UserRoleAdmin
+		request.Name = request.Email
+		password := RandomString(8)
+		request.PasswordSha = EncodePassword(password)
+
+		_, err = CreateSchoolAdmin(db, request)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		adminTeacher := UserInfo{
+			Name:        request.Name[:1] + "." + request.Name[1:],
+			FirstName:   request.FirstName,
+			LastName:    request.LastName,
+			Email:       request.Email[:1] + "." + request.Email[1:],
+			Role:        UserRoleTeacher,
+			SchoolId:    request.SchoolId,
+			PasswordSha: request.PasswordSha,
+		}
+
+		err = createTeacher(db, adminTeacher)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response := openapi.ResponseResetPassword{
+			Password: password,
+		}
+
+		lgr.Printf("admin created for %s ", request.Email)
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err = encoder.Encode(response)
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
+func createJobOrEvent(db *bolt.DB, marshal []byte, bucketKey, itemKey string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		EJ, err := tx.CreateBucketIfNotExists([]byte(bucketKey))
+		if err != nil {
+			return err
+		}
+		err = EJ.Put([]byte(itemKey), marshal)
+		return err
 	})
 }

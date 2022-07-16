@@ -102,12 +102,6 @@ type SysAdminApiRouter interface {
 	SearchSchools(http.ResponseWriter, *http.Request)
 	SearchTransaction(http.ResponseWriter, *http.Request)
 }
-// TeacherApiRouter defines the required methods for binding the api requests to a responses for the TeacherApi
-// The TeacherApiRouter implementation should parse necessary information from the http request,
-// pass the data to a TeacherApiServicer to perform the required actions, then write the service results to the http response.
-type TeacherApiRouter interface { 
-	TeacherAddClass(http.ResponseWriter, *http.Request)
-}
 // UnregisteredApiRouter defines the required methods for binding the api requests to a responses for the UnregisteredApi
 // The UnregisteredApiRouter implementation should parse necessary information from the http request,
 // pass the data to a UnregisteredApiServicer to perform the required actions, then write the service results to the http response.
@@ -216,15 +210,6 @@ type SysAdminApiServicer interface {
 	MakeSchool(context.Context, SchoolsSchoolBody1) (ImplResponse, error)
 	SearchSchools(context.Context, int32) (ImplResponse, error)
 	SearchTransaction(context.Context, string) (ImplResponse, error)
-}
-
-
-// TeacherApiServicer defines the api actions for the TeacherApi service
-// This interface intended to stay up to date with the openapi yaml used to generate it,
-// while the service implementation can ignored with the .openapi-generator-ignore file
-// and updated with the logic required for the API.
-type TeacherApiServicer interface { 
-	TeacherAddClass(context.Context, RequestAddClass) (ImplResponse, error)
 }
 
 
