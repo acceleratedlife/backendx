@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 	"math/rand"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -140,7 +140,13 @@ func createTeacher(db *bolt.DB, newUser UserInfo) (err error) {
 }
 
 func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
-	newUser.Income = float32(math.Floor(rand.Float64()*(335.0-104.0) + 104.0))
+	jobDetails := getJob(db, KeyJobs, newUser.Job)
+	max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
+	min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
+	diff := max.Sub(min)
+	random := decimal.NewFromFloat32(rand.Float32())
+	newUser.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
+
 	newUser.CareerTransition = false
 	err = db.Update(func(tx *bolt.Tx) error {
 		err = AddUserTx(tx, newUser)

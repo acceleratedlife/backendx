@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/go-pkgz/lgr"
 	"net/http"
 	"testing"
 	"time"
@@ -374,9 +373,7 @@ func TestSearchEvents(t *testing.T) {
 		EventIfNeeded(db, &clock, userDetails)
 	}
 
-	lgr.Printf("start time: %s", clock.Now().String())
 	clock.TickOne(time.Hour * 240)
-	lgr.Printf("test time, %s", clock.Now().String())
 
 	for _, student := range students {
 		userDetails, err := getUserInLocalStore(db, student)

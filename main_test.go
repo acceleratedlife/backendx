@@ -109,6 +109,20 @@ func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudent
 	classes = make([]string, 0)
 	mandatoryClasses := make([]string, 0)
 
+	job2 := Job{
+		Pay:         53000,
+		Description: "Teach Stuff",
+		College:     false,
+	}
+
+	marshal, err := json.Marshal(job2)
+
+	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
+	if err != nil {
+		lgr.Printf("ERROR school admin is not created: %v", err)
+		return
+	}
+
 	for s := 0; s < noSchools; s++ {
 		schoolId, err := FindOrCreateSchool(db, fmt.Sprintf("scool %d", s), "sc, ca", s)
 		if err != nil {
@@ -177,6 +191,7 @@ func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudent
 						LastName:    "admin",
 						Role:        UserRoleStudent,
 						SchoolId:    schoolId,
+						Job:         getJobId(db, KeyJobs),
 					}
 					errE = createStudent(db, student, PathId{
 						schoolId:  schoolId,

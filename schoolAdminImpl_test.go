@@ -52,6 +52,7 @@ func TestCreateStudentIncome(t *testing.T) {
 		Email:            "ss@ss.com",
 		SchoolId:         schools[0],
 		Role:             UserRoleStudent,
+		Job:              getJobId(db, KeyJobs),
 	}
 
 	path := PathId{

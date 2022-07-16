@@ -643,11 +643,9 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
-		lgr.Printf("+++ %s", clock.Now().String())
 		days := rand.Intn(5) + 4
 
 		eventTime := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour)
-		lgr.Printf("event %v", eventTime.String())
 		eventDate, err := eventTime.MarshalText()
 		if err != nil {
 			return err
@@ -745,9 +743,7 @@ func IsEventNeeded(student *bolt.Bucket, clock Clock, tx bool) (bool, error) {
 	dayB := student.Get([]byte(KeyDayEvent))
 	if dayB == nil && tx {
 		days := rand.Intn(5) + 4
-
 		eventTime := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour)
-		lgr.Printf("event %v", eventTime.String())
 		eventDate, err := eventTime.MarshalText()
 		if err != nil {
 			return true, err
