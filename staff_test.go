@@ -394,6 +394,7 @@ func TestSearchEvents(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&respData)
 
+	assert.Greater(t, len(respData), 0)
 	assert.NotZero(t, respData[0].Value)
 
 }

@@ -486,6 +486,15 @@ func studentPayStudentTx(tx *bolt.Tx, clock Clock, amount decimal.Decimal, recie
 	return nil
 }
 
+func getJob(db *bolt.DB, key string, jobId string) (job openapi.UserNoHistoryJob) {
+	_ = db.View(func(tx *bolt.Tx) error {
+		job = getJobRx(tx, key, jobId)
+		return nil
+	})
+
+	return
+}
+
 func getJobRx(tx *bolt.Tx, key string, jobId string) (job openapi.UserNoHistoryJob) {
 	jobs := tx.Bucket([]byte(key))
 	jobData := jobs.Get([]byte(jobId))

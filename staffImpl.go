@@ -552,7 +552,7 @@ func getEventsTeacher(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []op
 
 		c := transactions.Cursor()
 		var trans Transaction
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		for k, _ := c.Last(); k != nil; k, _ = c.Prev() {
 
 			transTime, err := time.Parse(time.RFC3339, string(k))
 			if err != nil {

@@ -145,6 +145,7 @@ func main() {
 	router.Use(buildAuthMiddleware(m))
 
 	log.Fatal(http.ListenAndServe(":5000", router))
+
 }
 
 // creates routes for prod
