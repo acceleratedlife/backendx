@@ -860,7 +860,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	return nil
 }
 
-func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, from string, to string, charge bool) (err error) {
+func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, from, to, reference string, charge bool) (err error) {
 	if userInfo.Role != UserRoleStudent {
 		return fmt.Errorf("user is not a student")
 	}
@@ -908,6 +908,10 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		amount = amount.Mul(decimal.NewFromFloat32(keyCharge))
 	}
 
+	if reference == "" {
+		reference = fromDetails.LastName + " to " + toDetails.LastName
+	}
+
 	transaction := Transaction{
 		Ts:             ts,
 		Source:         userInfo.Name,
@@ -917,7 +921,7 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		AmountSource:   amount,
 		AmountDest:     converted,
 		XRate:          xRate,
-		Reference:      fromDetails.LastName + " to " + toDetails.LastName,
+		Reference:      reference,
 		FromSource:     true,
 	}
 
@@ -998,7 +1002,13 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 	_, _, err = addToHolderTx(student, currency, transaction, OperationDebit, true)
 	if err != nil {
 		if err.Error() == "Insufficient funds" && !sPurchase {
-			err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, false)
+			if strings.Contains(reference, "Event: ") {
+				err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, reference, false)
+				if err != nil {
+					return err
+				}
+			}
+			err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, "", false)
 			if err != nil {
 				return err
 			}

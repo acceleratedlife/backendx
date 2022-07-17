@@ -534,7 +534,7 @@ func TestAddJobCollegeSecured(t *testing.T) {
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
-	mux.Handle("/admin/addJob", addJobHandler(db))
+	mux.Handle("/admin/addJobs", addJobsHandler(db))
 
 	l, _ := net.Listen("tcp", "127.0.0.1:8089")
 
@@ -548,18 +548,20 @@ func TestAddJobCollegeSecured(t *testing.T) {
 
 	client := &http.Client{}
 
-	body := Job{
+	body := make([]Job, 0)
+
+	body = append(body, Job{
 		Title:       "Teacher",
 		Pay:         200,
 		Description: "Teach",
 		College:     true,
-	}
+	})
 
 	marshal, _ := json.Marshal(body)
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/addJob",
+		"http://localhost:8089/admin/addJobs",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -584,7 +586,7 @@ func TestAddJobSecured(t *testing.T) {
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
-	mux.Handle("/admin/addJob", addJobHandler(db))
+	mux.Handle("/admin/addJobs", addJobsHandler(db))
 
 	l, _ := net.Listen("tcp", "127.0.0.1:8089")
 
@@ -598,18 +600,20 @@ func TestAddJobSecured(t *testing.T) {
 
 	client := &http.Client{}
 
-	body := Job{
+	body := make([]Job, 0)
+
+	body = append(body, Job{
 		Title:       "Teacher",
 		Pay:         200,
 		Description: "Teach",
 		College:     false,
-	}
+	})
 
 	marshal, _ := json.Marshal(body)
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/addJob",
+		"http://localhost:8089/admin/addJobs",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -634,7 +638,7 @@ func TestAddEventPositiveSecured(t *testing.T) {
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
-	mux.Handle("/admin/addEvent", addEventHandler(db))
+	mux.Handle("/admin/addEvents", addEventsHandler(db))
 
 	l, _ := net.Listen("tcp", "127.0.0.1:8089")
 
@@ -648,17 +652,19 @@ func TestAddEventPositiveSecured(t *testing.T) {
 
 	client := &http.Client{}
 
-	body := eventRequest{
+	body := make([]eventRequest, 0)
+
+	body = append(body, eventRequest{
 		Positive:    true,
 		Description: "Lottery",
 		Title:       "Winner",
-	}
+	})
 
 	marshal, _ := json.Marshal(body)
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/addEvent",
+		"http://localhost:8089/admin/addEvents",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -683,7 +689,7 @@ func TestAddEventNegativeSecured(t *testing.T) {
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
-	mux.Handle("/admin/addEvent", addEventHandler(db))
+	mux.Handle("/admin/addEvents", addEventsHandler(db))
 
 	l, _ := net.Listen("tcp", "127.0.0.1:8089")
 
@@ -697,17 +703,19 @@ func TestAddEventNegativeSecured(t *testing.T) {
 
 	client := &http.Client{}
 
-	body := eventRequest{
+	body := make([]eventRequest, 0)
+
+	body = append(body, eventRequest{
 		Positive:    false,
 		Description: "Pay Taxes",
-		Title:       "Taxes",
-	}
+		Title:       "Winner",
+	})
 
 	marshal, _ := json.Marshal(body)
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/addEvent",
+		"http://localhost:8089/admin/addEvents",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -771,5 +779,43 @@ func TestAddAdminSecured(t *testing.T) {
 	_ = decoder.Decode(&data)
 
 	require.Equal(t, 8, len(data.Password))
+
+}
+
+func TestSeedDbSecured(t *testing.T) {
+
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/seedDb", seedDbHandler(db))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	client := &http.Client{}
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/seedDb",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
 
 }

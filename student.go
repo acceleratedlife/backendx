@@ -71,7 +71,7 @@ func (a *StudentApiServiceImpl) BuckConvert(ctx context.Context, body openapi.Re
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		err := studentConvertTx(tx, a.clock, userDetails, decimal.NewFromFloat32(body.Amount), body.AccountFrom, body.AccountTo, true)
+		err := studentConvertTx(tx, a.clock, userDetails, decimal.NewFromFloat32(body.Amount), body.AccountFrom, body.AccountTo, "", true)
 		if err != nil {
 			return err
 		}
