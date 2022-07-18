@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -59,6 +60,20 @@ func FindOrCreateSchool(db *bolt.DB, name string, city string, zip int) (id stri
 		}
 
 		err = school.Put([]byte(KeyAddCode), []byte(RandomString(6)))
+		if err != nil {
+			return err
+		}
+
+		settings := openapi.Settings{
+			Student2student: true,
+		}
+
+		marshal, err := json.Marshal(settings)
+		if err != nil {
+			return err
+		}
+
+		err = school.Put([]byte(KeySettings), marshal)
 		if err != nil {
 			return err
 		}

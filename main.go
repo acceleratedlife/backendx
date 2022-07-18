@@ -56,6 +56,7 @@ const (
 	KeyStudents         = "students"
 	KeyClasses          = "classes"
 	KeyAddCode          = "addCode"
+	KeySettings         = "settings"
 	KeyName             = "name"
 	KeyCity             = "city"
 	KeyZip              = "zip"

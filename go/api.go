@@ -53,7 +53,9 @@ type AllSchoolApiRouter interface {
 // The SchoolAdminApiRouter implementation should parse necessary information from the http request,
 // pass the data to a SchoolAdminApiServicer to perform the required actions, then write the service results to the http response.
 type SchoolAdminApiRouter interface { 
+	GetSettings(http.ResponseWriter, *http.Request)
 	SearchAdminTeacherClass(http.ResponseWriter, *http.Request)
+	SetSettings(http.ResponseWriter, *http.Request)
 }
 // StaffApiRouter defines the required methods for binding the api requests to a responses for the StaffApi
 // The StaffApiRouter implementation should parse necessary information from the http request,
@@ -153,7 +155,9 @@ type AllSchoolApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type SchoolAdminApiServicer interface { 
+	GetSettings(context.Context) (ImplResponse, error)
 	SearchAdminTeacherClass(context.Context, string) (ImplResponse, error)
+	SetSettings(context.Context, Settings) (ImplResponse, error)
 }
 
 

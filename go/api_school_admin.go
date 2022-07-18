@@ -11,6 +11,7 @@
 package openapi
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 )
@@ -49,12 +50,37 @@ func NewSchoolAdminApiController(s SchoolAdminApiServicer, opts ...SchoolAdminAp
 func (c *SchoolAdminApiController) Routes() Routes {
 	return Routes{
 		{
+			"GetSettings",
+			strings.ToUpper("Get"),
+			"/api/settings",
+			c.GetSettings,
+		},
+		{
 			"SearchAdminTeacherClass",
 			strings.ToUpper("Get"),
 			"/api/classes/teachers",
 			c.SearchAdminTeacherClass,
 		},
+		{
+			"SetSettings",
+			strings.ToUpper("Put"),
+			"/api/settings",
+			c.SetSettings,
+		},
 	}
+}
+
+// GetSettings - get school settings
+func (c *SchoolAdminApiController) GetSettings(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.GetSettings(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
 }
 
 // SearchAdminTeacherClass - gets the teacher class of an admin and all the teacher that are its members
@@ -62,6 +88,30 @@ func (c *SchoolAdminApiController) SearchAdminTeacherClass(w http.ResponseWriter
 	query := r.URL.Query()
 	idParam := query.Get("_id")
 	result, err := c.service.SearchAdminTeacherClass(r.Context(), idParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SetSettings - change school settings
+func (c *SchoolAdminApiController) SetSettings(w http.ResponseWriter, r *http.Request) {
+	settingsParam := Settings{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&settingsParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertSettingsRequired(settingsParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.SetSettings(r.Context(), settingsParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
