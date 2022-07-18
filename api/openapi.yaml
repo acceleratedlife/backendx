@@ -885,6 +885,38 @@ paths:
       summary: returns all of todays events for the users school
       tags:
       - Staff
+  /settings:
+    get:
+      description: return the settings of the school
+      operationId: getSettings
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+          description: transactions matching criteria
+        "400":
+          description: problem finding settings
+      summary: get school settings
+      tags:
+      - schoolAdmin
+    put:
+      description: school admin can change settings for school
+      operationId: setSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Settings'
+      responses:
+        "200":
+          description: updated settings
+        "400":
+          description: failed to update settings
+      summary: change school settings
+      tags:
+      - schoolAdmin
   /transactions:
     get:
       description: By passing in the staffs _id you can find a transactions that they
@@ -1634,6 +1666,13 @@ components:
       - owner
       - transaction
       - value
+      type: object
+    Settings:
+      example:
+        student2student: true
+      properties:
+        student2student:
+          type: boolean
       type: object
     School:
       example:
@@ -2780,6 +2819,7 @@ components:
         title:
           type: string
         pay:
+          format: int
           type: number
         description:
           type: string

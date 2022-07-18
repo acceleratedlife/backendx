@@ -250,6 +250,17 @@ func (a *AllApiServiceImpl) MakeAuction(ctx context.Context, body openapi.Reques
 		}), nil
 	}
 
+	if userDetails.Role == UserRoleStudent {
+		settings, err := getSettings(a.db, userDetails)
+		if err != nil {
+			return openapi.Response(400, "{}"), err
+		}
+
+		if !settings.Student2student {
+			return openapi.Response(400, ""), fmt.Errorf("Disabled by Administrator")
+		}
+	}
+
 	err = MakeAuctionImpl(a.db, userDetails, body)
 	if err != nil {
 		lgr.Printf("ERROR cannot make auctions from : %s %v", userDetails.Name, err)
@@ -314,6 +325,13 @@ func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.Req
 	}
 
 	if userDetails.Role == UserRoleStudent {
+		settings, err := getSettings(s.db, userDetails)
+		if err != nil {
+			return openapi.Response(400, ""), err
+		}
+		if !settings.Student2student {
+			return openapi.Response(400, ""), fmt.Errorf("Disabled by Administrator")
+		}
 		err = executeStudentTransaction(s.db, s.clock, body.Amount, body.Student, userDetails, body.Description)
 		if err != nil {
 			return openapi.Response(400, ""), err

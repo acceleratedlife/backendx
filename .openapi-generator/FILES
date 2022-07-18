@@ -82,6 +82,7 @@ go/model_response_transactions.go
 go/model_school.go
 go/model_schools_school_body.go
 go/model_schools_school_body_1.go
+go/model_settings.go
 go/model_transaction.go
 go/model_user.go
 go/model_user_no_history.go
