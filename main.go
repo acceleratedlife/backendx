@@ -599,8 +599,9 @@ func seedDb(db *bolt.DB) (err error) {
 		PasswordSha: EncodePassword("123qwe"),
 		SchoolId:    schoolId,
 		Role:        UserRoleStudent,
-		Job:         getJobId(db, KeyCollegeJobs),
+		Job:         getJobId(db, KeyJobs),
 		College:     true,
+		CollegeEnd:  time.Now(),
 	}
 
 	err = createStudent(db, newUser, path)
@@ -617,8 +618,9 @@ func seedDb(db *bolt.DB) (err error) {
 		PasswordSha: EncodePassword("123qwe"),
 		SchoolId:    schoolId,
 		Role:        UserRoleStudent,
-		Job:         getJobId(db, KeyCollegeJobs),
+		Job:         getJobId(db, KeyJobs),
 		College:     true,
+		CollegeEnd:  time.Now(),
 	}
 
 	err = createStudent(db, newUser, path)
