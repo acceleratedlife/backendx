@@ -158,7 +158,7 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 
 	return openapi.Response(200, resp), nil
 }
-func (a *StudentApiServiceImpl) SearchBuckTransaction(ctx context.Context) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) SearchBuckTransactions(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {

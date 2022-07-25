@@ -11,11 +11,21 @@
 package openapi
 
 type Settings struct {
+
 	Student2student bool `json:"student2student"`
 }
 
 // AssertSettingsRequired checks if the required fields are not zero-ed
 func AssertSettingsRequired(obj Settings) error {
+	elements := map[string]interface{}{
+		"student2student": obj.Student2student,
+	}
+	for name, el := range elements {
+		if isZero := IsZeroValue(el); isZero {
+			return &RequiredError{Field: name}
+		}
+	}
+
 	return nil
 }
 

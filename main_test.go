@@ -119,7 +119,7 @@ func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudent
 
 	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
 	if err != nil {
-		lgr.Printf("ERROR school admin is not created: %v", err)
+		lgr.Printf("ERROR cannot create job: %v", err)
 		return
 	}
 

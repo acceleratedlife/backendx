@@ -1002,7 +1002,7 @@ paths:
       description: query account kind by Buck and owner by _id. Then query transaction
         for type of buck and account in accounts from account query. Populate assetID
         with name, sort by createdAt descending and limit to 25 records.
-      operationId: searchBuckTransaction
+      operationId: searchBuckTransactions
       responses:
         "200":
           content:
@@ -1673,6 +1673,8 @@ components:
       properties:
         student2student:
           type: boolean
+      required:
+      - student2student
       type: object
     School:
       example:
@@ -1864,6 +1866,7 @@ components:
         buck:
           $ref: '#/components/schemas/ResponseCurrencyExchange_buck'
         balance:
+          default: 0
           example: 123.45
           format: float
           type: number

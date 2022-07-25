@@ -305,9 +305,14 @@ func TestSearchStudentBucksNegative(t *testing.T) {
 
 	userDetails, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
-	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "pre load")
+	userDetails1, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[1], "pre load")
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails1, decimal.NewFromFloat(1000), teachers[0], "pre load")
 	require.Nil(t, err)
 	err = chargeStudent(db, &clock, userDetails, decimal.NewFromFloat(1001), teachers[0], "charge", false)
+	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodGet,
 		"http://127.0.0.1:8090/api/accounts/all",
@@ -323,8 +328,8 @@ func TestSearchStudentBucksNegative(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
-	assert.Equal(t, data[0].Balance, float32(1001))
-	assert.Equal(t, data[1].Balance, float32(1000))
+	assert.Equal(t, data[0].Balance, float32(1000))
+	assert.Equal(t, len(data), 1)
 }
 
 func TestSearchStudentBucksUbuck(t *testing.T) {
