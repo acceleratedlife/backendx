@@ -574,9 +574,10 @@ func getEventsTeacher(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []op
 			}
 
 			var student UserInfo
-			if trans.Source != "" {
+			if trans.Source != "" { //bad event
 				student, err = getUserInLocalStoreTx(tx, trans.Source)
-			} else {
+				trans.AmountSource = trans.AmountSource.Neg()
+			} else { //good event
 				student, err = getUserInLocalStoreTx(tx, trans.Destination)
 			}
 
