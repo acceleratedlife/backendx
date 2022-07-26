@@ -328,8 +328,13 @@ func TestSearchStudentBucksNegative(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
-	assert.Equal(t, data[0].Balance, float32(1000))
-	assert.Equal(t, len(data), 1)
+	if data[0].Id == KeyDebt {
+		assert.Equal(t, float32(1001), data[0].Balance)
+	} else {
+		assert.Equal(t, float32(1000), data[0].Balance)
+	}
+
+	assert.Equal(t, len(data), 2)
 }
 
 func TestSearchStudentBucksUbuck(t *testing.T) {

@@ -114,10 +114,14 @@ func getStudentAccount(db *bolt.DB, bAccount *bolt.Bucket, accountId string) (re
 
 func getStudentAccountRx(tx *bolt.Tx, bAccount *bolt.Bucket, accountId string) (resp openapi.ResponseCurrencyExchange, err error) {
 
-	balanceData := bAccount.Get([]byte(KeyBalance))
-	err = json.Unmarshal(balanceData, &resp.Balance)
 	resp.Id = accountId
+	balanceData := bAccount.Get([]byte(KeyBalance))
+	if balanceData == nil {
+		resp.Balance = 0
+		return
+	}
 
+	err = json.Unmarshal(balanceData, &resp.Balance)
 	return
 }
 
