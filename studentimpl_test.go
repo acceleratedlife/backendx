@@ -286,6 +286,52 @@ func TestDailyPayment(t *testing.T) {
 
 }
 
+func TestDailyPaymentGarnish(t *testing.T) {
+
+	lgr.Printf("INFO TestDailyPaymentGarnish")
+	t.Log("INFO TestDailyPaymentGarnish")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("payGarnish")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, _ := getUserInLocalStore(db, students[0])
+
+	r := DailyPayIfNeeded(db, &clock, student)
+	require.True(t, r)
+
+	require.Equal(t, float64(student.Income), StudentNetWorth(db, student.Name).InexactFloat64())
+
+	chargeStudentUbuck(db, &clock, student, decimal.NewFromFloat32(student.Income+1), "to debt", false)
+	chargeStudent(db, &clock, student, decimal.NewFromFloat32(student.Income), KeyDebt, "minimize debt", false)
+	netWorth := StudentNetWorth(db, student.Name)
+	require.Equal(t, float64(student.Income-1), netWorth.InexactFloat64())
+
+	clock.TickOne(24 * time.Hour)
+	r = DailyPayIfNeeded(db, &clock, student)
+	require.True(t, r)
+
+	var account openapi.ResponseCurrencyExchange
+	err := db.View(func(tx *bolt.Tx) error {
+		studentBucket, err := getStudentBucketRx(tx, student.Name)
+		if err != nil {
+			return err
+		}
+		accounts := studentBucket.Bucket([]byte(KeyAccounts))
+		debt := accounts.Bucket([]byte(KeyDebt))
+		account, err = getStudentAccountRx(tx, debt, student.Name)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	require.Nil(t, err)
+
+	require.Equal(t, float64(0), math.Round(float64((account.Balance)*1000))/1000)
+
+}
+
 func TestDebtInterest(t *testing.T) {
 
 	lgr.Printf("INFO TestDebtInterest")

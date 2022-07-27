@@ -121,7 +121,9 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 			buyValue := transaction.AmountDest.Mul(transaction.XRate)
 			numerator := basisValue.Add(buyValue)
 			denominator := balance.Add(transaction.AmountDest)
-			basis = numerator.Div(denominator)
+			if !denominator.IsZero() {
+				basis = numerator.Div(denominator)
+			}
 		}
 
 		balance = balance.Add(transaction.AmountDest)
@@ -296,7 +298,7 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		pay := decimal.NewFromFloat32(userDetails.Income)
-		haveDebt, _, _, err := IsDebtNeeded(student, clock)
+		haveDebt, _, balance, err := IsDebtNeeded(student, clock)
 		if err != nil {
 			return err
 		}
@@ -313,18 +315,22 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		if haveDebt {
 			garnish := pay.Mul(decimal.NewFromFloat32(.3))
 			pay = pay.Mul(decimal.NewFromFloat32(.7))
+			if garnish.GreaterThan(balance) {
+				garnishRemainder := garnish.Sub(balance)
+				pay = pay.Add(garnishRemainder)
+				garnish = balance.Add(decimal.Zero)
+			}
 			err = chargeStudentTx(tx, clock, userDetails, garnish, KeyDebt, "Paycheck Garnishment", false)
 			if err != nil {
 				return err
 			}
 			return addUbuck2StudentTx(tx, clock, userDetails, pay, "daily payment")
 		}
-
 		return addUbuck2StudentTx(tx, clock, userDetails, pay, "daily payment")
 	})
 
 	if err != nil {
-		lgr.Printf("ERROR daily payment not added to %s: %v", userDetails.Name, err)
+		lgr.Printf("ERROR daily payment not added to %s, Error: %v", userDetails.Name, err)
 		return false
 	}
 	return true
@@ -885,7 +891,6 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 	fromDetails := UserInfo{
 		LastName: "UBuck",
 	}
-
 	if to == KeyDebt {
 		target = ""
 	} else if to == CurrencyUBuck {
@@ -899,7 +904,7 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		}
 	}
 
-	if from != CurrencyUBuck {
+	if from != CurrencyUBuck && from != KeyDebt {
 		fromDetails, err = getUserInLocalStoreTx(tx, from)
 		if err != nil {
 			return err
@@ -1003,9 +1008,8 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 	}
 	student, err := getStudentBucketTx(tx, userDetails.Name)
 	if err != nil {
-		return err
+		return fmt.Errorf("can't find student, error: " + err.Error())
 	}
-
 	_, _, err = addToHolderTx(student, currency, transaction, OperationDebit, true)
 	if err != nil {
 		if err.Error() == "Insufficient funds" && !sPurchase {
@@ -1027,7 +1031,6 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 		return err
 
 	}
-
 	cb, err := getCbTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return err
@@ -1317,7 +1320,7 @@ func getStudentTransactionsTx(tx *bolt.Tx, bAccounts *bolt.Bucket, student UserI
 
 		transactions := buck.Bucket([]byte(KeyTransactions))
 		if transactions == nil {
-			return resp, fmt.Errorf("Cannot get transactions")
+			continue
 		}
 
 		trans, err = getBuckTransactionsTx(transactions, trans, student, string(k))
@@ -1472,7 +1475,7 @@ func insert(a []Transaction, index int, value Transaction) []Transaction {
 	return a
 }
 
-func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.Crypto, err error) {
+func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []CryptoDecimal, err error) {
 	studentBucket, err := getStudentBucketRx(tx, userDetails.Name)
 	if err != nil {
 		return
@@ -1515,7 +1518,7 @@ func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.Cryp
 		}
 
 		if balance.IsPositive() {
-			var crypto openapi.Crypto
+			var crypto CryptoDecimal
 			crypto.Name = string(k)
 			usd, err := getCryptoLatest(string(k))
 			if err != nil {
@@ -1531,7 +1534,7 @@ func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.Cryp
 	return
 }
 
-func getStudentCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.Crypto, accountsBucket *bolt.Bucket, err error) {
+func getStudentCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp CryptoDecimal, accountsBucket *bolt.Bucket, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
 		resp, accountsBucket, err = getStudentCryptoRx(tx, userDetails, crypto)
 		return err
@@ -1540,7 +1543,7 @@ func getStudentCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp op
 	return
 }
 
-func getStudentCryptoRx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp openapi.Crypto, accountsBucket *bolt.Bucket, err error) {
+func getStudentCryptoRx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp CryptoDecimal, accountsBucket *bolt.Bucket, err error) {
 	studentBucket, err := getStudentBucketRx(tx, userDetails.Name)
 	if err != nil {
 		return
