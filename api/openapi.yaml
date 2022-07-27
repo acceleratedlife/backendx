@@ -1002,7 +1002,7 @@ paths:
       description: query account kind by Buck and owner by _id. Then query transaction
         for type of buck and account in accounts from account query. Populate assetID
         with name, sort by createdAt descending and limit to 25 records.
-      operationId: searchBuckTransaction
+      operationId: searchBuckTransactions
       responses:
         "200":
           content:
@@ -1642,30 +1642,6 @@ components:
       required:
       - updatedAt
       - usd
-      type: object
-    Event:
-      properties:
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-        owner_id:
-          example: 613eab19e58cc511801af657
-          type: string
-        transaction_id:
-          example: 613eab19e58cc511801af657
-          type: string
-        value:
-          example: 123
-          type: integer
-        description:
-          example: Life Event
-          type: string
-      required:
-      - _id
-      - description
-      - owner
-      - transaction
-      - value
       type: object
     Settings:
       example:
@@ -2441,7 +2417,7 @@ components:
         rank: 2
         _id: 613eab19e58cc511801af657
         job:
-          pay: 0.8008281904610115
+          pay: 0
           description: description
           title: title
         email: ss@ss.com
@@ -2812,15 +2788,14 @@ components:
       type: object
     UserNoHistory_job:
       example:
-        pay: 0.8008281904610115
+        pay: 0
         description: description
         title: title
       properties:
         title:
           type: string
         pay:
-          format: int
-          type: number
+          type: integer
         description:
           type: string
       type: object

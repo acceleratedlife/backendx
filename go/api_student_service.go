@@ -83,9 +83,9 @@ func (s *StudentApiService) SearchAuctionsStudent(ctx context.Context) (ImplResp
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchAuctionsStudent method not implemented")
 }
 
-// SearchBuckTransaction - searches for buck transactions
-func (s *StudentApiService) SearchBuckTransaction(ctx context.Context) (ImplResponse, error) {
-	// TODO - update SearchBuckTransaction with the required logic for this service method.
+// SearchBuckTransactions - searches for buck transactions
+func (s *StudentApiService) SearchBuckTransactions(ctx context.Context) (ImplResponse, error) {
+	// TODO - update SearchBuckTransactions with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
 	//TODO: Uncomment the next line to return response Response(200, []ResponseBuckTransaction{}) or use other options such as http.Ok ...
@@ -94,7 +94,7 @@ func (s *StudentApiService) SearchBuckTransaction(ctx context.Context) (ImplResp
 	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
 	//return Response(400, nil),nil
 
-	return Response(http.StatusNotImplemented, nil), errors.New("SearchBuckTransaction method not implemented")
+	return Response(http.StatusNotImplemented, nil), errors.New("SearchBuckTransactions method not implemented")
 }
 
 // SearchCrypto - returns the given crypto price, how many are owned and how many ubucks the user has.

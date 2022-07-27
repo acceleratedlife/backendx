@@ -894,7 +894,7 @@ func TestSearchStudentCrypto(t *testing.T) {
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
-	var v []openapi.Crypto
+	var v []CryptoDecimal
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&v)
 	require.Nil(t, err)

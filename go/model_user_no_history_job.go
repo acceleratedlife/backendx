@@ -11,6 +11,7 @@
 package openapi
 
 type UserNoHistoryJob struct {
+
 	Title string `json:"title,omitempty"`
 
 	Pay int32 `json:"pay,omitempty"`

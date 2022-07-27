@@ -74,10 +74,10 @@ func (c *StudentApiController) Routes() Routes {
 			c.SearchAuctionsStudent,
 		},
 		{
-			"SearchBuckTransaction",
+			"SearchBuckTransactions",
 			strings.ToUpper("Get"),
 			"/api/transactions/buckTransactions",
-			c.SearchBuckTransaction,
+			c.SearchBuckTransactions,
 		},
 		{
 			"SearchCrypto",
@@ -197,9 +197,9 @@ func (c *StudentApiController) SearchAuctionsStudent(w http.ResponseWriter, r *h
 
 }
 
-// SearchBuckTransaction - searches for buck transactions
-func (c *StudentApiController) SearchBuckTransaction(w http.ResponseWriter, r *http.Request) {
-	result, err := c.service.SearchBuckTransaction(r.Context())
+// SearchBuckTransactions - searches for buck transactions
+func (c *StudentApiController) SearchBuckTransactions(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.SearchBuckTransactions(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
