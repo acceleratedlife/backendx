@@ -262,7 +262,7 @@ func (a *StudentApiServiceImpl) SearchStudentCrypto(ctx context.Context) (openap
 		return openapi.Response(401, ""), nil
 	}
 
-	var resp []openapi.Crypto
+	var resp []CryptoDecimal
 	err = a.db.View(func(tx *bolt.Tx) error {
 		resp, err = getStudentCryptosRx(tx, userDetails)
 		if err != nil {

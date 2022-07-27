@@ -29,6 +29,13 @@ type Gecko struct {
 	usd  float32
 }
 
+type CryptoDecimal struct {
+	Basis        decimal.Decimal `json:"basis"`
+	CurrentPrice decimal.Decimal `json:"currentPrice"`
+	Name         string          `json:"name"`
+	Quantity     decimal.Decimal `json:"quantity"`
+}
+
 type Transaction struct {
 	Ts             time.Time
 	Source         string

@@ -33,7 +33,6 @@ go/model_class_with_members.go
 go/model_class_with_members_members.go
 go/model_crypto.go
 go/model_crypto_cb.go
-go/model_event.go
 go/model_history.go
 go/model_inline_response_200.go
 go/model_inline_response_200_1.go

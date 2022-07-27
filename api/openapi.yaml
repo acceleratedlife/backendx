@@ -1643,38 +1643,12 @@ components:
       - updatedAt
       - usd
       type: object
-    Event:
-      properties:
-        _id:
-          example: 613eab19e58cc511801af657
-          type: string
-        owner_id:
-          example: 613eab19e58cc511801af657
-          type: string
-        transaction_id:
-          example: 613eab19e58cc511801af657
-          type: string
-        value:
-          example: 123
-          type: integer
-        description:
-          example: Life Event
-          type: string
-      required:
-      - _id
-      - description
-      - owner
-      - transaction
-      - value
-      type: object
     Settings:
       example:
         student2student: true
       properties:
         student2student:
           type: boolean
-      required:
-      - student2student
       type: object
     School:
       example:
@@ -1866,7 +1840,6 @@ components:
         buck:
           $ref: '#/components/schemas/ResponseCurrencyExchange_buck'
         balance:
-          default: 0
           example: 123.45
           format: float
           type: number
@@ -2444,7 +2417,7 @@ components:
         rank: 2
         _id: 613eab19e58cc511801af657
         job:
-          pay: 0.8008281904610115
+          pay: 0
           description: description
           title: title
         email: ss@ss.com
@@ -2815,15 +2788,14 @@ components:
       type: object
     UserNoHistory_job:
       example:
-        pay: 0.8008281904610115
+        pay: 0
         description: description
         title: title
       properties:
         title:
           type: string
         pay:
-          format: int
-          type: number
+          type: integer
         description:
           type: string
       type: object
