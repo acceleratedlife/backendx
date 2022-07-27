@@ -364,7 +364,7 @@ func (a AllApiServiceImpl) SearchSchool(ctx context.Context, s string) (openapi.
 
 func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
-	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	_, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
 		return openapi.Response(404, openapi.ResponseAuth{
 			IsAuth: false,
@@ -374,37 +374,37 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (opena
 
 	var resp openapi.User
 	err = a.db.View(func(tx *bolt.Tx) error {
-		user, err := getUserInLocalStoreTx(tx, Id)
+		searchedUser, err := getUserInLocalStoreTx(tx, Id)
 		if err != nil {
 			return err
 		}
 
 		nWorth := 0.0
 		job := openapi.UserNoHistoryJob{}
-		if userDetails.Role == UserRoleStudent {
-			nWorth, _ = StudentNetWorthTx(tx, user.Email).Float64()
-			if userDetails.College && userDetails.CollegeEnd.IsZero() {
-				job = getJobRx(tx, KeyCollegeJobs, userDetails.Job)
+		if searchedUser.Role == UserRoleStudent {
+			nWorth, _ = StudentNetWorthTx(tx, searchedUser.Email).Float64()
+			if searchedUser.College && searchedUser.CollegeEnd.IsZero() {
+				job = getJobRx(tx, KeyCollegeJobs, searchedUser.Job)
 			} else {
-				job = getJobRx(tx, KeyJobs, userDetails.Job)
+				job = getJobRx(tx, KeyJobs, searchedUser.Job)
 			}
 
 		}
 		nUser := openapi.User{
-			Id:               user.Email,
-			CollegeEnd:       user.CollegeEnd,
-			TransitionEnd:    user.TransitionEnd,
-			FirstName:        user.FirstName,
-			LastName:         user.LastName,
-			Email:            user.Email,
-			Confirmed:        user.Confirmed,
-			SchoolId:         user.SchoolId,
-			College:          user.College,
-			Children:         user.Children,
-			Income:           user.Income,
-			Role:             user.Role,
-			Rank:             user.Rank,
-			CareerTransition: user.CareerTransition,
+			Id:               searchedUser.Email,
+			CollegeEnd:       searchedUser.CollegeEnd,
+			TransitionEnd:    searchedUser.TransitionEnd,
+			FirstName:        searchedUser.FirstName,
+			LastName:         searchedUser.LastName,
+			Email:            searchedUser.Email,
+			Confirmed:        searchedUser.Confirmed,
+			SchoolId:         searchedUser.SchoolId,
+			College:          searchedUser.College,
+			Children:         searchedUser.Children,
+			Income:           searchedUser.Income,
+			Role:             searchedUser.Role,
+			Rank:             searchedUser.Rank,
+			CareerTransition: searchedUser.CareerTransition,
 			NetWorth:         float32(nWorth),
 			Job:              job,
 		}
