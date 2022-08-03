@@ -96,6 +96,7 @@ type ServerConfig struct {
 	SecureCookies bool
 	EnableXSRF    bool
 	SecretKey     string
+	ServerPort    int
 }
 
 type Clock interface {
@@ -148,7 +149,8 @@ func main() {
 
 	router.Use(buildAuthMiddleware(m))
 
-	log.Fatal(http.ListenAndServe(":5000", router))
+	addr := fmt.Sprintf(":%d", config.ServerPort)
+	log.Fatal(http.ListenAndServe(addr, router))
 
 }
 
@@ -316,6 +318,7 @@ func loadConfig() ServerConfig {
 	config := ServerConfig{
 		SecretKey:     "secret",
 		AdminPassword: "admin",
+		ServerPort:    5000,
 	}
 
 	yamlFile, err := ioutil.ReadFile("./alcfg.yml")
