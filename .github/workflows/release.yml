@@ -24,7 +24,7 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-    - name: deploy-test
+    - name: deploy
       if: ${{ github.ref == 'refs/heads/release' }}
       uses: appleboy/scp-action@master
       with:
