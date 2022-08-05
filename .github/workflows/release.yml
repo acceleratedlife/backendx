@@ -33,7 +33,7 @@ jobs:
         passphrase: ${{ secrets.PASS }}
         key: ${{ secrets.KEY }}
         source: "out/backend"
-        target: ${{ secrets.TARGET }}
+        target: ${{ secrets.PROD_TARGET }}
 
     - name: executing remote ssh commands using ssh key
       if: ${{ github.ref == 'refs/heads/release' }}
