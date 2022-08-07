@@ -671,8 +671,9 @@ func TestAddEventPositiveSecured(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	event := getEvent(db, KeyPEvents)
-	require.Equal(t, "Lottery", event)
+	eventId := getEventId(db, KeyPEvents)
+	eventDescription := getEventDescription(db, KeyPEvents, eventId)
+	require.Equal(t, "Lottery", eventDescription)
 
 }
 
@@ -722,8 +723,9 @@ func TestAddEventNegativeSecured(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	event := getEvent(db, KeyNEvents)
-	require.Equal(t, "Pay Taxes", event)
+	eventId := getEventId(db, KeyNEvents)
+	eventDescription := getEventDescription(db, KeyNEvents, eventId)
+	require.Equal(t, "Pay Taxes", eventDescription)
 
 }
 
