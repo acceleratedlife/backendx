@@ -53,7 +53,7 @@ type Transaction struct {
 }
 
 // adds ubucks from CB
-//creates order, transaction into student account, update account balance, update ubuck balance
+// creates order, transaction into student account, update account balance, update ubuck balance
 func addUbuck2Student(db *bolt.DB, clock Clock, userInfo UserInfo, amount decimal.Decimal, reference string) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		return addUbuck2StudentTx(tx, clock, userInfo, amount, reference)
@@ -679,9 +679,9 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		if change.IsPositive() {
-			return addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getEventRx(tx, KeyPEvents))
+			return addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getEventIdRx(tx, KeyPEvents))
 		}
-		return chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getEventRx(tx, KeyNEvents), false)
+		return chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getEventIdRx(tx, KeyNEvents), false)
 	})
 
 	if err != nil {
@@ -691,16 +691,37 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 	return needToAdd
 }
 
-func getEvent(db *bolt.DB, key string) (description string) {
+func getEventDescription(db *bolt.DB, typeKey string, idKey string) (description string) {
 	_ = db.View(func(tx *bolt.Tx) error {
-		description = getEventRx(tx, key)
+		description = getEventDescriptionRx(tx, typeKey, idKey)
 		return nil
 	})
 
 	return
 }
 
-func getEventRx(tx *bolt.Tx, key string) string {
+func getEventDescriptionRx(tx *bolt.Tx, typeKey string, idKey string) string {
+	events := tx.Bucket([]byte(typeKey))
+
+	var event eventRequest
+	err := json.Unmarshal(events.Get([]byte(idKey)), &event)
+	if err != nil {
+		return ""
+	}
+
+	return event.Description
+}
+
+func getEventId(db *bolt.DB, key string) (id string) {
+	_ = db.View(func(tx *bolt.Tx) error {
+		id = getEventIdRx(tx, key)
+		return nil
+	})
+
+	return
+}
+
+func getEventIdRx(tx *bolt.Tx, key string) string {
 	events := tx.Bucket([]byte(key))
 	bucketStats := events.Stats()
 	pick := rand.Intn(bucketStats.KeyN)
@@ -714,13 +735,7 @@ func getEventRx(tx *bolt.Tx, key string) string {
 
 		i++
 
-		var event eventRequest
-		err := json.Unmarshal(events.Get(k), &event)
-		if err != nil {
-			return ""
-		}
-
-		return event.Description
+		return string(k)
 
 	}
 
@@ -1461,6 +1476,15 @@ func transactionToResponseBuckTransactionTx(tx *bolt.Tx, trans Transaction) (res
 		Amount:      float32(amount),
 		Name:        buckName,
 		CreatedAt:   trans.Ts,
+	}
+
+	if strings.Contains(resp.Description, "Event:") {
+		typeKey := KeyPEvents
+		if resp.Amount <= 0 {
+			typeKey = KeyNEvents
+		}
+		idKey := resp.Description[7:]
+		resp.Description = getEventDescriptionRx(tx, typeKey, idKey)
 	}
 
 	return
