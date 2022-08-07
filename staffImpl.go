@@ -574,16 +574,19 @@ func getEventsTeacher(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []op
 			}
 
 			var student UserInfo
+			var typeKey string
 			if trans.Source != "" { //bad event
 				student, err = getUserInLocalStoreTx(tx, trans.Source)
 				trans.AmountSource = trans.AmountSource.Neg()
+				typeKey = KeyNEvents
 			} else { //good event
 				student, err = getUserInLocalStoreTx(tx, trans.Destination)
+				typeKey = KeyPEvents
 			}
 
 			resp = append(resp, openapi.ResponseEvents{
 				Value:       int32(trans.AmountSource.IntPart()),
-				Description: trans.Reference,
+				Description: getEventDescriptionRx(tx, typeKey, trans.Reference[7:]),
 				FirstName:   student.FirstName,
 				LastName:    student.LastName,
 			})
