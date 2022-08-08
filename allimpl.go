@@ -415,7 +415,7 @@ func executeStudentTransaction(db *bolt.DB, clock Clock, value float32, student 
 		return fmt.Errorf("error finding student: %v", err)
 	}
 
-	err = studentPayStudent(db, clock, amount, studentDetails, owner, description)
+	err = studentPayStudent(db, clock, amount, studentDetails, owner, "from "+owner.FirstName+" "+owner.LastName+" to "+studentDetails.FirstName+" "+studentDetails.LastName)
 	if err != nil {
 		return fmt.Errorf("error paying student: %v", err)
 	}

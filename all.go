@@ -332,7 +332,7 @@ func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.Req
 		if !settings.Student2student {
 			return openapi.Response(400, ""), fmt.Errorf("Disabled by Administrator")
 		}
-		err = executeStudentTransaction(s.db, s.clock, body.Amount, body.Student, userDetails, body.Description)
+		err = executeStudentTransaction(s.db, s.clock, body.Amount, body.Student, userDetails, "")
 		if err != nil {
 			return openapi.Response(400, ""), err
 		}
