@@ -250,6 +250,7 @@ func (a *AllApiServiceImpl) MakeAuction(ctx context.Context, body openapi.Reques
 		}), nil
 	}
 
+	isStaff := true
 	if userDetails.Role == UserRoleStudent {
 		settings, err := getSettings(a.db, userDetails)
 		if err != nil {
@@ -259,9 +260,10 @@ func (a *AllApiServiceImpl) MakeAuction(ctx context.Context, body openapi.Reques
 		if !settings.Student2student {
 			return openapi.Response(400, ""), fmt.Errorf("Disabled by Administrator")
 		}
+		isStaff = false
 	}
 
-	err = MakeAuctionImpl(a.db, userDetails, body)
+	err = MakeAuctionImpl(a.db, userDetails, body, isStaff)
 	if err != nil {
 		lgr.Printf("ERROR cannot make auctions from : %s %v", userDetails.Name, err)
 		return openapi.Response(500, "{}"), err

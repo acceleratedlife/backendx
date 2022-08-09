@@ -387,8 +387,8 @@ func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int)
 	return
 }
 
-func MakeAuctionImpl(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (err error) {
-	_, err = CreateAuction(db, userDetails, request)
+func MakeAuctionImpl(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction, isStaff bool) (err error) {
+	_, err = CreateAuction(db, userDetails, request, isStaff)
 	if err != nil {
 		return fmt.Errorf("cannot create auction")
 	}
@@ -396,7 +396,7 @@ func MakeAuctionImpl(db *bolt.DB, userDetails UserInfo, request openapi.RequestM
 	return err
 }
 
-func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (auctionId time.Time, err error) {
+func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction, isStaff bool) (auctionId time.Time, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 		if err != nil {
@@ -407,7 +407,7 @@ func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMak
 			return fmt.Errorf("Problem finding auctions bucket")
 		}
 
-		auctionId, err = addAuctionDetailsTx(auctionsBucket, request)
+		auctionId, err = addAuctionDetailsTx(auctionsBucket, request, isStaff)
 		if err != nil {
 			return fmt.Errorf("Problem adding auctions details: %v", err)
 		}
@@ -422,7 +422,7 @@ func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMak
 	return
 }
 
-func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction) (auctionId time.Time, err error) {
+func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction, isStaff bool) (auctionId time.Time, err error) {
 	auctionId = request.EndDate.Truncate(time.Millisecond)
 	found := bucket.Get([]byte(auctionId.String()))
 	for found != nil {
@@ -442,6 +442,7 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 		OwnerId: openapi.AuctionOwnerId{
 			Id: request.OwnerId,
 		},
+		Approved: isStaff,
 	}
 
 	marshal, err := json.Marshal(auction)
