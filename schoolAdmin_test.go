@@ -43,8 +43,8 @@ func TestSearchAdminTeacherClass(t *testing.T) {
 	require.Equal(t, teachers[1], data.Members[1].Id)
 }
 
-//if the following test is failing and you just ran the spec then it is probably because student2student has been change
-//to omitempty on openapi.Settings. This causes nothing to be sent back because false is seen as empty and is omitted.
+// if the following test is failing and you just ran the spec then it is probably because student2student has been change
+// to omitempty on openapi.Settings. This causes nothing to be sent back because false is seen as empty and is omitted.
 func TestGetSettings(t *testing.T) {
 	db, tearDown := FullStartTestServer("getSettings", 8090, "")
 	defer tearDown()
@@ -91,6 +91,9 @@ func TestGetSettings(t *testing.T) {
 	require.False(t, data.Student2student)
 }
 
+// if the following test is failing and you just ran the spec then it is probably because you set student2student as required in the spec
+// This causes openapi.Settings to require student2student to be true so when you make it false marshal does not know what to do with it.
+// The only solution at this time is to omit the requirement in spec. This will make getsettings fail until you delete omitempty
 func TestSetSettings(t *testing.T) {
 	db, tearDown := FullStartTestServer("setSettings", 8090, "")
 	defer tearDown()
@@ -113,6 +116,7 @@ func TestSetSettings(t *testing.T) {
 	}
 
 	marshal, err := json.Marshal(settings)
+	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodPut,
 		"http://127.0.0.1:8090/api/settings",

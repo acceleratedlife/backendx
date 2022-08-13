@@ -457,6 +457,61 @@ paths:
       summary: make a new auction
       tags:
       - All
+  /auctions/all:
+    get:
+      description: all of a schools active auctions will be returned for the staff
+        to observe, reject or confirm
+      operationId: auctionsAll
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseAuctionStudent'
+                type: array
+          description: all auctions of the school
+        "400":
+          description: error finding auctions
+      summary: get all auctions for school
+      tags:
+      - Staff
+  /auctions/approve:
+    put:
+      description: staff approves an auction
+      operationId: auctionApprove
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestAuctionAction'
+      responses:
+        "200":
+          description: auction accepted
+        "400":
+          description: error finding auctions
+      tags:
+      - Staff
+  /auctions/reject:
+    delete:
+      description: staff rejects an auction
+      operationId: auctionReject
+      parameters:
+      - description: pass the _id to be deleted
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          description: auction rejected
+        "400":
+          description: error finding auctions
+      tags:
+      - Staff
   /auctions/student:
     get:
       description: given a student id find every class that they are a member of.
@@ -1446,6 +1501,8 @@ components:
       type: object
     Auction:
       example:
+        approver: approver
+        approved: true
         visibility:
         - 613eab19e58cc511801af657
         - 613eab19e58cc511801af657
@@ -1495,6 +1552,10 @@ components:
           type: array
         active:
           type: boolean
+        approved:
+          type: boolean
+        approver:
+          type: string
       required:
       - _id
       - bid
@@ -1682,8 +1743,11 @@ components:
       type: object
     ResponseAuctionStudent:
       example:
+        approver: approver
+        approved: true
         endDate: 2000-01-23T04:56:07.000+00:00
         owner_id:
+          firstName: Tommy
           lastName: Boy
           _id: 61be17e2f5691463b0fc972d
         active: true
@@ -1705,6 +1769,10 @@ components:
           type: number
         active:
           type: boolean
+        approved:
+          type: boolean
+        approver:
+          type: string
         description:
           example: Candy Bar
           type: string
@@ -1717,7 +1785,17 @@ components:
         owner_id:
           $ref: '#/components/schemas/ResponseAuctionStudent_owner_id'
         winner_id:
-          $ref: '#/components/schemas/ResponseAuctionStudent_winner_id'
+          $ref: '#/components/schemas/ResponseAuctionStudent_owner_id'
+      required:
+      - _id
+      - active
+      - approved
+      - bid
+      - description
+      - endDate
+      - owner_id
+      - startDate
+      - winner_id
       type: object
     ResponseAuth2:
       example:
@@ -2071,6 +2149,13 @@ components:
           type: string
         _id:
           example: 613eab19e58cc511801af657
+          type: string
+      type: object
+    RequestAuctionAction:
+      example:
+        auctionId: auctionId
+      properties:
+        auctionId:
           type: string
       type: object
     RequestAuctionBid:
@@ -2742,18 +2827,6 @@ components:
           type: string
       type: object
     ResponseAuctionStudent_owner_id:
-      example:
-        lastName: Boy
-        _id: 61be17e2f5691463b0fc972d
-      properties:
-        _id:
-          example: 61be17e2f5691463b0fc972d
-          type: string
-        lastName:
-          example: Boy
-          type: string
-      type: object
-    ResponseAuctionStudent_winner_id:
       example:
         firstName: Tommy
         lastName: Boy

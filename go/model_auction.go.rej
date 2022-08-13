@@ -1,0 +1,9 @@
+diff a/go/model_auction.go b/go/model_auction.go	(rejected hunks)
+@@ -15,7 +15,6 @@
+ )
+ 
+ type Auction struct {
+-
+ 	Id time.Time `json:"_id"`
+ 
+ 	OwnerId AuctionOwnerId `json:"owner_id,omitempty"`

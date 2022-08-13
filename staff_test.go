@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -163,7 +164,7 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
-	}, body)
+	}, body, true)
 
 	require.Nil(t, err)
 
@@ -211,7 +212,7 @@ func TestSearchAuctionsTeacherStudent(t *testing.T) {
 		Name:     students[0],
 		SchoolId: schools[0],
 		Role:     UserRoleStudent,
-	}, body)
+	}, body, true)
 
 	require.Nil(t, err)
 
@@ -396,5 +397,185 @@ func TestSearchEvents(t *testing.T) {
 
 	assert.Greater(t, len(respData), 0)
 	assert.NotZero(t, respData[0].Value)
+
+}
+
+func TestAuctionsAllGet(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("auctionsAllGet", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	SetTestLoginUser(teachers[0])
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(time.Minute * 100),
+		StartDate:   clock.Now().Add(time.Minute * -10),
+		OwnerId:     teachers[0],
+		Visibility:  classes,
+	}
+
+	err = MakeAuctionImpl(db, teacher, body, true)
+	require.Nil(t, err)
+
+	body = openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(time.Minute * 10),
+		StartDate:   clock.Now().Add(time.Minute * -10),
+		OwnerId:     students[0],
+		Visibility:  classes,
+	}
+
+	err = MakeAuctionImpl(db, teacher, body, true)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/auctions/all",
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var respData []openapi.ResponseAuctionStudent
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, 2, len(respData))
+
+}
+
+func TestAuctionApprove(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("auctionApprove", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	SetTestLoginUser(teachers[0])
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(time.Minute * 100),
+		StartDate:   clock.Now().Add(time.Minute * -10),
+		OwnerId:     students[0],
+		Visibility:  classes,
+	}
+
+	err = MakeAuctionImpl(db, student, body, false)
+	require.Nil(t, err)
+
+	auctions, err := getAllAuctions(db, &clock, teacher)
+	require.Nil(t, err)
+
+	action := openapi.RequestAuctionAction{
+		AuctionId: auctions[0].Id.Format(time.RFC3339Nano),
+	}
+
+	marshal, err := json.Marshal(action)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/auctions/approve",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}
+
+func TestAuctionReject(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("auctionReject", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	SetTestLoginUser(teachers[0])
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(time.Minute * 100),
+		StartDate:   clock.Now().Add(time.Minute * -10),
+		OwnerId:     students[0],
+		Visibility:  classes,
+	}
+
+	err = MakeAuctionImpl(db, student, body, false)
+	require.Nil(t, err)
+
+	body = openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(time.Minute * 10),
+		StartDate:   clock.Now().Add(time.Minute * -10),
+		OwnerId:     students[0],
+		Visibility:  classes,
+	}
+
+	err = MakeAuctionImpl(db, teacher, body, true)
+	require.Nil(t, err)
+
+	auctions, err := getAllAuctions(db, &clock, teacher)
+	require.Nil(t, err)
+	assert.Equal(t, 2, len(auctions))
+
+	timeId := auctions[0].Id.Format(time.RFC3339Nano)
+
+	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/auctions/reject")
+	q := u.Query()
+	q.Set("_id", timeId)
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest(http.MethodDelete,
+		u.String(),
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	auctions, err = getAllAuctions(db, &clock, teacher)
+	require.Nil(t, err)
+	assert.Equal(t, 1, len(auctions))
 
 }

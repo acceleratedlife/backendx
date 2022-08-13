@@ -16,29 +16,50 @@ import (
 
 type ResponseAuctionStudent struct {
 
-	Id time.Time `json:"_id,omitempty"`
+	Id time.Time `json:"_id"`
 
-	Bid float32 `json:"bid,omitempty"`
+	Bid float32 `json:"bid"`
 
-	Active bool `json:"active,omitempty"`
+	Active bool `json:"active"`
 
-	Description string `json:"description,omitempty"`
+	Approved bool `json:"approved"`
 
-	EndDate time.Time `json:"endDate,omitempty"`
+	Approver string `json:"approver,omitempty"`
 
-	StartDate time.Time `json:"startDate,omitempty"`
+	Description string `json:"description"`
 
-	OwnerId ResponseAuctionStudentOwnerId `json:"owner_id,omitempty"`
+	EndDate time.Time `json:"endDate"`
 
-	WinnerId ResponseAuctionStudentWinnerId `json:"winner_id,omitempty"`
+	StartDate time.Time `json:"startDate"`
+
+	OwnerId ResponseAuctionStudentOwnerId `json:"owner_id"`
+
+	WinnerId ResponseAuctionStudentOwnerId `json:"winner_id"`
 }
 
 // AssertResponseAuctionStudentRequired checks if the required fields are not zero-ed
 func AssertResponseAuctionStudentRequired(obj ResponseAuctionStudent) error {
+	elements := map[string]interface{}{
+		"_id": obj.Id,
+		"bid": obj.Bid,
+		"active": obj.Active,
+		"approved": obj.Approved,
+		"description": obj.Description,
+		"endDate": obj.EndDate,
+		"startDate": obj.StartDate,
+		"owner_id": obj.OwnerId,
+		"winner_id": obj.WinnerId,
+	}
+	for name, el := range elements {
+		if isZero := IsZeroValue(el); isZero {
+			return &RequiredError{Field: name}
+		}
+	}
+
 	if err := AssertResponseAuctionStudentOwnerIdRequired(obj.OwnerId); err != nil {
 		return err
 	}
-	if err := AssertResponseAuctionStudentWinnerIdRequired(obj.WinnerId); err != nil {
+	if err := AssertResponseAuctionStudentOwnerIdRequired(obj.WinnerId); err != nil {
 		return err
 	}
 	return nil

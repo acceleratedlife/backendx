@@ -50,6 +50,24 @@ func NewStaffApiController(s StaffApiServicer, opts ...StaffApiOption) Router {
 func (c *StaffApiController) Routes() Routes {
 	return Routes{
 		{
+			"AuctionApprove",
+			strings.ToUpper("Put"),
+			"/api/auctions/approve",
+			c.AuctionApprove,
+		},
+		{
+			"AuctionReject",
+			strings.ToUpper("Delete"),
+			"/api/auctions/reject",
+			c.AuctionReject,
+		},
+		{
+			"AuctionsAll",
+			strings.ToUpper("Get"),
+			"/api/auctions/all",
+			c.AuctionsAll,
+		},
+		{
 			"DeleteStudent",
 			strings.ToUpper("Delete"),
 			"/api/users/user",
@@ -110,6 +128,58 @@ func (c *StaffApiController) Routes() Routes {
 			c.SearchTransactions,
 		},
 	}
+}
+
+// AuctionApprove -
+func (c *StaffApiController) AuctionApprove(w http.ResponseWriter, r *http.Request) {
+	requestAuctionActionParam := RequestAuctionAction{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestAuctionActionParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestAuctionActionRequired(requestAuctionActionParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.AuctionApprove(r.Context(), requestAuctionActionParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// AuctionReject -
+func (c *StaffApiController) AuctionReject(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.AuctionReject(r.Context(), idParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// AuctionsAll - get all auctions for school
+func (c *StaffApiController) AuctionsAll(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.AuctionsAll(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
 }
 
 // DeleteStudent - delete student

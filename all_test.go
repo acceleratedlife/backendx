@@ -902,7 +902,7 @@ func TestDeleteAuction(t *testing.T) {
 	teacherDetails, err := getUserInLocalStore(db, teachers[0])
 
 	//to be deleted
-	err = MakeAuctionImpl(db, teacherDetails, body)
+	err = MakeAuctionImpl(db, teacherDetails, body, true)
 	require.Nil(t, err)
 	auctions, err := getTeacherAuctions(db, teacherDetails)
 	require.Nil(t, err)
@@ -925,7 +925,7 @@ func TestDeleteAuction(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode)
 
 	//to be deleted
-	err = MakeAuctionImpl(db, teacherDetails, body)
+	err = MakeAuctionImpl(db, teacherDetails, body, true)
 
 	userDetails, _ := getUserInLocalStore(db, students[0])
 	addUbuck2Student(db, &clock, userDetails, decimal.NewFromInt32(100), "loading")
@@ -947,7 +947,7 @@ func TestDeleteAuction(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode)
 
 	//to be de-activated
-	err = MakeAuctionImpl(db, teacherDetails, body)
+	err = MakeAuctionImpl(db, teacherDetails, body, true)
 	require.Nil(t, err)
 
 	_, err = placeBid(db, &clock, userDetails, timeId, 20)
