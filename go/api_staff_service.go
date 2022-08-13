@@ -27,6 +27,48 @@ func NewStaffApiService() StaffApiServicer {
 	return &StaffApiService{}
 }
 
+// AuctionApprove - 
+func (s *StaffApiService) AuctionApprove(ctx context.Context, requestAuctionAction RequestAuctionAction) (ImplResponse, error) {
+	// TODO - update AuctionApprove with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("AuctionApprove method not implemented")
+}
+
+// AuctionReject - 
+func (s *StaffApiService) AuctionReject(ctx context.Context, id string) (ImplResponse, error) {
+	// TODO - update AuctionReject with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("AuctionReject method not implemented")
+}
+
+// AuctionsAll - get all auctions for school
+func (s *StaffApiService) AuctionsAll(ctx context.Context) (ImplResponse, error) {
+	// TODO - update AuctionsAll with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []ResponseAuctionStudent{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseAuctionStudent{}), nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("AuctionsAll method not implemented")
+}
+
 // DeleteStudent - delete student
 func (s *StaffApiService) DeleteStudent(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update DeleteStudent with the required logic for this service method.

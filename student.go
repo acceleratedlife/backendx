@@ -129,7 +129,7 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 	for _, auction := range auctions {
 
 		now := a.clock.Now()
-		if (auction.StartDate.Before(now) && auction.EndDate.After(now) && auction.OwnerId.Id != userDetails.Name) || auction.WinnerId.Id == userDetails.Name {
+		if (auction.Approved && auction.StartDate.Before(now) && auction.EndDate.After(now) && auction.OwnerId.Id != userDetails.Name) || auction.WinnerId.Id == userDetails.Name {
 			iAuction := openapi.ResponseAuctionStudent{
 				Id:          auction.Id,
 				Active:      auction.Active,
@@ -141,7 +141,7 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 					Id:       auction.OwnerId.Id,
 					LastName: auction.OwnerId.LastName,
 				},
-				WinnerId: openapi.ResponseAuctionStudentWinnerId{
+				WinnerId: openapi.ResponseAuctionStudentOwnerId{
 					Id:        auction.WinnerId.Id,
 					FirstName: auction.WinnerId.FirstName,
 					LastName:  auction.WinnerId.LastName,

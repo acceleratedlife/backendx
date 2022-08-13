@@ -387,8 +387,8 @@ func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int)
 	return
 }
 
-func MakeAuctionImpl(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (err error) {
-	_, err = CreateAuction(db, userDetails, request)
+func MakeAuctionImpl(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction, isStaff bool) (err error) {
+	_, err = CreateAuction(db, userDetails, request, isStaff)
 	if err != nil {
 		return fmt.Errorf("cannot create auction")
 	}
@@ -396,7 +396,7 @@ func MakeAuctionImpl(db *bolt.DB, userDetails UserInfo, request openapi.RequestM
 	return err
 }
 
-func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction) (auctionId time.Time, err error) {
+func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction, isStaff bool) (auctionId time.Time, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 		if err != nil {
@@ -407,7 +407,7 @@ func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMak
 			return fmt.Errorf("Problem finding auctions bucket")
 		}
 
-		auctionId, err = addAuctionDetailsTx(auctionsBucket, request)
+		auctionId, err = addAuctionDetailsTx(auctionsBucket, request, isStaff)
 		if err != nil {
 			return fmt.Errorf("Problem adding auctions details: %v", err)
 		}
@@ -422,7 +422,7 @@ func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMak
 	return
 }
 
-func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction) (auctionId time.Time, err error) {
+func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction, isStaff bool) (auctionId time.Time, err error) {
 	auctionId = request.EndDate.Truncate(time.Millisecond)
 	found := bucket.Get([]byte(auctionId.String()))
 	for found != nil {
@@ -442,6 +442,7 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 		OwnerId: openapi.AuctionOwnerId{
 			Id: request.OwnerId,
 		},
+		Approved: isStaff,
 	}
 
 	marshal, err := json.Marshal(auction)
@@ -533,6 +534,76 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 		if len(resp) >= 60 {
 			break
 		}
+	}
+
+	return
+}
+
+func getAllAuctions(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []openapi.ResponseAuctionStudent, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getAllAuctionsRx(tx, clock, userDetails)
+		return err
+	})
+
+	return
+}
+
+func getAllAuctionsRx(tx *bolt.Tx, clock Clock, userDetails UserInfo) (resp []openapi.ResponseAuctionStudent, err error) {
+	school, err := getSchoolBucketTx(tx, userDetails)
+	if err != nil {
+		return
+	}
+	auctions := school.Bucket([]byte(KeyAuctions))
+	c := auctions.Cursor()
+
+	for k, v := c.Last(); k != nil; k, v = c.Prev() {
+
+		var auction openapi.Auction
+		err = json.Unmarshal(v, &auction)
+		if err != nil {
+			return
+		}
+
+		if clock.Now().After(auction.Id) {
+			break
+		}
+
+		owner, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
+		if err != nil {
+			return resp, err
+		}
+
+		if auction.WinnerId.Id != "" {
+			winner, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
+			if err != nil {
+				return resp, err
+			}
+
+			auction.WinnerId.FirstName = winner.FirstName
+			auction.WinnerId.LastName = winner.LastName
+		}
+
+		resp = append(resp, openapi.ResponseAuctionStudent{
+			Id:          auction.Id,
+			Bid:         float32(auction.Bid),
+			Active:      auction.Active,
+			Approved:    auction.Approved,
+			Approver:    auction.Approver,
+			Description: auction.Description,
+			EndDate:     auction.EndDate,
+			StartDate:   auction.StartDate,
+			OwnerId: openapi.ResponseAuctionStudentOwnerId{
+				Id:        auction.OwnerId.Id,
+				FirstName: owner.FirstName,
+				LastName:  owner.LastName,
+			},
+			WinnerId: openapi.ResponseAuctionStudentOwnerId{
+				Id:        auction.WinnerId.Id,
+				FirstName: auction.WinnerId.FirstName,
+				LastName:  auction.WinnerId.LastName,
+			},
+		})
+
 	}
 
 	return
@@ -634,4 +705,85 @@ func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseRe
 	}
 
 	return
+}
+
+func approveAuction(db *bolt.DB, userDetails UserInfo, body openapi.RequestAuctionAction) (err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		return approveAuctionTx(tx, userDetails, body)
+	})
+
+	return
+}
+
+func approveAuctionTx(tx *bolt.Tx, userDetails UserInfo, body openapi.RequestAuctionAction) (err error) {
+	newTime, err := time.Parse(time.RFC3339, body.AuctionId)
+	if err != nil {
+		return err
+	}
+	school, err := getSchoolBucketTx(tx, userDetails)
+	if err != nil {
+		return err
+	}
+
+	auctions, auctionData, err := getAuctionBucketTx(tx, school, newTime.String())
+	if err != nil {
+		return err
+	}
+
+	var auction openapi.Auction
+	err = json.Unmarshal(auctionData, &auction)
+	if err != nil {
+		return err
+	}
+
+	if auction.Approved {
+		return
+	}
+
+	auction.Approved = true
+	auction.Approver = userDetails.Name
+
+	marshal, err := json.Marshal(auction)
+	if err != nil {
+		return err
+	}
+
+	return auctions.Put([]byte(auction.Id.String()), marshal)
+
+}
+
+func rejectAuction(db *bolt.DB, userDetails UserInfo, auctionId string) (err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		return rejectAuctionTx(tx, userDetails, auctionId)
+	})
+
+	return
+}
+
+func rejectAuctionTx(tx *bolt.Tx, userDetails UserInfo, auctionId string) (err error) {
+	newTime, err := time.Parse(time.RFC3339, auctionId)
+	if err != nil {
+		return err
+	}
+
+	auctionId = newTime.String()
+
+	school, err := getSchoolBucketTx(tx, userDetails)
+	if err != nil {
+		return err
+	}
+
+	auctions, auctionData, err := getAuctionBucketTx(tx, school, auctionId)
+	if err != nil {
+		return err
+	}
+
+	var auction openapi.Auction
+	err = json.Unmarshal(auctionData, &auction)
+	if err != nil {
+		return err
+	}
+
+	return auctions.Delete([]byte(auctionId))
+
 }

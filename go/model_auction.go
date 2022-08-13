@@ -35,6 +35,10 @@ type Auction struct {
 	Visibility []string `json:"visibility"`
 
 	Active bool `json:"active,omitempty"`
+
+	Approved bool `json:"approved,omitempty"`
+
+	Approver string `json:"approver,omitempty"`
 }
 
 // AssertAuctionRequired checks if the required fields are not zero-ed

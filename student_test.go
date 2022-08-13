@@ -247,7 +247,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
-	}, body)
+	}, body, true)
 
 	auctionClasses = make([]string, 0)
 	auctionClasses = append(auctionClasses, teacherClasses[1].Id)
@@ -258,7 +258,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
-	}, body)
+	}, body, true)
 
 	body2 := openapi.RequestAddClass{
 		AddCode: teacherClasses[0].AddCode,
@@ -706,7 +706,7 @@ func TestAuctionBid(t *testing.T) {
 		StartDate:   time.Now(),
 		OwnerId:     teacher.Name,
 		Visibility:  classes,
-	})
+	}, true)
 	require.Nil(t, err)
 
 	auctions, err := getTeacherAuctions(db, teacher)

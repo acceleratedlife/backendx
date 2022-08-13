@@ -2,17 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
-	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
-	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -64,77 +60,7 @@ func (a *AllApiServiceImpl) DeleteAuction(ctx context.Context, Id string) (opena
 		}), nil
 	}
 
-	newTime, err := time.Parse(time.RFC3339, Id)
-	if err != nil {
-		return openapi.Response(500, "{}"), err
-	}
-
-	Id = newTime.Truncate(time.Millisecond).String()
-
-	err = a.db.Update(func(tx *bolt.Tx) error {
-		schoolBucket, err := getSchoolBucketTx(tx, userDetails)
-		if err != nil {
-			return err
-		}
-
-		auctionsBucket, auctionData, err := getAuctionBucketTx(tx, schoolBucket, Id)
-		if err != nil {
-			return err
-		}
-
-		var auction openapi.Auction
-		err = json.Unmarshal(auctionData, &auction)
-		if err != nil {
-			return err
-		}
-
-		if a.clock.Now().Before(auction.EndDate) {
-			if auction.WinnerId.Id != "" {
-				err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid, "Canceled Auction: "+strconv.Itoa(auction.EndDate.Second()))
-				if err != nil {
-					return err
-				}
-			}
-
-			err = auctionsBucket.Delete([]byte(Id))
-			if err != nil {
-				return err
-			}
-
-		} else {
-			if auction.WinnerId.Id != "" {
-				if auction.MaxBid > auction.Bid {
-					err = repayLosertx(tx, a.clock, auction.WinnerId.Id, auction.MaxBid-auction.Bid, "Won auction return: "+strconv.Itoa(auction.EndDate.Minute()))
-					if err != nil {
-						return err
-					}
-				}
-
-				auction.Active = false
-				marshal, err := json.Marshal(auction)
-				if err != nil {
-					return err
-				}
-
-				err = auctionsBucket.Put([]byte(Id), marshal)
-				if err != nil {
-					return err
-				}
-
-				if userDetails.Role == UserRoleStudent && auction.OwnerId.Id == userDetails.Name {
-					addUbuck2StudentTx(tx, a.clock, userDetails, decimal.NewFromInt32(auction.Bid).Mul(decimal.NewFromFloat32(.99)), "Auction sold: "+strconv.Itoa(auction.EndDate.Minute()))
-				}
-			} else {
-				err = auctionsBucket.Delete([]byte(Id))
-				if err != nil {
-					return err
-				}
-			}
-
-		}
-
-		return nil
-	})
+	err = deleteAuction(a.db, userDetails, a.clock, Id)
 
 	if err != nil {
 		lgr.Printf("ERROR cannot delete auction from the school: %s %v", userDetails.SchoolId, err)
@@ -250,6 +176,7 @@ func (a *AllApiServiceImpl) MakeAuction(ctx context.Context, body openapi.Reques
 		}), nil
 	}
 
+	isStaff := true
 	if userDetails.Role == UserRoleStudent {
 		settings, err := getSettings(a.db, userDetails)
 		if err != nil {
@@ -259,9 +186,10 @@ func (a *AllApiServiceImpl) MakeAuction(ctx context.Context, body openapi.Reques
 		if !settings.Student2student {
 			return openapi.Response(400, ""), fmt.Errorf("Disabled by Administrator")
 		}
+		isStaff = false
 	}
 
-	err = MakeAuctionImpl(a.db, userDetails, body)
+	err = MakeAuctionImpl(a.db, userDetails, body, isStaff)
 	if err != nil {
 		lgr.Printf("ERROR cannot make auctions from : %s %v", userDetails.Name, err)
 		return openapi.Response(500, "{}"), err
@@ -332,7 +260,7 @@ func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.Req
 		if !settings.Student2student {
 			return openapi.Response(400, ""), fmt.Errorf("Disabled by Administrator")
 		}
-		err = executeStudentTransaction(s.db, s.clock, body.Amount, body.Student, userDetails, body.Description)
+		err = executeStudentTransaction(s.db, s.clock, body.Amount, body.Student, userDetails, "")
 		if err != nil {
 			return openapi.Response(400, ""), err
 		}

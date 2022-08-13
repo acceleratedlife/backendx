@@ -14,6 +14,8 @@ type ResponseAuctionStudentOwnerId struct {
 
 	Id string `json:"_id,omitempty"`
 
+	FirstName string `json:"firstName,omitempty"`
+
 	LastName string `json:"lastName,omitempty"`
 }
 
