@@ -91,6 +91,8 @@ const (
 	KeyMMA              = "MMA"
 )
 
+var build_date string
+
 type ServerConfig struct {
 	AdminPassword string
 	SecureCookies bool
@@ -134,6 +136,10 @@ func main() {
 
 	// backup
 	router.Handle("/admin/backup", backUpHandler(db))
+	router.HandleFunc("/admin/version", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/octet-stream")
+		writer.Write([]byte(build_date))
+	})
 	//new school
 	router.Handle("/admin/new-school", newSchoolHandler(db))
 	//reset staff password
