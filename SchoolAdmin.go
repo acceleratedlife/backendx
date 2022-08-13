@@ -103,7 +103,7 @@ func (s *SchoolAdminServiceImpl) SetSettings(ctx context.Context, body openapi.S
 		return openapi.Response(400, nil), nil
 	}
 
-	if userDetails.Role == UserRoleStudent {
+	if userDetails.Role != UserRoleAdmin {
 		return openapi.Response(401, ""), nil
 	}
 

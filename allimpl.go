@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"strconv"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -511,4 +512,85 @@ func getJobRx(tx *bolt.Tx, key string, jobId string) (job openapi.UserNoHistoryJ
 	job.Title = jobId
 
 	return job
+}
+
+func deleteAuction(db *bolt.DB, userDetails UserInfo, clock Clock, Id string) (err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		return deleteAuctionTx(tx, userDetails, clock, Id)
+	})
+
+	return
+}
+
+func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) (err error) {
+
+	newTime, err := time.Parse(time.RFC3339, Id)
+	if err != nil {
+		return err
+	}
+
+	Id = newTime.Truncate(time.Millisecond).String()
+
+	schoolBucket, err := getSchoolBucketTx(tx, userDetails)
+	if err != nil {
+		return err
+	}
+
+	auctionsBucket, auctionData, err := getAuctionBucketTx(tx, schoolBucket, Id)
+	if err != nil {
+		return err
+	}
+
+	var auction openapi.Auction
+	err = json.Unmarshal(auctionData, &auction)
+	if err != nil {
+		return err
+	}
+
+	if clock.Now().Before(auction.EndDate) {
+		if auction.WinnerId.Id != "" {
+			err = repayLosertx(tx, clock, auction.WinnerId.Id, auction.MaxBid, "Canceled Auction: "+strconv.Itoa(auction.EndDate.Second()))
+			if err != nil {
+				return err
+			}
+		}
+
+		err = auctionsBucket.Delete([]byte(Id))
+		if err != nil {
+			return err
+		}
+
+	} else {
+		if auction.WinnerId.Id != "" {
+			if auction.MaxBid > auction.Bid {
+				err = repayLosertx(tx, clock, auction.WinnerId.Id, auction.MaxBid-auction.Bid, "Won auction return: "+strconv.Itoa(auction.EndDate.Minute()))
+				if err != nil {
+					return err
+				}
+			}
+
+			auction.Active = false
+			marshal, err := json.Marshal(auction)
+			if err != nil {
+				return err
+			}
+
+			err = auctionsBucket.Put([]byte(Id), marshal)
+			if err != nil {
+				return err
+			}
+
+			if userDetails.Role == UserRoleStudent && auction.OwnerId.Id == userDetails.Name {
+				addUbuck2StudentTx(tx, clock, userDetails, decimal.NewFromInt32(auction.Bid).Mul(decimal.NewFromFloat32(.99)), "Auction sold: "+strconv.Itoa(auction.EndDate.Minute()))
+			}
+		} else {
+			err = auctionsBucket.Delete([]byte(Id))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return
+
 }
