@@ -15,6 +15,7 @@ import (
 )
 
 type Auction struct {
+
 	Id time.Time `json:"_id"`
 
 	OwnerId AuctionOwnerId `json:"owner_id,omitempty"`
@@ -43,12 +44,12 @@ type Auction struct {
 // AssertAuctionRequired checks if the required fields are not zero-ed
 func AssertAuctionRequired(obj Auction) error {
 	elements := map[string]interface{}{
-		"_id":         obj.Id,
-		"startDate":   obj.StartDate,
-		"endDate":     obj.EndDate,
-		"bid":         obj.Bid,
+		"_id": obj.Id,
+		"startDate": obj.StartDate,
+		"endDate": obj.EndDate,
+		"bid": obj.Bid,
 		"description": obj.Description,
-		"visibility":  obj.Visibility,
+		"visibility": obj.Visibility,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

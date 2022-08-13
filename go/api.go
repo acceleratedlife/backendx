@@ -61,6 +61,9 @@ type SchoolAdminApiRouter interface {
 // The StaffApiRouter implementation should parse necessary information from the http request,
 // pass the data to a StaffApiServicer to perform the required actions, then write the service results to the http response.
 type StaffApiRouter interface { 
+	AuctionApprove(http.ResponseWriter, *http.Request)
+	AuctionReject(http.ResponseWriter, *http.Request)
+	AuctionsAll(http.ResponseWriter, *http.Request)
 	DeleteStudent(http.ResponseWriter, *http.Request)
 	Deleteclass(http.ResponseWriter, *http.Request)
 	EditClass(http.ResponseWriter, *http.Request)
@@ -166,6 +169,9 @@ type SchoolAdminApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type StaffApiServicer interface { 
+	AuctionApprove(context.Context, RequestAuctionAction) (ImplResponse, error)
+	AuctionReject(context.Context, string) (ImplResponse, error)
+	AuctionsAll(context.Context) (ImplResponse, error)
 	DeleteStudent(context.Context, string) (ImplResponse, error)
 	Deleteclass(context.Context, string) (ImplResponse, error)
 	EditClass(context.Context, RequestEditClass) (ImplResponse, error)
