@@ -189,6 +189,8 @@ func (a *AllApiServiceImpl) MakeAuction(ctx context.Context, body openapi.Reques
 		isStaff = false
 	}
 
+	lgr.Print("this should be showing *********************")
+
 	err = MakeAuctionImpl(a.db, userDetails, body, isStaff)
 	if err != nil {
 		lgr.Printf("ERROR cannot make auctions from : %s %v", userDetails.Name, err)
