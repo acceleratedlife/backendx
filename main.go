@@ -99,6 +99,7 @@ type ServerConfig struct {
 	EnableXSRF    bool
 	SecretKey     string
 	ServerPort    int
+	SeedPassword  string
 }
 
 type Clock interface {
@@ -325,6 +326,7 @@ func loadConfig() ServerConfig {
 		SecretKey:     "secret",
 		AdminPassword: "admin",
 		ServerPort:    5000,
+		SeedPassword:  "123qwe",
 	}
 
 	yamlFile, err := ioutil.ReadFile("./alcfg.yml")
@@ -343,6 +345,8 @@ func loadConfig() ServerConfig {
 
 func seedDb(db *bolt.DB) (err error) {
 
+	config := loadConfig()
+
 	school := NewSchoolRequest{
 		School:    "JHS",
 		FirstName: "Tom",
@@ -352,7 +356,7 @@ func seedDb(db *bolt.DB) (err error) {
 		Zip:       94558,
 	}
 
-	err = createNewSchool(db, school, "123qwe")
+	err = createNewSchool(db, school, config.SeedPassword)
 	if err != nil {
 		lgr.Printf("ERROR school is not created: %v", err)
 		return err
@@ -512,7 +516,7 @@ func seedDb(db *bolt.DB) (err error) {
 		LastName:    "tt",
 		Email:       "tt@tt.com",
 		Confirmed:   true,
-		PasswordSha: EncodePassword("123qwe"),
+		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleTeacher,
 	}
@@ -528,7 +532,7 @@ func seedDb(db *bolt.DB) (err error) {
 		LastName:    "tt1",
 		Email:       "tt1@tt.com",
 		Confirmed:   true,
-		PasswordSha: EncodePassword("123qwe"),
+		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleTeacher,
 	}
@@ -544,7 +548,7 @@ func seedDb(db *bolt.DB) (err error) {
 		LastName:    "tt2",
 		Email:       "tt2@tt.com",
 		Confirmed:   true,
-		PasswordSha: EncodePassword("123qwe"),
+		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleTeacher,
 	}
@@ -571,7 +575,7 @@ func seedDb(db *bolt.DB) (err error) {
 		LastName:    "ss",
 		Email:       "ss@ss.com",
 		Confirmed:   true,
-		PasswordSha: EncodePassword("123qwe"),
+		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleStudent,
 		Job:         getJobId(db, KeyJobs),
@@ -588,7 +592,7 @@ func seedDb(db *bolt.DB) (err error) {
 		LastName:    "ss1",
 		Email:       "ss1@ss.com",
 		Confirmed:   true,
-		PasswordSha: EncodePassword("123qwe"),
+		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleStudent,
 		Job:         getJobId(db, KeyJobs),
@@ -605,7 +609,7 @@ func seedDb(db *bolt.DB) (err error) {
 		LastName:    "ss2",
 		Email:       "ss2@ss.com",
 		Confirmed:   true,
-		PasswordSha: EncodePassword("123qwe"),
+		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleStudent,
 		Job:         getJobId(db, KeyJobs),
@@ -624,7 +628,7 @@ func seedDb(db *bolt.DB) (err error) {
 		LastName:    "ss3",
 		Email:       "ss3@ss.com",
 		Confirmed:   true,
-		PasswordSha: EncodePassword("123qwe"),
+		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleStudent,
 		Job:         getJobId(db, KeyJobs),
