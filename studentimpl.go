@@ -237,6 +237,10 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 			return decimal.Zero
 		}
 
+		if value.IsZero() {
+			continue
+		}
+
 		var ubuck decimal.Decimal
 		if string(k) != CurrencyUBuck && string(k) != KeyDebt && !strings.Contains(string(k), "@") {
 			usd, err := getCryptoLatest(string(k))
