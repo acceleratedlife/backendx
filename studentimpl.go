@@ -1608,9 +1608,35 @@ func getStudentCryptoRx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp 
 	return
 }
 
-func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.ResponseCrypto, err error) {
+func getCryptoForStudentRequest(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.ResponseCrypto, err error) {
 	crypto = strings.ToLower(crypto)
+	usd, err := getCrypto(db, crypto)
+
+	ubuck, err := getStudentUbuck(db, userDetails)
+	if err != nil {
+		return
+	}
+
+	studentCrypto, _, err := getStudentCrypto(db, userDetails, crypto)
+	if err != nil {
+		return
+	}
+
+	resp = openapi.ResponseCrypto{
+		Searched: crypto,
+		Usd:      usd,
+		Owned:    float32(studentCrypto.Quantity.InexactFloat64()),
+		UBuck:    ubuck.Value,
+		Basis:    float32(studentCrypto.Basis.InexactFloat64()),
+	}
+
+	return
+}
+
+func getCrypto(db *bolt.DB, crypto string) (usd float32, err error) {
+	// crypto = strings.ToLower(crypto)
 	needToAdd := false
+	var cryptoInfoOut openapi.CryptoCb
 	err = db.View(func(tx *bolt.Tx) error {
 		toUpdate, cryptoInfo, err := isCryptoNeeded(tx, crypto)
 		if err != nil {
@@ -1621,29 +1647,12 @@ func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.R
 			return nil
 		}
 
-		ubuck, err := getStudentUbuckRx(tx, userDetails)
-		if err != nil {
-			return err
-		}
-
-		studentCrypto, _, err := getStudentCryptoRx(tx, userDetails, crypto)
-		if err != nil {
-			return err
-		}
-
-		resp = openapi.ResponseCrypto{
-			Searched: crypto,
-			Usd:      cryptoInfo.Usd,
-			Owned:    float32(studentCrypto.Quantity.InexactFloat64()),
-			UBuck:    ubuck.Value,
-			Basis:    float32(studentCrypto.Basis.InexactFloat64()),
-		}
-
+		cryptoInfoOut = cryptoInfo
 		return nil
 	})
 
 	if !needToAdd || err != nil {
-		return resp, err
+		return cryptoInfoOut.Usd, err
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
@@ -1670,29 +1679,12 @@ func getCrypto(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.R
 			return err
 		}
 
-		ubuck, err := getStudentUbuckRx(tx, userDetails)
-		if err != nil {
-			return err
-		}
-
-		studentCrypto, _, err := getStudentCryptoRx(tx, userDetails, crypto)
-		if err != nil {
-			return err
-		}
-
-		resp = openapi.ResponseCrypto{
-			Searched: crypto,
-			Usd:      cryptoInfo.Usd,
-			Owned:    float32(studentCrypto.Quantity.InexactFloat64()),
-			UBuck:    ubuck.Value,
-			Basis:    float32(studentCrypto.Basis.InexactFloat64()),
-		}
-
+		cryptoInfoOut = cryptoInfo
 		return nil
 
 	})
 
-	return
+	return cryptoInfoOut.Usd, err
 }
 
 func isCryptoNeeded(tx *bolt.Tx, crypto string) (needToAdd bool, cryptoInfo openapi.CryptoCb, err error) {
@@ -1718,6 +1710,7 @@ func isCryptoNeeded(tx *bolt.Tx, crypto string) (needToAdd bool, cryptoInfo open
 	return
 }
 
+// this should only be called from within getCrypto
 func getCryptoLatest(crypto string) (usd decimal.Decimal, err error) {
 	resp, err := http.Get("https://api.coingecko.com/api/v3/simple/price?ids=" + crypto + "&vs_currencies=usd")
 	if err != nil {
