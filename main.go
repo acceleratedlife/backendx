@@ -114,6 +114,11 @@ func (*AppClock) Now() time.Time {
 }
 
 func main() {
+
+	runEveryMinute(func(time2 time.Time) {
+		lgr.Printf("INFO Tick2 at", time2)
+	})
+
 	lgr.Printf("server started")
 
 	config := loadConfig()
