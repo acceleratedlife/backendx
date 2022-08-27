@@ -196,12 +196,12 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 
 func StudentNetWorth(db *bolt.DB, userName string) (res decimal.Decimal) {
 	_ = db.View(func(tx *bolt.Tx) error {
-		res = StudentNetWorthTx(tx, userName)
+		res = StudentNetWorthTx(tx, db, userName)
 		return nil
 	})
 	return
 }
-func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
+func StudentNetWorthTx(tx *bolt.Tx, db *bolt.DB, userName string) (res decimal.Decimal) {
 	res = decimal.Zero
 	student, err := getStudentBucketRx(tx, userName)
 	if err != nil {
@@ -243,18 +243,17 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 
 		var ubuck decimal.Decimal
 		if string(k) != CurrencyUBuck && string(k) != KeyDebt && !strings.Contains(string(k), "@") {
-			usd, err := getCryptoLatest(string(k))
+			usd, err := getCrypto(db, string(k))
 			if err != nil {
 				lgr.Printf("ERROR cannot get crytpo to ubuck of %s: %v", userName, err)
 				return decimal.Zero
 			}
-
 			basis, err := getStudentCryptoBasisRx(student, string(k))
 			if err != nil {
 				lgr.Printf("ERROR cannot get crytpo basis of %s: %v", userName, err)
 				return decimal.Zero
 			}
-			ubuck = cryptoConvert(basis, usd, value)
+			ubuck = cryptoConvert(basis, decimal.NewFromFloat32(usd), value)
 			if err != nil {
 				return
 			}
@@ -672,7 +671,7 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return fmt.Errorf("cannot save event date: %v", err)
 		}
 
-		students, _, err := getSchoolStudentsTx(tx, userDetails)
+		students, _, err := getSchoolStudentsTx(tx, db, userDetails)
 		if err != nil {
 			return err
 		}
@@ -1503,7 +1502,7 @@ func insert(a []Transaction, index int, value Transaction) []Transaction {
 	return a
 }
 
-func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []CryptoDecimal, err error) {
+func getStudentCryptosRx(tx *bolt.Tx, db *bolt.DB, userDetails UserInfo) (resp []CryptoDecimal, err error) {
 	studentBucket, err := getStudentBucketRx(tx, userDetails.Name)
 	if err != nil {
 		return
@@ -1548,11 +1547,11 @@ func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []CryptoDecima
 		if balance.IsPositive() {
 			var crypto CryptoDecimal
 			crypto.Name = string(k)
-			usd, err := getCryptoLatest(string(k))
+			usd, err := getCrypto(db, string(k))
 			if err != nil {
 				return resp, err
 			}
-			crypto.CurrentPrice = usd.Round(4)
+			crypto.CurrentPrice = decimal.NewFromFloat32(usd).Round(4)
 			crypto.Basis = basis.Round(4)
 			crypto.Quantity = balance.Round(4)
 			resp = append(resp, crypto)
@@ -1741,24 +1740,24 @@ func getCryptoLatest(crypto string) (usd decimal.Decimal, err error) {
 
 func cryptoTransaction(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestCryptoConvert) (err error) {
 	return db.Update(func(tx *bolt.Tx) error {
-		return cryptoTransactionTx(tx, clock, userDetails, body)
+		return cryptoTransactionTx(tx, db, clock, userDetails, body)
 	})
 
 }
 
-func cryptoTransactionTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.RequestCryptoConvert) (err error) {
+func cryptoTransactionTx(tx *bolt.Tx, db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestCryptoConvert) (err error) {
 	buy := decimal.NewFromFloat32(body.Buy)
 	sell := decimal.NewFromFloat32(body.Sell)
 	if body.Buy > 0 {
-		err = ubuckToCrypto(tx, clock, userDetails, buy, body.Name)
+		err = ubuckToCrypto(tx, db, clock, userDetails, buy, body.Name)
 	} else {
-		err = cryptoToUbuck(tx, clock, userDetails, sell, body.Name)
+		err = cryptoToUbuck(tx, db, clock, userDetails, sell, body.Name)
 	}
 
 	return
 }
 
-func ubuckToCrypto(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, to string) (err error) {
+func ubuckToCrypto(tx *bolt.Tx, db *bolt.DB, clock Clock, userInfo UserInfo, amount decimal.Decimal, to string) (err error) {
 	to = strings.ToLower(to)
 	if userInfo.Role != UserRoleStudent {
 		return fmt.Errorf("user is not a student")
@@ -1769,12 +1768,14 @@ func ubuckToCrypto(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 
 	ts := clock.Now().Truncate(time.Millisecond)
 
-	usd, err := getCryptoLatest(to)
+	usd, err := getCrypto(db, to)
 	if err != nil {
 		return err
 	}
 
-	ubuck := amount.Mul(usd).Mul(decimal.NewFromFloat(keyCharge))
+	usdDecimal := decimal.NewFromFloat32(usd)
+
+	ubuck := amount.Mul(usdDecimal).Mul(decimal.NewFromFloat(keyCharge))
 
 	transaction := Transaction{
 		Ts:             ts,
@@ -1784,7 +1785,7 @@ func ubuckToCrypto(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		CurrencyDest:   to,
 		AmountSource:   ubuck,
 		AmountDest:     amount,
-		XRate:          usd,
+		XRate:          usdDecimal,
 		Reference:      "Ubuck to " + to,
 		FromSource:     true,
 	}
@@ -1825,7 +1826,7 @@ func ubuckToCrypto(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	return nil
 }
 
-func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.Decimal, from string) (err error) {
+func cryptoToUbuck(tx *bolt.Tx, db *bolt.DB, clock Clock, userInfo UserInfo, amount decimal.Decimal, from string) (err error) {
 	from = strings.ToLower(from)
 	if userInfo.Role != UserRoleStudent {
 		return fmt.Errorf("user is not a student")
@@ -1841,17 +1842,19 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		return err
 	}
 
-	usd, err := getCryptoLatest(from)
+	usd, err := getCrypto(db, from)
 	if err != nil {
 		return err
 	}
+
+	usdDecimal := decimal.NewFromFloat32(usd)
 
 	basis, err := getStudentCryptoBasisRx(student, from)
 	if err != nil {
 		return err
 	}
 
-	ubuck := cryptoConvert(basis, usd, amount)
+	ubuck := cryptoConvert(basis, usdDecimal, amount)
 	charge := 1 - (keyCharge - 1)
 	ubuck = ubuck.Mul(decimal.NewFromFloat(charge))
 
@@ -1863,7 +1866,7 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		CurrencyDest:   CurrencyUBuck,
 		AmountSource:   amount,
 		AmountDest:     ubuck,
-		XRate:          usd,
+		XRate:          usdDecimal,
 		Reference:      from + " to Ubuck",
 		FromSource:     true,
 	}

@@ -45,7 +45,7 @@ func Test_addUbuck2Student(t *testing.T) {
 
 		_ = balance.UnmarshalText(v)
 
-		studentNetWo = StudentNetWorthTx(tx, students[0])
+		studentNetWo = StudentNetWorthTx(tx, db, students[0])
 		return nil
 	})
 

@@ -109,7 +109,7 @@ func TestEvents(t *testing.T) {
 
 	netWorth := decimal.Zero
 	_ = db.View(func(tx *bolt.Tx) error {
-		netWorth = StudentNetWorthTx(tx, students[0])
+		netWorth = StudentNetWorthTx(tx, db, students[0])
 		return nil
 	})
 
@@ -252,7 +252,7 @@ func TestDailyPayment(t *testing.T) {
 
 	netWorth := decimal.Zero
 	_ = db.View(func(tx *bolt.Tx) error {
-		netWorth = StudentNetWorthTx(tx, students[0])
+		netWorth = StudentNetWorthTx(tx, db, students[0])
 		return nil
 	})
 

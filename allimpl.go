@@ -254,7 +254,7 @@ func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (ranked int, err e
 	return
 }
 
-func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
+func getSchoolStudentsTx(tx *bolt.Tx, db *bolt.DB, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
 	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return
@@ -282,7 +282,7 @@ func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.User
 			continue
 		}
 
-		nWorth, _ := StudentNetWorthTx(tx, student.Name).Float64()
+		nWorth, _ := StudentNetWorthTx(tx, db, student.Name).Float64()
 		nUser := openapi.UserNoHistory{
 			Id:        student.Email,
 			FirstName: student.FirstName,
