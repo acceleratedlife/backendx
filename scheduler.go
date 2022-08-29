@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -64,8 +63,22 @@ func coinGecko(db *bolt.DB) (err error) {
 		lgr.Printf(err.Error())
 		return
 	}
-	fmt.Println(decodedResp) // to parse out your value
-	fmt.Println(decodedResp.Bitcoin.Usd)
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		cryptosBucket := tx.Bucket([]byte(KeyCryptos))
+		// need to convert this struct
+		for k, v := range decodedResp {
+
+		}
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	// fmt.Println(decodedResp)
+	// fmt.Println(decodedResp.Bitcoin.Usd)
 
 	return
 
