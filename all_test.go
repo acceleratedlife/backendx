@@ -48,6 +48,7 @@ func TestSearchStudents(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchStudents", 8090, "")
 	defer tearDown()
+	coinGecko(db)
 
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 3)
 

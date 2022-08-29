@@ -89,6 +89,7 @@ const (
 	KeyTime             = "2006-01-02 15:04:05.999999999 -0700 MST"
 	KeyValue            = "value"
 	KeyMMA              = "MMA"
+	KeyCoins            = "cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba inu, dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,chainlink,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
 )
 
 var build_date string
@@ -114,6 +115,7 @@ func (*AppClock) Now() time.Time {
 }
 
 func main() {
+
 	lgr.Printf("server started")
 
 	config := loadConfig()
@@ -123,6 +125,8 @@ func main() {
 		panic(fmt.Errorf("cannot open db %v", err))
 	}
 	defer db.Close()
+
+	runEveryMinute(db)
 
 	// ***
 
