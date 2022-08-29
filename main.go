@@ -89,6 +89,7 @@ const (
 	KeyTime             = "2006-01-02 15:04:05.999999999 -0700 MST"
 	KeyValue            = "value"
 	KeyMMA              = "MMA"
+	KeyCoins            = "cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba inu, dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,chainlink,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
 )
 
 var build_date string
@@ -100,6 +101,87 @@ type ServerConfig struct {
 	SecretKey     string
 	ServerPort    int
 	SeedPassword  string
+}
+
+type CoinGecko struct {
+	Apecoin struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"apecoin,omitempty"`
+	Zcash struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"zcash,omitempty"`
+	Chainlink struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"chainlink,omitempty"`
+	Decentraland struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"decentraland,omitempty"`
+	Fantom struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"fantom,omitempty"`
+	Solana struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"solana,omitempty"`
+	Litecoin struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"litecoin,omitempty"`
+	Okb struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"okb,omitempty"`
+	Flow struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"flow,omitempty"`
+	Cronos struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"cronos,omitempty"`
+	Frax struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"frax,omitempty"`
+	Bitcoin struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"bitcoin,omitempty"`
+	Tron struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"tron,omitempty"`
+	Polkadot struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"polkadot,omitempty"`
+	Stellar struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"stellar,omitempty"`
+	Algorand struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"algorand,omitempty"`
+	Cardano struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"cardano,omitempty"`
+	Uniswap struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"uniswap,omitempty"`
+	Dogecoin struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"dogecoin,omitempty"`
+	Aave struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"aave,omitempty"`
+	Filecoin struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"filecoin,omitempty"`
+	Vechain struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"vechain,omitempty"`
+	Tezos struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"tezos,omitempty"`
+	Chain struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"chain,omitempty"`
+	Eos struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"eos,omitempty"`
+	Helium struct {
+		Usd float64 `json:"usd,omitempty"`
+	} `json:"helium,omitempty"`
 }
 
 type Clock interface {
@@ -115,9 +197,7 @@ func (*AppClock) Now() time.Time {
 
 func main() {
 
-	runEveryMinute(func(time2 time.Time) {
-		lgr.Printf("INFO Tick2 at", time2)
-	})
+	runEveryMinute()
 
 	lgr.Printf("server started")
 
@@ -128,6 +208,8 @@ func main() {
 		panic(fmt.Errorf("cannot open db %v", err))
 	}
 	defer db.Close()
+
+	runEveryMinute(db)
 
 	// ***
 
