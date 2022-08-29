@@ -3,10 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/rand"
-	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -243,7 +240,7 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 
 		var ubuck decimal.Decimal
 		if string(k) != CurrencyUBuck && string(k) != KeyDebt && !strings.Contains(string(k), "@") {
-			usd, err := getCryptoLatest(string(k))
+			usd, err := getCrypto(tx, string(k))
 			if err != nil {
 				lgr.Printf("ERROR cannot get crytpo to ubuck of %s: %v", userName, err)
 				return decimal.Zero
@@ -1548,7 +1545,7 @@ func getStudentCryptosRx(tx *bolt.Tx, userDetails UserInfo) (resp []CryptoDecima
 		if balance.IsPositive() {
 			var crypto CryptoDecimal
 			crypto.Name = string(k)
-			usd, err := getCryptoLatest(string(k))
+			usd, err := getCrypto(tx, string(k))
 			if err != nil {
 				return resp, err
 			}
@@ -1610,7 +1607,7 @@ func getStudentCryptoRx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp 
 
 func getCryptoForStudentRequest(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.ResponseCrypto, err error) {
 	crypto = strings.ToLower(crypto)
-	usd, err := getCrypto(db, crypto)
+	usd, err := getOrUpdateCrypto(db, crypto)
 
 	ubuck, err := getStudentUbuck(db, userDetails)
 	if err != nil {
@@ -1633,7 +1630,7 @@ func getCryptoForStudentRequest(db *bolt.DB, userDetails UserInfo, crypto string
 	return
 }
 
-func getCrypto(db *bolt.DB, crypto string) (usd float32, err error) {
+func getOrUpdateCrypto(db *bolt.DB, crypto string) (usd float32, err error) {
 	// crypto = strings.ToLower(crypto)
 	needToAdd := false
 	var cryptoInfoOut openapi.CryptoCb
@@ -1663,7 +1660,7 @@ func getCrypto(db *bolt.DB, crypto string) (usd float32, err error) {
 
 		var cryptoInfo openapi.CryptoCb
 
-		usd, err := getCryptoLatest(crypto)
+		usd, err := getCrypto(tx, crypto)
 		if err != nil {
 			return err
 		}
@@ -1710,33 +1707,21 @@ func isCryptoNeeded(tx *bolt.Tx, crypto string) (needToAdd bool, cryptoInfo open
 	return
 }
 
-// this should only be called from within getCrypto
-func getCryptoLatest(crypto string) (usd decimal.Decimal, err error) {
-	resp, err := http.Get("https://api.coingecko.com/api/v3/simple/price?ids=" + crypto + "&vs_currencies=usd")
+func getCrypto(tx *bolt.Tx, crypto string) (usd decimal.Decimal, err error) {
+	crypto = strings.ToLower(crypto)
+	cryptoBucket := tx.Bucket([]byte(KeyCryptos))
+	cryptoData := cryptoBucket.Get([]byte(crypto))
+	if cryptoData == nil {
+		return usd, fmt.Errorf("can't find the Crypto")
+	}
+
+	var cryptoRecord openapi.CryptoCb
+	err = json.Unmarshal(cryptoData, &cryptoRecord)
 	if err != nil {
 		return
 	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
 
-	bodyString := string(body)
-
-	if string(bodyString) == "{}" {
-		return usd, fmt.Errorf("No crypto was found for " + crypto)
-	}
-
-	split := strings.SplitAfter(bodyString, "usd\":")
-	final := strings.TrimRight(split[1], "}")
-	value, err := strconv.ParseFloat(final, 32)
-	if err != nil {
-		return
-	}
-	usd = decimal.NewFromFloat(value)
-
-	return
+	return decimal.NewFromFloat32(cryptoRecord.Usd), err
 }
 
 func cryptoTransaction(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestCryptoConvert) (err error) {
@@ -1769,7 +1754,7 @@ func ubuckToCrypto(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 
 	ts := clock.Now().Truncate(time.Millisecond)
 
-	usd, err := getCryptoLatest(to)
+	usd, err := getCrypto(tx, to)
 	if err != nil {
 		return err
 	}
@@ -1841,7 +1826,7 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		return err
 	}
 
-	usd, err := getCryptoLatest(from)
+	usd, err := getCrypto(tx, from)
 	if err != nil {
 		return err
 	}

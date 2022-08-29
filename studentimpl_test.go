@@ -392,6 +392,7 @@ func TestGetCryptoForStudentRequest(t *testing.T) {
 	clock := TestClock{}
 	db, dbTearDown := OpenTestDB("getCryptoForStudentRequest")
 	defer dbTearDown()
+	coinGecko(db)
 	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
 	student, err := getUserInLocalStore(db, students[0])
@@ -431,6 +432,7 @@ func TestCryptoTransaction(t *testing.T) {
 	clock := TestClock{}
 	db, dbTearDown := OpenTestDB("cryptoTransaction")
 	defer dbTearDown()
+	coinGecko(db)
 	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
 	student, err := getUserInLocalStore(db, students[0])

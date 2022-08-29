@@ -65,7 +65,11 @@ func coinGecko(db *bolt.DB) (err error) {
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
-		cryptosBucket := tx.Bucket([]byte(KeyCryptos))
+		cryptosBucket, err := tx.CreateBucketIfNotExists([]byte(KeyCryptos))
+		if err != nil {
+			lgr.Printf(err.Error())
+			return err
+		}
 		var cryptoInfo openapi.CryptoCb
 
 		for k, v := range decodedResp {
@@ -83,6 +87,8 @@ func coinGecko(db *bolt.DB) (err error) {
 				return err
 			}
 		}
+
+		lgr.Printf("Updated Cryptos")
 
 		return nil
 	})
