@@ -865,6 +865,7 @@ func TestSearchStudentCrypto(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchStudentCrypto", 8090, "test@admin.com")
 	defer tearDown()
+	coinGecko(db)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
 
@@ -907,6 +908,7 @@ func TestSearchCrypto(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchCrypto", 8090, "test@admin.com")
 	defer tearDown()
+	coinGecko(db)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
 
@@ -948,6 +950,7 @@ func TestCryptoConvert(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("cryptoConvert", 8090, "test@admin.com")
 	defer tearDown()
+	coinGecko(db)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
 
@@ -983,6 +986,7 @@ func TestSearchCryptoTransactions(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchCryptoTransactions", 8090, "test@admin.com")
 	defer tearDown()
+	coinGecko(db)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
 

@@ -214,7 +214,7 @@ func (a *StudentApiServiceImpl) SearchCrypto(ctx context.Context, crypto string)
 	}
 
 	var resp openapi.ResponseCrypto
-	resp, err = getCrypto(a.db, userDetails, crypto)
+	resp, err = getCryptoForStudentRequest(a.db, userDetails, crypto)
 
 	if err != nil {
 		lgr.Printf("ERROR cannot get Cryptos for: %s %v", userDetails.Name, err)

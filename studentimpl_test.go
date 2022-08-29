@@ -385,13 +385,14 @@ func TestDebtInterest(t *testing.T) {
 	require.Greater(t, account.Balance, float32(2000))
 }
 
-func TestGetCrypto(t *testing.T) {
+func TestGetCryptoForStudentRequest(t *testing.T) {
 
-	lgr.Printf("INFO TestGetCrypto")
-	t.Log("INFO TestGetCrypto")
+	lgr.Printf("INFO TestGetCryptoForStudentRequest")
+	t.Log("INFO TestGetCryptoForStudentRequest")
 	clock := TestClock{}
-	db, dbTearDown := OpenTestDB("getCrypto")
+	db, dbTearDown := OpenTestDB("getCryptoForStudentRequest")
 	defer dbTearDown()
+	coinGecko(db)
 	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
 	student, err := getUserInLocalStore(db, students[0])
@@ -399,16 +400,16 @@ func TestGetCrypto(t *testing.T) {
 	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
-	resp, err := getCrypto(db, student, "bitCoin")
+	resp, err := getCryptoForStudentRequest(db, student, "bitCoin")
 	require.Nil(t, err)
 
-	resp2, err := getCrypto(db, student, "bitCoin")
+	resp2, err := getCryptoForStudentRequest(db, student, "bitCoin")
 	require.Nil(t, err)
 	require.Equal(t, resp.Usd, resp2.Usd)
 
 	clock.TickOne(time.Minute * 2)
 
-	resp, err = getCrypto(db, student, "bitCoin")
+	resp, err = getCryptoForStudentRequest(db, student, "bitCoin")
 
 	var bitcoin openapi.CryptoCb
 	err = db.View(func(tx *bolt.Tx) error {
@@ -431,6 +432,7 @@ func TestCryptoTransaction(t *testing.T) {
 	clock := TestClock{}
 	db, dbTearDown := OpenTestDB("cryptoTransaction")
 	defer dbTearDown()
+	coinGecko(db)
 	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
 	student, err := getUserInLocalStore(db, students[0])
@@ -444,13 +446,13 @@ func TestCryptoTransaction(t *testing.T) {
 		Sell: 0,
 	}
 
-	resp, err := getCrypto(db, student, "Cardano")
+	resp, err := getCryptoForStudentRequest(db, student, "Cardano")
 	require.Nil(t, err)
 	require.Equal(t, float32(0), resp.Owned)
 
 	err = cryptoTransaction(db, &clock, student, body)
 
-	resp, err = getCrypto(db, student, "Cardano")
+	resp, err = getCryptoForStudentRequest(db, student, "Cardano")
 	require.Nil(t, err)
 	require.Equal(t, float32(10), resp.Owned)
 
@@ -470,13 +472,13 @@ func TestCryptoTransaction(t *testing.T) {
 
 	err = cryptoTransaction(db, &clock, student, body)
 	require.Nil(t, err)
-	resp, err = getCrypto(db, student, "Cardano")
+	resp, err = getCryptoForStudentRequest(db, student, "Cardano")
 	require.Nil(t, err)
 	require.Equal(t, float32(5), resp.Owned)
 
 	err = cryptoTransaction(db, &clock, student, body)
 	require.Nil(t, err)
-	resp, err = getCrypto(db, student, "Cardano")
+	resp, err = getCryptoForStudentRequest(db, student, "Cardano")
 	require.Nil(t, err)
 	require.Equal(t, float32(0), resp.Owned)
 
