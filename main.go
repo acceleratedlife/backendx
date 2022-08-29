@@ -103,87 +103,6 @@ type ServerConfig struct {
 	SeedPassword  string
 }
 
-type CoinGecko struct {
-	Apecoin struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"apecoin,omitempty"`
-	Zcash struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"zcash,omitempty"`
-	Chainlink struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"chainlink,omitempty"`
-	Decentraland struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"decentraland,omitempty"`
-	Fantom struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"fantom,omitempty"`
-	Solana struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"solana,omitempty"`
-	Litecoin struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"litecoin,omitempty"`
-	Okb struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"okb,omitempty"`
-	Flow struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"flow,omitempty"`
-	Cronos struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"cronos,omitempty"`
-	Frax struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"frax,omitempty"`
-	Bitcoin struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"bitcoin,omitempty"`
-	Tron struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"tron,omitempty"`
-	Polkadot struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"polkadot,omitempty"`
-	Stellar struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"stellar,omitempty"`
-	Algorand struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"algorand,omitempty"`
-	Cardano struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"cardano,omitempty"`
-	Uniswap struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"uniswap,omitempty"`
-	Dogecoin struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"dogecoin,omitempty"`
-	Aave struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"aave,omitempty"`
-	Filecoin struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"filecoin,omitempty"`
-	Vechain struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"vechain,omitempty"`
-	Tezos struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"tezos,omitempty"`
-	Chain struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"chain,omitempty"`
-	Eos struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"eos,omitempty"`
-	Helium struct {
-		Usd float64 `json:"usd,omitempty"`
-	} `json:"helium,omitempty"`
-}
-
 type Clock interface {
 	Now() time.Time
 }
@@ -196,8 +115,6 @@ func (*AppClock) Now() time.Time {
 }
 
 func main() {
-
-	runEveryMinute()
 
 	lgr.Printf("server started")
 

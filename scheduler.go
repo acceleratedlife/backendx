@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 
+	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
 )
@@ -20,7 +21,7 @@ import (
 // to stop:   done <- true
 
 func runEveryMinute(db *bolt.DB) (done chan bool) {
-	ticker := time.NewTicker(4 * time.Second)
+	ticker := time.NewTicker(60 * time.Second)
 	done = make(chan bool)
 	go func() {
 		for {
@@ -56,8 +57,7 @@ func coinGecko(db *bolt.DB) (err error) {
 		return
 	}
 
-	var decodedResp CoinGecko
-
+	var decodedResp map[string]map[string]float32
 	err = json.Unmarshal(body, &decodedResp)
 	if err != nil {
 		lgr.Printf(err.Error())
@@ -66,19 +66,26 @@ func coinGecko(db *bolt.DB) (err error) {
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		cryptosBucket := tx.Bucket([]byte(KeyCryptos))
-		// need to convert this struct
-		for k, v := range decodedResp {
+		var cryptoInfo openapi.CryptoCb
 
-		}
-		if err != nil {
-			return err
+		for k, v := range decodedResp {
+			cryptoInfo.Usd = v["usd"]
+			cryptoInfo.UpdatedAt = time.Now().Truncate(time.Second)
+			marshal, err := json.Marshal(cryptoInfo)
+			if err != nil {
+				lgr.Printf(err.Error())
+				return err
+			}
+
+			err = cryptosBucket.Put([]byte(k), marshal)
+			if err != nil {
+				lgr.Printf(err.Error())
+				return err
+			}
 		}
 
 		return nil
 	})
-
-	// fmt.Println(decodedResp)
-	// fmt.Println(decodedResp.Bitcoin.Usd)
 
 	return
 
