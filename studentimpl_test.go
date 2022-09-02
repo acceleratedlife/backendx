@@ -483,3 +483,111 @@ func TestCryptoTransaction(t *testing.T) {
 	require.Equal(t, float32(0), resp.Owned)
 
 }
+
+func TestTrueAuctionFalse(t *testing.T) {
+
+	lgr.Printf("INFO TestTrueAuctionFalse")
+	t.Log("INFO TestTrueAuctionFalse")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("TrueAuctionFalse")
+	defer dbTearDown()
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(teachers[0])
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	student1, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	err = addUbuck2Student(db, &clock, student0, decimal.NewFromFloat(100), "starter")
+	require.Nil(t, err)
+	err = addUbuck2Student(db, &clock, student1, decimal.NewFromFloat(100), "starter")
+	require.Nil(t, err)
+
+	err = MakeAuctionImpl(db, teacher, openapi.RequestMakeAuction{
+		Bid:         0,
+		MaxBid:      0,
+		Description: "test auc",
+		EndDate:     time.Now().Add(time.Minute),
+		StartDate:   time.Now(),
+		OwnerId:     teacher.Name,
+		Visibility:  classes,
+		TrueAuction: false,
+	}, true)
+	require.Nil(t, err)
+
+	auctions, err := getTeacherAuctions(db, teacher)
+	require.Nil(t, err)
+
+	//overdrawn student 0 max 0 bid 0
+	timeId := auctions[0].Id.Format(time.RFC3339Nano)
+
+	clock.TickOne(time.Second * 30)
+
+	_, err = placeBid(db, &clock, student1, timeId, 1)
+	require.Nil(t, err)
+
+	auctions, err = getTeacherAuctions(db, teacher)
+	require.Nil(t, err)
+
+	require.Equal(t, timeId, auctions[0].EndDate.Format((time.RFC3339Nano)))
+
+}
+
+func TestTrueAuctionTrue(t *testing.T) {
+
+	lgr.Printf("INFO TestTrueAuctionFalse")
+	t.Log("INFO TestTrueAuctionFalse")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("TrueAuctionFalse")
+	defer dbTearDown()
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(teachers[0])
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	student1, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	err = addUbuck2Student(db, &clock, student0, decimal.NewFromFloat(100), "starter")
+	require.Nil(t, err)
+	err = addUbuck2Student(db, &clock, student1, decimal.NewFromFloat(100), "starter")
+	require.Nil(t, err)
+
+	err = MakeAuctionImpl(db, teacher, openapi.RequestMakeAuction{
+		Bid:         0,
+		MaxBid:      0,
+		Description: "test auc",
+		EndDate:     time.Now().Add(time.Minute),
+		StartDate:   time.Now(),
+		OwnerId:     teacher.Name,
+		Visibility:  classes,
+		TrueAuction: true,
+	}, true)
+	require.Nil(t, err)
+
+	auctions, err := getTeacherAuctions(db, teacher)
+	require.Nil(t, err)
+
+	//overdrawn student 0 max 0 bid 0
+	timeId := auctions[0].Id.Format(time.RFC3339Nano)
+
+	clock.TickOne(time.Second * 30)
+
+	_, err = placeBid(db, &clock, student1, timeId, 1)
+	require.Nil(t, err)
+
+	auctions, err = getTeacherAuctions(db, teacher)
+	require.Nil(t, err)
+
+	require.NotEqual(t, timeId, auctions[0].EndDate.Format((time.RFC3339Nano)))
+
+}

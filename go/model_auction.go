@@ -20,6 +20,8 @@ type Auction struct {
 
 	OwnerId AuctionOwnerId `json:"owner_id,omitempty"`
 
+	TrueAuction bool `json:"trueAuction"`
+
 	WinnerId AuctionWinnerId `json:"winner_id,omitempty"`
 
 	StartDate time.Time `json:"startDate"`
@@ -45,6 +47,7 @@ type Auction struct {
 func AssertAuctionRequired(obj Auction) error {
 	elements := map[string]interface{}{
 		"_id": obj.Id,
+		"trueAuction": obj.TrueAuction,
 		"startDate": obj.StartDate,
 		"endDate": obj.EndDate,
 		"bid": obj.Bid,

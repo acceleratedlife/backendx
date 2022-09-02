@@ -29,6 +29,8 @@ type RequestMakeAuction struct {
 	OwnerId string `json:"owner_id,omitempty"`
 
 	Visibility []string `json:"visibility,omitempty"`
+
+	TrueAuction bool `json:"trueAuction,omitempty"`
 }
 
 // AssertRequestMakeAuctionRequired checks if the required fields are not zero-ed

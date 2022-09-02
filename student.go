@@ -488,7 +488,7 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid
 	auction.MaxBid = int32(bid)
 	auction.WinnerId.Id = userDetails.Name
 
-	if time.Until(auction.EndDate) < time.Minute {
+	if auction.TrueAuction && time.Until(auction.EndDate) < time.Minute {
 		auction.EndDate = auction.EndDate.Add(time.Minute * 2)
 	}
 
