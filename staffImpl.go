@@ -442,7 +442,8 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 		OwnerId: openapi.AuctionOwnerId{
 			Id: request.OwnerId,
 		},
-		Approved: isStaff,
+		Approved:    isStaff,
+		TrueAuction: request.TrueAuction,
 	}
 
 	marshal, err := json.Marshal(auction)

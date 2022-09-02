@@ -1502,7 +1502,6 @@ components:
     Auction:
       example:
         approver: approver
-        approved: true
         visibility:
         - 613eab19e58cc511801af657
         - 613eab19e58cc511801af657
@@ -1510,13 +1509,15 @@ components:
         owner_id:
           lastName: Jones
           _id: ou812
-        maxBid: 4
         winner_id:
           firstName: Tom
           lastName: Jones
           _id: ou812
         description: Candy Bar
         active: true
+        trueAuction: true
+        approved: true
+        maxBid: 4
         _id: 2000-01-23T04:56:07.000+00:00
         bid: 4
         startDate: 2000-01-23T04:56:07.000+00:00
@@ -1526,6 +1527,8 @@ components:
           type: string
         owner_id:
           $ref: '#/components/schemas/Auction_owner_id'
+        trueAuction:
+          type: boolean
         winner_id:
           $ref: '#/components/schemas/Auction_winner_id'
         startDate:
@@ -1563,6 +1566,7 @@ components:
       - endDate
       - ownerId
       - startDate
+      - trueAuction
       - visibility
       - winnerId
       type: object
@@ -2243,6 +2247,7 @@ components:
         maxBid: 123
         description: candy
         bid: 123
+        trueAuction: true
         startDate: 2000-01-23T04:56:07.000+00:00
       properties:
         bid:
@@ -2268,6 +2273,8 @@ components:
             example: 613eab19e58cc511801af657
             type: string
           type: array
+        trueAuction:
+          type: boolean
       type: object
     RequestMakeClass:
       example:
