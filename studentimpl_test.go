@@ -282,7 +282,7 @@ func TestDailyPayment(t *testing.T) {
 
 	require.Nil(t, err)
 
-	require.Equal(t, math.Round(float64(student.Income*.3)*1000)/1000, math.Round(float64((2000-account.Balance)*1000))/1000)
+	require.Equal(t, math.Round(float64(student.Income*.75)*1000)/1000, math.Round(float64((2000-account.Balance)*1000))/1000)
 
 }
 

@@ -314,8 +314,8 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		if haveDebt {
-			garnish := pay.Mul(decimal.NewFromFloat32(.3))
-			pay = pay.Mul(decimal.NewFromFloat32(.7))
+			garnish := pay.Mul(decimal.NewFromFloat32(.75))
+			pay = pay.Mul(decimal.NewFromFloat32(.25))
 			if garnish.GreaterThan(balance) {
 				garnishRemainder := garnish.Sub(balance)
 				pay = pay.Add(garnishRemainder)
