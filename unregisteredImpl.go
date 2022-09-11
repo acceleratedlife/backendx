@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
@@ -47,7 +48,7 @@ func SchoolByIdTx(tx *bolt.Tx, schoolId string) (school *bolt.Bucket, err error)
 }
 
 // RoleByAddCode determines role by addCode and school, for students it determines the class
-func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err error) {
+func RoleByAddCode(db *bolt.DB, code string, clock Clock) (role int32, pathId PathId, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
 		schools := tx.Bucket([]byte(KeySchools))
 		if schools == nil {
@@ -68,8 +69,16 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 			}
 
 			addCodeTx := school.Get([]byte(KeyAddCode))
-			if addCodeTx != nil &&
-				string(addCodeTx) == code {
+			if addCodeTx != nil && string(addCodeTx) == code {
+				regEnd := school.Get([]byte(KeyRegEnd))
+				endTime, err := time.Parse(time.RFC3339, string(regEnd))
+				if err != nil {
+					return err
+				}
+
+				if clock.Now().After(endTime) {
+					return fmt.Errorf("Add code expired, ask your admin to regenerate the add code")
+				}
 				role = UserRoleTeacher
 				pathId.schoolId = string(currentSchoolId)
 				return nil
@@ -87,7 +96,17 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 						return fmt.Errorf("class not found")
 					}
 					addCodeTx := class.Get([]byte(KeyAddCode))
+
 					if addCodeTx != nil && string(addCodeTx) == code {
+						regEnd := class.Get([]byte(KeyRegEnd))
+						endTime, err := time.Parse(time.RFC3339, string(regEnd))
+						if err != nil {
+							return err
+						}
+
+						if clock.Now().After(endTime) {
+							return fmt.Errorf("Add code expired, ask your teacher to regenerate the add code")
+						}
 						admins := school.Bucket([]byte(KeyAdmins))
 						cAdmins := admins.Cursor()
 						adminId, _ := cAdmins.First()
@@ -127,7 +146,17 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 						return nil
 					}
 					addCodeTx := class.Get([]byte(KeyAddCode))
+
 					if addCodeTx != nil && string(addCodeTx) == code {
+						regEnd := class.Get([]byte(KeyRegEnd))
+						endTime, err := time.Parse(time.RFC3339, string(regEnd))
+						if err != nil {
+							return err
+						}
+
+						if clock.Now().After(endTime) {
+							return fmt.Errorf("Add code expired, ask your teacher to regenerate the add code")
+						}
 						role = UserRoleStudent
 						pathId.schoolId = string(currentSchoolId)
 						pathId.teacherId = string(teacherId)
@@ -140,8 +169,11 @@ func RoleByAddCode(db *bolt.DB, code string) (role int32, pathId PathId, err err
 				return res
 			})
 
-			if res != nil && res.Error() == "found" {
-				return nil
+			if res != nil {
+				if res.Error() == "found" {
+					return nil
+				}
+				return res
 			}
 
 		}

@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	bolt "go.etcd.io/bbolt"
 )
 
-func FindOrCreateSchool(db *bolt.DB, name string, city string, zip int) (id string, err error) {
+func FindOrCreateSchool(db *bolt.DB, clock Clock, name string, city string, zip int) (id string, err error) {
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
@@ -64,6 +65,13 @@ func FindOrCreateSchool(db *bolt.DB, name string, city string, zip int) (id stri
 			return err
 		}
 
+		endTime := clock.Now().Add(time.Hour * 72).Truncate(time.Second).Format(time.RFC3339)
+
+		err = school.Put([]byte(KeyRegEnd), []byte(endTime))
+		if err != nil {
+			return err
+		}
+
 		settings := openapi.Settings{
 			Student2student: true,
 		}
@@ -99,7 +107,7 @@ func FindOrCreateSchool(db *bolt.DB, name string, city string, zip int) (id stri
 		}
 
 		for _, c := range def {
-			_, err = addClassDetailsTx(classes, c.name, c.period, true)
+			_, err = addClassDetailsTx(classes, clock, c.name, c.period, true)
 			if err != nil {
 				return err
 			}

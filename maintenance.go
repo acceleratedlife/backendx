@@ -49,7 +49,7 @@ type eventRequest struct {
 	Title       string `json:",omitempty"`
 }
 
-func newSchoolHandler(db *bolt.DB) http.Handler {
+func newSchoolHandler(db *bolt.DB, clock Clock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request NewSchoolRequest
 		defer r.Body.Close()
@@ -80,7 +80,7 @@ func newSchoolHandler(db *bolt.DB) http.Handler {
 		response := NewSchoolResponse{
 			AdminPassword: RandomString(8),
 		}
-		err = createNewSchool(db, request, response.AdminPassword)
+		err = createNewSchool(db, clock, request, response.AdminPassword)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -363,12 +363,12 @@ func addAdminHandler(db *bolt.DB) http.Handler {
 	})
 }
 
-func seedDbHandler(db *bolt.DB) http.Handler {
+func seedDbHandler(db *bolt.DB, clock Clock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		lgr.Printf("INFO new seedDb request")
 
-		err := seedDb(db)
+		err := seedDb(db, clock)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

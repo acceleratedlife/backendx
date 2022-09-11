@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/stretchr/testify/assert"
@@ -15,12 +16,13 @@ import (
 func TestAddTeacher(t *testing.T) {
 	db, tearDown := FullStartTestServer("addTeacher", 8090, "test@admin.com")
 	defer tearDown()
+	clock := TestClock{}
 
-	schoolId, _ := FindOrCreateSchool(db, "test school", "no city", 0)
+	schoolId, _ := FindOrCreateSchool(db, &clock, "test school", "no city", 0)
 
 	err := db.Update(func(tx *bolt.Tx) error {
 		school, _ := SchoolByIdTx(tx, schoolId)
-		return school.Put([]byte("addCode"), []byte("123123"))
+		return school.Put([]byte(KeyAddCode), []byte("123123"))
 	})
 
 	require.Nil(t, err)
@@ -56,19 +58,32 @@ func TestAddTeacher(t *testing.T) {
 
 	})
 	require.Equal(t, UserRoleTeacher, teach.Role)
+
+	clock.TickOne(time.Hour * 73)
+
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/users/register",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 404, resp.StatusCode)
 }
 
 func TestAddStudent(t *testing.T) {
 	db, tearDown := FullStartTestServer("addStudent", 8090, "test@admin.com")
 	defer tearDown()
+	clock := TestClock{}
 
-	schoolId, _ := FindOrCreateSchool(db, "test school", "no city", 0)
+	schoolId, _ := FindOrCreateSchool(db, &clock, "test school", "no city", 0)
 	_ = db.Update(func(tx *bolt.Tx) error {
 		school, _ := SchoolByIdTx(tx, schoolId)
-		return school.Put([]byte("addCode"), []byte("123123"))
+		return school.Put([]byte(KeyAddCode), []byte("123123"))
 	})
 	s := UnregisteredApiServiceImpl{
-		db: db,
+		db:    db,
+		clock: &clock,
 	}
 
 	job := Job{
@@ -93,7 +108,7 @@ func TestAddStudent(t *testing.T) {
 	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
 	require.Nil(t, err)
 
-	_, err = s.Register(nil, openapi.RequestRegister{
+	regResponse, err := s.Register(nil, openapi.RequestRegister{
 		Email:     "testaddstu@teacher.com",
 		Password:  "123",
 		AddCode:   "123123",
@@ -102,6 +117,31 @@ func TestAddStudent(t *testing.T) {
 	})
 
 	require.Nil(t, err)
+	assert.Equal(t, 200, regResponse.Code)
+
+	regResponse, err = s.Register(nil, openapi.RequestRegister{
+		Email:     "testaddstu@teacher.com",
+		Password:  "123",
+		AddCode:   "false",
+		FirstName: "qw",
+		LastName:  "qw",
+	})
+
+	require.Nil(t, err)
+	assert.Equal(t, 404, regResponse.Code)
+
+	clock.TickOne(time.Minute * 11)
+
+	regResponse, err = s.Register(nil, openapi.RequestRegister{
+		Email:     "testaddstu@teacher.com",
+		Password:  "123",
+		AddCode:   "123123",
+		FirstName: "qw",
+		LastName:  "qw",
+	})
+
+	require.Nil(t, err)
+	assert.Equal(t, 404, regResponse.Code)
 
 	s1 := StaffApiServiceImpl{
 		db: db,
@@ -110,7 +150,27 @@ func TestAddStudent(t *testing.T) {
 		Name:     "testaddstu@teacher.com",
 		SchoolId: schoolId,
 		Role:     UserRoleTeacher,
-	}, openapi.RequestMakeClass{
+	}, &clock, openapi.RequestMakeClass{
+		Name:    "qwe",
+		OwnerId: "",
+		Period:  0,
+	})
+
+	classes, _ = s1.MakeClassImpl(UserInfo{
+		Name:     "testaddstu@teacher.com",
+		SchoolId: schoolId,
+		Role:     UserRoleTeacher,
+	}, &clock, openapi.RequestMakeClass{
+		Name:    "qwe",
+		OwnerId: "",
+		Period:  0,
+	})
+
+	classes, _ = s1.MakeClassImpl(UserInfo{
+		Name:     "testaddstu@teacher.com",
+		SchoolId: schoolId,
+		Role:     UserRoleTeacher,
+	}, &clock, openapi.RequestMakeClass{
 		Name:    "qwe",
 		OwnerId: "",
 		Period:  0,
@@ -118,7 +178,7 @@ func TestAddStudent(t *testing.T) {
 
 	assert.Equal(t, 6, len(classes[0].AddCode))
 
-	regResponse, err := s.Register(nil, openapi.RequestRegister{
+	regResponse, err = s.Register(nil, openapi.RequestRegister{
 		Email:     "testaddstu@student.com",
 		Password:  "123321",
 		AddCode:   classes[0].AddCode,
@@ -128,4 +188,28 @@ func TestAddStudent(t *testing.T) {
 
 	require.Nil(t, err)
 	assert.Equal(t, 200, regResponse.Code)
+
+	regResponse, err = s.Register(nil, openapi.RequestRegister{
+		Email:     "testaddstu@student.com",
+		Password:  "123321",
+		AddCode:   "false",
+		FirstName: "qw1",
+		LastName:  "qw2",
+	})
+
+	require.Nil(t, err)
+	assert.Equal(t, 404, regResponse.Code)
+
+	clock.TickOne(time.Minute * 11)
+
+	regResponse, err = s.Register(nil, openapi.RequestRegister{
+		Email:     "testaddstu2@student.com",
+		Password:  "123321",
+		AddCode:   classes[0].AddCode,
+		FirstName: "qw1",
+		LastName:  "qw2",
+	})
+
+	require.Nil(t, err)
+	assert.Equal(t, 404, regResponse.Code)
 }

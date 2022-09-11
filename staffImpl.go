@@ -344,18 +344,18 @@ func getClasses1Tx(classesBucket *bolt.Bucket, ownerId string) []openapi.Class {
 	return data
 }
 
-func (s *StaffApiServiceImpl) MakeClassImpl(userDetails UserInfo, request openapi.RequestMakeClass) (classes []openapi.Class, err error) {
+func (s *StaffApiServiceImpl) MakeClassImpl(userDetails UserInfo, clock Clock, request openapi.RequestMakeClass) (classes []openapi.Class, err error) {
 	schoolId := userDetails.SchoolId
 	teacherId := userDetails.Name
 	className := request.Name
 	period := request.Period
 
-	_, classes, err = CreateClass(s.db, schoolId, teacherId, className, int(period))
+	_, classes, err = CreateClass(s.db, clock, schoolId, teacherId, className, int(period))
 
 	return classes, err
 }
 
-func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int) (classId string, classes []openapi.Class, err error) {
+func CreateClass(db *bolt.DB, clock Clock, schoolId, teacherId, className string, period int) (classId string, classes []openapi.Class, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, schoolId)
 		if err != nil {
@@ -375,7 +375,7 @@ func CreateClass(db *bolt.DB, schoolId, teacherId, className string, period int)
 			return fmt.Errorf("Problem finding classesBucket")
 		}
 
-		classId, err = addClassDetailsTx(classesBucket, className, period, false)
+		classId, err = addClassDetailsTx(classesBucket, clock, className, period, false)
 		if err != nil {
 			return err
 		}
@@ -459,7 +459,7 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 	return
 }
 
-func addClassDetailsTx(bucket *bolt.Bucket, className string, period int, adminClass bool) (classId string, err error) {
+func addClassDetailsTx(bucket *bolt.Bucket, clock Clock, className string, period int, adminClass bool) (classId string, err error) {
 	if adminClass {
 		classId = className
 	} else {
@@ -480,6 +480,16 @@ func addClassDetailsTx(bucket *bolt.Bucket, className string, period int, adminC
 	}
 	addCode := RandomString(6)
 	err = class.Put([]byte(KeyAddCode), []byte(addCode))
+	if err != nil {
+		return "", err
+	}
+
+	endTime := clock.Now().Add(time.Minute * 10).Truncate(time.Second)
+
+	err = class.Put([]byte(KeyRegEnd), []byte(endTime.Format(time.RFC3339)))
+	if err != nil {
+		return "", err
+	}
 	return
 }
 

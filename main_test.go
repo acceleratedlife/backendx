@@ -88,7 +88,7 @@ func FullStartTestServer(dbSuffix string, port int, userName string) (db *bolt.D
 }
 func FullStartTestServerClock(dbSuffix string, port int, userName string, clock Clock) (db *bolt.DB, teardown func()) {
 	db, dbTearDown := OpenTestDB(dbSuffix)
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, clock)
 	netTearDown := InitTestServer(port, db, userName, clock)
 
 	return db, func() {
@@ -101,7 +101,7 @@ func FullStartTestServerClock(dbSuffix string, port int, userName string, clock 
 // creates entities
 // classes contains noClasses for every teacher in every school + 4 mandatory classes for every school
 func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudents int) (admins, schools, teachers, classes, students []string, errE error) {
-
+	clock := TestClock{}
 	schools = make([]string, 0)
 	admins = make([]string, 0)
 	teachers = make([]string, 0)
@@ -124,7 +124,7 @@ func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudent
 	}
 
 	for s := 0; s < noSchools; s++ {
-		schoolId, err := FindOrCreateSchool(db, fmt.Sprintf("scool %d", s), "sc, ca", s)
+		schoolId, err := FindOrCreateSchool(db, &clock, fmt.Sprintf("scool %d", s), "sc, ca", s)
 		if err != nil {
 			errE = err
 			return
@@ -172,7 +172,7 @@ func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudent
 
 			for class := 0; class < noClasses; class++ {
 
-				classId, _, err := CreateClass(db, schoolId, teacher.Name,
+				classId, _, err := CreateClass(db, &clock, schoolId, teacher.Name,
 					RandomString(10), class)
 				if err != nil {
 					errE = err
@@ -225,8 +225,8 @@ func TestFirst(t *testing.T) {
 func TestSchema(t *testing.T) {
 	db, teardown := OpenTestDB("")
 	defer teardown()
-
-	InitDefaultAccounts(db)
+	clock := TestClock{}
+	InitDefaultAccounts(db, &clock)
 
 	ok, err := checkUserInLocalStore(db, "test@admin.com", "123qwe")
 
@@ -237,8 +237,8 @@ func TestIntegrationAuth(t *testing.T) {
 
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
-	InitDefaultAccounts(db)
+	clock := TestClock{}
+	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{})
 
 	mux := createRouter(db)
@@ -283,8 +283,9 @@ func TestIntegrationAuth(t *testing.T) {
 func TestIntegrationLoginPage(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
+	clock := TestClock{}
 
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, &clock)
 	mux := createRouter(db)
 	l, _ := net.Listen("tcp", "127.0.0.1:8089")
 
@@ -356,11 +357,11 @@ func TestInitialDB(t *testing.T) {
 }
 
 func TestBackupSecured(t *testing.T) {
-
+	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
@@ -415,11 +416,11 @@ func TestBackupSecured(t *testing.T) {
 }
 
 func TestNewSchoolSecured(t *testing.T) {
-
+	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
@@ -427,7 +428,7 @@ func TestNewSchoolSecured(t *testing.T) {
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
-	mux.Handle("/admin/new-school", newSchoolHandler(db))
+	mux.Handle("/admin/new-school", newSchoolHandler(db, &clock))
 
 	l, _ := net.Listen("tcp", "127.0.0.1:8089")
 
@@ -470,11 +471,11 @@ func TestNewSchoolSecured(t *testing.T) {
 }
 
 func TestResetPasswordSecured(t *testing.T) {
-
+	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
@@ -522,11 +523,11 @@ func TestResetPasswordSecured(t *testing.T) {
 }
 
 func TestAddJobCollegeSecured(t *testing.T) {
-
+	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
@@ -574,11 +575,11 @@ func TestAddJobCollegeSecured(t *testing.T) {
 }
 
 func TestAddJobSecured(t *testing.T) {
-
+	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
@@ -626,11 +627,11 @@ func TestAddJobSecured(t *testing.T) {
 }
 
 func TestAddEventPositiveSecured(t *testing.T) {
-
+	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
@@ -678,11 +679,11 @@ func TestAddEventPositiveSecured(t *testing.T) {
 }
 
 func TestAddEventNegativeSecured(t *testing.T) {
-
+	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
@@ -730,11 +731,11 @@ func TestAddEventNegativeSecured(t *testing.T) {
 }
 
 func TestAddAdminSecured(t *testing.T) {
-
+	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
@@ -785,11 +786,11 @@ func TestAddAdminSecured(t *testing.T) {
 }
 
 func TestSeedDbSecured(t *testing.T) {
-
+	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	InitDefaultAccounts(db)
+	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
@@ -797,7 +798,7 @@ func TestSeedDbSecured(t *testing.T) {
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
-	mux.Handle("/admin/seedDb", seedDbHandler(db))
+	mux.Handle("/admin/seedDb", seedDbHandler(db, &clock))
 
 	l, _ := net.Listen("tcp", "127.0.0.1:8089")
 

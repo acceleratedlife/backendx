@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -11,12 +12,11 @@ import (
 )
 
 type AllSchoolApiServiceImpl struct {
-	db *bolt.DB
+	db    *bolt.DB
+	clock Clock
 }
 
 func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi.RequestUser) (openapi.ImplResponse, error) {
-	//type contextKey string
-	//userData := ctx.Value("user").(token.User)
 	v := ctx.Value("user")
 	if v == nil {
 		return openapi.Response(403, nil), nil
@@ -49,6 +49,13 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 				return err
 			}
 			err = teachersClass.Put([]byte(KeyAddCode), []byte(newCode))
+			if err != nil {
+				return err
+			}
+
+			endTime := a.clock.Now().Add(time.Minute * 10).Truncate(time.Second).Format(time.RFC3339)
+
+			err = teachersClass.Put([]byte(KeyRegEnd), []byte(endTime))
 			if err != nil {
 				return err
 			}
@@ -86,12 +93,26 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 				if err != nil {
 					return err
 				}
+
+				endTime := a.clock.Now().Add(time.Hour * 72).Truncate(time.Second)
+
+				err = school.Put([]byte(KeyRegEnd), []byte(endTime.Format(time.RFC3339)))
+				if err != nil {
+					return err
+				}
 			} else { // admin class
 				classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
 				if err != nil {
 					return err
 				}
 				err = classBucket.Put([]byte(KeyAddCode), []byte(newCode))
+				if err != nil {
+					return err
+				}
+
+				endTime := a.clock.Now().Add(time.Minute * 10).Truncate(time.Second)
+
+				err = classBucket.Put([]byte(KeyRegEnd), []byte(endTime.Format(time.RFC3339)))
 				if err != nil {
 					return err
 				}
@@ -166,9 +187,10 @@ func (a *AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, Id string
 }
 
 // NewAllSchoolApiServiceImpl creates a default api service
-func NewAllSchoolApiServiceImpl(db *bolt.DB) openapi.AllSchoolApiServicer {
+func NewAllSchoolApiServiceImpl(db *bolt.DB, clock Clock) openapi.AllSchoolApiServicer {
 	return &AllSchoolApiServiceImpl{
-		db: db,
+		db:    db,
+		clock: clock,
 	}
 }
 
