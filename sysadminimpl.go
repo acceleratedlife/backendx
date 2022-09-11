@@ -8,7 +8,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-func FindOrCreateSchool(db *bolt.DB, name string, city string, zip int) (id string, err error) {
+func FindOrCreateSchool(db *bolt.DB, clock Clock, name string, city string, zip int) (id string, err error) {
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		schools, err := tx.CreateBucketIfNotExists([]byte("schools"))
@@ -99,7 +99,7 @@ func FindOrCreateSchool(db *bolt.DB, name string, city string, zip int) (id stri
 		}
 
 		for _, c := range def {
-			_, err = addClassDetailsTx(classes, c.name, c.period, true)
+			_, err = addClassDetailsTx(classes, clock, c.name, c.period, true)
 			if err != nil {
 				return err
 			}

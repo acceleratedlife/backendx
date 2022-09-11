@@ -89,6 +89,7 @@ const (
 	KeyTime             = "2006-01-02 15:04:05.999999999 -0700 MST"
 	KeyValue            = "value"
 	KeyMMA              = "MMA"
+	KeyRegEnd           = "regEnd"
 	KeyCoins            = "cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba inu, dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,chainlink,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
 )
 
@@ -146,7 +147,7 @@ func main() {
 		writer.Write([]byte(build_date))
 	})
 	//new school
-	router.Handle("/admin/new-school", newSchoolHandler(db))
+	router.Handle("/admin/new-school", newSchoolHandler(db, &AppClock{}))
 	//reset staff password
 	router.Handle("/admin/resetPassword", resetPasswordHandler(db))
 	//add job details
@@ -156,7 +157,7 @@ func main() {
 	//add admin
 	router.Handle("/admin/addAdmin", addAdminHandler(db))
 	//seed db
-	router.Handle("/admin/seedDb", seedDbHandler(db))
+	router.Handle("/admin/seedDb", seedDbHandler(db, &AppClock{}))
 
 	router.Use(buildAuthMiddleware(m))
 
@@ -185,11 +186,11 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 	sysAdminApiServiceImpl := NewSysAdminApiServiceImpl(db)
 	sysAdminCtrl := openapi.NewSysAdminApiController(sysAdminApiServiceImpl)
 
-	unregisteredServiceImpl := NewUnregisteredApiServiceImpl(db)
+	unregisteredServiceImpl := NewUnregisteredApiServiceImpl(db, clock)
 	unregisteredApiController := openapi.NewUnregisteredApiController(unregisteredServiceImpl)
 	openapi.WithUnregisteredApiErrorHandler(ErrorHandler)
 
-	allSchoolApiServiceImpl := NewAllSchoolApiServiceImpl(db)
+	allSchoolApiServiceImpl := NewAllSchoolApiServiceImpl(db, clock)
 	schoolApiController := openapi.NewAllSchoolApiController(allSchoolApiServiceImpl)
 
 	staffApiServiceImpl := NewStaffApiServiceImpl(db, clock)
@@ -205,7 +206,7 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 
 }
 
-func InitDefaultAccounts(db *bolt.DB) {
+func InitDefaultAccounts(db *bolt.DB, clock Clock) {
 	newSchoolRequest := NewSchoolRequest{
 		School:    "test school",
 		FirstName: "test",
@@ -214,12 +215,12 @@ func InitDefaultAccounts(db *bolt.DB) {
 		City:      "Stockton",
 		Zip:       95336,
 	}
-	_ = createNewSchool(db, newSchoolRequest, "123qwe")
+	_ = createNewSchool(db, clock, newSchoolRequest, "123qwe")
 }
 
-func createNewSchool(db *bolt.DB, newSchoolRequest NewSchoolRequest, adminPassword string) error {
+func createNewSchool(db *bolt.DB, clock Clock, newSchoolRequest NewSchoolRequest, adminPassword string) error {
 
-	schoolId, err := FindOrCreateSchool(db, newSchoolRequest.School, newSchoolRequest.City, newSchoolRequest.Zip)
+	schoolId, err := FindOrCreateSchool(db, clock, newSchoolRequest.School, newSchoolRequest.City, newSchoolRequest.Zip)
 	if err != nil {
 		lgr.Printf("ERROR school does not exist: %v", err)
 	}
@@ -347,7 +348,7 @@ func loadConfig() ServerConfig {
 	return config
 }
 
-func seedDb(db *bolt.DB) (err error) {
+func seedDb(db *bolt.DB, clock Clock) (err error) {
 
 	config := loadConfig()
 
@@ -360,7 +361,7 @@ func seedDb(db *bolt.DB) (err error) {
 		Zip:       94558,
 	}
 
-	err = createNewSchool(db, school, config.SeedPassword)
+	err = createNewSchool(db, clock, school, config.SeedPassword)
 	if err != nil {
 		lgr.Printf("ERROR school is not created: %v", err)
 		return err
@@ -562,7 +563,7 @@ func seedDb(db *bolt.DB) (err error) {
 		return err
 	}
 
-	classId, _, err := CreateClass(db, schoolId, "tt@tt.com", "math", 1)
+	classId, _, err := CreateClass(db, clock, schoolId, "tt@tt.com", "math", 1)
 	if err != nil {
 		return
 	}
