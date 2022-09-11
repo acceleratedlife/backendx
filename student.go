@@ -316,7 +316,7 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 		return openapi.Response(401, ""), nil
 	}
 
-	_, pathId, err := RoleByAddCode(a.db, body.AddCode)
+	_, pathId, err := RoleByAddCode(a.db, body.AddCode, a.clock)
 	if err != nil {
 		return openapi.Response(404,
 			openapi.ResponseRegister4{

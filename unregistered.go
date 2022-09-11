@@ -8,12 +8,13 @@ import (
 )
 
 type UnregisteredApiServiceImpl struct {
-	db *bolt.DB
+	db    *bolt.DB
+	clock Clock
 }
 
 func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register openapi.RequestRegister) (openapi.ImplResponse, error) {
 
-	role, pathId, err := RoleByAddCode(u.db, register.AddCode)
+	role, pathId, err := RoleByAddCode(u.db, register.AddCode, u.clock)
 	if err != nil {
 		return openapi.Response(404,
 			openapi.ResponseRegister4{
@@ -88,8 +89,9 @@ func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register open
 }
 
 // NewUnregisteredApiServiceImpl creates a default api service
-func NewUnregisteredApiServiceImpl(db *bolt.DB) openapi.UnregisteredApiServicer {
+func NewUnregisteredApiServiceImpl(db *bolt.DB, clock Clock) openapi.UnregisteredApiServicer {
 	return &UnregisteredApiServiceImpl{
-		db: db,
+		db:    db,
+		clock: clock,
 	}
 }

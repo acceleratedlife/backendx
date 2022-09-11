@@ -259,7 +259,7 @@ func (s *StaffApiServiceImpl) MakeClass(ctx context.Context, request openapi.Req
 		return openapi.Response(401, ""), nil
 	}
 
-	classes, err := s.MakeClassImpl(userDetails, request)
+	classes, err := s.MakeClassImpl(userDetails, s.clock, request)
 
 	if err != nil {
 		lgr.Printf("ERROR class not created: %v", err)

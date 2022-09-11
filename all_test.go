@@ -19,7 +19,6 @@ import (
 func TestAuth(t *testing.T) {
 	_, tearDown := FullStartTestServer("auth", 8090, "test@admin.com")
 	defer tearDown()
-
 	client := &http.Client{}
 
 	req, _ := http.NewRequest(http.MethodGet,
@@ -88,7 +87,6 @@ func TestSearchStudents(t *testing.T) {
 func TestSearchStudent(t *testing.T) {
 	db, tearDown := FullStartTestServer("searchStudent", 8090, "")
 	defer tearDown()
-
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 2, 6)
 
 	SetTestLoginUser(teachers[0])

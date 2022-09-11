@@ -107,6 +107,7 @@ func TestSearchMyClasses(t *testing.T) {
 	assert.Equal(t, 1, len(v))
 }
 
+// changes the add code for frosh, soph, jr, sr. Students need it to register
 func TestAddCodeClass_adminClass(t *testing.T) {
 	db, tearDown := FullStartTestServer("addCodeClass", 8090, "test@admin.com")
 	defer tearDown()
@@ -138,6 +139,7 @@ func TestAddCodeClass_adminClass(t *testing.T) {
 	assert.NotEqual(t, v.AddCode, "")
 }
 
+// changes the school code that teachers use to register
 func TestAddCodeClass_SchoolClass(t *testing.T) {
 	db, tearDown := FullStartTestServer("addCodeClass", 8090, "test@admin.com")
 	defer tearDown()
@@ -169,6 +171,7 @@ func TestAddCodeClass_SchoolClass(t *testing.T) {
 	assert.NotEqual(t, v.AddCode, "")
 }
 
+// changes the add code for a teachers class. The students will use this to register
 func TestAddCodeClass_TeacherClass(t *testing.T) {
 	db, tearDown := FullStartTestServer("addCodeClass", 8090, "test@admin.com")
 	defer tearDown()
