@@ -54,7 +54,6 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 			}
 
 			endTime := a.clock.Now().Add(time.Minute * 10).Truncate(time.Second).Format(time.RFC3339)
-			lgr.Printf(endTime)
 
 			err = teachersClass.Put([]byte(KeyRegEnd), []byte(endTime))
 			if err != nil {

@@ -69,8 +69,16 @@ func RoleByAddCode(db *bolt.DB, code string, clock Clock) (role int32, pathId Pa
 			}
 
 			addCodeTx := school.Get([]byte(KeyAddCode))
-			if addCodeTx != nil &&
-				string(addCodeTx) == code {
+			if addCodeTx != nil && string(addCodeTx) == code {
+				regEnd := school.Get([]byte(KeyRegEnd))
+				endTime, err := time.Parse(time.RFC3339, string(regEnd))
+				if err != nil {
+					return err
+				}
+
+				if clock.Now().After(endTime) {
+					return fmt.Errorf("Add code expired, ask your admin to regenerate the add code")
+				}
 				role = UserRoleTeacher
 				pathId.schoolId = string(currentSchoolId)
 				return nil
@@ -89,13 +97,13 @@ func RoleByAddCode(db *bolt.DB, code string, clock Clock) (role int32, pathId Pa
 					}
 					addCodeTx := class.Get([]byte(KeyAddCode))
 
-					regEnd := class.Get([]byte(KeyRegEnd))
-					endTime, err := time.Parse(time.RFC3339, string(regEnd))
-					if err != nil {
-						return err
-					}
-
 					if addCodeTx != nil && string(addCodeTx) == code {
+						regEnd := class.Get([]byte(KeyRegEnd))
+						endTime, err := time.Parse(time.RFC3339, string(regEnd))
+						if err != nil {
+							return err
+						}
+
 						if clock.Now().After(endTime) {
 							return fmt.Errorf("Add code expired, ask your teacher to regenerate the add code")
 						}
@@ -138,12 +146,14 @@ func RoleByAddCode(db *bolt.DB, code string, clock Clock) (role int32, pathId Pa
 						return nil
 					}
 					addCodeTx := class.Get([]byte(KeyAddCode))
-					regEnd := class.Get([]byte(KeyRegEnd))
-					endTime, err := time.Parse(time.RFC3339, string(regEnd))
-					if err != nil {
-						return err
-					}
+
 					if addCodeTx != nil && string(addCodeTx) == code {
+						regEnd := class.Get([]byte(KeyRegEnd))
+						endTime, err := time.Parse(time.RFC3339, string(regEnd))
+						if err != nil {
+							return err
+						}
+
 						if clock.Now().After(endTime) {
 							return fmt.Errorf("Add code expired, ask your teacher to regenerate the add code")
 						}
