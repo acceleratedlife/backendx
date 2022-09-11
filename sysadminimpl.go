@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	bolt "go.etcd.io/bbolt"
@@ -60,6 +61,13 @@ func FindOrCreateSchool(db *bolt.DB, clock Clock, name string, city string, zip 
 		}
 
 		err = school.Put([]byte(KeyAddCode), []byte(RandomString(6)))
+		if err != nil {
+			return err
+		}
+
+		endTime := clock.Now().Add(time.Hour * 72).Truncate(time.Second).Format(time.RFC3339)
+
+		err = school.Put([]byte(KeyRegEnd), []byte(endTime))
 		if err != nil {
 			return err
 		}

@@ -22,7 +22,7 @@ func TestAddTeacher(t *testing.T) {
 
 	err := db.Update(func(tx *bolt.Tx) error {
 		school, _ := SchoolByIdTx(tx, schoolId)
-		return school.Put([]byte("addCode"), []byte("123123"))
+		return school.Put([]byte(KeyAddCode), []byte("123123"))
 	})
 
 	require.Nil(t, err)
@@ -58,6 +58,17 @@ func TestAddTeacher(t *testing.T) {
 
 	})
 	require.Equal(t, UserRoleTeacher, teach.Role)
+
+	clock.TickOne(time.Hour * 73)
+
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/users/register",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 404, resp.StatusCode)
 }
 
 func TestAddStudent(t *testing.T) {
@@ -68,7 +79,7 @@ func TestAddStudent(t *testing.T) {
 	schoolId, _ := FindOrCreateSchool(db, &clock, "test school", "no city", 0)
 	_ = db.Update(func(tx *bolt.Tx) error {
 		school, _ := SchoolByIdTx(tx, schoolId)
-		return school.Put([]byte("addCode"), []byte("123123"))
+		return school.Put([]byte(KeyAddCode), []byte("123123"))
 	})
 	s := UnregisteredApiServiceImpl{
 		db:    db,
