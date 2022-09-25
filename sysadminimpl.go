@@ -73,7 +73,7 @@ func FindOrCreateSchool(db *bolt.DB, clock Clock, name string, city string, zip 
 		}
 
 		settings := openapi.Settings{
-			Student2student: true,
+			Student2student: false,
 		}
 
 		marshal, err := json.Marshal(settings)

@@ -69,15 +69,15 @@ func TestGetSettings(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
-	require.True(t, data.Student2student)
+	require.False(t, data.Student2student)
 
 	admin, err := getUserInLocalStore(db, admins[0])
 	require.Nil(t, err)
 
-	setSettings(db, admin, openapi.Settings{Student2student: false})
+	setSettings(db, admin, openapi.Settings{Student2student: true})
 	settings, err := getSettings(db, admin)
 	require.Nil(t, err)
-	require.False(t, settings.Student2student)
+	require.True(t, settings.Student2student)
 
 	resp, err = client.Do(req)
 	defer resp.Body.Close()
@@ -88,7 +88,7 @@ func TestGetSettings(t *testing.T) {
 	decoder = json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
-	require.False(t, data.Student2student)
+	require.True(t, data.Student2student)
 }
 
 // if the following test is failing and you just ran the spec then it is probably because you set student2student as required in the spec
@@ -109,10 +109,10 @@ func TestSetSettings(t *testing.T) {
 
 	settings, err := getSettings(db, admin)
 	require.Nil(t, err)
-	require.True(t, settings.Student2student)
+	require.False(t, settings.Student2student)
 
 	settings = openapi.Settings{
-		Student2student: false,
+		Student2student: true,
 	}
 
 	marshal, err := json.Marshal(settings)
@@ -130,10 +130,10 @@ func TestSetSettings(t *testing.T) {
 
 	settings, err = getSettings(db, admin)
 	require.Nil(t, err)
-	require.False(t, settings.Student2student)
+	require.True(t, settings.Student2student)
 
 	settings = openapi.Settings{
-		Student2student: true,
+		Student2student: false,
 	}
 
 	marshal, err = json.Marshal(settings)
@@ -150,7 +150,7 @@ func TestSetSettings(t *testing.T) {
 
 	settings, err = getSettings(db, admin)
 	require.Nil(t, err)
-	require.True(t, settings.Student2student)
+	require.False(t, settings.Student2student)
 }
 
 func TestStudent2Student(t *testing.T) {
@@ -160,6 +160,11 @@ func TestStudent2Student(t *testing.T) {
 
 	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
 	require.Nil(t, err)
+
+	admin, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	setSettings(db, admin, openapi.Settings{Student2student: true})
 
 	SetTestLoginUser(students[0])
 
@@ -179,9 +184,6 @@ func TestStudent2Student(t *testing.T) {
 	}
 
 	marshal, _ := json.Marshal(body)
-
-	admin, err := getUserInLocalStore(db, admins[0])
-	require.Nil(t, err)
 
 	settings, err := getSettings(db, admin)
 	require.Nil(t, err)

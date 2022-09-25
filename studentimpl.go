@@ -569,7 +569,7 @@ func DebtIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		days := decimal.NewFromFloat32(float32(clock.Now().Truncate(24*time.Hour).Sub(day).Hours() / 24))
-		interest := decimal.NewFromFloat32(1.06)
+		interest := decimal.NewFromFloat32(LoanRate)
 		compoundedInterest := interest.Pow(days)
 		compoundedInterest = compoundedInterest.Sub(decimal.NewFromInt32(1))
 		change := balance.Mul(compoundedInterest)
@@ -1151,7 +1151,7 @@ func getStudentAuctionsRx(tx *bolt.Tx, userDetails UserInfo) (auctions []openapi
 
 	c := auctionsBucket.Cursor()
 
-	for k, v := c.First(); k != nil; k, v = c.Next() {
+	for k, v := c.Last(); k != nil; k, v = c.Prev() {
 		if v == nil {
 			continue
 		}

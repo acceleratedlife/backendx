@@ -269,7 +269,7 @@ func getTeacherAuctionsRx(tx *bolt.Tx, auctionsBucket *bolt.Bucket, userDetails 
 
 	c := auctionsBucket.Cursor()
 
-	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+	for k, _ := c.Last(); k != nil; k, _ = c.Prev() {
 
 		auctionBucket := auctionsBucket.Get(k)
 		var auction openapi.Auction
