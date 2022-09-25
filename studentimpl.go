@@ -569,7 +569,7 @@ func DebtIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		days := decimal.NewFromFloat32(float32(clock.Now().Truncate(24*time.Hour).Sub(day).Hours() / 24))
-		interest := decimal.NewFromFloat32(1.06)
+		interest := decimal.NewFromFloat32(LoanRate)
 		compoundedInterest := interest.Pow(days)
 		compoundedInterest = compoundedInterest.Sub(decimal.NewFromInt32(1))
 		change := balance.Mul(compoundedInterest)
