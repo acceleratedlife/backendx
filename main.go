@@ -91,6 +91,7 @@ const (
 	KeyMMA              = "MMA"
 	KeyRegEnd           = "regEnd"
 	KeyCoins            = "ethereum,cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba-inu,dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,chainlink,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
+	LoanRate            = 1.015
 )
 
 var build_date string

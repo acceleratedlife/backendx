@@ -746,9 +746,14 @@ func TestPayTransaction_student(t *testing.T) {
 	db, tearDown := FullStartTestServer("payTransactions_student", 8090, "")
 	defer tearDown()
 
-	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
 
 	SetTestLoginUser(students[0])
+
+	admin, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	setSettings(db, admin, openapi.Settings{Student2student: true})
 
 	client := &http.Client{}
 	body := openapi.RequestPayTransaction{
