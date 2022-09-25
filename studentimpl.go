@@ -1151,7 +1151,7 @@ func getStudentAuctionsRx(tx *bolt.Tx, userDetails UserInfo) (auctions []openapi
 
 	c := auctionsBucket.Cursor()
 
-	for k, v := c.First(); k != nil; k, v = c.Next() {
+	for k, v := c.Last(); k != nil; k, v = c.Prev() {
 		if v == nil {
 			continue
 		}

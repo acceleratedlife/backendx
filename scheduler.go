@@ -88,8 +88,6 @@ func coinGecko(db *bolt.DB) (err error) {
 			}
 		}
 
-		lgr.Printf("Updated Cryptos")
-
 		return nil
 	})
 
