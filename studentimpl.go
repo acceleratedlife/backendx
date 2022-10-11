@@ -143,7 +143,7 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 		return
 	}
 
-	if balance.Sign() < 0 && negBlock {
+	if balance.Round(5).Sign() < 0 && negBlock {
 		errR = fmt.Errorf("Insufficient funds")
 		return
 	}
@@ -941,7 +941,7 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 	}
 
 	if charge {
-		amount = amount.Mul(decimal.NewFromFloat32(keyCharge))
+		converted = converted.Mul(decimal.NewFromFloat(2 - keyCharge))
 	}
 
 	if reference == "" {
