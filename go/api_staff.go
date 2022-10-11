@@ -86,6 +86,12 @@ func (c *StaffApiController) Routes() Routes {
 			c.EditClass,
 		},
 		{
+			"GetSettings",
+			strings.ToUpper("Get"),
+			"/api/settings",
+			c.GetSettings,
+		},
+		{
 			"KickClass",
 			strings.ToUpper("Put"),
 			"/api/classes/class/kick",
@@ -126,6 +132,12 @@ func (c *StaffApiController) Routes() Routes {
 			strings.ToUpper("Get"),
 			"/api/transactions",
 			c.SearchTransactions,
+		},
+		{
+			"SetSettings",
+			strings.ToUpper("Put"),
+			"/api/settings",
+			c.SetSettings,
 		},
 	}
 }
@@ -226,6 +238,19 @@ func (c *StaffApiController) EditClass(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result, err := c.service.EditClass(r.Context(), requestEditClassParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// GetSettings - get school settings
+func (c *StaffApiController) GetSettings(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.GetSettings(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -363,6 +388,30 @@ func (c *StaffApiController) SearchTransactions(w http.ResponseWriter, r *http.R
 	query := r.URL.Query()
 	idParam := query.Get("_id")
 	result, err := c.service.SearchTransactions(r.Context(), idParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SetSettings - change school settings
+func (c *StaffApiController) SetSettings(w http.ResponseWriter, r *http.Request) {
+	settingsParam := Settings{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&settingsParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertSettingsRequired(settingsParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.SetSettings(r.Context(), settingsParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

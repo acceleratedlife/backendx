@@ -12,6 +12,8 @@ package openapi
 
 type Settings struct {
 	Student2student bool `json:"student2student"`
+
+	CurrencyLock bool `json:"currencyLock"`
 }
 
 // AssertSettingsRequired checks if the required fields are not zero-ed

@@ -955,7 +955,7 @@ paths:
           description: problem finding settings
       summary: get school settings
       tags:
-      - schoolAdmin
+      - Staff
     put:
       description: school admin can change settings for school
       operationId: setSettings
@@ -971,7 +971,7 @@ paths:
           description: failed to update settings
       summary: change school settings
       tags:
-      - schoolAdmin
+      - Staff
   /transactions:
     get:
       description: By passing in the staffs _id you can find a transactions that they
@@ -1711,8 +1711,11 @@ components:
     Settings:
       example:
         student2student: true
+        CurrencyLock: true
       properties:
         student2student:
+          type: boolean
+        CurrencyLock:
           type: boolean
       type: object
     School:

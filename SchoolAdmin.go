@@ -75,48 +75,6 @@ func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, Id
 
 }
 
-func (s *SchoolAdminServiceImpl) GetSettings(ctx context.Context) (openapi.ImplResponse, error) {
-	userData := ctx.Value("user").(token.User)
-	userDetails, err := getUserInLocalStore(s.db, userData.Name)
-	if err != nil {
-		return openapi.Response(404, nil), nil
-	}
-
-	if userDetails.Role == UserRoleStudent {
-		return openapi.Response(401, ""), nil
-	}
-
-	settings, err := getSettings(s.db, userDetails)
-	if err != nil {
-		lgr.Printf("ERROR cannot get settings with : %s %v", userDetails.Name, err)
-		return openapi.Response(500, "{}"), err
-	}
-
-	return openapi.Response(200, settings), nil
-
-}
-
-func (s *SchoolAdminServiceImpl) SetSettings(ctx context.Context, body openapi.Settings) (openapi.ImplResponse, error) {
-	userData := ctx.Value("user").(token.User)
-	userDetails, err := getUserInLocalStore(s.db, userData.Name)
-	if err != nil {
-		return openapi.Response(400, nil), nil
-	}
-
-	if userDetails.Role != UserRoleAdmin {
-		return openapi.Response(401, ""), nil
-	}
-
-	err = setSettings(s.db, userDetails, body)
-	if err != nil {
-		lgr.Printf("ERROR cannot set: %v", err)
-		return openapi.Response(500, "{}"), err
-	}
-
-	return openapi.Response(200, nil), nil
-
-}
-
 func NewSchoolAdminServiceImpl(db *bolt.DB) openapi.SchoolAdminApiServicer {
 	return &SchoolAdminServiceImpl{
 		db: db,

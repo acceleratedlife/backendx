@@ -111,6 +111,20 @@ func (s *StaffApiService) EditClass(ctx context.Context, requestEditClass Reques
 	return Response(http.StatusNotImplemented, nil), errors.New("EditClass method not implemented")
 }
 
+// GetSettings - get school settings
+func (s *StaffApiService) GetSettings(ctx context.Context) (ImplResponse, error) {
+	// TODO - update GetSettings with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, Settings{}) or use other options such as http.Ok ...
+	//return Response(200, Settings{}), nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("GetSettings method not implemented")
+}
+
 // KickClass - Kick member from class
 func (s *StaffApiService) KickClass(ctx context.Context, requestKickClass RequestKickClass) (ImplResponse, error) {
 	// TODO - update KickClass with the required logic for this service method.
@@ -207,4 +221,18 @@ func (s *StaffApiService) SearchTransactions(ctx context.Context, id string) (Im
 	//return Response(404, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchTransactions method not implemented")
+}
+
+// SetSettings - change school settings
+func (s *StaffApiService) SetSettings(ctx context.Context, settings Settings) (ImplResponse, error) {
+	// TODO - update SetSettings with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("SetSettings method not implemented")
 }

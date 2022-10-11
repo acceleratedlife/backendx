@@ -918,12 +918,20 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		if err != nil {
 			return err
 		}
+
+		if toDetails.Settings.CurrencyLock {
+			return fmt.Errorf(toDetails.LastName + " bucks are locked by the teacher")
+		}
 	}
 
 	if from != CurrencyUBuck && from != KeyDebt {
 		fromDetails, err = getUserInLocalStoreTx(tx, from)
 		if err != nil {
 			return err
+		}
+
+		if fromDetails.Settings.CurrencyLock {
+			return fmt.Errorf(fromDetails.LastName + " bucks are locked by the teacher")
 		}
 	}
 

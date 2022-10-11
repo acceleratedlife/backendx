@@ -420,6 +420,62 @@ func (s *StaffApiServiceImpl) SearchTransactions(ctx context.Context, teacherId 
 	return openapi.Response(200, resp), nil
 }
 
+func (s *StaffApiServiceImpl) GetSettings(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, nil), nil
+	}
+
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	if userDetails.Role == UserRoleTeacher {
+		return openapi.Response(200, userDetails.Settings), nil
+	}
+
+	settings, err := getSettings(s.db, userDetails)
+	if err != nil {
+		lgr.Printf("ERROR cannot get settings with : %s %v", userDetails.Name, err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, settings), nil
+}
+
+func (s *StaffApiServiceImpl) SetSettings(ctx context.Context, body openapi.Settings) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(400, nil), nil
+	}
+
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	if userDetails.Role == UserRoleTeacher {
+		updatedTeacher := userDetails
+		updatedTeacher.Settings.CurrencyLock = body.CurrencyLock
+		err := userEdit(s.db, s.clock, updatedTeacher, openapi.UsersUserBody{})
+		if err != nil {
+			return openapi.Response(400, ""), nil
+		}
+
+		return openapi.Response(200, nil), nil
+	}
+
+	err = setSettings(s.db, userDetails, body)
+	if err != nil {
+		lgr.Printf("ERROR cannot set: %v", err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, nil), nil
+
+}
+
 // NewStaffApiServiceImpl creates a default api service
 func NewStaffApiServiceImpl(db *bolt.DB, clock Clock) openapi.StaffApiServicer {
 	return &StaffApiServiceImpl{

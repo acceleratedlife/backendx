@@ -255,6 +255,9 @@ func createNewSchool(db *bolt.DB, clock Clock, newSchoolRequest NewSchoolRequest
 		LastName:    newSchoolRequest.LastName,
 		Role:        UserRoleTeacher,
 		SchoolId:    schoolId,
+		Settings: TeacherSettings{
+			CurrencyLock: false,
+		},
 	}
 
 	err = createTeacher(db, teacher)
@@ -525,6 +528,9 @@ func seedDb(db *bolt.DB, clock Clock) (err error) {
 		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleTeacher,
+		Settings: TeacherSettings{
+			CurrencyLock: false,
+		},
 	}
 
 	err = createTeacher(db, newUser)
@@ -541,6 +547,9 @@ func seedDb(db *bolt.DB, clock Clock) (err error) {
 		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleTeacher,
+		Settings: TeacherSettings{
+			CurrencyLock: false,
+		},
 	}
 
 	err = createTeacher(db, newUser)
@@ -557,6 +566,9 @@ func seedDb(db *bolt.DB, clock Clock) (err error) {
 		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleTeacher,
+		Settings: TeacherSettings{
+			CurrencyLock: false,
+		},
 	}
 
 	err = createTeacher(db, newUser)

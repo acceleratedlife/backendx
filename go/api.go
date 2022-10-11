@@ -53,9 +53,7 @@ type AllSchoolApiRouter interface {
 // The SchoolAdminApiRouter implementation should parse necessary information from the http request,
 // pass the data to a SchoolAdminApiServicer to perform the required actions, then write the service results to the http response.
 type SchoolAdminApiRouter interface { 
-	GetSettings(http.ResponseWriter, *http.Request)
 	SearchAdminTeacherClass(http.ResponseWriter, *http.Request)
-	SetSettings(http.ResponseWriter, *http.Request)
 }
 // StaffApiRouter defines the required methods for binding the api requests to a responses for the StaffApi
 // The StaffApiRouter implementation should parse necessary information from the http request,
@@ -67,6 +65,7 @@ type StaffApiRouter interface {
 	DeleteStudent(http.ResponseWriter, *http.Request)
 	Deleteclass(http.ResponseWriter, *http.Request)
 	EditClass(http.ResponseWriter, *http.Request)
+	GetSettings(http.ResponseWriter, *http.Request)
 	KickClass(http.ResponseWriter, *http.Request)
 	MakeClass(http.ResponseWriter, *http.Request)
 	PayTransactions(http.ResponseWriter, *http.Request)
@@ -74,6 +73,7 @@ type StaffApiRouter interface {
 	SearchAuctionsTeacher(http.ResponseWriter, *http.Request)
 	SearchEvents(http.ResponseWriter, *http.Request)
 	SearchTransactions(http.ResponseWriter, *http.Request)
+	SetSettings(http.ResponseWriter, *http.Request)
 }
 // StudentApiRouter defines the required methods for binding the api requests to a responses for the StudentApi
 // The StudentApiRouter implementation should parse necessary information from the http request,
@@ -158,9 +158,7 @@ type AllSchoolApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type SchoolAdminApiServicer interface { 
-	GetSettings(context.Context) (ImplResponse, error)
 	SearchAdminTeacherClass(context.Context, string) (ImplResponse, error)
-	SetSettings(context.Context, Settings) (ImplResponse, error)
 }
 
 
@@ -175,6 +173,7 @@ type StaffApiServicer interface {
 	DeleteStudent(context.Context, string) (ImplResponse, error)
 	Deleteclass(context.Context, string) (ImplResponse, error)
 	EditClass(context.Context, RequestEditClass) (ImplResponse, error)
+	GetSettings(context.Context) (ImplResponse, error)
 	KickClass(context.Context, RequestKickClass) (ImplResponse, error)
 	MakeClass(context.Context, RequestMakeClass) (ImplResponse, error)
 	PayTransactions(context.Context, RequestPayTransactions) (ImplResponse, error)
@@ -182,6 +181,7 @@ type StaffApiServicer interface {
 	SearchAuctionsTeacher(context.Context) (ImplResponse, error)
 	SearchEvents(context.Context) (ImplResponse, error)
 	SearchTransactions(context.Context, string) (ImplResponse, error)
+	SetSettings(context.Context, Settings) (ImplResponse, error)
 }
 
 

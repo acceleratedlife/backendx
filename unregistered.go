@@ -32,6 +32,9 @@ func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register open
 			PasswordSha: EncodePassword(register.Password),
 			SchoolId:    pathId.schoolId,
 			Role:        role,
+			Settings: TeacherSettings{
+				CurrencyLock: false,
+			},
 		}
 		err = createTeacher(u.db, newUser)
 
