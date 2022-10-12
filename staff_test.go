@@ -836,3 +836,68 @@ func TestStudent2Student(t *testing.T) {
 	assert.Equal(t, 400, resp.StatusCode)
 
 }
+
+func TestCurrencyLock(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("payTransactions_student", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	teacher.Settings.CurrencyLock = true
+	err = userEdit(db, &clock, teacher, openapi.UsersUserBody{})
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+	body := openapi.RequestBuckConvert{
+		AccountFrom: CurrencyUBuck,
+		AccountTo:   teachers[0],
+		Amount:      100,
+	}
+
+	for _, student := range students {
+		userDetails, err := getUserInLocalStore(db, student)
+		require.Nil(t, err)
+		err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), "pre load")
+		require.Nil(t, err)
+		err = addBuck2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "pre load")
+		require.Nil(t, err)
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	teacher, err = getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+	require.True(t, teacher.Settings.CurrencyLock)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode)
+
+	teacher.Settings.CurrencyLock = false
+	err = userEdit(db, &clock, teacher, openapi.UsersUserBody{})
+	require.Nil(t, err)
+
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}

@@ -495,7 +495,7 @@ func TestBuckConvertNewCurrency(t *testing.T) {
 		balanceData := account.Get([]byte(KeyBalance))
 		var balance float32
 		_ = json.Unmarshal(balanceData, &balance)
-		require.Equal(t, float32(900), balance)
+		require.Equal(t, float32(900*.99), balance)
 		return nil
 	})
 
