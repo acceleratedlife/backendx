@@ -22,6 +22,12 @@ func (a *AllApiServiceImpl) Login(ctx context.Context, login openapi.RequestLogi
 	panic("implement me")
 }
 
+func (a AllApiServiceImpl) SearchMarketItems(ctx context.Context) (openapi.ImplResponse, error) {
+	//TODO implement me
+	//depricated
+	panic("implement me")
+}
+
 func (a *AllApiServiceImpl) AuthUser(ctx context.Context) (user openapi.ImplResponse, err error) {
 
 	userData := ctx.Value("user").(token.User)

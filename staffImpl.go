@@ -11,6 +11,170 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+type MarketItem struct {
+	Cost   int32  `json:"cost"`
+	Count  int32  `json:"count"`
+	Active bool   `json:"active,omitempty"`
+	Title  string `json:"title"`
+}
+
+type Buyer struct {
+	Id     string `json:"id"`
+	Active bool   `json:"active,omitempty"`
+}
+
+func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.ResponseMarketItem, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		teacher, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Email)
+		if err != nil {
+			return err
+		}
+
+		market := teacher.Bucket([]byte(KeyMarket))
+		if market == nil {
+			return fmt.Errorf("failed to find market for: %v", userDetails.LastName)
+		}
+
+		c := market.Cursor()
+		for k, v := c.Last(); k != nil; k, v = c.Prev() {
+			if v != nil {
+				continue
+			}
+
+			item, err := getMarketItemRx(tx, userDetails, string(k), market)
+			if err != nil {
+				return err
+			}
+
+			items = append(items, item)
+		}
+
+		return nil
+	})
+
+	return
+}
+
+func getMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemId string, market *bolt.Bucket) (item openapi.ResponseMarketItem, err error) {
+	var details MarketItem
+	dataBucket := market.Bucket([]byte(itemId))
+	if dataBucket == nil {
+		return item, fmt.Errorf("ERROR cannot get market data bucket")
+	}
+
+	marketData := dataBucket.Get([]byte(KeyMarketData))
+	err = json.Unmarshal(marketData, &details)
+	if err != nil {
+		return item, fmt.Errorf("ERROR cannot unmarshal market details")
+	}
+
+	item = openapi.ResponseMarketItem{
+		OwnerId: openapi.ResponseMemberClassOwner{
+			FirstName: userDetails.FirstName,
+			LastName:  userDetails.LastName,
+			Id:        userDetails.Email,
+		},
+		Count: details.Count,
+		Cost:  details.Cost,
+		Title: details.Title,
+	}
+
+	buyersBucket := market.Bucket([]byte(KeyBuyers))
+	if buyersBucket != nil {
+		bc := buyersBucket.Cursor()
+		for k, v := bc.First(); k != nil; k, v = bc.Next() {
+			if v == nil {
+				continue
+			}
+
+			var buyer Buyer
+			err = json.Unmarshal(v, &buyer)
+			if err != nil {
+				return item, fmt.Errorf("ERROR cannot unmarshal market details")
+			}
+
+			if !buyer.Active {
+				continue
+			}
+
+			student, err := getUserInLocalStoreTx(tx, buyer.Id)
+			if err != nil {
+				return item, fmt.Errorf("cannot find buyer details")
+			}
+
+			item.Buyers = append(item.Buyers, openapi.ResponseMemberClassOwner{
+				FirstName: student.FirstName,
+				LastName:  student.LastName,
+				Id:        student.Email,
+			})
+		}
+	}
+
+	return
+}
+
+func getMarketItem(db *bolt.DB, userDetails UserInfo, itemId string) (item openapi.ResponseMarketItem, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		teacher, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Email)
+		if err != nil {
+			return err
+		}
+
+		market := teacher.Bucket([]byte(KeyMarket))
+		if market == nil {
+			return fmt.Errorf("failed to find market for: %v", userDetails.LastName)
+		}
+
+		item, err = getMarketItemRx(tx, userDetails, itemId, market)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+}
+
+func makeMarketItem(db *bolt.DB, clock Clock, userDetails UserInfo, request openapi.RequestMakeMarketItem) (Id string, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		teacher, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Email)
+		if err != nil {
+			return err
+		}
+
+		market, err := teacher.CreateBucketIfNotExists([]byte(KeyMarket))
+		if err != nil {
+			return err
+		}
+
+		Id = clock.Now().Truncate(time.Millisecond).String()
+
+		item, err := market.CreateBucket([]byte(Id))
+		if err != nil {
+			return err
+		}
+
+		marshal, err := json.Marshal(MarketItem{
+			Cost:   request.Cost,
+			Count:  request.Count,
+			Active: true,
+			Title:  request.Title,
+		})
+		if err != nil {
+			return err
+		}
+
+		err = item.Put([]byte(KeyMarketData), marshal)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	return
+}
+
 func deleteStudent(db *bolt.DB, studentId string) (err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		return deleteStudentTx(tx, studentId)

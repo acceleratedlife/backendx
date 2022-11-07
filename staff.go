@@ -135,6 +135,12 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, Id string) (opena
 	return openapi.Response(200, nil), nil
 }
 
+func (a *StaffApiServiceImpl) DeleteMarketItem(ctx context.Context, Id string) (openapi.ImplResponse, error) {
+	//TODO implement me
+	//depricated
+	panic("implement me")
+}
+
 func (s *StaffApiServiceImpl) DeleteStudent(ctx context.Context, query string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
@@ -267,6 +273,29 @@ func (s *StaffApiServiceImpl) MakeClass(ctx context.Context, request openapi.Req
 	}
 
 	return openapi.Response(200, classes), nil
+}
+
+func (s *StaffApiServiceImpl) MakeMarketItem(ctx context.Context, request openapi.RequestMakeMarketItem) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	_, err = makeMarketItem(s.db, s.clock, userDetails, request)
+
+	if err != nil {
+		lgr.Printf("ERROR market item not created: %v", err)
+		return openapi.Response(400, err), nil
+	}
+
+	return openapi.Response(200, "{}"), nil
 }
 
 func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.RequestPayTransactions) (openapi.ImplResponse, error) {
@@ -474,6 +503,18 @@ func (s *StaffApiServiceImpl) SetSettings(ctx context.Context, body openapi.Sett
 
 	return openapi.Response(200, nil), nil
 
+}
+
+func (s *StaffApiServiceImpl) MarketItemResolve(ctx context.Context, body openapi.RequestMarketRefund) (openapi.ImplResponse, error) {
+	//TODO implement me
+	//depricated
+	panic("implement me")
+}
+
+func (s *StaffApiServiceImpl) MarketItemRefund(ctx context.Context, body openapi.RequestMarketRefund) (openapi.ImplResponse, error) {
+	//TODO implement me
+	//depricated
+	panic("implement me")
 }
 
 // NewStaffApiServiceImpl creates a default api service

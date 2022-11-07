@@ -49,6 +49,71 @@ type Transaction struct {
 	Ubuck          decimal.Decimal `json:"-"`
 }
 
+func buyMarketItem(db *bolt.DB, clock Clock, student UserInfo, teacher UserInfo, itemId string) (err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		teacherBucket, err := getTeacherBucketTx(tx, teacher.SchoolId, teacher.Email)
+		if err != nil {
+			return err
+		}
+
+		market := teacherBucket.Bucket([]byte(KeyMarket))
+		if market == nil {
+			return fmt.Errorf("failed to find market for: %v", teacher.LastName)
+		}
+
+		dataBucket := market.Bucket([]byte(itemId))
+		if dataBucket == nil {
+			return fmt.Errorf("ERROR cannot get market data bucket")
+		}
+		var details MarketItem
+		marketData := dataBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(marketData, &details)
+		if err != nil {
+			return fmt.Errorf("ERROR cannot unmarshal market details")
+		}
+
+		if details.Count == 0 {
+			return fmt.Errorf("ERROR there is nothing left to buy")
+		}
+
+		err = chargeStudentTx(tx, clock, student, decimal.NewFromInt32(details.Cost), teacher.Email, "Purchased "+details.Title, true)
+		if err != nil {
+			return err
+		}
+
+		details.Count = details.Count - 1
+		marshal, err := json.Marshal(details)
+		if err != nil {
+			return err
+		}
+
+		err = dataBucket.Put([]byte(KeyMarketData), marshal)
+		if err != nil {
+			return err
+		}
+
+		buyersBucket, err := market.CreateBucketIfNotExists([]byte(KeyBuyers))
+		if err != nil {
+			return err
+		}
+
+		marshal, err = json.Marshal(Buyer{Active: true, Id: student.Email})
+		if err != nil {
+			return err
+		}
+
+		err = buyersBucket.Put([]byte(RandomString(7)), marshal)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+
+}
+
 // adds ubucks from CB
 // creates order, transaction into student account, update account balance, update ubuck balance
 func addUbuck2Student(db *bolt.DB, clock Clock, userInfo UserInfo, amount decimal.Decimal, reference string) error {

@@ -1025,3 +1025,53 @@ func TestSearchCryptoTransactions(t *testing.T) {
 	require.Equal(t, float32(3), v[0].Amount)
 	require.Equal(t, float32(3), v[0].Balance)
 }
+
+func TestBuyMarketItem(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("BuyMarketItem", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	request := openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 3,
+		Cost:  5,
+	}
+
+	id, err := makeMarketItem(db, &clock, teacher, request)
+	require.Nil(t, err)
+
+	// initialize http client
+	client := &http.Client{}
+
+	body := openapi.RequestMarketRefund{
+		Id:        id,
+		UserId:    students[0],
+		TeacherId: teachers[0],
+	}
+
+	marshal, err := json.Marshal(body)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/marketItems/buy", bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+}
