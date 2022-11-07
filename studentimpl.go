@@ -809,7 +809,7 @@ func getEventIdRx(tx *bolt.Tx, key string) string {
 }
 
 func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change decimal.Decimal, err error) {
-	multiplier := decimal.NewFromFloat(.3)
+	multiplier := decimal.NewFromFloat(.4)
 	one := decimal.NewFromInt(1)
 	random := decimal.NewFromFloat32(rand.Float32())
 	count := len(students)
@@ -1074,6 +1074,7 @@ func chargeStudent(db *bolt.DB, clock Clock, userDetails UserInfo, amount decima
 	})
 }
 
+// sPurchase is asking if the student is making this transaction or the teacher
 func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount decimal.Decimal, currency string, reference string, sPurchase bool) (err error) {
 	if userDetails.Role != UserRoleStudent {
 		return fmt.Errorf("user is not a student")
