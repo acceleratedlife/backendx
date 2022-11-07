@@ -91,11 +91,11 @@ func (a *StudentApiServiceImpl) BuckConvert(ctx context.Context, body openapi.Re
 	}
 
 	if body.AccountFrom == body.AccountTo {
-		return openapi.Response(400, nil), fmt.Errorf("Can't convert same bucks")
+		return openapi.Response(400, nil), fmt.Errorf("can't convert same bucks")
 	}
 
 	if body.AccountFrom == KeyDebt {
-		return openapi.Response(400, nil), fmt.Errorf("Can't convert from debt account")
+		return openapi.Response(400, nil), fmt.Errorf("can't convert from debt account")
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
@@ -456,15 +456,15 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid
 	}
 
 	if auction.WinnerId.Id == userDetails.Name {
-		return message, fmt.Errorf("You are already winning this auction")
+		return message, fmt.Errorf("you are already winning this auction")
 	}
 
 	if clock.Now().After(auction.EndDate) {
-		return message, fmt.Errorf("Bid not accepted, auction expired")
+		return message, fmt.Errorf("bid not accepted, auction expired")
 	}
 
 	if bid < auction.Bid {
-		return message, fmt.Errorf("Failed to outbid, try refreshing")
+		return message, fmt.Errorf("failed to outbid, try refreshing")
 	}
 
 	if bid < auction.MaxBid {

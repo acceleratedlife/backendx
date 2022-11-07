@@ -302,15 +302,15 @@ func getTeacherClasses(db *bolt.DB, schoolId, teacherId string) (res []openapi.C
 func getTeacherBucketTx(tx *bolt.Tx, schoolId, teacherId string) (teacher *bolt.Bucket, err error) {
 	school, err := SchoolByIdTx(tx, schoolId)
 	if err != nil {
-		return teacher, fmt.Errorf("Cannot find school")
+		return teacher, fmt.Errorf("cannot find school")
 	}
 	teachers := school.Bucket([]byte(KeyTeachers))
 	if teachers == nil {
-		return teacher, fmt.Errorf("Cannot find teachers")
+		return teacher, fmt.Errorf("cannot find teachers")
 	}
 	teacher = teachers.Bucket([]byte(teacherId))
 	if teacher == nil {
-		return teacher, fmt.Errorf("Cannot find teacher")
+		return teacher, fmt.Errorf("cannot find teacher")
 	}
 	return
 }
@@ -416,6 +416,10 @@ func getSchoolBucketTx(tx *bolt.Tx, userDetails UserInfo) (school *bolt.Bucket, 
 func getTeacherAuctions(db *bolt.DB, userDetails UserInfo) (auctions []openapi.Auction, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
 		school, err := getSchoolBucketTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
 		auctionsBucket := school.Bucket([]byte(KeyAuctions))
 		auctions, err = getTeacherAuctionsRx(tx, auctionsBucket, userDetails)
 		if err != nil {
@@ -536,7 +540,7 @@ func CreateClass(db *bolt.DB, clock Clock, schoolId, teacherId, className string
 
 		classesBucket := teacher.Bucket([]byte(KeyClasses))
 		if classesBucket == nil {
-			return fmt.Errorf("Problem finding classesBucket")
+			return fmt.Errorf("problem finding classesBucket")
 		}
 
 		classId, err = addClassDetailsTx(classesBucket, clock, className, period, false)
@@ -564,16 +568,16 @@ func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMak
 	err = db.Update(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 		if err != nil {
-			return fmt.Errorf("Problem finding auctions bucket: %v", err)
+			return fmt.Errorf("problem finding auctions bucket: %v", err)
 		}
 		auctionsBucket := school.Bucket([]byte(KeyAuctions))
 		if auctionsBucket == nil {
-			return fmt.Errorf("Problem finding auctions bucket")
+			return fmt.Errorf("problem finding auctions bucket")
 		}
 
 		auctionId, err = addAuctionDetailsTx(auctionsBucket, request, isStaff)
 		if err != nil {
-			return fmt.Errorf("Problem adding auctions details: %v", err)
+			return fmt.Errorf("problem adding auctions details: %v", err)
 		}
 
 		return nil
@@ -665,7 +669,7 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 
 	accounts := CB.Bucket([]byte(KeyAccounts))
 	if accounts == nil {
-		return resp, fmt.Errorf("Cannot find buck accounts bucket")
+		return resp, fmt.Errorf("cannot find buck accounts bucket")
 	}
 
 	buck := accounts.Bucket([]byte(teacher.Name))
@@ -676,7 +680,7 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 
 	transactions := buck.Bucket([]byte(KeyTransactions))
 	if transactions == nil {
-		return resp, fmt.Errorf("Cannot find transactions bucket")
+		return resp, fmt.Errorf("cannot find transactions bucket")
 	}
 
 	c := transactions.Cursor()
@@ -823,10 +827,18 @@ func getEventsTeacher(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []op
 			var typeKey string
 			if trans.Source != "" { //bad event
 				student, err = getUserInLocalStoreTx(tx, trans.Source)
+				if err != nil {
+					return err
+				}
+
 				trans.AmountSource = trans.AmountSource.Neg()
 				typeKey = KeyNEvents
 			} else { //good event
 				student, err = getUserInLocalStoreTx(tx, trans.Destination)
+				if err != nil {
+					return err
+				}
+
 				typeKey = KeyPEvents
 			}
 
@@ -871,12 +883,12 @@ func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseRe
 
 	marshal, err := json.Marshal(userDetails)
 	if err != nil {
-		return resp, fmt.Errorf("Failed to Marshal userDetails")
+		return resp, fmt.Errorf("failed to Marshal userDetails")
 	}
 
 	err = users.Put([]byte(userDetails.Name), marshal)
 	if err != nil {
-		return resp, fmt.Errorf("Failed to Put studendDetails")
+		return resp, fmt.Errorf("failed to Put studendDetails")
 	}
 
 	return
