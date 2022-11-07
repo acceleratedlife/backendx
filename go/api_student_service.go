@@ -69,6 +69,20 @@ func (s *StudentApiService) CryptoConvert(ctx context.Context, requestCryptoConv
 	return Response(http.StatusNotImplemented, nil), errors.New("CryptoConvert method not implemented")
 }
 
+// MarketItemBuy - market purchase
+func (s *StudentApiService) MarketItemBuy(ctx context.Context, requestMarketRefund RequestMarketRefund) (ImplResponse, error) {
+	// TODO - update MarketItemBuy with the required logic for this service method.
+	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MarketItemBuy method not implemented")
+}
+
 // SearchAuctionsStudent - searches auctions
 func (s *StudentApiService) SearchAuctionsStudent(ctx context.Context) (ImplResponse, error) {
 	// TODO - update SearchAuctionsStudent with the required logic for this service method.

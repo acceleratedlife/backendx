@@ -972,6 +972,114 @@ paths:
       summary: change school settings
       tags:
       - Staff
+  /marketItems:
+    delete:
+      description: delete a marketItem if there is any unresolved buyers refund them.
+      operationId: deleteMarketItem
+      parameters:
+      - description: pass the _id to be deleted
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          description: successful deletion
+        "404":
+          description: Auction not found
+      summary: delete Market Item
+      tags:
+      - Staff
+    get:
+      description: if teacher find their items, if student check if they are in the
+        class and then display the items
+      operationId: searchMarketItems
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseMarketItem'
+                type: array
+          description: market items that match
+        "404":
+          description: No market items found
+      summary: all market items relitive to this user
+      tags:
+      - All
+    post:
+      description: Find the staff that wants to make an item and save it
+      operationId: makeMarketItem
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMakeMarketItem'
+      responses:
+        "200":
+          description: status code
+        "404":
+          description: transactions cannot be made with that data
+      summary: When a staff makes a market item
+      tags:
+      - Staff
+  /marketItems/buy:
+    put:
+      description: market purchase for one student
+      operationId: marketItemBuy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMarketRefund'
+      responses:
+        "200":
+          description: purchased market item
+        "400":
+          description: failed to purchase item
+      summary: market purchase
+      tags:
+      - Student
+  /marketItems/refund:
+    put:
+      description: refund market purchase for one student
+      operationId: marketItemRefund
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMarketRefund'
+      responses:
+        "200":
+          description: refunded and updated market item
+        "400":
+          description: failed to update settings
+      summary: refund market purchase
+      tags:
+      - Staff
+  /marketItems/resolve:
+    put:
+      description: marks the purchase as complete and it will no longer display. if
+        the market item count is zero and there are no resolved then mark item as
+        completed and no longer display.
+      operationId: marketItemResolve
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMarketRefund'
+      responses:
+        "200":
+          description: updated settings
+        "400":
+          description: failed to update settings
+      summary: resolve market item purchase
+      tags:
+      - Staff
   /transactions:
     get:
       description: By passing in the staffs _id you can find a transactions that they
@@ -2029,6 +2137,39 @@ components:
           example: 613eab19e58cc511801af657
           type: string
       type: object
+    ResponseMarketItem:
+      example:
+        cost: 3
+        buyers:
+        - firstName: Jay
+          lastName: Leno
+          _id: 613eab19e58cc511801af657
+        - firstName: Jay
+          lastName: Leno
+          _id: 613eab19e58cc511801af657
+        owner_id:
+          firstName: Jay
+          lastName: Leno
+          _id: 613eab19e58cc511801af657
+        count: 4
+        title: candy
+      properties:
+        owner_id:
+          $ref: '#/components/schemas/ResponseMemberClassOwner'
+        count:
+          example: 4
+          type: integer
+        cost:
+          example: 3
+          type: integer
+        title:
+          example: candy
+          type: string
+        buyers:
+          items:
+            $ref: '#/components/schemas/ResponseMemberClassOwner'
+          type: array
+      type: object
     ResponseMemberClass:
       example:
         period: 4
@@ -2294,6 +2435,38 @@ components:
         period:
           example: 4
           type: integer
+      type: object
+    RequestMakeMarketItem:
+      example:
+        cost: 4
+        count: 3
+        title: Math
+      properties:
+        title:
+          example: Math
+          type: string
+        count:
+          example: 3
+          type: integer
+        cost:
+          example: 4
+          type: integer
+      type: object
+    RequestMarketRefund:
+      example:
+        user_id: ss@ss.com
+        teacher_id: ss@ss.com
+        _id: dlksdlksd4
+      properties:
+        _id:
+          example: dlksdlksd4
+          type: string
+        user_id:
+          example: ss@ss.com
+          type: string
+        teacher_id:
+          example: ss@ss.com
+          type: string
       type: object
     RequestLogin:
       example:

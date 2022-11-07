@@ -128,6 +128,12 @@ func (c *AllApiController) Routes() Routes {
 			c.SearchClasses,
 		},
 		{
+			"SearchMarketItems",
+			strings.ToUpper("Get"),
+			"/api/marketItems",
+			c.SearchMarketItems,
+		},
+		{
 			"SearchSchool",
 			strings.ToUpper("Get"),
 			"/api/schools/school",
@@ -366,6 +372,19 @@ func (c *AllApiController) SearchClass(w http.ResponseWriter, r *http.Request) {
 // SearchClasses - searches for users classes
 func (c *AllApiController) SearchClasses(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.SearchClasses(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SearchMarketItems - all market items relitive to this user
+func (c *AllApiController) SearchMarketItems(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.SearchMarketItems(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

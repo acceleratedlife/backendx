@@ -69,6 +69,20 @@ func (s *StaffApiService) AuctionsAll(ctx context.Context) (ImplResponse, error)
 	return Response(http.StatusNotImplemented, nil), errors.New("AuctionsAll method not implemented")
 }
 
+// DeleteMarketItem - delete Market Item
+func (s *StaffApiService) DeleteMarketItem(ctx context.Context, id string) (ImplResponse, error) {
+	// TODO - update DeleteMarketItem with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("DeleteMarketItem method not implemented")
+}
+
 // DeleteStudent - delete student
 func (s *StaffApiService) DeleteStudent(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update DeleteStudent with the required logic for this service method.
@@ -151,6 +165,48 @@ func (s *StaffApiService) MakeClass(ctx context.Context, requestMakeClass Reques
 	//return Response(404, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("MakeClass method not implemented")
+}
+
+// MakeMarketItem - When a staff makes a market item
+func (s *StaffApiService) MakeMarketItem(ctx context.Context, requestMakeMarketItem RequestMakeMarketItem) (ImplResponse, error) {
+	// TODO - update MakeMarketItem with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MakeMarketItem method not implemented")
+}
+
+// MarketItemRefund - refund market purchase
+func (s *StaffApiService) MarketItemRefund(ctx context.Context, requestMarketRefund RequestMarketRefund) (ImplResponse, error) {
+	// TODO - update MarketItemRefund with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MarketItemRefund method not implemented")
+}
+
+// MarketItemResolve - resolve market item purchase
+func (s *StaffApiService) MarketItemResolve(ctx context.Context, requestMarketRefund RequestMarketRefund) (ImplResponse, error) {
+	// TODO - update MarketItemResolve with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MarketItemResolve method not implemented")
 }
 
 // PayTransactions - When a teacher or admin is paying/debting an entire class
