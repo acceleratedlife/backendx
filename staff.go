@@ -8,6 +8,7 @@ import (
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -545,9 +546,41 @@ func (s *StaffApiServiceImpl) MarketItemResolve(ctx context.Context, body openap
 }
 
 func (s *StaffApiServiceImpl) MarketItemRefund(ctx context.Context, body openapi.RequestMarketRefund) (openapi.ImplResponse, error) {
-	//TODO implement me
-	//depricated
-	panic("implement me")
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(400, nil), nil
+	}
+
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	teacher, err := getUserInLocalStore(s.db, body.TeacherId)
+	if err != nil {
+		return openapi.Response(400, nil), nil
+	}
+
+	err = s.db.Update(func(tx *bolt.Tx) error {
+		itemBucket, err := getMarketItemRx(tx, teacher, body.Id)
+		if err != nil {
+			return err
+		}
+
+		err = marketItemRefundTx(tx, s.clock, itemBucket, body.UserId, teacher.Email)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR: %v", err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, nil), nil
 }
 
 // NewStaffApiServiceImpl creates a default api service
@@ -621,6 +654,59 @@ func marketItemResolveTx(itemBucket *bolt.Bucket, studentPurchaseId string) (err
 	err = buyersBucket.Put([]byte(studentPurchaseId), marshal)
 	if err != nil {
 		return fmt.Errorf("ERROR cannot put buyers data")
+	}
+
+	return
+}
+
+func marketItemRefundTx(tx *bolt.Tx, clock Clock, itemBucket *bolt.Bucket, studentPurchaseId, teacherId string) (err error) {
+	itemDetails := itemBucket.Get([]byte(KeyMarketData))
+	var marketItem MarketItem
+	err = json.Unmarshal(itemDetails, &marketItem)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot unmarshal item details")
+	}
+
+	marketItem.Count = marketItem.Count + 1
+	marshal, err := json.Marshal(marketItem)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot marshal item details")
+	}
+
+	err = itemBucket.Put([]byte(KeyMarketData), marshal)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot put item details")
+	}
+
+	buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
+	if buyersBucket == nil {
+		return fmt.Errorf("cannot find buyers bucket")
+	}
+
+	buyersData := buyersBucket.Get([]byte(studentPurchaseId))
+	if buyersData == nil {
+		return fmt.Errorf("cannot find buyers data")
+	}
+
+	var buyersInfo Buyer
+	err = json.Unmarshal(buyersData, &buyersInfo)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot unmarshal buyers data")
+	}
+
+	student, err := getUserInLocalStoreTx(tx, buyersInfo.Id)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot find student")
+	}
+
+	err = pay2StudentTx(tx, clock, student, decimal.NewFromInt32(marketItem.Cost), teacherId, "refund market item")
+	if err != nil {
+		return fmt.Errorf("ERROR cannot refund student")
+	}
+
+	err = buyersBucket.Delete([]byte(studentPurchaseId))
+	if err != nil {
+		return fmt.Errorf("ERROR cannot delete buyers data")
 	}
 
 	return

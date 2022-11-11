@@ -1206,6 +1206,36 @@ func getStudentUbuckRx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.Response
 	return
 }
 
+func getStudentbuckRx(tx *bolt.Tx, userDetails UserInfo, teacherId string) (resp openapi.ResponseSearchStudentUbuck, err error) {
+	student, err := getStudentBucketRx(tx, userDetails.Name)
+	if student == nil {
+		return resp, err
+	}
+
+	accounts := student.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
+		return resp, fmt.Errorf("cannot find Buck Accounts")
+	}
+
+	buck := accounts.Bucket([]byte(teacherId))
+	if buck == nil {
+		return resp, fmt.Errorf("cannot find ubuck")
+	}
+
+	var balance decimal.Decimal
+	balanceB := buck.Get([]byte(KeyBalance))
+	err = balance.UnmarshalText(balanceB)
+	if err != nil {
+		return resp, fmt.Errorf("cannot extract balance for the account %s: %v", userDetails.Name, err)
+	}
+	balanceF, _ := balance.Float64()
+	resp = openapi.ResponseSearchStudentUbuck{
+		Value: float32(balanceF),
+	}
+
+	return
+}
+
 func getStudentAuctions(db *bolt.DB, userDetails UserInfo) (auctions []openapi.Auction, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
 		auctions, err = getStudentAuctionsRx(tx, userDetails)
