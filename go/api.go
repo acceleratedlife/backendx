@@ -139,7 +139,7 @@ type AllApiServicer interface {
 	SearchBucks(context.Context, string) (ImplResponse, error)
 	SearchClass(context.Context, string) (ImplResponse, error)
 	SearchClasses(context.Context) (ImplResponse, error)
-	SearchMarketItems(context.Context) (ImplResponse, error)
+	SearchMarketItems(context.Context, string) (ImplResponse, error)
 	SearchSchool(context.Context, string) (ImplResponse, error)
 	SearchStudent(context.Context, string) (ImplResponse, error)
 	SearchStudentBucks(context.Context) (ImplResponse, error)

@@ -37,7 +37,7 @@ func (a *StudentApiServiceImpl) MarketItemBuy(ctx context.Context, body openapi.
 		return openapi.Response(400, nil), err
 	}
 
-	err = buyMarketItem(a.db, a.clock, userDetails, teacher, body.Id)
+	_, err = buyMarketItem(a.db, a.clock, userDetails, teacher, body.Id)
 	if err != nil {
 		return openapi.Response(400, nil), err
 	}

@@ -22,10 +22,27 @@ func (a *AllApiServiceImpl) Login(ctx context.Context, login openapi.RequestLogi
 	panic("implement me")
 }
 
-func (a AllApiServiceImpl) SearchMarketItems(ctx context.Context) (openapi.ImplResponse, error) {
-	//TODO implement me
-	//depricated
-	panic("implement me")
+func (a AllApiServiceImpl) SearchMarketItems(ctx context.Context, teacherId string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	_, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	teacherDetails, err := getUserInLocalStore(a.db, teacherId)
+	if err != nil {
+		return openapi.Response(400, ""), err
+	}
+
+	items, err := getMarketItems(a.db, teacherDetails)
+	if err != nil {
+		return openapi.Response(400, ""), err
+	}
+
+	return openapi.Response(200, items), nil
 }
 
 func (a *AllApiServiceImpl) AuthUser(ctx context.Context) (user openapi.ImplResponse, err error) {

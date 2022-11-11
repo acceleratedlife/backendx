@@ -8,6 +8,7 @@ import (
 	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
+	bolt "go.etcd.io/bbolt"
 )
 
 func TestAuctionsAll(t *testing.T) {
@@ -194,9 +195,17 @@ func TestMakeMarketItemImpl(t *testing.T) {
 	require.Equal(t, 1, len(items))
 	require.Equal(t, "Candy", items[0].Title)
 
-	item, err := getMarketItem(db, teacher, id)
-	require.Nil(t, err)
-	require.Equal(t, "Candy", item.Title)
+	_ = db.View(func(tx *bolt.Tx) error {
+		itemBucket, err := getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, teacher, itemBucket)
+		require.Nil(t, err)
+
+		require.Equal(t, "Candy", item.Title)
+
+		return nil
+	})
 
 }
 
@@ -245,22 +254,30 @@ func TestMakeMarketItemImplBuyers(t *testing.T) {
 	id, err := makeMarketItem(db, &clock, teacher, body)
 	require.Nil(t, err)
 
-	err = buyMarketItem(db, &clock, student0, teacher, id)
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
 	require.Nil(t, err)
 
-	err = buyMarketItem(db, &clock, student1, teacher, id)
+	_, err = buyMarketItem(db, &clock, student1, teacher, id)
 	require.Nil(t, err)
 
-	err = buyMarketItem(db, &clock, student2, teacher, id)
+	_, err = buyMarketItem(db, &clock, student2, teacher, id)
 	require.Nil(t, err)
 
-	err = buyMarketItem(db, &clock, student2, teacher, id)
+	_, err = buyMarketItem(db, &clock, student2, teacher, id)
 	require.NotNil(t, err)
 	require.Equal(t, "ERROR there is nothing left to buy", err.Error())
 
-	item, err := getMarketItem(db, teacher, id)
-	require.Nil(t, err)
-	require.Equal(t, 3, len(item.Buyers))
+	_ = db.View(func(tx *bolt.Tx) error {
+		itemBucket, err := getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, teacher, itemBucket)
+		require.Nil(t, err)
+
+		require.Equal(t, 3, len(item.Buyers))
+
+		return nil
+	})
 
 }
 
@@ -291,18 +308,77 @@ func TestMakeMarketItemImplBuyers1multi(t *testing.T) {
 	id, err := makeMarketItem(db, &clock, teacher, body)
 	require.Nil(t, err)
 
-	err = buyMarketItem(db, &clock, student0, teacher, id)
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
 	require.Nil(t, err)
 
-	err = buyMarketItem(db, &clock, student0, teacher, id)
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
 	require.Nil(t, err)
 
-	err = buyMarketItem(db, &clock, student0, teacher, id)
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
 	require.NotNil(t, err)
 	require.Equal(t, "Insufficient funds", err.Error())
 
-	item, err := getMarketItem(db, teacher, id)
+	_ = db.View(func(tx *bolt.Tx) error {
+		itemBucket, err := getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, teacher, itemBucket)
+		require.Nil(t, err)
+
+		require.Equal(t, 2, len(item.Buyers))
+
+		return nil
+	})
+
+}
+
+func TestMarketResolveTx(t *testing.T) {
+
+	lgr.Printf("INFO TestMarketResolveTx")
+	t.Log("INFO TestMarketResolveTx")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("marketResolveTx")
+	defer dbTearDown()
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 4)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
 	require.Nil(t, err)
-	require.Equal(t, 2, len(item.Buyers))
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student0, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 3,
+		Cost:  4,
+	}
+
+	id, err := makeMarketItem(db, &clock, teacher, body)
+	require.Nil(t, err)
+
+	purchaseId, err := buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_ = db.Update(func(tx *bolt.Tx) error {
+		itemBucket, err := getMarketItemRx(tx, teacher, id)
+		if err != nil {
+			return err
+		}
+		err = marketItemResolveTx(itemBucket, purchaseId)
+		require.Nil(t, err)
+
+		itemBucket, err = getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, teacher, itemBucket)
+		require.Nil(t, err)
+
+		require.Equal(t, 0, len(item.Buyers))
+
+		return nil
+	})
 
 }

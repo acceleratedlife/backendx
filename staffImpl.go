@@ -41,7 +41,12 @@ func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.Response
 				continue
 			}
 
-			item, err := getMarketItemRx(tx, userDetails, string(k), market)
+			itemBucket := market.Bucket(k)
+			if itemBucket == nil {
+				return fmt.Errorf("ERROR cannot get market data bucket")
+			}
+
+			item, err := packageMarketItemRx(tx, userDetails, itemBucket)
 			if err != nil {
 				return err
 			}
@@ -55,15 +60,11 @@ func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.Response
 	return
 }
 
-func getMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemId string, market *bolt.Bucket) (item openapi.ResponseMarketItem, err error) {
+func packageMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemBucket *bolt.Bucket) (item openapi.ResponseMarketItem, err error) {
 	var details MarketItem
-	dataBucket := market.Bucket([]byte(itemId))
-	if dataBucket == nil {
-		return item, fmt.Errorf("ERROR cannot get market data bucket")
-	}
 
-	marketData := dataBucket.Get([]byte(KeyMarketData))
-	err = json.Unmarshal(marketData, &details)
+	itemData := itemBucket.Get([]byte(KeyMarketData))
+	err = json.Unmarshal(itemData, &details)
 	if err != nil {
 		return item, fmt.Errorf("ERROR cannot unmarshal market details")
 	}
@@ -79,7 +80,7 @@ func getMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemId string, market *b
 		Title: details.Title,
 	}
 
-	buyersBucket := market.Bucket([]byte(KeyBuyers))
+	buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
 	if buyersBucket != nil {
 		bc := buyersBucket.Cursor()
 		for k, v := bc.First(); k != nil; k, v = bc.Next() {
@@ -105,7 +106,7 @@ func getMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemId string, market *b
 			item.Buyers = append(item.Buyers, openapi.ResponseMemberClassOwner{
 				FirstName: student.FirstName,
 				LastName:  student.LastName,
-				Id:        student.Email,
+				Id:        string(k),
 			})
 		}
 	}
@@ -113,19 +114,30 @@ func getMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemId string, market *b
 	return
 }
 
-func getMarketItem(db *bolt.DB, userDetails UserInfo, itemId string) (item openapi.ResponseMarketItem, err error) {
+func getMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemId string) (item *bolt.Bucket, err error) {
+	teacher, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	market := teacher.Bucket([]byte(KeyMarket))
+	if market == nil {
+		return nil, fmt.Errorf("failed to find market for: %v", userDetails.LastName)
+	}
+
+	// getMarketItemRx(tx, userDetails, itemId, market)
+
+	item = market.Bucket([]byte(itemId))
+	if err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+func getMarketItem(db *bolt.DB, userDetails UserInfo, itemId string) (item *bolt.Bucket, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		teacher, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Email)
-		if err != nil {
-			return err
-		}
-
-		market := teacher.Bucket([]byte(KeyMarket))
-		if market == nil {
-			return fmt.Errorf("failed to find market for: %v", userDetails.LastName)
-		}
-
-		item, err = getMarketItemRx(tx, userDetails, itemId, market)
+		item, err = getMarketItemRx(tx, userDetails, itemId)
 		if err != nil {
 			return err
 		}

@@ -972,3 +972,40 @@ func TestDeleteAuction(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode)
 
 }
+
+func TestSearchMarketItems(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("searchMarketItems", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	SetTestLoginUser(students[0])
+
+	userDetails, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+	makeMarketItem(db, &clock, userDetails, openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 4,
+		Cost:  56,
+	})
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/marketItems?_id="+teachers[0],
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data []openapi.ResponseMarketItem
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, 1, len(data))
+	require.Equal(t, "Candy", data[0].Title)
+}

@@ -384,7 +384,9 @@ func (c *AllApiController) SearchClasses(w http.ResponseWriter, r *http.Request)
 
 // SearchMarketItems - all market items relitive to this user
 func (c *AllApiController) SearchMarketItems(w http.ResponseWriter, r *http.Request) {
-	result, err := c.service.SearchMarketItems(r.Context())
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.SearchMarketItems(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

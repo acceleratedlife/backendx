@@ -49,7 +49,7 @@ type Transaction struct {
 	Ubuck          decimal.Decimal `json:"-"`
 }
 
-func buyMarketItem(db *bolt.DB, clock Clock, student UserInfo, teacher UserInfo, itemId string) (err error) {
+func buyMarketItem(db *bolt.DB, clock Clock, student UserInfo, teacher UserInfo, itemId string) (purchaseId string, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		teacherBucket, err := getTeacherBucketTx(tx, teacher.SchoolId, teacher.Email)
 		if err != nil {
@@ -92,7 +92,7 @@ func buyMarketItem(db *bolt.DB, clock Clock, student UserInfo, teacher UserInfo,
 			return err
 		}
 
-		buyersBucket, err := market.CreateBucketIfNotExists([]byte(KeyBuyers))
+		buyersBucket, err := dataBucket.CreateBucketIfNotExists([]byte(KeyBuyers))
 		if err != nil {
 			return err
 		}
@@ -102,7 +102,9 @@ func buyMarketItem(db *bolt.DB, clock Clock, student UserInfo, teacher UserInfo,
 			return err
 		}
 
-		err = buyersBucket.Put([]byte(RandomString(7)), marshal)
+		purchaseId = RandomString(7)
+
+		err = buyersBucket.Put([]byte(purchaseId), marshal)
 		if err != nil {
 			return err
 		}

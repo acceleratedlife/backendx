@@ -994,9 +994,17 @@ paths:
       tags:
       - Staff
     get:
-      description: if teacher find their items, if student check if they are in the
-        class and then display the items
+      description: find market items of query id
       operationId: searchMarketItems
+      parameters:
+      - description: pass the staff_id to be searched
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
       responses:
         "200":
           content:

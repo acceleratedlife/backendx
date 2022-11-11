@@ -213,7 +213,7 @@ func (s *AllApiService) SearchClasses(ctx context.Context) (ImplResponse, error)
 }
 
 // SearchMarketItems - all market items relitive to this user
-func (s *AllApiService) SearchMarketItems(ctx context.Context) (ImplResponse, error) {
+func (s *AllApiService) SearchMarketItems(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchMarketItems with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
