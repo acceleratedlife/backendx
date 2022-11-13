@@ -199,7 +199,7 @@ func TestMakeMarketItemImpl(t *testing.T) {
 		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
 
-		item, err := packageMarketItemRx(tx, teacher, itemBucket)
+		item, err := packageMarketItemRx(tx, teacher, itemBucket, id)
 		require.Nil(t, err)
 
 		require.Equal(t, "Candy", item.Title)
@@ -271,7 +271,7 @@ func TestMakeMarketItemImplBuyers(t *testing.T) {
 		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
 
-		item, err := packageMarketItemRx(tx, teacher, itemBucket)
+		item, err := packageMarketItemRx(tx, teacher, itemBucket, id)
 		require.Nil(t, err)
 
 		require.Equal(t, 3, len(item.Buyers))
@@ -322,7 +322,7 @@ func TestMakeMarketItemImplBuyers1multi(t *testing.T) {
 		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
 
-		item, err := packageMarketItemRx(tx, teacher, itemBucket)
+		item, err := packageMarketItemRx(tx, teacher, itemBucket, id)
 		require.Nil(t, err)
 
 		require.Equal(t, 2, len(item.Buyers))
@@ -373,7 +373,7 @@ func TestMarketResolveTx(t *testing.T) {
 		_, itemBucket, err = getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
 
-		item, err := packageMarketItemRx(tx, teacher, itemBucket)
+		item, err := packageMarketItemRx(tx, teacher, itemBucket, id)
 		require.Nil(t, err)
 
 		require.Equal(t, 0, len(item.Buyers))
@@ -431,7 +431,7 @@ func TestMarketItemRefundTx(t *testing.T) {
 		_, itemBucket, err = getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
 
-		item, err := packageMarketItemRx(tx, teacher, itemBucket)
+		item, err := packageMarketItemRx(tx, teacher, itemBucket, id)
 		require.Nil(t, err)
 
 		require.Equal(t, 0, len(item.Buyers))

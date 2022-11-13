@@ -20,6 +20,8 @@ type ResponseMarketItem struct {
 
 	Title string `json:"title,omitempty"`
 
+	Id string `json:"_id,omitempty"`
+
 	Buyers []ResponseMemberClassOwner `json:"buyers,omitempty"`
 }
 

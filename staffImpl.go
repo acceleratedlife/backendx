@@ -47,7 +47,7 @@ func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.Response
 				return fmt.Errorf("ERROR cannot get market data bucket")
 			}
 
-			item, err := packageMarketItemRx(tx, userDetails, itemBucket)
+			item, err := packageMarketItemRx(tx, userDetails, itemBucket, string(k))
 			if err != nil {
 				return err
 			}
@@ -61,7 +61,7 @@ func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.Response
 	return
 }
 
-func packageMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemBucket *bolt.Bucket) (item openapi.ResponseMarketItem, err error) {
+func packageMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemBucket *bolt.Bucket, itemId string) (item openapi.ResponseMarketItem, err error) {
 	var details MarketItem
 
 	itemData := itemBucket.Get([]byte(KeyMarketData))
@@ -79,6 +79,7 @@ func packageMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemBucket *bolt.Buc
 		Count: details.Count,
 		Cost:  details.Cost,
 		Title: details.Title,
+		Id:    itemId,
 	}
 
 	buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
@@ -1177,32 +1178,31 @@ func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt
 	}
 
 	buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
-	if buyersBucket == nil {
-		return fmt.Errorf("cannot find buyers bucket")
-	}
+	if buyersBucket != nil {
 
-	c := buyersBucket.Cursor()
-	for k, v := c.First(); k != nil; k, v = c.Next() {
-		var buyersInfo Buyer
-		err = json.Unmarshal(v, &buyersInfo)
-		if err != nil {
-			return err
+		c := buyersBucket.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var buyersInfo Buyer
+			err = json.Unmarshal(v, &buyersInfo)
+			if err != nil {
+				return err
+			}
+
+			if !buyersInfo.Active {
+				continue
+			}
+
+			student, err := getUserInLocalStoreTx(tx, buyersInfo.Id)
+			if err != nil {
+				return err
+			}
+
+			err = pay2StudentTx(tx, clock, student, decimal.NewFromInt32(marketItem.Cost), teacherId, "refund market item")
+			if err != nil {
+				return err
+			}
+
 		}
-
-		if !buyersInfo.Active {
-			continue
-		}
-
-		student, err := getUserInLocalStoreTx(tx, buyersInfo.Id)
-		if err != nil {
-			return err
-		}
-
-		err = pay2StudentTx(tx, clock, student, decimal.NewFromInt32(marketItem.Cost), teacherId, "refund market item")
-		if err != nil {
-			return err
-		}
-
 	}
 
 	err = marketBucket.DeleteBucket([]byte(marketItemId))

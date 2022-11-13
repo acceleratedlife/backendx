@@ -39,6 +39,7 @@ type AllApiRouter interface {
 	SearchStudent(http.ResponseWriter, *http.Request)
 	SearchStudentBucks(http.ResponseWriter, *http.Request)
 	SearchStudents(http.ResponseWriter, *http.Request)
+	SearchTeachers(http.ResponseWriter, *http.Request)
 	UserEdit(http.ResponseWriter, *http.Request)
 }
 // AllSchoolApiRouter defines the required methods for binding the api requests to a responses for the AllSchoolApi
@@ -144,6 +145,7 @@ type AllApiServicer interface {
 	SearchStudent(context.Context, string) (ImplResponse, error)
 	SearchStudentBucks(context.Context) (ImplResponse, error)
 	SearchStudents(context.Context) (ImplResponse, error)
+	SearchTeachers(context.Context) (ImplResponse, error)
 	UserEdit(context.Context, UsersUserBody) (ImplResponse, error)
 }
 

@@ -22,6 +22,24 @@ func (a *AllApiServiceImpl) Login(ctx context.Context, login openapi.RequestLogi
 	panic("implement me")
 }
 
+func (a AllApiServiceImpl) SearchTeachers(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	teachers, err := getTeachers(a.db, userDetails)
+	if err != nil {
+		return openapi.Response(400, ""), err
+	}
+
+	return openapi.Response(200, teachers), nil
+}
+
 func (a AllApiServiceImpl) SearchMarketItems(ctx context.Context, teacherId string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	_, err := getUserInLocalStore(a.db, userData.Name)

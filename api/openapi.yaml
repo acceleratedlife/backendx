@@ -989,7 +989,7 @@ paths:
         "200":
           description: successful deletion
         "404":
-          description: Auction not found
+          description: Market item not found
       summary: delete Market Item
       tags:
       - Staff
@@ -1088,6 +1088,24 @@ paths:
       summary: resolve market item purchase
       tags:
       - Staff
+  /teachers:
+    get:
+      description: find the teachers
+      operationId: searchTeachers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseTeachers'
+                type: array
+          description: teachers of a school
+        "404":
+          description: No transaction found
+      summary: all the teachers that are at the same school of the user
+      tags:
+      - All
   /transactions:
     get:
       description: By passing in the staffs _id you can find a transactions that they
@@ -2160,6 +2178,7 @@ components:
           lastName: Leno
           _id: 613eab19e58cc511801af657
         count: 4
+        _id: dkdk3
         title: candy
       properties:
         owner_id:
@@ -2172,6 +2191,9 @@ components:
           type: integer
         title:
           example: candy
+          type: string
+        _id:
+          example: dkdk3
           type: string
         buyers:
           items:
@@ -2273,6 +2295,18 @@ components:
           example: 123.45
           format: float
           type: number
+      type: object
+    ResponseTeachers:
+      example:
+        name: Jay Leno
+        _id: sdk3
+      properties:
+        _id:
+          example: sdk3
+          type: string
+        name:
+          example: Jay Leno
+          type: string
       type: object
     ResponseTransactions:
       example:

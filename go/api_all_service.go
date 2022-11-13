@@ -282,6 +282,20 @@ func (s *AllApiService) SearchStudents(ctx context.Context) (ImplResponse, error
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchStudents method not implemented")
 }
 
+// SearchTeachers - all the teachers that are at the same school of the user
+func (s *AllApiService) SearchTeachers(ctx context.Context) (ImplResponse, error) {
+	// TODO - update SearchTeachers with the required logic for this service method.
+	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []ResponseTeachers{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseTeachers{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("SearchTeachers method not implemented")
+}
+
 // UserEdit - edit a user
 func (s *AllApiService) UserEdit(ctx context.Context, usersUserBody UsersUserBody) (ImplResponse, error) {
 	// TODO - update UserEdit with the required logic for this service method.

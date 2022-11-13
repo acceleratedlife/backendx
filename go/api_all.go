@@ -158,6 +158,12 @@ func (c *AllApiController) Routes() Routes {
 			c.SearchStudents,
 		},
 		{
+			"SearchTeachers",
+			strings.ToUpper("Get"),
+			"/api/teachers",
+			c.SearchTeachers,
+		},
+		{
 			"UserEdit",
 			strings.ToUpper("Put"),
 			"/api/users/user",
@@ -443,6 +449,19 @@ func (c *AllApiController) SearchStudentBucks(w http.ResponseWriter, r *http.Req
 // SearchStudents - return all students from a school
 func (c *AllApiController) SearchStudents(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.SearchStudents(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SearchTeachers - all the teachers that are at the same school of the user
+func (c *AllApiController) SearchTeachers(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.SearchTeachers(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
