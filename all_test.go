@@ -991,10 +991,12 @@ func TestSearchMarketItems(t *testing.T) {
 	})
 
 	client := &http.Client{}
+	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/marketItems")
+	q := u.Query()
+	q.Set("_id", teachers[0])
+	u.RawQuery = q.Encode()
 
-	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/marketItems?_id="+teachers[0],
-		nil)
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 
 	resp, err := client.Do(req)
 	defer resp.Body.Close()

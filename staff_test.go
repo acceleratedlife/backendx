@@ -981,9 +981,9 @@ func TestMarketItemResolve(t *testing.T) {
 
 }
 
-func TestMarketItemRefund(t *testing.T) {
+func TestMarketItemDelete(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("marketItemRefund", 8090, "")
+	db, tearDown := FullStartTestServer("marketItemDelete", 8090, "")
 	defer tearDown()
 
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
@@ -1008,21 +1008,17 @@ func TestMarketItemRefund(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	purchaseId, err := buyMarketItem(db, &clock, student, teacher, itemId)
+	_, err = buyMarketItem(db, &clock, student, teacher, itemId)
 	require.Nil(t, err)
 
-	request := openapi.RequestMarketRefund{
-		Id:        itemId,
-		UserId:    purchaseId,
-		TeacherId: teacher.Email,
-	}
-
-	marshal, err := json.Marshal(request)
+	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/marketItems")
 	require.Nil(t, err)
 
-	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/marketItems/refund",
-		bytes.NewBuffer(marshal))
+	q := u.Query()
+	q.Set("_id", itemId)
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest(http.MethodDelete, u.String(), nil)
 
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
