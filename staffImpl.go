@@ -25,6 +25,7 @@ type Buyer struct {
 }
 
 func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.ResponseMarketItem, err error) {
+	items = make([]openapi.ResponseMarketItem, 0) //I usually would not do this but I need the return to be non null
 	err = db.View(func(tx *bolt.Tx) error {
 		teacher, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Email)
 		if err != nil {
@@ -37,7 +38,7 @@ func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.Response
 		}
 
 		c := market.Cursor()
-		for k, v := c.Last(); k != nil; k, v = c.Prev() {
+		for k, v := c.First(); k != nil; k, v = c.Next() {
 			if v != nil {
 				continue
 			}
@@ -1196,6 +1197,8 @@ func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt
 			if err != nil {
 				return err
 			}
+
+			// clock = clock.Now().Add(time.Millisecond * 1)
 
 			err = pay2StudentTx(tx, clock, student, decimal.NewFromInt32(marketItem.Cost), teacherId, "refund market item")
 			if err != nil {

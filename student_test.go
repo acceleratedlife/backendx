@@ -1075,3 +1075,41 @@ func TestBuyMarketItem(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
 }
+
+func TestSearchBuck(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("SearchBuck", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/bucks/buck")
+	q := u.Query()
+	q.Set("_id", teachers[0])
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	require.Nil(t, err)
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v openapi.ResponseSearchStudentUbuck
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, float32(10000), v.Value)
+}

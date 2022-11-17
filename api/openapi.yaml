@@ -584,7 +584,7 @@ paths:
       - SysAdmin
     get:
       description: by passing in a buck ID that buck is returned
-      operationId: searchBucks
+      operationId: searchBuck
       parameters:
       - description: pass the id to be searched
         explode: true
@@ -599,13 +599,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Buck'
+                $ref: '#/components/schemas/ResponseSearchStudentUbuck'
           description: buck matching criteria
         "404":
           description: No buck matching that _id
-      summary: searches bucks
+      summary: returns how much the student holds of this buck
       tags:
-      - All
+      - Student
     post:
       description: create a buck
       operationId: createBuck

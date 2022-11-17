@@ -18,6 +18,30 @@ type StudentApiServiceImpl struct {
 	clock Clock
 }
 
+func (a *StudentApiServiceImpl) SearchBuck(ctx context.Context, teacherId string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	resp, err := getStudentBuck(a.db, userDetails, teacherId)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, resp), nil
+
+}
+
 func (a *StudentApiServiceImpl) MarketItemBuy(ctx context.Context, body openapi.RequestMarketRefund) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)

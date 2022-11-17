@@ -244,11 +244,6 @@ func (a AllApiServiceImpl) SearchAccount(ctx context.Context, s string) (openapi
 	panic("implement me")
 }
 
-func (a AllApiServiceImpl) SearchBucks(ctx context.Context, s string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (a *AllApiServiceImpl) SearchClass(ctx context.Context, Id string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)

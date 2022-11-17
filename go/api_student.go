@@ -80,6 +80,12 @@ func (c *StudentApiController) Routes() Routes {
 			c.SearchAuctionsStudent,
 		},
 		{
+			"SearchBuck",
+			strings.ToUpper("Get"),
+			"/api/bucks/buck",
+			c.SearchBuck,
+		},
+		{
 			"SearchBuckTransactions",
 			strings.ToUpper("Get"),
 			"/api/transactions/buckTransactions",
@@ -217,6 +223,21 @@ func (c *StudentApiController) MarketItemBuy(w http.ResponseWriter, r *http.Requ
 // SearchAuctionsStudent - searches auctions
 func (c *StudentApiController) SearchAuctionsStudent(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.SearchAuctionsStudent(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SearchBuck - returns how much the student holds of this buck
+func (c *StudentApiController) SearchBuck(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.SearchBuck(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

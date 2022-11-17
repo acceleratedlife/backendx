@@ -414,7 +414,7 @@ func TestMarketItemRefundTx(t *testing.T) {
 	require.Nil(t, err)
 
 	_ = db.Update(func(tx *bolt.Tx) error {
-		resp, err := getStudentbuckRx(tx, student0, teacher.Email)
+		resp, err := getStudentBuckRx(tx, student0, teacher.Email)
 		require.Nil(t, err)
 		require.Equal(t, float32(4), resp.Value)
 
@@ -424,7 +424,7 @@ func TestMarketItemRefundTx(t *testing.T) {
 		err = marketItemRefundTx(tx, &clock, itemBucket, purchaseId, teacher.Email)
 		require.Nil(t, err)
 
-		resp, err = getStudentbuckRx(tx, student0, teacher.Email)
+		resp, err = getStudentBuckRx(tx, student0, teacher.Email)
 		require.Nil(t, err)
 		require.Equal(t, float32(8), resp.Value)
 
@@ -462,8 +462,8 @@ func TestMarketItemDeleteTx(t *testing.T) {
 
 	body := openapi.RequestMakeMarketItem{
 		Title: "Candy",
-		Count: 3,
-		Cost:  4,
+		Count: 8,
+		Cost:  1,
 	}
 
 	id, err := makeMarketItem(db, &clock, teacher, body)
@@ -472,10 +472,31 @@ func TestMarketItemDeleteTx(t *testing.T) {
 	_, err = buyMarketItem(db, &clock, student0, teacher, id)
 	require.Nil(t, err)
 
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
 	_ = db.Update(func(tx *bolt.Tx) error {
-		resp, err := getStudentbuckRx(tx, student0, teacher.Email)
+		resp, err := getStudentBuckRx(tx, student0, teacher.Email)
 		require.Nil(t, err)
-		require.Equal(t, float32(4), resp.Value)
+		require.Equal(t, float32(0), resp.Value)
 
 		marketBucket, itemBucket, err := getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
@@ -483,12 +504,9 @@ func TestMarketItemDeleteTx(t *testing.T) {
 		err = marketItemDeleteTx(tx, &clock, marketBucket, itemBucket, id, teacher.Email)
 		require.Nil(t, err)
 
-		resp, err = getStudentbuckRx(tx, student0, teacher.Email)
+		resp, err = getStudentBuckRx(tx, student0, teacher.Email)
 		require.Nil(t, err)
 		require.Equal(t, float32(8), resp.Value)
-
-		// _, _, err = getMarketItemRx(tx, teacher, id)
-		// require.NotNil(t, err)
 
 		return nil
 	})

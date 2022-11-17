@@ -255,6 +255,8 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	}
 
 	errR = transactions.Put(tsB, transactionB)
+
+	lgr.Printf(transaction.Ts.String())
 	return
 }
 
@@ -1206,7 +1208,19 @@ func getStudentUbuckRx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.Response
 	return
 }
 
-func getStudentbuckRx(tx *bolt.Tx, userDetails UserInfo, teacherId string) (resp openapi.ResponseSearchStudentUbuck, err error) {
+func getStudentBuck(db *bolt.DB, userDetails UserInfo, teacherId string) (resp openapi.ResponseSearchStudentUbuck, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getStudentBuckRx(tx, userDetails, teacherId)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return
+}
+
+func getStudentBuckRx(tx *bolt.Tx, userDetails UserInfo, teacherId string) (resp openapi.ResponseSearchStudentUbuck, err error) {
 	student, err := getStudentBucketRx(tx, userDetails.Name)
 	if student == nil {
 		return resp, err

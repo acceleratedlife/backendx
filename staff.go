@@ -543,13 +543,8 @@ func (s *StaffApiServiceImpl) MarketItemResolve(ctx context.Context, body openap
 		return openapi.Response(401, ""), nil
 	}
 
-	teacher, err := getUserInLocalStore(s.db, body.TeacherId)
-	if err != nil {
-		return openapi.Response(400, nil), nil
-	}
-
 	err = s.db.Update(func(tx *bolt.Tx) error {
-		market, itemBucket, err := getMarketItemRx(tx, teacher, body.Id)
+		market, itemBucket, err := getMarketItemRx(tx, userDetails, body.Id)
 		if err != nil {
 			return err
 		}
@@ -581,18 +576,13 @@ func (s *StaffApiServiceImpl) MarketItemRefund(ctx context.Context, body openapi
 		return openapi.Response(401, ""), nil
 	}
 
-	teacher, err := getUserInLocalStore(s.db, body.TeacherId)
-	if err != nil {
-		return openapi.Response(400, nil), nil
-	}
-
 	err = s.db.Update(func(tx *bolt.Tx) error {
-		_, itemBucket, err := getMarketItemRx(tx, teacher, body.Id)
+		_, itemBucket, err := getMarketItemRx(tx, userDetails, body.Id)
 		if err != nil {
 			return err
 		}
 
-		err = marketItemRefundTx(tx, s.clock, itemBucket, body.UserId, teacher.Email)
+		err = marketItemRefundTx(tx, s.clock, itemBucket, body.UserId, userDetails.Email)
 		if err != nil {
 			return err
 		}

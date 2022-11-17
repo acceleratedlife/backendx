@@ -170,20 +170,6 @@ func (s *AllApiService) SearchAllBucks(ctx context.Context) (ImplResponse, error
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchAllBucks method not implemented")
 }
 
-// SearchBucks - searches bucks
-func (s *AllApiService) SearchBucks(ctx context.Context, id string) (ImplResponse, error) {
-	// TODO - update SearchBucks with the required logic for this service method.
-	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, Buck{}) or use other options such as http.Ok ...
-	//return Response(200, Buck{}), nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("SearchBucks method not implemented")
-}
-
 // SearchClass - searches for a class
 func (s *AllApiService) SearchClass(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchClass with the required logic for this service method.
