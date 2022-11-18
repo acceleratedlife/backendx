@@ -48,7 +48,19 @@ func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.Response
 				return fmt.Errorf("ERROR cannot get market data bucket")
 			}
 
-			item, err := packageMarketItemRx(tx, userDetails, itemBucket, string(k))
+			var details MarketItem
+
+			itemData := itemBucket.Get([]byte(KeyMarketData))
+			err = json.Unmarshal(itemData, &details)
+			if err != nil {
+				return fmt.Errorf("ERROR cannot unmarshal market details")
+			}
+
+			if !details.Active {
+				continue
+			}
+
+			item, err := packageMarketItemRx(tx, details, userDetails, itemBucket, string(k))
 			if err != nil {
 				return err
 			}
@@ -62,14 +74,7 @@ func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.Response
 	return
 }
 
-func packageMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemBucket *bolt.Bucket, itemId string) (item openapi.ResponseMarketItem, err error) {
-	var details MarketItem
-
-	itemData := itemBucket.Get([]byte(KeyMarketData))
-	err = json.Unmarshal(itemData, &details)
-	if err != nil {
-		return item, fmt.Errorf("ERROR cannot unmarshal market details")
-	}
+func packageMarketItemRx(tx *bolt.Tx, details MarketItem, userDetails UserInfo, itemBucket *bolt.Bucket, itemId string) (item openapi.ResponseMarketItem, err error) {
 
 	item = openapi.ResponseMarketItem{
 		OwnerId: openapi.ResponseMemberClassOwner{
@@ -1103,7 +1108,7 @@ func checkItemActive(marketBucket, itemBucket, buyersBucket *bolt.Bucket, studen
 		return fmt.Errorf("ERROR cannot marshal item data")
 	}
 
-	err = marketBucket.Put([]byte(studentPurchaseId), marshal)
+	err = itemBucket.Put([]byte(KeyMarketData), marshal)
 	if err != nil {
 		return fmt.Errorf("ERROR cannot put item data")
 	}
@@ -1167,9 +1172,9 @@ func marketItemRefundTx(tx *bolt.Tx, clock Clock, itemBucket *bolt.Bucket, stude
 
 func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt.Bucket, marketItemId, teacherId string) (err error) {
 
-	itemDetails := itemBucket.Get([]byte(KeyMarketData))
+	itemDetailsData := itemBucket.Get([]byte(KeyMarketData))
 	var marketItem MarketItem
-	err = json.Unmarshal(itemDetails, &marketItem)
+	err = json.Unmarshal(itemDetailsData, &marketItem)
 	if err != nil {
 		return err
 	}
@@ -1179,6 +1184,7 @@ func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt
 	}
 
 	buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
+	del := true
 	if buyersBucket != nil {
 
 		c := buyersBucket.Cursor()
@@ -1190,6 +1196,7 @@ func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt
 			}
 
 			if !buyersInfo.Active {
+				del = false
 				continue
 			}
 
@@ -1197,8 +1204,6 @@ func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt
 			if err != nil {
 				return err
 			}
-
-			// clock = clock.Now().Add(time.Millisecond * 1)
 
 			err = pay2StudentTx(tx, clock, student, decimal.NewFromInt32(marketItem.Cost), teacherId, "refund market item")
 			if err != nil {
@@ -1208,9 +1213,24 @@ func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt
 		}
 	}
 
-	err = marketBucket.DeleteBucket([]byte(marketItemId))
+	if del {
+		err = marketBucket.DeleteBucket([]byte(marketItemId))
+		if err != nil {
+			return err
+		}
+
+		return
+	}
+
+	marketItem.Active = false
+	marshal, err := json.Marshal(marketItem)
 	if err != nil {
-		return err
+		return fmt.Errorf("ERROR cannot marshal item data")
+	}
+
+	err = itemBucket.Put([]byte(KeyMarketData), marshal)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot put item data")
 	}
 
 	return

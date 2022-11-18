@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -199,7 +200,13 @@ func TestMakeMarketItemImpl(t *testing.T) {
 		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
 
-		item, err := packageMarketItemRx(tx, teacher, itemBucket, id)
+		var details MarketItem
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(itemData, &details)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, details, teacher, itemBucket, id)
 		require.Nil(t, err)
 
 		require.Equal(t, "Candy", item.Title)
@@ -271,7 +278,13 @@ func TestMakeMarketItemImplBuyers(t *testing.T) {
 		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
 
-		item, err := packageMarketItemRx(tx, teacher, itemBucket, id)
+		var details MarketItem
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(itemData, &details)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, details, teacher, itemBucket, id)
 		require.Nil(t, err)
 
 		require.Equal(t, 3, len(item.Buyers))
@@ -322,7 +335,13 @@ func TestMakeMarketItemImplBuyers1multi(t *testing.T) {
 		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
 
-		item, err := packageMarketItemRx(tx, teacher, itemBucket, id)
+		var details MarketItem
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(itemData, &details)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, details, teacher, itemBucket, id)
 		require.Nil(t, err)
 
 		require.Equal(t, 2, len(item.Buyers))
@@ -352,7 +371,7 @@ func TestMarketResolveTx(t *testing.T) {
 
 	body := openapi.RequestMakeMarketItem{
 		Title: "Candy",
-		Count: 3,
+		Count: 1,
 		Cost:  4,
 	}
 
@@ -373,8 +392,16 @@ func TestMarketResolveTx(t *testing.T) {
 		_, itemBucket, err = getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
 
-		item, err := packageMarketItemRx(tx, teacher, itemBucket, id)
+		var details MarketItem
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(itemData, &details)
 		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, details, teacher, itemBucket, id)
+		require.Nil(t, err)
+
+		require.False(t, details.Active)
 
 		require.Equal(t, 0, len(item.Buyers))
 
@@ -431,7 +458,13 @@ func TestMarketItemRefundTx(t *testing.T) {
 		_, itemBucket, err = getMarketItemRx(tx, teacher, id)
 		require.Nil(t, err)
 
-		item, err := packageMarketItemRx(tx, teacher, itemBucket, id)
+		var details MarketItem
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(itemData, &details)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, details, teacher, itemBucket, id)
 		require.Nil(t, err)
 
 		require.Equal(t, 0, len(item.Buyers))
@@ -457,7 +490,25 @@ func TestMarketItemDeleteTx(t *testing.T) {
 	student0, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
 
+	student1, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+
+	student2, err := getUserInLocalStore(db, students[2])
+	require.Nil(t, err)
+
+	student3, err := getUserInLocalStore(db, students[3])
+	require.Nil(t, err)
+
 	err = pay2Student(db, &clock, student0, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student1, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student2, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student3, decimal.NewFromFloat(8), teachers[0], "pre load")
 	require.Nil(t, err)
 
 	body := openapi.RequestMakeMarketItem{
@@ -472,19 +523,19 @@ func TestMarketItemDeleteTx(t *testing.T) {
 	_, err = buyMarketItem(db, &clock, student0, teacher, id)
 	require.Nil(t, err)
 
-	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	_, err = buyMarketItem(db, &clock, student1, teacher, id)
 	require.Nil(t, err)
 
-	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	_, err = buyMarketItem(db, &clock, student2, teacher, id)
 	require.Nil(t, err)
 
-	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	_, err = buyMarketItem(db, &clock, student3, teacher, id)
 	require.Nil(t, err)
 
-	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	purchaseIdResolve, err := buyMarketItem(db, &clock, student0, teacher, id)
 	require.Nil(t, err)
 
-	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	purchaseIdRefund, err := buyMarketItem(db, &clock, student0, teacher, id)
 	require.Nil(t, err)
 
 	_, err = buyMarketItem(db, &clock, student0, teacher, id)
@@ -496,9 +547,15 @@ func TestMarketItemDeleteTx(t *testing.T) {
 	_ = db.Update(func(tx *bolt.Tx) error {
 		resp, err := getStudentBuckRx(tx, student0, teacher.Email)
 		require.Nil(t, err)
-		require.Equal(t, float32(0), resp.Value)
+		require.Equal(t, float32(3), resp.Value)
 
 		marketBucket, itemBucket, err := getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		err = marketItemResolveTx(marketBucket, itemBucket, purchaseIdResolve)
+		require.Nil(t, err)
+
+		err = marketItemRefundTx(tx, &clock, itemBucket, purchaseIdRefund, teacher.Email)
 		require.Nil(t, err)
 
 		err = marketItemDeleteTx(tx, &clock, marketBucket, itemBucket, id, teacher.Email)
@@ -506,12 +563,12 @@ func TestMarketItemDeleteTx(t *testing.T) {
 
 		resp, err = getStudentBuckRx(tx, student0, teacher.Email)
 		require.Nil(t, err)
-		require.Equal(t, float32(8), resp.Value)
+		require.Equal(t, float32(7), resp.Value)
 
 		return nil
 	})
 
 	_, _, err = getMarketItem(db, teacher, id)
-	require.Equal(t, "failed to find market item", err.Error())
+	require.Nil(t, err)
 
 }

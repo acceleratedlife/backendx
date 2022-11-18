@@ -239,13 +239,14 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	}
 
 	oldTransaction := transactions.Get(tsB)
-	if oldTransaction != nil {
-		transaction.Ts.Add(time.Millisecond * 1)
+	for oldTransaction != nil {
+		transaction.Ts = transaction.Ts.Add(time.Millisecond * 1)
 		tsB, err = transaction.Ts.MarshalText()
 		if err != nil {
 			errR = err
 			return
 		}
+		oldTransaction = transactions.Get(tsB)
 	}
 
 	transactionB, err := json.Marshal(transaction)
@@ -256,7 +257,6 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 
 	errR = transactions.Put(tsB, transactionB)
 
-	lgr.Printf(transaction.Ts.String())
 	return
 }
 
