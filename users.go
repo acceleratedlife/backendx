@@ -33,6 +33,11 @@ type UserInfo struct {
 	Rank             int32 `json:",omitempty"`
 	NetWorth         float32
 	Job              string
+	Settings         TeacherSettings `json:",omitempty"`
+}
+
+type TeacherSettings struct {
+	CurrencyLock bool `json:"currencyLock"`
 }
 
 type Job struct {
@@ -131,7 +136,7 @@ func AddUserTx(tx *bolt.Tx, info UserInfo) error {
 	return nil
 }
 
-//get bucket, make bucket if it does not exist, use within update
+// get bucket, make bucket if it does not exist, use within update
 func getStudentBucketTx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	userInfo, err := getUserInLocalStoreTx(tx, userName)
 	if err != nil {
@@ -169,7 +174,7 @@ func getStudentBucket(db *bolt.DB, userName string) (student *bolt.Bucket, err e
 	return
 }
 
-//get bucket, throw if it does not exist, use with view
+// get bucket, throw if it does not exist, use with view
 func getStudentBucketRx(tx *bolt.Tx, userName string) (*bolt.Bucket, error) {
 	userInfo, err := getUserInLocalStoreTx(tx, userName)
 	if err != nil {

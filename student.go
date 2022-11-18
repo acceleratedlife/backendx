@@ -18,6 +18,58 @@ type StudentApiServiceImpl struct {
 	clock Clock
 }
 
+func (a *StudentApiServiceImpl) SearchBuck(ctx context.Context, teacherId string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	resp, err := getStudentBuck(a.db, userDetails, teacherId)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, resp), nil
+
+}
+
+func (a *StudentApiServiceImpl) MarketItemBuy(ctx context.Context, body openapi.RequestMarketRefund) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	teacher, err := getUserInLocalStore(a.db, body.TeacherId)
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	_, err = buyMarketItem(a.db, a.clock, userDetails, teacher, body.Id)
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
+
+}
+
 func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, body openapi.RequestAuctionBid) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
@@ -63,11 +115,11 @@ func (a *StudentApiServiceImpl) BuckConvert(ctx context.Context, body openapi.Re
 	}
 
 	if body.AccountFrom == body.AccountTo {
-		return openapi.Response(400, nil), fmt.Errorf("Can't convert same bucks")
+		return openapi.Response(400, nil), fmt.Errorf("can't convert same bucks")
 	}
 
 	if body.AccountFrom == KeyDebt {
-		return openapi.Response(400, nil), fmt.Errorf("Can't convert from debt account")
+		return openapi.Response(400, nil), fmt.Errorf("can't convert from debt account")
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
@@ -428,15 +480,15 @@ func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid
 	}
 
 	if auction.WinnerId.Id == userDetails.Name {
-		return message, fmt.Errorf("You are already winning this auction")
+		return message, fmt.Errorf("you are already winning this auction")
 	}
 
 	if clock.Now().After(auction.EndDate) {
-		return message, fmt.Errorf("Bid not accepted, auction expired")
+		return message, fmt.Errorf("bid not accepted, auction expired")
 	}
 
 	if bid < auction.Bid {
-		return message, fmt.Errorf("Failed to outbid, try refreshing")
+		return message, fmt.Errorf("failed to outbid, try refreshing")
 	}
 
 	if bid < auction.MaxBid {

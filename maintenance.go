@@ -339,6 +339,9 @@ func addAdminHandler(db *bolt.DB) http.Handler {
 			Role:        UserRoleTeacher,
 			SchoolId:    request.SchoolId,
 			PasswordSha: request.PasswordSha,
+			Settings: TeacherSettings{
+				CurrencyLock: false,
+			},
 		}
 
 		err = createTeacher(db, adminTeacher)

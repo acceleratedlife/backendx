@@ -92,6 +92,9 @@ const (
 	KeyRegEnd           = "regEnd"
 	KeyCoins            = "ethereum,cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba-inu,dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,chainlink,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
 	LoanRate            = 1.015
+	KeyMarket           = "market"
+	KeyMarketData       = "marketData"
+	KeyBuyers           = "buyers"
 )
 
 var build_date string
@@ -255,6 +258,9 @@ func createNewSchool(db *bolt.DB, clock Clock, newSchoolRequest NewSchoolRequest
 		LastName:    newSchoolRequest.LastName,
 		Role:        UserRoleTeacher,
 		SchoolId:    schoolId,
+		Settings: TeacherSettings{
+			CurrencyLock: false,
+		},
 	}
 
 	err = createTeacher(db, teacher)
@@ -525,6 +531,9 @@ func seedDb(db *bolt.DB, clock Clock) (err error) {
 		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleTeacher,
+		Settings: TeacherSettings{
+			CurrencyLock: false,
+		},
 	}
 
 	err = createTeacher(db, newUser)
@@ -541,6 +550,9 @@ func seedDb(db *bolt.DB, clock Clock) (err error) {
 		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleTeacher,
+		Settings: TeacherSettings{
+			CurrencyLock: false,
+		},
 	}
 
 	err = createTeacher(db, newUser)
@@ -557,6 +569,9 @@ func seedDb(db *bolt.DB, clock Clock) (err error) {
 		PasswordSha: EncodePassword(config.SeedPassword),
 		SchoolId:    schoolId,
 		Role:        UserRoleTeacher,
+		Settings: TeacherSettings{
+			CurrencyLock: false,
+		},
 	}
 
 	err = createTeacher(db, newUser)

@@ -1,12 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
+	bolt "go.etcd.io/bbolt"
 )
 
 func TestAuctionsAll(t *testing.T) {
@@ -163,5 +166,409 @@ func TestRejectAuction(t *testing.T) {
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(auctions))
+
+}
+
+func TestMakeMarketItemImpl(t *testing.T) {
+
+	lgr.Printf("INFO TestMakeMarketItemImpl")
+	t.Log("INFO TestMakeMarketItemImpl")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("MakeMarketItemImpl")
+	defer dbTearDown()
+	_, _, teachers, _, _, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	body := openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 54,
+		Cost:  23,
+	}
+
+	id, err := makeMarketItem(db, &clock, teacher, body)
+	require.Nil(t, err)
+
+	items, err := getMarketItems(db, teacher)
+	require.Nil(t, err)
+
+	require.Equal(t, 1, len(items))
+	require.Equal(t, "Candy", items[0].Title)
+
+	_ = db.View(func(tx *bolt.Tx) error {
+		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		var details MarketItem
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(itemData, &details)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, details, teacher, itemBucket, id)
+		require.Nil(t, err)
+
+		require.Equal(t, "Candy", item.Title)
+
+		return nil
+	})
+
+}
+
+func TestMakeMarketItemImplBuyers(t *testing.T) {
+
+	lgr.Printf("INFO TestMakeMarketItemImplBuyers")
+	t.Log("INFO TestMakeMarketItemImplBuyers")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("MakeMarketItemImplBuyers")
+	defer dbTearDown()
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 4)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student0, decimal.NewFromFloat(100), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	student1, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student1, decimal.NewFromFloat(100), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	student2, err := getUserInLocalStore(db, students[2])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student2, decimal.NewFromFloat(100), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	student3, err := getUserInLocalStore(db, students[3])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student3, decimal.NewFromFloat(100), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 3,
+		Cost:  4,
+	}
+
+	id, err := makeMarketItem(db, &clock, teacher, body)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student1, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student2, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student2, teacher, id)
+	require.NotNil(t, err)
+	require.Equal(t, "ERROR there is nothing left to buy", err.Error())
+
+	_ = db.View(func(tx *bolt.Tx) error {
+		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		var details MarketItem
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(itemData, &details)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, details, teacher, itemBucket, id)
+		require.Nil(t, err)
+
+		require.Equal(t, 3, len(item.Buyers))
+
+		return nil
+	})
+
+}
+
+func TestMakeMarketItemImplBuyers1multi(t *testing.T) {
+
+	lgr.Printf("INFO TestMakeMarketItemImplBuyers1Multi")
+	t.Log("INFO TestMakeMarketItemImplBuyers1Multi")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("MakeMarketItemImplBuyers1Multi")
+	defer dbTearDown()
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 4)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student0, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 3,
+		Cost:  4,
+	}
+
+	id, err := makeMarketItem(db, &clock, teacher, body)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.NotNil(t, err)
+	require.Equal(t, "Insufficient funds", err.Error())
+
+	_ = db.View(func(tx *bolt.Tx) error {
+		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		var details MarketItem
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(itemData, &details)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, details, teacher, itemBucket, id)
+		require.Nil(t, err)
+
+		require.Equal(t, 2, len(item.Buyers))
+
+		return nil
+	})
+
+}
+
+func TestMarketResolveTx(t *testing.T) {
+
+	lgr.Printf("INFO TestMarketResolveTx")
+	t.Log("INFO TestMarketResolveTx")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("marketResolveTx")
+	defer dbTearDown()
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 4)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student0, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 1,
+		Cost:  4,
+	}
+
+	id, err := makeMarketItem(db, &clock, teacher, body)
+	require.Nil(t, err)
+
+	purchaseId, err := buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_ = db.Update(func(tx *bolt.Tx) error {
+		marketBucket, itemBucket, err := getMarketItemRx(tx, teacher, id)
+		if err != nil {
+			return err
+		}
+		err = marketItemResolveTx(marketBucket, itemBucket, purchaseId)
+		require.Nil(t, err)
+
+		_, itemBucket, err = getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		var details MarketItem
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(itemData, &details)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, details, teacher, itemBucket, id)
+		require.Nil(t, err)
+
+		require.False(t, details.Active)
+
+		require.Equal(t, 0, len(item.Buyers))
+
+		return nil
+	})
+
+}
+
+func TestMarketItemRefundTx(t *testing.T) {
+
+	lgr.Printf("INFO TestMarketItemRefundTx")
+	t.Log("INFO TestMarketItemRefundTx")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("marketItemRefundTx")
+	defer dbTearDown()
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 4)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student0, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 3,
+		Cost:  4,
+	}
+
+	id, err := makeMarketItem(db, &clock, teacher, body)
+	require.Nil(t, err)
+
+	purchaseId, err := buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_ = db.Update(func(tx *bolt.Tx) error {
+		resp, err := getStudentBuckRx(tx, student0, teacher.Email)
+		require.Nil(t, err)
+		require.Equal(t, float32(4), resp.Value)
+
+		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		err = marketItemRefundTx(tx, &clock, itemBucket, purchaseId, teacher.Email)
+		require.Nil(t, err)
+
+		resp, err = getStudentBuckRx(tx, student0, teacher.Email)
+		require.Nil(t, err)
+		require.Equal(t, float32(8), resp.Value)
+
+		_, itemBucket, err = getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		var details MarketItem
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(itemData, &details)
+		require.Nil(t, err)
+
+		item, err := packageMarketItemRx(tx, details, teacher, itemBucket, id)
+		require.Nil(t, err)
+
+		require.Equal(t, 0, len(item.Buyers))
+		require.Equal(t, int32(3), item.Count)
+
+		return nil
+	})
+
+}
+
+func TestMarketItemDeleteTx(t *testing.T) {
+
+	lgr.Printf("INFO TestMarketItemDeleteTx")
+	t.Log("INFO TestMarketItemDeleteTx")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("marketItemDeleteTx")
+	defer dbTearDown()
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 4)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	student1, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+
+	student2, err := getUserInLocalStore(db, students[2])
+	require.Nil(t, err)
+
+	student3, err := getUserInLocalStore(db, students[3])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student0, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student1, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student2, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student3, decimal.NewFromFloat(8), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 8,
+		Cost:  1,
+	}
+
+	id, err := makeMarketItem(db, &clock, teacher, body)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student1, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student2, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student3, teacher, id)
+	require.Nil(t, err)
+
+	purchaseIdResolve, err := buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	purchaseIdRefund, err := buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student0, teacher, id)
+	require.Nil(t, err)
+
+	_ = db.Update(func(tx *bolt.Tx) error {
+		resp, err := getStudentBuckRx(tx, student0, teacher.Email)
+		require.Nil(t, err)
+		require.Equal(t, float32(3), resp.Value)
+
+		marketBucket, itemBucket, err := getMarketItemRx(tx, teacher, id)
+		require.Nil(t, err)
+
+		err = marketItemResolveTx(marketBucket, itemBucket, purchaseIdResolve)
+		require.Nil(t, err)
+
+		err = marketItemRefundTx(tx, &clock, itemBucket, purchaseIdRefund, teacher.Email)
+		require.Nil(t, err)
+
+		err = marketItemDeleteTx(tx, &clock, marketBucket, itemBucket, id, teacher.Email)
+		require.Nil(t, err)
+
+		resp, err = getStudentBuckRx(tx, student0, teacher.Email)
+		require.Nil(t, err)
+		require.Equal(t, float32(7), resp.Value)
+
+		return nil
+	})
+
+	_, _, err = getMarketItem(db, teacher, id)
+	require.Nil(t, err)
 
 }

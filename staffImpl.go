@@ -8,8 +8,192 @@ import (
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
+
+type MarketItem struct {
+	Cost   int32  `json:"cost"`
+	Count  int32  `json:"count"`
+	Active bool   `json:"active,omitempty"`
+	Title  string `json:"title"`
+}
+
+type Buyer struct {
+	Id     string `json:"id"`
+	Active bool   `json:"active,omitempty"`
+}
+
+func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.ResponseMarketItem, err error) {
+	items = make([]openapi.ResponseMarketItem, 0) //I usually would not do this but I need the return to be non null
+	err = db.View(func(tx *bolt.Tx) error {
+		teacher, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Email)
+		if err != nil {
+			return err
+		}
+
+		market := teacher.Bucket([]byte(KeyMarket))
+		if market == nil {
+			return nil
+		}
+
+		c := market.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if v != nil {
+				continue
+			}
+
+			itemBucket := market.Bucket(k)
+			if itemBucket == nil {
+				return fmt.Errorf("ERROR cannot get market data bucket")
+			}
+
+			var details MarketItem
+
+			itemData := itemBucket.Get([]byte(KeyMarketData))
+			err = json.Unmarshal(itemData, &details)
+			if err != nil {
+				return fmt.Errorf("ERROR cannot unmarshal market details")
+			}
+
+			if !details.Active {
+				continue
+			}
+
+			item, err := packageMarketItemRx(tx, details, userDetails, itemBucket, string(k))
+			if err != nil {
+				return err
+			}
+
+			items = append(items, item)
+		}
+
+		return nil
+	})
+
+	return
+}
+
+func packageMarketItemRx(tx *bolt.Tx, details MarketItem, userDetails UserInfo, itemBucket *bolt.Bucket, itemId string) (item openapi.ResponseMarketItem, err error) {
+
+	item = openapi.ResponseMarketItem{
+		OwnerId: openapi.ResponseMemberClassOwner{
+			FirstName: userDetails.FirstName,
+			LastName:  userDetails.LastName,
+			Id:        userDetails.Email,
+		},
+		Count: details.Count,
+		Cost:  details.Cost,
+		Title: details.Title,
+		Id:    itemId,
+	}
+
+	buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
+	if buyersBucket != nil {
+		bc := buyersBucket.Cursor()
+		for k, v := bc.First(); k != nil; k, v = bc.Next() {
+			if v == nil {
+				continue
+			}
+
+			var buyer Buyer
+			err = json.Unmarshal(v, &buyer)
+			if err != nil {
+				return item, fmt.Errorf("ERROR cannot unmarshal market details")
+			}
+
+			if !buyer.Active {
+				continue
+			}
+
+			student, err := getUserInLocalStoreTx(tx, buyer.Id)
+			if err != nil {
+				return item, fmt.Errorf("cannot find buyer details")
+			}
+
+			item.Buyers = append(item.Buyers, openapi.ResponseMemberClassOwner{
+				FirstName: student.FirstName,
+				LastName:  student.LastName,
+				Id:        string(k),
+			})
+		}
+	}
+
+	return
+}
+
+func getMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemId string) (market, item *bolt.Bucket, err error) {
+	teacher, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Email)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	market = teacher.Bucket([]byte(KeyMarket))
+	if market == nil {
+		return nil, nil, fmt.Errorf("failed to find market for: %v", userDetails.LastName)
+	}
+
+	// getMarketItemRx(tx, userDetails, itemId, market)
+
+	item = market.Bucket([]byte(itemId))
+	if item == nil {
+		return nil, nil, fmt.Errorf("failed to find market item")
+	}
+
+	return
+}
+
+func getMarketItem(db *bolt.DB, userDetails UserInfo, itemId string) (market, item *bolt.Bucket, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		market, item, err = getMarketItemRx(tx, userDetails, itemId)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+}
+
+func makeMarketItem(db *bolt.DB, clock Clock, userDetails UserInfo, request openapi.RequestMakeMarketItem) (Id string, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		teacher, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Email)
+		if err != nil {
+			return err
+		}
+
+		market, err := teacher.CreateBucketIfNotExists([]byte(KeyMarket))
+		if err != nil {
+			return err
+		}
+
+		Id = clock.Now().Truncate(time.Millisecond).String()
+
+		item, err := market.CreateBucket([]byte(Id))
+		if err != nil {
+			return err
+		}
+
+		marshal, err := json.Marshal(MarketItem{
+			Cost:   request.Cost,
+			Count:  request.Count,
+			Active: true,
+			Title:  request.Title,
+		})
+		if err != nil {
+			return err
+		}
+
+		err = item.Put([]byte(KeyMarketData), marshal)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	return
+}
 
 func deleteStudent(db *bolt.DB, studentId string) (err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
@@ -138,15 +322,15 @@ func getTeacherClasses(db *bolt.DB, schoolId, teacherId string) (res []openapi.C
 func getTeacherBucketTx(tx *bolt.Tx, schoolId, teacherId string) (teacher *bolt.Bucket, err error) {
 	school, err := SchoolByIdTx(tx, schoolId)
 	if err != nil {
-		return teacher, fmt.Errorf("Cannot find school")
+		return teacher, fmt.Errorf("cannot find school")
 	}
 	teachers := school.Bucket([]byte(KeyTeachers))
 	if teachers == nil {
-		return teacher, fmt.Errorf("Cannot find teachers")
+		return teacher, fmt.Errorf("cannot find teachers")
 	}
 	teacher = teachers.Bucket([]byte(teacherId))
 	if teacher == nil {
-		return teacher, fmt.Errorf("Cannot find teacher")
+		return teacher, fmt.Errorf("cannot find teacher")
 	}
 	return
 }
@@ -252,6 +436,10 @@ func getSchoolBucketTx(tx *bolt.Tx, userDetails UserInfo) (school *bolt.Bucket, 
 func getTeacherAuctions(db *bolt.DB, userDetails UserInfo) (auctions []openapi.Auction, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
 		school, err := getSchoolBucketTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
 		auctionsBucket := school.Bucket([]byte(KeyAuctions))
 		auctions, err = getTeacherAuctionsRx(tx, auctionsBucket, userDetails)
 		if err != nil {
@@ -372,7 +560,7 @@ func CreateClass(db *bolt.DB, clock Clock, schoolId, teacherId, className string
 
 		classesBucket := teacher.Bucket([]byte(KeyClasses))
 		if classesBucket == nil {
-			return fmt.Errorf("Problem finding classesBucket")
+			return fmt.Errorf("problem finding classesBucket")
 		}
 
 		classId, err = addClassDetailsTx(classesBucket, clock, className, period, false)
@@ -400,16 +588,16 @@ func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMak
 	err = db.Update(func(tx *bolt.Tx) error {
 		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 		if err != nil {
-			return fmt.Errorf("Problem finding auctions bucket: %v", err)
+			return fmt.Errorf("problem finding auctions bucket: %v", err)
 		}
 		auctionsBucket := school.Bucket([]byte(KeyAuctions))
 		if auctionsBucket == nil {
-			return fmt.Errorf("Problem finding auctions bucket")
+			return fmt.Errorf("problem finding auctions bucket")
 		}
 
 		auctionId, err = addAuctionDetailsTx(auctionsBucket, request, isStaff)
 		if err != nil {
-			return fmt.Errorf("Problem adding auctions details: %v", err)
+			return fmt.Errorf("problem adding auctions details: %v", err)
 		}
 
 		return nil
@@ -501,7 +689,7 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 
 	accounts := CB.Bucket([]byte(KeyAccounts))
 	if accounts == nil {
-		return resp, fmt.Errorf("Cannot find buck accounts bucket")
+		return resp, fmt.Errorf("cannot find buck accounts bucket")
 	}
 
 	buck := accounts.Bucket([]byte(teacher.Name))
@@ -512,7 +700,7 @@ func getTeacherTransactionsTx(tx *bolt.Tx, teacher UserInfo) (resp []openapi.Res
 
 	transactions := buck.Bucket([]byte(KeyTransactions))
 	if transactions == nil {
-		return resp, fmt.Errorf("Cannot find transactions bucket")
+		return resp, fmt.Errorf("cannot find transactions bucket")
 	}
 
 	c := transactions.Cursor()
@@ -659,10 +847,18 @@ func getEventsTeacher(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []op
 			var typeKey string
 			if trans.Source != "" { //bad event
 				student, err = getUserInLocalStoreTx(tx, trans.Source)
+				if err != nil {
+					return err
+				}
+
 				trans.AmountSource = trans.AmountSource.Neg()
 				typeKey = KeyNEvents
 			} else { //good event
 				student, err = getUserInLocalStoreTx(tx, trans.Destination)
+				if err != nil {
+					return err
+				}
+
 				typeKey = KeyPEvents
 			}
 
@@ -707,12 +903,12 @@ func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseRe
 
 	marshal, err := json.Marshal(userDetails)
 	if err != nil {
-		return resp, fmt.Errorf("Failed to Marshal userDetails")
+		return resp, fmt.Errorf("failed to Marshal userDetails")
 	}
 
 	err = users.Put([]byte(userDetails.Name), marshal)
 	if err != nil {
-		return resp, fmt.Errorf("Failed to Put studendDetails")
+		return resp, fmt.Errorf("failed to Put studendDetails")
 	}
 
 	return
@@ -797,4 +993,245 @@ func rejectAuctionTx(tx *bolt.Tx, userDetails UserInfo, auctionId string) (err e
 
 	return auctions.Delete([]byte(auctionId))
 
+}
+
+func getSettings(db *bolt.DB, userDetails UserInfo) (settings openapi.Settings, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		school, err := getSchoolBucketTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		settingsData := school.Get([]byte(KeySettings))
+		err = json.Unmarshal(settingsData, &settings)
+		if err != nil {
+			return err
+		}
+
+		return err
+	})
+
+	return
+}
+
+func setSettings(db *bolt.DB, userDetails UserInfo, body openapi.Settings) (err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		school, err := getSchoolBucketTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		marshal, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+
+		err = school.Put([]byte(KeySettings), marshal)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+}
+
+func marketItemResolveTx(marketBucket, itemBucket *bolt.Bucket, studentPurchaseId string) (err error) {
+
+	buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
+	if buyersBucket == nil {
+		return fmt.Errorf("cannot find buyers bucket")
+	}
+
+	buyersData := buyersBucket.Get([]byte(studentPurchaseId))
+	if buyersData == nil {
+		return fmt.Errorf("cannot find buyers data")
+	}
+
+	var buyersInfo Buyer
+	err = json.Unmarshal(buyersData, &buyersInfo)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot unmarshal buyers data")
+	}
+
+	buyersInfo.Active = false
+	marshal, err := json.Marshal(buyersInfo)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot marshal buyers data")
+	}
+	err = buyersBucket.Put([]byte(studentPurchaseId), marshal)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot put buyers data")
+	}
+
+	err = checkItemActive(marketBucket, itemBucket, buyersBucket, studentPurchaseId)
+	if err != nil {
+		return err
+	}
+
+	return
+}
+
+func checkItemActive(marketBucket, itemBucket, buyersBucket *bolt.Bucket, studentPurchaseId string) (err error) {
+	itemDetailsData := itemBucket.Get([]byte(KeyMarketData))
+	if itemDetailsData == nil {
+		return fmt.Errorf("cannot find item details bucket")
+	}
+
+	var itemDetails MarketItem
+	err = json.Unmarshal(itemDetailsData, &itemDetails)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot unmarshal item data")
+	}
+
+	if itemDetails.Count != 0 {
+		return
+	}
+
+	c := buyersBucket.Cursor()
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		var buyersInfo Buyer
+		err = json.Unmarshal(v, &buyersInfo)
+		if err != nil {
+			return fmt.Errorf("ERROR cannot unmarshal buyers data")
+		}
+
+		if buyersInfo.Active {
+			return
+		}
+	}
+
+	itemDetails.Active = false
+	marshal, err := json.Marshal(itemDetails)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot marshal item data")
+	}
+
+	err = itemBucket.Put([]byte(KeyMarketData), marshal)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot put item data")
+	}
+
+	return
+
+}
+
+func marketItemRefundTx(tx *bolt.Tx, clock Clock, itemBucket *bolt.Bucket, studentPurchaseId, teacherId string) (err error) {
+	itemDetails := itemBucket.Get([]byte(KeyMarketData))
+	var marketItem MarketItem
+	err = json.Unmarshal(itemDetails, &marketItem)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot unmarshal item details")
+	}
+
+	marketItem.Count = marketItem.Count + 1
+	marshal, err := json.Marshal(marketItem)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot marshal item details")
+	}
+
+	err = itemBucket.Put([]byte(KeyMarketData), marshal)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot put item details")
+	}
+
+	buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
+	if buyersBucket == nil {
+		return fmt.Errorf("cannot find buyers bucket")
+	}
+
+	buyersData := buyersBucket.Get([]byte(studentPurchaseId))
+	if buyersData == nil {
+		return fmt.Errorf("cannot find buyers data")
+	}
+
+	var buyersInfo Buyer
+	err = json.Unmarshal(buyersData, &buyersInfo)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot unmarshal buyers data")
+	}
+
+	student, err := getUserInLocalStoreTx(tx, buyersInfo.Id)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot find student")
+	}
+
+	err = pay2StudentTx(tx, clock, student, decimal.NewFromInt32(marketItem.Cost), teacherId, "refund market item")
+	if err != nil {
+		return fmt.Errorf("ERROR cannot refund student")
+	}
+
+	err = buyersBucket.Delete([]byte(studentPurchaseId))
+	if err != nil {
+		return fmt.Errorf("ERROR cannot delete buyers data")
+	}
+
+	return
+}
+
+func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt.Bucket, marketItemId, teacherId string) (err error) {
+
+	itemDetailsData := itemBucket.Get([]byte(KeyMarketData))
+	var marketItem MarketItem
+	err = json.Unmarshal(itemDetailsData, &marketItem)
+	if err != nil {
+		return err
+	}
+
+	if !marketItem.Active {
+		return
+	}
+
+	buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
+	del := true
+	if buyersBucket != nil {
+
+		c := buyersBucket.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var buyersInfo Buyer
+			err = json.Unmarshal(v, &buyersInfo)
+			if err != nil {
+				return err
+			}
+
+			if !buyersInfo.Active {
+				del = false
+				continue
+			}
+
+			student, err := getUserInLocalStoreTx(tx, buyersInfo.Id)
+			if err != nil {
+				return err
+			}
+
+			err = pay2StudentTx(tx, clock, student, decimal.NewFromInt32(marketItem.Cost), teacherId, "refund market item")
+			if err != nil {
+				return err
+			}
+
+		}
+	}
+
+	if del {
+		err = marketBucket.DeleteBucket([]byte(marketItemId))
+		if err != nil {
+			return err
+		}
+
+		return
+	}
+
+	marketItem.Active = false
+	marshal, err := json.Marshal(marketItem)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot marshal item data")
+	}
+
+	err = itemBucket.Put([]byte(KeyMarketData), marshal)
+	if err != nil {
+		return fmt.Errorf("ERROR cannot put item data")
+	}
+
+	return
 }

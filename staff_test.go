@@ -579,3 +579,500 @@ func TestAuctionReject(t *testing.T) {
 	assert.Equal(t, 1, len(auctions))
 
 }
+
+// if the following test is failing and you just ran the spec then it is probably because student2student has been change
+// to omitempty on openapi.Settings. This causes nothing to be sent back because false is seen as empty and is omitted.
+func TestGetSettingsAdmin(t *testing.T) {
+	db, tearDown := FullStartTestServer("getSettings", 8090, "")
+	defer tearDown()
+
+	admins, _, _, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
+
+	SetTestLoginUser(admins[0])
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/settings",
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.Settings
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.False(t, data.Student2student)
+
+	admin, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	setSettings(db, admin, openapi.Settings{Student2student: true})
+	settings, err := getSettings(db, admin)
+	require.Nil(t, err)
+	require.True(t, settings.Student2student)
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	decoder = json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.True(t, data.Student2student)
+}
+
+func TestGetSettingsTeacher(t *testing.T) {
+	db, tearDown := FullStartTestServer("getSettings", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/settings",
+		nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.Settings
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.False(t, data.CurrencyLock)
+}
+
+// if the following test is failing and you just ran the spec then it is probably because you set student2student as required in the spec
+// This causes openapi.Settings to require student2student to be true so when you make it false marshal does not know what to do with it.
+// The only solution at this time is to omit the requirement in spec. This will make getsettings fail until you delete omitempty
+func TestSetSettingsAdmin(t *testing.T) {
+	db, tearDown := FullStartTestServer("setSettings", 8090, "")
+	defer tearDown()
+
+	admins, _, _, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
+
+	SetTestLoginUser(admins[0])
+
+	client := &http.Client{}
+
+	admin, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	settings, err := getSettings(db, admin)
+	require.Nil(t, err)
+	require.False(t, settings.Student2student)
+
+	settings = openapi.Settings{
+		Student2student: true,
+	}
+
+	marshal, err := json.Marshal(settings)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/settings",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	settings, err = getSettings(db, admin)
+	require.Nil(t, err)
+	require.True(t, settings.Student2student)
+
+	settings = openapi.Settings{
+		Student2student: false,
+	}
+
+	marshal, err = json.Marshal(settings)
+
+	req, _ = http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/settings",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	settings, err = getSettings(db, admin)
+	require.Nil(t, err)
+	require.False(t, settings.Student2student)
+}
+
+func TestSetSettingsTeacher(t *testing.T) {
+	db, tearDown := FullStartTestServer("setSettings", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	require.False(t, teacher.Settings.CurrencyLock)
+
+	settings := openapi.Settings{
+		CurrencyLock: true,
+	}
+
+	marshal, err := json.Marshal(settings)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/settings",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	teacher, err = getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+	require.True(t, teacher.Settings.CurrencyLock)
+
+	settings = openapi.Settings{
+		CurrencyLock: false,
+	}
+
+	marshal, err = json.Marshal(settings)
+
+	req, _ = http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/settings",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	teacher, err = getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+	require.False(t, teacher.Settings.CurrencyLock)
+}
+
+func TestStudent2Student(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("payTransactions_student", 8090, "")
+	defer tearDown()
+
+	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
+
+	admin, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	setSettings(db, admin, openapi.Settings{Student2student: true})
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+	body := openapi.RequestPayTransaction{
+		OwnerId:     students[0],
+		Description: "student2student",
+		Amount:      100,
+		Student:     students[1],
+	}
+
+	for _, student := range students {
+		userDetails, err := getUserInLocalStore(db, student)
+		require.Nil(t, err)
+		err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), "pre load")
+		require.Nil(t, err)
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	settings, err := getSettings(db, admin)
+	require.Nil(t, err)
+	require.True(t, settings.Student2student)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/payTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	setSettings(db, admin, openapi.Settings{Student2student: false})
+	settings, err = getSettings(db, admin)
+	require.Nil(t, err)
+	require.False(t, settings.Student2student)
+
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/payTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode)
+
+}
+
+func TestCurrencyLock(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("payTransactions_student", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	teacher.Settings.CurrencyLock = true
+	err = userEdit(db, &clock, teacher, openapi.UsersUserBody{})
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+	body := openapi.RequestBuckConvert{
+		AccountFrom: CurrencyUBuck,
+		AccountTo:   teachers[0],
+		Amount:      100,
+	}
+
+	for _, student := range students {
+		userDetails, err := getUserInLocalStore(db, student)
+		require.Nil(t, err)
+		err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), "pre load")
+		require.Nil(t, err)
+		err = addBuck2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), teachers[0], "pre load")
+		require.Nil(t, err)
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	teacher, err = getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+	require.True(t, teacher.Settings.CurrencyLock)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode)
+
+	teacher.Settings.CurrencyLock = false
+	err = userEdit(db, &clock, teacher, openapi.UsersUserBody{})
+	require.Nil(t, err)
+
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+}
+
+func TestMakeMarketItem(t *testing.T) {
+	db, tearDown := FullStartTestServer("makeMarketItem", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 4,
+		Cost:  99,
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/marketItems",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}
+
+func TestMarketItemResolve(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("marketItemResolve", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+	SetTestLoginUser(teachers[0])
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	itemId, err := makeMarketItem(db, &clock, teacher, openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 4,
+		Cost:  3,
+	})
+	require.Nil(t, err)
+
+	purchaseId, err := buyMarketItem(db, &clock, student, teacher, itemId)
+	require.Nil(t, err)
+
+	request := openapi.RequestMarketRefund{
+		Id:     itemId,
+		UserId: purchaseId,
+	}
+
+	marshal, err := json.Marshal(request)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/marketItems/resolve",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}
+
+func TestMarketItemRefund(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("marketItemRefund", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+	SetTestLoginUser(teachers[0])
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	itemId, err := makeMarketItem(db, &clock, teacher, openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 4,
+		Cost:  3,
+	})
+	require.Nil(t, err)
+
+	purchaseId, err := buyMarketItem(db, &clock, student, teacher, itemId)
+	require.Nil(t, err)
+
+	request := openapi.RequestMarketRefund{
+		Id:     itemId,
+		UserId: purchaseId,
+	}
+
+	marshal, err := json.Marshal(request)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/marketItems/refund",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}
+
+func TestMarketItemDelete(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("marketItemDelete", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+	SetTestLoginUser(teachers[0])
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	itemId, err := makeMarketItem(db, &clock, teacher, openapi.RequestMakeMarketItem{
+		Title: "Candy",
+		Count: 4,
+		Cost:  3,
+	})
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student, teacher, itemId)
+	require.Nil(t, err)
+
+	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/marketItems")
+	require.Nil(t, err)
+
+	q := u.Query()
+	q.Set("_id", itemId)
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest(http.MethodDelete, u.String(), nil)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}

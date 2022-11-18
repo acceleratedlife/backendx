@@ -49,6 +49,73 @@ type Transaction struct {
 	Ubuck          decimal.Decimal `json:"-"`
 }
 
+func buyMarketItem(db *bolt.DB, clock Clock, student UserInfo, teacher UserInfo, itemId string) (purchaseId string, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		teacherBucket, err := getTeacherBucketTx(tx, teacher.SchoolId, teacher.Email)
+		if err != nil {
+			return err
+		}
+
+		market := teacherBucket.Bucket([]byte(KeyMarket))
+		if market == nil {
+			return fmt.Errorf("failed to find market for: %v", teacher.LastName)
+		}
+
+		dataBucket := market.Bucket([]byte(itemId))
+		if dataBucket == nil {
+			return fmt.Errorf("ERROR cannot get market data bucket")
+		}
+		var details MarketItem
+		marketData := dataBucket.Get([]byte(KeyMarketData))
+		err = json.Unmarshal(marketData, &details)
+		if err != nil {
+			return fmt.Errorf("ERROR cannot unmarshal market details")
+		}
+
+		if details.Count == 0 {
+			return fmt.Errorf("ERROR there is nothing left to buy")
+		}
+
+		err = chargeStudentTx(tx, clock, student, decimal.NewFromInt32(details.Cost), teacher.Email, "Purchased "+details.Title, true)
+		if err != nil {
+			return err
+		}
+
+		details.Count = details.Count - 1
+		marshal, err := json.Marshal(details)
+		if err != nil {
+			return err
+		}
+
+		err = dataBucket.Put([]byte(KeyMarketData), marshal)
+		if err != nil {
+			return err
+		}
+
+		buyersBucket, err := dataBucket.CreateBucketIfNotExists([]byte(KeyBuyers))
+		if err != nil {
+			return err
+		}
+
+		marshal, err = json.Marshal(Buyer{Active: true, Id: student.Email})
+		if err != nil {
+			return err
+		}
+
+		purchaseId = RandomString(7)
+
+		err = buyersBucket.Put([]byte(purchaseId), marshal)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+
+}
+
 // adds ubucks from CB
 // creates order, transaction into student account, update account balance, update ubuck balance
 func addUbuck2Student(db *bolt.DB, clock Clock, userInfo UserInfo, amount decimal.Decimal, reference string) error {
@@ -143,7 +210,7 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 		return
 	}
 
-	if balance.Sign() < 0 && negBlock {
+	if balance.Round(5).Sign() < 0 && negBlock {
 		errR = fmt.Errorf("Insufficient funds")
 		return
 	}
@@ -172,13 +239,14 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	}
 
 	oldTransaction := transactions.Get(tsB)
-	if oldTransaction != nil {
-		transaction.Ts.Add(time.Millisecond * 1)
+	for oldTransaction != nil {
+		transaction.Ts = transaction.Ts.Add(time.Millisecond * 1)
 		tsB, err = transaction.Ts.MarshalText()
 		if err != nil {
 			errR = err
 			return
 		}
+		oldTransaction = transactions.Get(tsB)
 	}
 
 	transactionB, err := json.Marshal(transaction)
@@ -188,6 +256,7 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	}
 
 	errR = transactions.Put(tsB, transactionB)
+
 	return
 }
 
@@ -744,7 +813,7 @@ func getEventIdRx(tx *bolt.Tx, key string) string {
 }
 
 func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change decimal.Decimal, err error) {
-	multiplier := decimal.NewFromFloat(.3)
+	multiplier := decimal.NewFromFloat(.4)
 	one := decimal.NewFromInt(1)
 	random := decimal.NewFromFloat32(rand.Float32())
 	count := len(students)
@@ -918,12 +987,20 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 		if err != nil {
 			return err
 		}
+
+		if toDetails.Settings.CurrencyLock {
+			return fmt.Errorf(toDetails.LastName + " bucks are locked by the teacher")
+		}
 	}
 
 	if from != CurrencyUBuck && from != KeyDebt {
 		fromDetails, err = getUserInLocalStoreTx(tx, from)
 		if err != nil {
 			return err
+		}
+
+		if fromDetails.Settings.CurrencyLock {
+			return fmt.Errorf(fromDetails.LastName + " bucks are locked by the teacher")
 		}
 	}
 
@@ -933,7 +1010,7 @@ func studentConvertTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decima
 	}
 
 	if charge {
-		amount = amount.Mul(decimal.NewFromFloat32(keyCharge))
+		converted = converted.Mul(decimal.NewFromFloat(2 - keyCharge))
 	}
 
 	if reference == "" {
@@ -1001,6 +1078,7 @@ func chargeStudent(db *bolt.DB, clock Clock, userDetails UserInfo, amount decima
 	})
 }
 
+// sPurchase is asking if the student is making this transaction or the teacher
 func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount decimal.Decimal, currency string, reference string, sPurchase bool) (err error) {
 	if userDetails.Role != UserRoleStudent {
 		return fmt.Errorf("user is not a student")
@@ -1118,6 +1196,48 @@ func getStudentUbuckRx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.Response
 
 	var balance decimal.Decimal
 	balanceB := ubuck.Get([]byte(KeyBalance))
+	err = balance.UnmarshalText(balanceB)
+	if err != nil {
+		return resp, fmt.Errorf("cannot extract balance for the account %s: %v", userDetails.Name, err)
+	}
+	balanceF, _ := balance.Float64()
+	resp = openapi.ResponseSearchStudentUbuck{
+		Value: float32(balanceF),
+	}
+
+	return
+}
+
+func getStudentBuck(db *bolt.DB, userDetails UserInfo, teacherId string) (resp openapi.ResponseSearchStudentUbuck, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getStudentBuckRx(tx, userDetails, teacherId)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return
+}
+
+func getStudentBuckRx(tx *bolt.Tx, userDetails UserInfo, teacherId string) (resp openapi.ResponseSearchStudentUbuck, err error) {
+	student, err := getStudentBucketRx(tx, userDetails.Name)
+	if student == nil {
+		return resp, err
+	}
+
+	accounts := student.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
+		return resp, fmt.Errorf("cannot find Buck Accounts")
+	}
+
+	buck := accounts.Bucket([]byte(teacherId))
+	if buck == nil {
+		return resp, fmt.Errorf("cannot find ubuck")
+	}
+
+	var balance decimal.Decimal
+	balanceB := buck.Get([]byte(KeyBalance))
 	err = balance.UnmarshalText(balanceB)
 	if err != nil {
 		return resp, fmt.Errorf("cannot extract balance for the account %s: %v", userDetails.Name, err)

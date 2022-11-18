@@ -163,6 +163,9 @@ func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudent
 				LastName:    "admin",
 				Role:        UserRoleTeacher,
 				SchoolId:    schoolId,
+				Settings: TeacherSettings{
+					CurrencyLock: false,
+				},
 			}
 			errE = createTeacher(db, teacher)
 			if errE != nil {

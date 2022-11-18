@@ -56,8 +56,15 @@ go tool cover -html cover.out
                                 - email
                 "market"
                     [item_id]
-                        - description
-                        - cost
+                        [marketData]
+                            - title
+                            - cost
+                            - count
+                            - active
+                        [buyers]
+                            [studentPurchase_id]
+                                - active
+                                - student_id
 
 
         "admins"
