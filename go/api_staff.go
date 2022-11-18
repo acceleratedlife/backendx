@@ -68,6 +68,12 @@ func (c *StaffApiController) Routes() Routes {
 			c.AuctionsAll,
 		},
 		{
+			"DeleteMarketItem",
+			strings.ToUpper("Delete"),
+			"/api/marketItems",
+			c.DeleteMarketItem,
+		},
+		{
 			"DeleteStudent",
 			strings.ToUpper("Delete"),
 			"/api/users/user",
@@ -86,6 +92,12 @@ func (c *StaffApiController) Routes() Routes {
 			c.EditClass,
 		},
 		{
+			"GetSettings",
+			strings.ToUpper("Get"),
+			"/api/settings",
+			c.GetSettings,
+		},
+		{
 			"KickClass",
 			strings.ToUpper("Put"),
 			"/api/classes/class/kick",
@@ -96,6 +108,24 @@ func (c *StaffApiController) Routes() Routes {
 			strings.ToUpper("Post"),
 			"/api/classes/class",
 			c.MakeClass,
+		},
+		{
+			"MakeMarketItem",
+			strings.ToUpper("Post"),
+			"/api/marketItems",
+			c.MakeMarketItem,
+		},
+		{
+			"MarketItemRefund",
+			strings.ToUpper("Put"),
+			"/api/marketItems/refund",
+			c.MarketItemRefund,
+		},
+		{
+			"MarketItemResolve",
+			strings.ToUpper("Put"),
+			"/api/marketItems/resolve",
+			c.MarketItemResolve,
 		},
 		{
 			"PayTransactions",
@@ -126,6 +156,12 @@ func (c *StaffApiController) Routes() Routes {
 			strings.ToUpper("Get"),
 			"/api/transactions",
 			c.SearchTransactions,
+		},
+		{
+			"SetSettings",
+			strings.ToUpper("Put"),
+			"/api/settings",
+			c.SetSettings,
 		},
 	}
 }
@@ -172,6 +208,21 @@ func (c *StaffApiController) AuctionReject(w http.ResponseWriter, r *http.Reques
 // AuctionsAll - get all auctions for school
 func (c *StaffApiController) AuctionsAll(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.AuctionsAll(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// DeleteMarketItem - delete Market Item
+func (c *StaffApiController) DeleteMarketItem(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.DeleteMarketItem(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -236,6 +287,19 @@ func (c *StaffApiController) EditClass(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// GetSettings - get school settings
+func (c *StaffApiController) GetSettings(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.GetSettings(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
 // KickClass - Kick member from class
 func (c *StaffApiController) KickClass(w http.ResponseWriter, r *http.Request) {
 	requestKickClassParam := RequestKickClass{}
@@ -274,6 +338,78 @@ func (c *StaffApiController) MakeClass(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result, err := c.service.MakeClass(r.Context(), requestMakeClassParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MakeMarketItem - When a staff makes a market item
+func (c *StaffApiController) MakeMarketItem(w http.ResponseWriter, r *http.Request) {
+	requestMakeMarketItemParam := RequestMakeMarketItem{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMakeMarketItemParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMakeMarketItemRequired(requestMakeMarketItemParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MakeMarketItem(r.Context(), requestMakeMarketItemParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MarketItemRefund - refund market purchase
+func (c *StaffApiController) MarketItemRefund(w http.ResponseWriter, r *http.Request) {
+	requestMarketRefundParam := RequestMarketRefund{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMarketRefundParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMarketRefundRequired(requestMarketRefundParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MarketItemRefund(r.Context(), requestMarketRefundParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MarketItemResolve - resolve market item purchase
+func (c *StaffApiController) MarketItemResolve(w http.ResponseWriter, r *http.Request) {
+	requestMarketRefundParam := RequestMarketRefund{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMarketRefundParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMarketRefundRequired(requestMarketRefundParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MarketItemResolve(r.Context(), requestMarketRefundParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -363,6 +499,30 @@ func (c *StaffApiController) SearchTransactions(w http.ResponseWriter, r *http.R
 	query := r.URL.Query()
 	idParam := query.Get("_id")
 	result, err := c.service.SearchTransactions(r.Context(), idParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SetSettings - change school settings
+func (c *StaffApiController) SetSettings(w http.ResponseWriter, r *http.Request) {
+	settingsParam := Settings{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&settingsParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertSettingsRequired(settingsParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.SetSettings(r.Context(), settingsParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

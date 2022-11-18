@@ -135,6 +135,39 @@ func (a *StaffApiServiceImpl) Deleteclass(ctx context.Context, Id string) (opena
 	return openapi.Response(200, nil), nil
 }
 
+func (s *StaffApiServiceImpl) DeleteMarketItem(ctx context.Context, Id string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(400, nil), nil
+	}
+
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = s.db.Update(func(tx *bolt.Tx) error {
+		marketBucket, itemBucket, err := getMarketItemRx(tx, userDetails, Id)
+		if err != nil {
+			return err
+		}
+
+		err = marketItemDeleteTx(tx, s.clock, marketBucket, itemBucket, Id, userDetails.Email)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR: %v", err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, nil), nil
+}
+
 func (s *StaffApiServiceImpl) DeleteStudent(ctx context.Context, query string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
@@ -267,6 +300,29 @@ func (s *StaffApiServiceImpl) MakeClass(ctx context.Context, request openapi.Req
 	}
 
 	return openapi.Response(200, classes), nil
+}
+
+func (s *StaffApiServiceImpl) MakeMarketItem(ctx context.Context, request openapi.RequestMakeMarketItem) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	_, err = makeMarketItem(s.db, s.clock, userDetails, request)
+
+	if err != nil {
+		lgr.Printf("ERROR market item not created: %v", err)
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
 }
 
 func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.RequestPayTransactions) (openapi.ImplResponse, error) {
@@ -418,6 +474,128 @@ func (s *StaffApiServiceImpl) SearchTransactions(ctx context.Context, teacherId 
 	}
 
 	return openapi.Response(200, resp), nil
+}
+
+func (s *StaffApiServiceImpl) GetSettings(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, nil), nil
+	}
+
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	if userDetails.Role == UserRoleTeacher {
+		return openapi.Response(200, userDetails.Settings), nil
+	}
+
+	settings, err := getSettings(s.db, userDetails)
+	if err != nil {
+		lgr.Printf("ERROR cannot get settings with : %s %v", userDetails.Name, err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, settings), nil
+}
+
+func (s *StaffApiServiceImpl) SetSettings(ctx context.Context, body openapi.Settings) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(400, nil), nil
+	}
+
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	if userDetails.Role == UserRoleTeacher {
+		updatedTeacher := userDetails
+		updatedTeacher.Settings.CurrencyLock = body.CurrencyLock
+		err := userEdit(s.db, s.clock, updatedTeacher, openapi.UsersUserBody{})
+		if err != nil {
+			return openapi.Response(400, ""), nil
+		}
+
+		return openapi.Response(200, nil), nil
+	}
+
+	err = setSettings(s.db, userDetails, body)
+	if err != nil {
+		lgr.Printf("ERROR cannot set: %v", err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, nil), nil
+
+}
+
+func (s *StaffApiServiceImpl) MarketItemResolve(ctx context.Context, body openapi.RequestMarketRefund) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(400, nil), nil
+	}
+
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = s.db.Update(func(tx *bolt.Tx) error {
+		market, itemBucket, err := getMarketItemRx(tx, userDetails, body.Id)
+		if err != nil {
+			return err
+		}
+
+		err = marketItemResolveTx(market, itemBucket, body.UserId)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR: %v", err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, nil), nil
+}
+
+func (s *StaffApiServiceImpl) MarketItemRefund(ctx context.Context, body openapi.RequestMarketRefund) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(400, nil), nil
+	}
+
+	if userDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = s.db.Update(func(tx *bolt.Tx) error {
+		_, itemBucket, err := getMarketItemRx(tx, userDetails, body.Id)
+		if err != nil {
+			return err
+		}
+
+		err = marketItemRefundTx(tx, s.clock, itemBucket, body.UserId, userDetails.Email)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR: %v", err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, nil), nil
 }
 
 // NewStaffApiServiceImpl creates a default api service

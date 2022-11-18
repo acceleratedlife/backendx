@@ -170,20 +170,6 @@ func (s *AllApiService) SearchAllBucks(ctx context.Context) (ImplResponse, error
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchAllBucks method not implemented")
 }
 
-// SearchBucks - searches bucks
-func (s *AllApiService) SearchBucks(ctx context.Context, id string) (ImplResponse, error) {
-	// TODO - update SearchBucks with the required logic for this service method.
-	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, Buck{}) or use other options such as http.Ok ...
-	//return Response(200, Buck{}), nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("SearchBucks method not implemented")
-}
-
 // SearchClass - searches for a class
 func (s *AllApiService) SearchClass(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchClass with the required logic for this service method.
@@ -210,6 +196,20 @@ func (s *AllApiService) SearchClasses(ctx context.Context) (ImplResponse, error)
 	//return Response(404, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchClasses method not implemented")
+}
+
+// SearchMarketItems - all market items relitive to this user
+func (s *AllApiService) SearchMarketItems(ctx context.Context, id string) (ImplResponse, error) {
+	// TODO - update SearchMarketItems with the required logic for this service method.
+	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []ResponseMarketItem{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseMarketItem{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("SearchMarketItems method not implemented")
 }
 
 // SearchSchool - searches for a school
@@ -266,6 +266,20 @@ func (s *AllApiService) SearchStudents(ctx context.Context) (ImplResponse, error
 	//return Response(404, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchStudents method not implemented")
+}
+
+// SearchTeachers - all the teachers that are at the same school of the user
+func (s *AllApiService) SearchTeachers(ctx context.Context) (ImplResponse, error) {
+	// TODO - update SearchTeachers with the required logic for this service method.
+	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []ResponseTeachers{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseTeachers{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("SearchTeachers method not implemented")
 }
 
 // UserEdit - edit a user

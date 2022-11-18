@@ -31,13 +31,14 @@ type AllApiRouter interface {
 	PayTransaction(http.ResponseWriter, *http.Request)
 	SearchAccount(http.ResponseWriter, *http.Request)
 	SearchAllBucks(http.ResponseWriter, *http.Request)
-	SearchBucks(http.ResponseWriter, *http.Request)
 	SearchClass(http.ResponseWriter, *http.Request)
 	SearchClasses(http.ResponseWriter, *http.Request)
+	SearchMarketItems(http.ResponseWriter, *http.Request)
 	SearchSchool(http.ResponseWriter, *http.Request)
 	SearchStudent(http.ResponseWriter, *http.Request)
 	SearchStudentBucks(http.ResponseWriter, *http.Request)
 	SearchStudents(http.ResponseWriter, *http.Request)
+	SearchTeachers(http.ResponseWriter, *http.Request)
 	UserEdit(http.ResponseWriter, *http.Request)
 }
 // AllSchoolApiRouter defines the required methods for binding the api requests to a responses for the AllSchoolApi
@@ -53,9 +54,7 @@ type AllSchoolApiRouter interface {
 // The SchoolAdminApiRouter implementation should parse necessary information from the http request,
 // pass the data to a SchoolAdminApiServicer to perform the required actions, then write the service results to the http response.
 type SchoolAdminApiRouter interface { 
-	GetSettings(http.ResponseWriter, *http.Request)
 	SearchAdminTeacherClass(http.ResponseWriter, *http.Request)
-	SetSettings(http.ResponseWriter, *http.Request)
 }
 // StaffApiRouter defines the required methods for binding the api requests to a responses for the StaffApi
 // The StaffApiRouter implementation should parse necessary information from the http request,
@@ -64,16 +63,22 @@ type StaffApiRouter interface {
 	AuctionApprove(http.ResponseWriter, *http.Request)
 	AuctionReject(http.ResponseWriter, *http.Request)
 	AuctionsAll(http.ResponseWriter, *http.Request)
+	DeleteMarketItem(http.ResponseWriter, *http.Request)
 	DeleteStudent(http.ResponseWriter, *http.Request)
 	Deleteclass(http.ResponseWriter, *http.Request)
 	EditClass(http.ResponseWriter, *http.Request)
+	GetSettings(http.ResponseWriter, *http.Request)
 	KickClass(http.ResponseWriter, *http.Request)
 	MakeClass(http.ResponseWriter, *http.Request)
+	MakeMarketItem(http.ResponseWriter, *http.Request)
+	MarketItemRefund(http.ResponseWriter, *http.Request)
+	MarketItemResolve(http.ResponseWriter, *http.Request)
 	PayTransactions(http.ResponseWriter, *http.Request)
 	ResetPassword(http.ResponseWriter, *http.Request)
 	SearchAuctionsTeacher(http.ResponseWriter, *http.Request)
 	SearchEvents(http.ResponseWriter, *http.Request)
 	SearchTransactions(http.ResponseWriter, *http.Request)
+	SetSettings(http.ResponseWriter, *http.Request)
 }
 // StudentApiRouter defines the required methods for binding the api requests to a responses for the StudentApi
 // The StudentApiRouter implementation should parse necessary information from the http request,
@@ -82,7 +87,9 @@ type StudentApiRouter interface {
 	AuctionBid(http.ResponseWriter, *http.Request)
 	BuckConvert(http.ResponseWriter, *http.Request)
 	CryptoConvert(http.ResponseWriter, *http.Request)
+	MarketItemBuy(http.ResponseWriter, *http.Request)
 	SearchAuctionsStudent(http.ResponseWriter, *http.Request)
+	SearchBuck(http.ResponseWriter, *http.Request)
 	SearchBuckTransactions(http.ResponseWriter, *http.Request)
 	SearchCrypto(http.ResponseWriter, *http.Request)
 	SearchCryptoTransaction(http.ResponseWriter, *http.Request)
@@ -130,13 +137,14 @@ type AllApiServicer interface {
 	PayTransaction(context.Context, RequestPayTransaction) (ImplResponse, error)
 	SearchAccount(context.Context, string) (ImplResponse, error)
 	SearchAllBucks(context.Context) (ImplResponse, error)
-	SearchBucks(context.Context, string) (ImplResponse, error)
 	SearchClass(context.Context, string) (ImplResponse, error)
 	SearchClasses(context.Context) (ImplResponse, error)
+	SearchMarketItems(context.Context, string) (ImplResponse, error)
 	SearchSchool(context.Context, string) (ImplResponse, error)
 	SearchStudent(context.Context, string) (ImplResponse, error)
 	SearchStudentBucks(context.Context) (ImplResponse, error)
 	SearchStudents(context.Context) (ImplResponse, error)
+	SearchTeachers(context.Context) (ImplResponse, error)
 	UserEdit(context.Context, UsersUserBody) (ImplResponse, error)
 }
 
@@ -158,9 +166,7 @@ type AllSchoolApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type SchoolAdminApiServicer interface { 
-	GetSettings(context.Context) (ImplResponse, error)
 	SearchAdminTeacherClass(context.Context, string) (ImplResponse, error)
-	SetSettings(context.Context, Settings) (ImplResponse, error)
 }
 
 
@@ -172,16 +178,22 @@ type StaffApiServicer interface {
 	AuctionApprove(context.Context, RequestAuctionAction) (ImplResponse, error)
 	AuctionReject(context.Context, string) (ImplResponse, error)
 	AuctionsAll(context.Context) (ImplResponse, error)
+	DeleteMarketItem(context.Context, string) (ImplResponse, error)
 	DeleteStudent(context.Context, string) (ImplResponse, error)
 	Deleteclass(context.Context, string) (ImplResponse, error)
 	EditClass(context.Context, RequestEditClass) (ImplResponse, error)
+	GetSettings(context.Context) (ImplResponse, error)
 	KickClass(context.Context, RequestKickClass) (ImplResponse, error)
 	MakeClass(context.Context, RequestMakeClass) (ImplResponse, error)
+	MakeMarketItem(context.Context, RequestMakeMarketItem) (ImplResponse, error)
+	MarketItemRefund(context.Context, RequestMarketRefund) (ImplResponse, error)
+	MarketItemResolve(context.Context, RequestMarketRefund) (ImplResponse, error)
 	PayTransactions(context.Context, RequestPayTransactions) (ImplResponse, error)
 	ResetPassword(context.Context, RequestUser) (ImplResponse, error)
 	SearchAuctionsTeacher(context.Context) (ImplResponse, error)
 	SearchEvents(context.Context) (ImplResponse, error)
 	SearchTransactions(context.Context, string) (ImplResponse, error)
+	SetSettings(context.Context, Settings) (ImplResponse, error)
 }
 
 
@@ -193,7 +205,9 @@ type StudentApiServicer interface {
 	AuctionBid(context.Context, RequestAuctionBid) (ImplResponse, error)
 	BuckConvert(context.Context, RequestBuckConvert) (ImplResponse, error)
 	CryptoConvert(context.Context, RequestCryptoConvert) (ImplResponse, error)
+	MarketItemBuy(context.Context, RequestMarketRefund) (ImplResponse, error)
 	SearchAuctionsStudent(context.Context) (ImplResponse, error)
+	SearchBuck(context.Context, string) (ImplResponse, error)
 	SearchBuckTransactions(context.Context) (ImplResponse, error)
 	SearchCrypto(context.Context, string) (ImplResponse, error)
 	SearchCryptoTransaction(context.Context) (ImplResponse, error)

@@ -594,3 +594,37 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 	return
 
 }
+
+func getTeachers(db *bolt.DB, userDetails UserInfo) (teachers []openapi.ResponseTeachers, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		school, err := getSchoolBucketTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		teachersBucket := school.Bucket([]byte(KeyTeachers))
+		if teachersBucket == nil {
+			return fmt.Errorf("cannot find teachers bucket")
+		}
+
+		c := teachersBucket.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			teacher, err := getUserInLocalStoreTx(tx, string(k))
+			if err != nil {
+				return err
+			}
+
+			teachers = append(teachers, openapi.ResponseTeachers{
+				Id:   teacher.Email,
+				Name: teacher.LastName + " " + teacher.FirstName[0:1],
+			})
+
+		}
+
+		return nil
+
+	})
+
+	return
+
+}

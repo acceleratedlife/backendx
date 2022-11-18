@@ -68,10 +68,22 @@ func (c *StudentApiController) Routes() Routes {
 			c.CryptoConvert,
 		},
 		{
+			"MarketItemBuy",
+			strings.ToUpper("Put"),
+			"/api/marketItems/buy",
+			c.MarketItemBuy,
+		},
+		{
 			"SearchAuctionsStudent",
 			strings.ToUpper("Get"),
 			"/api/auctions/student",
 			c.SearchAuctionsStudent,
+		},
+		{
+			"SearchBuck",
+			strings.ToUpper("Get"),
+			"/api/bucks/buck",
+			c.SearchBuck,
 		},
 		{
 			"SearchBuckTransactions",
@@ -184,9 +196,48 @@ func (c *StudentApiController) CryptoConvert(w http.ResponseWriter, r *http.Requ
 
 }
 
+// MarketItemBuy - market purchase
+func (c *StudentApiController) MarketItemBuy(w http.ResponseWriter, r *http.Request) {
+	requestMarketRefundParam := RequestMarketRefund{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMarketRefundParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMarketRefundRequired(requestMarketRefundParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MarketItemBuy(r.Context(), requestMarketRefundParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
 // SearchAuctionsStudent - searches auctions
 func (c *StudentApiController) SearchAuctionsStudent(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.SearchAuctionsStudent(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SearchBuck - returns how much the student holds of this buck
+func (c *StudentApiController) SearchBuck(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.SearchBuck(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

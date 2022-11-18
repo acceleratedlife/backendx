@@ -110,12 +110,6 @@ func (c *AllApiController) Routes() Routes {
 			c.SearchAllBucks,
 		},
 		{
-			"SearchBucks",
-			strings.ToUpper("Get"),
-			"/api/bucks/buck",
-			c.SearchBucks,
-		},
-		{
 			"SearchClass",
 			strings.ToUpper("Get"),
 			"/api/classes/class",
@@ -126,6 +120,12 @@ func (c *AllApiController) Routes() Routes {
 			strings.ToUpper("Get"),
 			"/api/classes",
 			c.SearchClasses,
+		},
+		{
+			"SearchMarketItems",
+			strings.ToUpper("Get"),
+			"/api/marketItems",
+			c.SearchMarketItems,
 		},
 		{
 			"SearchSchool",
@@ -150,6 +150,12 @@ func (c *AllApiController) Routes() Routes {
 			strings.ToUpper("Get"),
 			"/api/users",
 			c.SearchStudents,
+		},
+		{
+			"SearchTeachers",
+			strings.ToUpper("Get"),
+			"/api/teachers",
+			c.SearchTeachers,
 		},
 		{
 			"UserEdit",
@@ -333,21 +339,6 @@ func (c *AllApiController) SearchAllBucks(w http.ResponseWriter, r *http.Request
 
 }
 
-// SearchBucks - searches bucks
-func (c *AllApiController) SearchBucks(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.SearchBucks(r.Context(), idParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
 // SearchClass - searches for a class
 func (c *AllApiController) SearchClass(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
@@ -366,6 +357,21 @@ func (c *AllApiController) SearchClass(w http.ResponseWriter, r *http.Request) {
 // SearchClasses - searches for users classes
 func (c *AllApiController) SearchClasses(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.SearchClasses(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SearchMarketItems - all market items relitive to this user
+func (c *AllApiController) SearchMarketItems(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.SearchMarketItems(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -422,6 +428,19 @@ func (c *AllApiController) SearchStudentBucks(w http.ResponseWriter, r *http.Req
 // SearchStudents - return all students from a school
 func (c *AllApiController) SearchStudents(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.SearchStudents(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SearchTeachers - all the teachers that are at the same school of the user
+func (c *AllApiController) SearchTeachers(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.SearchTeachers(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

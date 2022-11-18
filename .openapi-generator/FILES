@@ -51,6 +51,8 @@ go/model_request_kick_class.go
 go/model_request_login.go
 go/model_request_make_auction.go
 go/model_request_make_class.go
+go/model_request_make_market_item.go
+go/model_request_market_refund.go
 go/model_request_pay_transaction.go
 go/model_request_pay_transactions.go
 go/model_request_register.go
@@ -69,6 +71,7 @@ go/model_response_events.go
 go/model_response_kick_class.go
 go/model_response_login2.go
 go/model_response_login4.go
+go/model_response_market_item.go
 go/model_response_member_class.go
 go/model_response_member_class_owner.go
 go/model_response_pay_transactions.go
@@ -77,6 +80,7 @@ go/model_response_register4.go
 go/model_response_reset_password.go
 go/model_response_schools.go
 go/model_response_search_student_ubuck.go
+go/model_response_teachers.go
 go/model_response_transactions.go
 go/model_school.go
 go/model_schools_school_body.go
