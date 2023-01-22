@@ -246,6 +246,18 @@ func TestDailyPayment(t *testing.T) {
 	r = DailyPayIfNeeded(db, &clock, student)
 	require.False(t, r)
 
+	clock.TickOne(5 * time.Hour)
+	r = DailyPayIfNeeded(db, &clock, student)
+	require.False(t, r)
+
+	clock.TickOne(3 * time.Hour)
+	r = DailyPayIfNeeded(db, &clock, student)
+	require.False(t, r)
+
+	clock.TickOne(1 * time.Hour)
+	r = DailyPayIfNeeded(db, &clock, student)
+	require.True(t, r)
+
 	clock.TickOne(24 * time.Hour)
 	r = DailyPayIfNeeded(db, &clock, student)
 	require.True(t, r)
