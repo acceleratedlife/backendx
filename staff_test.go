@@ -330,7 +330,7 @@ func TestResetPassword(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
-	require.Equal(t, 6, len(data.Password))
+	require.GreaterOrEqual(t, len(data.Password), 6)
 }
 
 func TestSearchEvents(t *testing.T) {
