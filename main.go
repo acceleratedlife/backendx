@@ -307,7 +307,7 @@ func buildAuthMiddleware(m middleware.Authenticator) func(http.Handler) http.Han
 			// if not authentication related pass through auth
 			if strings.HasPrefix(r.URL.Path, "/auth") {
 				handler.ServeHTTP(w, r)
-			} else if r.URL.Path == "/api/users/register" {
+			} else if r.URL.Path == "/api/users/register" || r.URL.Path == "/api/users/resetStaffPassword" {
 				// or auth-free
 				handler.ServeHTTP(w, r)
 

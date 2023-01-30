@@ -55,6 +55,12 @@ func (c *UnregisteredApiController) Routes() Routes {
 			"/api/users/register",
 			c.Register,
 		},
+		{
+			"ResetStaffPassword",
+			strings.ToUpper("Post"),
+			"/api/users/resetStaffPassword",
+			c.ResetStaffPassword,
+		},
 	}
 }
 
@@ -72,6 +78,30 @@ func (c *UnregisteredApiController) Register(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	result, err := c.service.Register(r.Context(), requestRegisterParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// ResetStaffPassword - reset staff password
+func (c *UnregisteredApiController) ResetStaffPassword(w http.ResponseWriter, r *http.Request) {
+	requestUserParam := RequestUser{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestUserParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestUserRequired(requestUserParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.ResetStaffPassword(r.Context(), requestUserParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
