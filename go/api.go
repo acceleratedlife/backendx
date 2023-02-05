@@ -119,6 +119,7 @@ type SysAdminApiRouter interface {
 // pass the data to a UnregisteredApiServicer to perform the required actions, then write the service results to the http response.
 type UnregisteredApiRouter interface { 
 	Register(http.ResponseWriter, *http.Request)
+	ResetStaffPassword(http.ResponseWriter, *http.Request)
 }
 
 
@@ -243,4 +244,5 @@ type SysAdminApiServicer interface {
 // and updated with the logic required for the API.
 type UnregisteredApiServicer interface { 
 	Register(context.Context, RequestRegister) (ImplResponse, error)
+	ResetStaffPassword(context.Context, RequestUser) (ImplResponse, error)
 }

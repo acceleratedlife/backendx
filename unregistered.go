@@ -12,6 +12,36 @@ type UnregisteredApiServiceImpl struct {
 	clock Clock
 }
 
+func (s *UnregisteredApiServiceImpl) ResetStaffPassword(ctx context.Context, body openapi.RequestUser) (openapi.ImplResponse, error) {
+	staffDetails, err := getUserInLocalStore(s.db, body.Id)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if staffDetails.Role == UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = s.db.Update(func(tx *bolt.Tx) error {
+		resp, err := resetPasswordTx(tx, staffDetails, 3)
+		if err != nil {
+			return err
+		}
+
+		err = sendEmail(staffDetails, resp.Password)
+		return err
+	})
+
+	if err != nil {
+		return openapi.Response(400, ""), err
+	}
+
+	return openapi.Response(200, ""), nil
+}
+
 func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register openapi.RequestRegister) (openapi.ImplResponse, error) {
 
 	role, pathId, err := RoleByAddCode(u.db, register.AddCode, u.clock)
