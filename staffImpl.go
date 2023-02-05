@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/smtp"
 	"strconv"
 	"strings"
 	"time"
@@ -878,16 +879,16 @@ func getEventsTeacher(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []op
 	return
 }
 
-func resetPassword(db *bolt.DB, userDetails UserInfo) (resp openapi.ResponseResetPassword, err error) {
+func resetPassword(db *bolt.DB, userDetails UserInfo, words int) (resp openapi.ResponseResetPassword, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
-		resp, err = resetPasswordTx(tx, userDetails)
+		resp, err = resetPasswordTx(tx, userDetails, words)
 		return err
 	})
 
 	return
 }
 
-func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseResetPassword, err error) {
+func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo, words int) (resp openapi.ResponseResetPassword, err error) {
 	users := tx.Bucket([]byte(KeyUsers))
 	if users == nil {
 		return resp, fmt.Errorf("users do not exist")
@@ -898,10 +899,9 @@ func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseRe
 	if user == nil {
 		return resp, fmt.Errorf("user does not exist")
 	}
-
-	Password := randomPassword()
-	resp.Password = Password
-	userDetails.PasswordSha = EncodePassword(Password)
+	password := randomPassword(words)
+	resp.Password = password
+	userDetails.PasswordSha = EncodePassword(password)
 
 	marshal, err := json.Marshal(userDetails)
 	if err != nil {
@@ -916,11 +916,42 @@ func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseRe
 	return
 }
 
-func randomPassword() (pass string) {
+func randomPassword(words int) (pass string) {
 	pwds := [100]string{"apple", "about", "after", "again", "being", "beach", "bread", "bring", "catch", "child", "clean", "clear", "drink", "dream", "drive", "dance", "every", "extra", "early", "enter", "final", "first", "floor", "follow", "great", "green", "group", "grown", "happy", "heart", "house", "heavy", "ideas", "image", "inside", "issue", "jumbo", "joins", "juice", "jumper", "kinds", "kings", "kneel", "knife", "large", "learn", "least", "leave", "music", "model", "money", "month", "night", "north", "noted", "nurse", "offer", "often", "order", "other", "peace", "party", "place", "plant", "quick", "quiet", "queue", "quote", "right", "reach", "ready", "round", "sound", "south", "small", "spend", "table", "teach", "taste", "today", "under", "until", "upset", "using", "value", "virus", "visit", "voice", "water", "watch", "wheel", "while", "xerox", "x-ray", "young", "years", "yells", "yolks", "zebra", "zoned"}
-	pick := pwds[rand.Intn(len(pwds))]
-	pick = pick + strconv.Itoa(rand.Intn(10))
-	return pick
+	for i := 0; i < words; i++ {
+		if i == 0 {
+			pass = pwds[rand.Intn(len(pwds))] + strconv.Itoa(rand.Intn(10))
+		} else {
+			pass = pass + "-" + pwds[rand.Intn(len(pwds))] + strconv.Itoa(rand.Intn(10))
+		}
+	}
+
+	return pass
+}
+
+func sendEmail(staffDetails UserInfo, password string) (err error) {
+	config := loadConfig()
+	var (
+		from = "SchoolBucksReset@schoolbucks.net"
+		msg  = []byte("From: SchoolBucksReset@schoolbucks.net\r\n" +
+
+			"Subject: Password Reset\r\n" +
+
+			"\r\n" +
+
+			"New Password is: " + password)
+		recipients = []string{staffDetails.Email}
+	)
+
+	hostname := "smtp-relay.sendinblue.com"
+	auth := smtp.PlainAuth("", config.EmailSMTP, config.PasswordSMTP, hostname)
+
+	err = smtp.SendMail(hostname+":587", auth, from, recipients, msg)
+	if err != nil {
+		return err
+	}
+
+	return
 }
 
 func approveAuction(db *bolt.DB, userDetails UserInfo, body openapi.RequestAuctionAction) (err error) {

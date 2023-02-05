@@ -586,7 +586,7 @@ paths:
       description: by passing in a buck ID that buck is returned
       operationId: searchBuck
       parameters:
-      - description: pass the id to be searched
+      - description: pass the teacher_id of the buck
         explode: true
         in: query
         name: _id
@@ -1466,6 +1466,23 @@ paths:
       summary: Users register
       tags:
       - Unregistered
+  /users/resetStaffPassword:
+    post:
+      description: generate temp password and send it in an email
+      operationId: resetStaffPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestUser'
+      responses:
+        "200":
+          description: success
+        "401":
+          description: unconfirmed email
+      summary: reset staff password
+      tags:
+      - Unregistered
   /users/login:
     post:
       description: If user email and password are correc tthen generate token. If
@@ -1534,7 +1551,7 @@ paths:
       - All
   /users/resetPassword:
     post:
-      description: generate temp password and send it in an email
+      description: generate temp password and display to teacher
       operationId: resetPassword
       requestBody:
         content:
@@ -1547,8 +1564,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseResetPassword'
-          description: class record is made. Return all the classes from this owner.
-            Sort classes by period ascending
+          description: success
         "401":
           description: unconfirmed email
       summary: reset password

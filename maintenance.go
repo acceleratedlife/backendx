@@ -123,7 +123,7 @@ func resetPasswordHandler(db *bolt.DB) http.Handler {
 			return
 		}
 
-		response, err := resetPassword(db, user)
+		response, err := resetPassword(db, user, 1)
 
 		lgr.Printf("Password reset for %s ", request.Email)
 

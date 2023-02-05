@@ -376,7 +376,7 @@ func (s *StaffApiServiceImpl) ResetPassword(ctx context.Context, body openapi.Re
 
 	var resp openapi.ResponseResetPassword
 	err = s.db.Update(func(tx *bolt.Tx) error {
-		resp, err = resetPasswordTx(tx, studentDetails)
+		resp, err = resetPasswordTx(tx, studentDetails, 1)
 		return err
 	})
 

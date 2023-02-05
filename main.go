@@ -106,6 +106,8 @@ type ServerConfig struct {
 	SecretKey     string
 	ServerPort    int
 	SeedPassword  string
+	EmailSMTP     string
+	PasswordSMTP  string
 }
 
 type Clock interface {
@@ -307,7 +309,7 @@ func buildAuthMiddleware(m middleware.Authenticator) func(http.Handler) http.Han
 			// if not authentication related pass through auth
 			if strings.HasPrefix(r.URL.Path, "/auth") {
 				handler.ServeHTTP(w, r)
-			} else if r.URL.Path == "/api/users/register" {
+			} else if r.URL.Path == "/api/users/register" || r.URL.Path == "/api/users/resetStaffPassword" {
 				// or auth-free
 				handler.ServeHTTP(w, r)
 
@@ -339,6 +341,8 @@ func loadConfig() ServerConfig {
 		AdminPassword: "admin",
 		ServerPort:    5000,
 		SeedPassword:  "123qwe",
+		EmailSMTP:     "qq@qq.com",
+		PasswordSMTP:  "123qwe",
 	}
 
 	yamlFile, err := ioutil.ReadFile("./alcfg.yml")
