@@ -930,15 +930,21 @@ func randomPassword(words int) (pass string) {
 }
 
 func sendEmail(staffDetails UserInfo, password string) (err error) {
+	config := loadConfig()
 	var (
-		from       = "alresetpass@gmail.com"
-		msg        = []byte("New Password is: " + password)
-		recipients = []string{"chad187@gmail.com"}
-		// recipients = []string{staffDetails.Email}
+		from = "SchoolBucksReset@schoolbucks.net"
+		msg  = []byte("From: SchoolBucksReset@schoolbucks.net\r\n" +
+
+			"Subject: Password Reset\r\n" +
+
+			"\r\n" +
+
+			"New Password is: " + password)
+		recipients = []string{staffDetails.Email}
 	)
 
 	hostname := "smtp-relay.sendinblue.com"
-	auth := smtp.PlainAuth("", "env var email", "env var password", hostname)
+	auth := smtp.PlainAuth("", config.EmailSMTP, config.PasswordSMTP, hostname)
 
 	err = smtp.SendMail(hostname+":587", auth, from, recipients, msg)
 	if err != nil {

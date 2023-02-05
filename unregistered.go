@@ -4,7 +4,6 @@ import (
 	"context"
 
 	openapi "github.com/acceleratedlife/backend/go"
-	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -33,7 +32,6 @@ func (s *UnregisteredApiServiceImpl) ResetStaffPassword(ctx context.Context, bod
 		}
 
 		err = sendEmail(staffDetails, resp.Password)
-		lgr.Printf(err.Error())
 		return err
 	})
 
