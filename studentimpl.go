@@ -1112,10 +1112,11 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 				if err != nil {
 					return err
 				}
-			}
-			err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, "", false)
-			if err != nil {
-				return err
+			} else {
+				err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, "", false)
+				if err != nil {
+					return err
+				}
 			}
 
 			return nil
