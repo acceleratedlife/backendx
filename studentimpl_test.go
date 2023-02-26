@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -72,18 +73,18 @@ func TestEvents(t *testing.T) {
 
 	marshal, _ := json.Marshal(event)
 
-	err := createJobOrEvent(db, marshal, KeyNEvents, "Teacher")
+	err := createJobOrEvent(db, marshal, KeyNEvents, "Negative")
 	require.Nil(t, err)
 
 	event = eventRequest{
 		Positive:    true,
-		Description: "Pay Taxes",
+		Description: "Tax Refund",
 		Title:       "Taxes",
 	}
 
 	marshal, _ = json.Marshal(event)
 
-	err = createJobOrEvent(db, marshal, KeyPEvents, "Teacher")
+	err = createJobOrEvent(db, marshal, KeyPEvents, "Positive")
 	require.Nil(t, err)
 
 	for _, student := range students {
@@ -114,6 +115,90 @@ func TestEvents(t *testing.T) {
 	})
 
 	require.False(t, netWorth.Equal(decimal.NewFromFloat(100)))
+
+}
+
+func TestEventsLowUbuck(t *testing.T) {
+
+	lgr.Printf("INFO TestEventsLowUbuck")
+	t.Log("INFO TestEventsLowUbuck")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("-eventLowUbuck")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 10)
+
+	student, _ := getUserInLocalStore(db, students[0])
+	student2, _ := getUserInLocalStore(db, students[2])
+
+	event := eventRequest{
+		Positive:    false,
+		Description: "Pay Taxes",
+		Title:       "Taxes",
+	}
+
+	marshal, _ := json.Marshal(event)
+
+	err := createJobOrEvent(db, marshal, KeyNEvents, "Negative")
+	require.Nil(t, err)
+
+	event = eventRequest{
+		Positive:    true,
+		Description: "Tax Refund",
+		Title:       "Taxes",
+	}
+
+	marshal, _ = json.Marshal(event)
+
+	err = createJobOrEvent(db, marshal, KeyPEvents, "Positive")
+	require.Nil(t, err)
+
+	for _, student := range students {
+		studentDetails, _ := getUserInLocalStore(db, student)
+		err := addUbuck2Student(db, &clock, studentDetails, decimal.NewFromFloat(1), "pre load")
+		require.Nil(t, err)
+
+	}
+
+	err = addUbuck2Student(db, &clock, student, decimal.NewFromFloat(1000), "overload load")
+	require.Nil(t, err)
+
+	r := EventIfNeeded(db, &clock, student2)
+	require.False(t, r)
+
+	clock.TickOne(time.Hour * 216)
+
+	r = EventIfNeeded(db, &clock, student2)
+	require.True(t, r)
+
+	keys := 0
+	err = db.View(func(tx *bolt.Tx) error {
+		cb, err := getCbRx(tx, student2.SchoolId)
+		if err != nil {
+			return err
+		}
+
+		accountsBucket := cb.Bucket([]byte(KeyAccounts))
+		if accountsBucket == nil {
+			return fmt.Errorf("cannot find cb accounts")
+		}
+
+		debtBucket := accountsBucket.Bucket([]byte(KeyDebt))
+		if debtBucket == nil {
+			return nil
+		}
+
+		trans := debtBucket.Bucket([]byte(KeyTransactions))
+		if trans == nil {
+			return fmt.Errorf("cannot find cb account debt trans")
+		}
+
+		keys = trans.Stats().KeyN
+		return nil
+	})
+
+	require.Nil(t, err)
+
+	require.LessOrEqual(t, keys, 1)
 }
 
 func TestCollege(t *testing.T) {
