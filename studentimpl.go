@@ -472,6 +472,7 @@ func CollegeIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
 		min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
 		diff := max.Sub(min)
+		rand.Seed(time.Now().UnixNano())
 		random := decimal.NewFromFloat32(rand.Float32())
 
 		student.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
@@ -553,6 +554,7 @@ func CareerIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
+		rand.Seed(time.Now().UnixNano())
 		if student.College && student.CollegeEnd.IsZero() {
 			student.Job = getJobIdRx(tx, KeyCollegeJobs)
 			jobDetails := getJobRx(tx, KeyCollegeJobs, student.Job)
@@ -726,6 +728,7 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
+		rand.Seed(time.Now().UnixNano())
 		days := rand.Intn(5) + 4
 
 		eventTime := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour)

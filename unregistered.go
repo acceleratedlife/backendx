@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"math/rand"
+	"regexp"
+	"strconv"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	bolt "go.etcd.io/bbolt"
@@ -52,7 +56,22 @@ func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register open
 			}), nil
 	}
 
+	emailPattern, err := regexp.Compile(`\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b`)
+	if err != nil {
+		return openapi.Response(404,
+			openapi.ResponseRegister4{
+				Message: err.Error(),
+			}), nil
+	}
+
 	if role == UserRoleTeacher {
+		if !emailPattern.MatchString(register.Email) {
+			return openapi.Response(404,
+				openapi.ResponseRegister4{
+					Message: "That is not a valid email address",
+				}), nil
+		}
+
 		newUser := UserInfo{
 			Name:        register.Email,
 			FirstName:   register.FirstName,
@@ -82,10 +101,18 @@ func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register open
 	}
 
 	if role == UserRoleStudent {
+		if emailPattern.MatchString(register.Email) {
+			return openapi.Response(404,
+				openapi.ResponseRegister4{
+					Message: "Students cannot register with an email address",
+				}), nil
+		}
+
+		rand.Seed(time.Now().UnixNano())
 		newUser := UserInfo{
 			Name:        register.Email,
 			FirstName:   register.FirstName,
-			LastName:    register.LastName,
+			LastName:    string(register.LastName[0]) + strconv.Itoa(rand.Intn(10000)),
 			Email:       register.Email,
 			Confirmed:   false,
 			PasswordSha: EncodePassword(register.Password),
