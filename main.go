@@ -108,6 +108,7 @@ type ServerConfig struct {
 	SeedPassword  string
 	EmailSMTP     string
 	PasswordSMTP  string
+	Production    bool
 }
 
 type Clock interface {
@@ -115,6 +116,21 @@ type Clock interface {
 }
 
 type AppClock struct {
+}
+
+type DemoClock struct {
+	Current time.Time
+}
+
+func (t *DemoClock) Now() time.Time {
+	if t.Current.IsZero() {
+		t.Current = time.Now()
+	}
+	lgr.Printf("DEBUG current time - %v", t.Current)
+	return t.Current
+}
+func (t *DemoClock) TickOne(d time.Duration) {
+	t.Current = t.Current.Add(d)
 }
 
 func (*AppClock) Now() time.Time {
@@ -164,6 +180,12 @@ func main() {
 	router.Handle("/admin/addAdmin", addAdminHandler(db))
 	//seed db
 	router.Handle("/admin/seedDb", seedDbHandler(db, &AppClock{}))
+	//advance clock 24 hours
+	router.Handle("/admin/nextDay", nextDayHandler(&DemoClock{}))
+	//advance clock 1 hour
+	router.Handle("/admin/nextHour", nextHourHandler(&DemoClock{}))
+	//advance clock 10 minutes
+	router.Handle("/admin/nextMinutes", nextMinutesHandler(&DemoClock{}))
 
 	router.Use(buildAuthMiddleware(m))
 
@@ -174,7 +196,13 @@ func main() {
 
 // creates routes for prod
 func createRouter(db *bolt.DB) *mux.Router {
-	clock := &AppClock{}
+	serverConfig := loadConfig()
+	if serverConfig.Production {
+		clock := &AppClock{}
+		return createRouterClock(db, clock)
+	}
+
+	clock := &DemoClock{}
 	return createRouterClock(db, clock)
 }
 
@@ -343,6 +371,7 @@ func loadConfig() ServerConfig {
 		SeedPassword:  "123qwe",
 		EmailSMTP:     "qq@qq.com",
 		PasswordSMTP:  "123qwe",
+		Production:    false,
 	}
 
 	yamlFile, err := ioutil.ReadFile("./alcfg.yml")

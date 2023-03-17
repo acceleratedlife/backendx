@@ -825,3 +825,126 @@ func TestSeedDbSecured(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode)
 
 }
+
+func TestNewDaySecured(t *testing.T) {
+	clock := DemoClock{}
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db, &clock)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/nextDay", nextDayHandler(&clock))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	beforeClock := clock.Now().Add(time.Minute * 20)
+
+	client := &http.Client{}
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/nextDay",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	assert.True(t, clock.Now().After(beforeClock))
+}
+
+func TestNewHourSecured(t *testing.T) {
+	clock := DemoClock{}
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db, &clock)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/nextHour", nextHourHandler(&clock))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	beforeClock := clock.Now().Add(time.Minute * 20)
+
+	client := &http.Client{}
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/nextHour",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	assert.True(t, clock.Now().After(beforeClock))
+}
+
+func TestNewMinutesSecured(t *testing.T) {
+	clock := DemoClock{}
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db, &clock)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/nextMinutes", nextMinutesHandler(&clock))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	beforeClock := clock.Now().Add(time.Minute * 5)
+
+	client := &http.Client{}
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/nextMinutes",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	assert.True(t, clock.Now().After(beforeClock))
+}
