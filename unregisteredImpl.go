@@ -195,7 +195,6 @@ func getJobId(db *bolt.DB, key string) (job string) {
 func getJobIdRx(tx *bolt.Tx, key string) (job string) {
 	jobs := tx.Bucket([]byte(key))
 	bucketStats := jobs.Stats()
-	rand.Seed(time.Now().UnixNano())
 	pick := rand.Intn(bucketStats.KeyN)
 	c := jobs.Cursor()
 	i := 0

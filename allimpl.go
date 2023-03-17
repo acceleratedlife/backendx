@@ -344,7 +344,7 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 		userDetails.Income = userDetails.Income / 2
 	}
 	if body.College && !userDetails.College {
-		rand.Seed(time.Now().UnixNano())
+
 		diff := decimal.NewFromInt32(8000 - 5000)
 		low := decimal.NewFromInt32(5000)
 		random := decimal.NewFromFloat32(rand.Float32())

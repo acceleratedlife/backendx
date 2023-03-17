@@ -158,7 +158,7 @@ func main() {
 	m := authService.Middleware()
 
 	// *** auth
-	router := createRouter(db)
+	router, clock := createRouter(db)
 	router.Handle("/auth/al/login", authRoute)
 	router.Handle("/auth/al/logout", authRoute)
 
@@ -180,12 +180,16 @@ func main() {
 	router.Handle("/admin/addAdmin", addAdminHandler(db))
 	//seed db
 	router.Handle("/admin/seedDb", seedDbHandler(db, &AppClock{}))
+	//advance clock 15 days
+	router.Handle("/admin/nextCollege", nextCollegeHandler(clock))
+	//advance clock 5 days
+	router.Handle("/admin/nextCareer", nextCareerHandler(clock))
 	//advance clock 24 hours
-	router.Handle("/admin/nextDay", nextDayHandler(&DemoClock{}))
+	router.Handle("/admin/nextDay", nextDayHandler(clock))
 	//advance clock 1 hour
-	router.Handle("/admin/nextHour", nextHourHandler(&DemoClock{}))
+	router.Handle("/admin/nextHour", nextHourHandler(clock))
 	//advance clock 10 minutes
-	router.Handle("/admin/nextMinutes", nextMinutesHandler(&DemoClock{}))
+	router.Handle("/admin/nextMinutes", nextMinutesHandler(clock))
 
 	router.Use(buildAuthMiddleware(m))
 
@@ -195,15 +199,15 @@ func main() {
 }
 
 // creates routes for prod
-func createRouter(db *bolt.DB) *mux.Router {
+func createRouter(db *bolt.DB) (*mux.Router, *DemoClock) {
 	serverConfig := loadConfig()
 	if serverConfig.Production {
 		clock := &AppClock{}
-		return createRouterClock(db, clock)
+		return createRouterClock(db, clock), nil
 	}
 
 	clock := &DemoClock{}
-	return createRouterClock(db, clock)
+	return createRouterClock(db, clock), clock
 }
 
 func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {

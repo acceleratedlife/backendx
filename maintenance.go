@@ -367,11 +367,70 @@ func addAdminHandler(db *bolt.DB) http.Handler {
 	})
 }
 
+func nextCollegeHandler(clock *DemoClock) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO College request")
+
+		clock.TickOne(time.Hour * 24 * 15)
+
+		lgr.Printf(clock.Now().String())
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err := encoder.Encode("")
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
+func nextCareerHandler(clock *DemoClock) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO Career request")
+
+		clock.TickOne(time.Hour * 24 * 5)
+
+		lgr.Printf(clock.Now().String())
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err := encoder.Encode("")
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
 func nextDayHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		lgr.Printf("INFO new Day request")
 
 		clock.TickOne(time.Hour * 24)
+
+		lgr.Printf(clock.Now().String())
 
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
@@ -385,6 +444,13 @@ func nextDayHandler(clock *DemoClock) http.Handler {
 
 func nextHourHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		lgr.Printf("INFO new Hour request")
 
 		clock.TickOne(time.Hour)
@@ -401,6 +467,13 @@ func nextHourHandler(clock *DemoClock) http.Handler {
 
 func nextMinutesHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		lgr.Printf("INFO new Minute request")
 
 		clock.TickOne(time.Minute * 10)
