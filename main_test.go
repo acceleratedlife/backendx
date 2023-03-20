@@ -502,7 +502,7 @@ func TestResetPasswordSecured(t *testing.T) {
 
 	admins, _, _, _, _, _ := CreateTestAccounts(db, 1, 0, 0, 0)
 
-	body := resetPasswordRequest{
+	body := ResetPasswordRequest{
 		Email: admins[0],
 	}
 
@@ -656,9 +656,9 @@ func TestAddEventPositiveSecured(t *testing.T) {
 
 	client := &http.Client{}
 
-	body := make([]eventRequest, 0)
+	body := make([]EventRequest, 0)
 
-	body = append(body, eventRequest{
+	body = append(body, EventRequest{
 		Positive:    true,
 		Description: "Lottery",
 		Title:       "Winner",
@@ -708,9 +708,9 @@ func TestAddEventNegativeSecured(t *testing.T) {
 
 	client := &http.Client{}
 
-	body := make([]eventRequest, 0)
+	body := make([]EventRequest, 0)
 
-	body = append(body, eventRequest{
+	body = append(body, EventRequest{
 		Positive:    false,
 		Description: "Pay Taxes",
 		Title:       "Winner",
@@ -789,6 +789,7 @@ func TestAddAdminSecured(t *testing.T) {
 }
 
 func TestSeedDbSecured(t *testing.T) {
+
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
@@ -797,11 +798,11 @@ func TestSeedDbSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux, _ := createRouter(db)
+	mux, clock2 := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
-	mux.Handle("/admin/seedDb", seedDbHandler(db, &clock))
+	mux.Handle("/admin/seedDb", seedDbHandler(db, clock2))
 
 	l, _ := net.Listen("tcp", "127.0.0.1:8089")
 
@@ -815,14 +816,40 @@ func TestSeedDbSecured(t *testing.T) {
 
 	client := &http.Client{}
 
+	body1 := make([]EventRequest, 0)
+
+	body1 = append(body1, EventRequest{
+		Positive:    false,
+		Description: "Pay Taxes",
+		Title:       "Winner",
+	})
+
+	marshal1, _ := json.Marshal(body1)
+
+	body2 := make([]Job, 0)
+
+	body2 = append(body2, Job{
+		Title:       "Teacher",
+		Pay:         200,
+		Description: "Teach",
+		College:     false,
+	})
+
+	marshal2, _ := json.Marshal(body2)
+
+	marshal := append(marshal1, marshal2...)
+
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
 		"http://localhost:8089/admin/seedDb",
-		nil)
+		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
+
+	_, err = getUserInLocalStore(db, "tt29@tt.com")
+	require.Nil(t, err)
 
 }
 

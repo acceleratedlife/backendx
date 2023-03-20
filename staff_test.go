@@ -344,7 +344,7 @@ func TestSearchEvents(t *testing.T) {
 
 	client := &http.Client{}
 
-	event := eventRequest{
+	event := EventRequest{
 		Positive:    false,
 		Description: "Pay Taxes",
 		Title:       "Taxes",
@@ -355,7 +355,7 @@ func TestSearchEvents(t *testing.T) {
 	err = createJobOrEvent(db, marshal, KeyNEvents, "Teacher")
 	require.Nil(t, err)
 
-	event = eventRequest{
+	event = EventRequest{
 		Positive:    true,
 		Description: "Pay Taxes",
 		Title:       "Taxes",

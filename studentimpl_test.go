@@ -65,7 +65,7 @@ func TestEvents(t *testing.T) {
 
 	student, _ := getUserInLocalStore(db, students[0])
 
-	event := eventRequest{
+	event := EventRequest{
 		Positive:    false,
 		Description: "Pay Taxes",
 		Title:       "Taxes",
@@ -76,7 +76,7 @@ func TestEvents(t *testing.T) {
 	err := createJobOrEvent(db, marshal, KeyNEvents, "Negative")
 	require.Nil(t, err)
 
-	event = eventRequest{
+	event = EventRequest{
 		Positive:    true,
 		Description: "Tax Refund",
 		Title:       "Taxes",
@@ -130,7 +130,7 @@ func TestEventsLowUbuck(t *testing.T) {
 	student, _ := getUserInLocalStore(db, students[0])
 	student2, _ := getUserInLocalStore(db, students[2])
 
-	event := eventRequest{
+	event := EventRequest{
 		Positive:    false,
 		Description: "Pay Taxes",
 		Title:       "Taxes",
@@ -141,7 +141,7 @@ func TestEventsLowUbuck(t *testing.T) {
 	err := createJobOrEvent(db, marshal, KeyNEvents, "Negative")
 	require.Nil(t, err)
 
-	event = eventRequest{
+	event = EventRequest{
 		Positive:    true,
 		Description: "Tax Refund",
 		Title:       "Taxes",

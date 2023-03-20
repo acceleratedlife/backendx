@@ -11,7 +11,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -178,17 +177,17 @@ func main() {
 	router.Handle("/admin/addEvents", addEventsHandler(db))
 	//add admin
 	router.Handle("/admin/addAdmin", addAdminHandler(db))
-	//seed db
-	router.Handle("/admin/seedDb", seedDbHandler(db, &AppClock{}))
-	//advance clock 15 days
+	//seed db, dev only
+	router.Handle("/admin/seedDb", seedDbHandler(db, clock))
+	//advance clock 15 days, dev only
 	router.Handle("/admin/nextCollege", nextCollegeHandler(clock))
-	//advance clock 5 days
+	//advance clock 5 days, dev only
 	router.Handle("/admin/nextCareer", nextCareerHandler(clock))
-	//advance clock 24 hours
+	//advance clock 24 hours, dev only
 	router.Handle("/admin/nextDay", nextDayHandler(clock))
-	//advance clock 1 hour
+	//advance clock 1 hour, dev only
 	router.Handle("/admin/nextHour", nextHourHandler(clock))
-	//advance clock 10 minutes
+	//advance clock 10 minutes, dev only
 	router.Handle("/admin/nextMinutes", nextMinutesHandler(clock))
 
 	router.Use(buildAuthMiddleware(m))
@@ -392,7 +391,7 @@ func loadConfig() ServerConfig {
 	return config
 }
 
-func seedDb(db *bolt.DB, clock Clock) (err error) {
+func seedDb(db *bolt.DB, clock Clock, eventRequests []EventRequest, jobRequests []Job) (err error) {
 
 	config := loadConfig()
 
@@ -418,283 +417,17 @@ func seedDb(db *bolt.DB, clock Clock) (err error) {
 
 	schoolId := admin.SchoolId
 
-	job := Job{
-		Pay:         52000,
-		Description: "Teach Stuff",
-	}
-
-	marshal, err := json.Marshal(job)
-
-	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
+	err = createJobs(db, jobRequests)
 	if err != nil {
 		return err
 	}
 
-	job = Job{
-		Pay:         102000,
-		Description: "Rehab Injuries",
-	}
-
-	marshal, err = json.Marshal(job)
-
-	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Physical Therapist")
+	err = createEvents(db, eventRequests)
 	if err != nil {
 		return err
 	}
 
-	job = Job{
-		Pay:         160128,
-		Description: "Oversee progress of large project",
-	}
-
-	marshal, err = json.Marshal(job)
-
-	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Division Director")
-	if err != nil {
-		return err
-	}
-
-	job = Job{
-		Pay:         26000,
-		Description: "Wait on tables",
-		College:     false,
-	}
-
-	marshal, err = json.Marshal(job)
-
-	err = createJobOrEvent(db, marshal, KeyJobs, "Waiter")
-	if err != nil {
-		return err
-	}
-
-	job = Job{
-		Pay:         45000,
-		Description: "run office",
-		College:     false,
-	}
-
-	marshal, err = json.Marshal(job)
-
-	err = createJobOrEvent(db, marshal, KeyJobs, "Secretary")
-	if err != nil {
-		return err
-	}
-
-	job = Job{
-		Pay:         26000,
-		Description: "organize warehouse",
-		College:     false,
-	}
-
-	marshal, err = json.Marshal(job)
-
-	err = createJobOrEvent(db, marshal, KeyJobs, "Logistics")
-	if err != nil {
-		return err
-	}
-
-	event := eventRequest{
-		Description: "Pay Taxes",
-	}
-
-	marshal, _ = json.Marshal(event)
-
-	err = createJobOrEvent(db, marshal, KeyNEvents, "Taxes")
-	if err != nil {
-		return err
-	}
-
-	event = eventRequest{
-		Description: "Broken Arm",
-	}
-
-	marshal, _ = json.Marshal(event)
-
-	err = createJobOrEvent(db, marshal, KeyNEvents, "Injury")
-	if err != nil {
-		return err
-	}
-
-	event = eventRequest{
-		Description: "crashed car",
-	}
-
-	marshal, _ = json.Marshal(event)
-
-	err = createJobOrEvent(db, marshal, KeyNEvents, "car accident")
-	if err != nil {
-		return err
-	}
-
-	event = eventRequest{
-		Description: "won beauty contest",
-	}
-
-	marshal, _ = json.Marshal(event)
-
-	err = createJobOrEvent(db, marshal, KeyPEvents, "beauty")
-	if err != nil {
-		return err
-	}
-
-	event = eventRequest{
-		Description: "created a viral video",
-	}
-
-	marshal, _ = json.Marshal(event)
-
-	err = createJobOrEvent(db, marshal, KeyPEvents, "video")
-	if err != nil {
-		return err
-	}
-
-	event = eventRequest{
-		Description: "won fortnite tournament",
-	}
-
-	marshal, _ = json.Marshal(event)
-
-	err = createJobOrEvent(db, marshal, KeyPEvents, "fortnite")
-	if err != nil {
-		return err
-	}
-
-	newUser := UserInfo{
-		Name:        "tt@tt.com",
-		FirstName:   "tt",
-		LastName:    "tt",
-		Email:       "tt@tt.com",
-		Confirmed:   true,
-		PasswordSha: EncodePassword(config.SeedPassword),
-		SchoolId:    schoolId,
-		Role:        UserRoleTeacher,
-		Settings: TeacherSettings{
-			CurrencyLock: false,
-		},
-	}
-
-	err = createTeacher(db, newUser)
-	if err != nil {
-		return err
-	}
-
-	newUser = UserInfo{
-		Name:        "tt1@tt.com",
-		FirstName:   "tt1",
-		LastName:    "tt1",
-		Email:       "tt1@tt.com",
-		Confirmed:   true,
-		PasswordSha: EncodePassword(config.SeedPassword),
-		SchoolId:    schoolId,
-		Role:        UserRoleTeacher,
-		Settings: TeacherSettings{
-			CurrencyLock: false,
-		},
-	}
-
-	err = createTeacher(db, newUser)
-	if err != nil {
-		return err
-	}
-
-	newUser = UserInfo{
-		Name:        "tt2@tt.com",
-		FirstName:   "tt2",
-		LastName:    "tt2",
-		Email:       "tt2@tt.com",
-		Confirmed:   true,
-		PasswordSha: EncodePassword(config.SeedPassword),
-		SchoolId:    schoolId,
-		Role:        UserRoleTeacher,
-		Settings: TeacherSettings{
-			CurrencyLock: false,
-		},
-	}
-
-	err = createTeacher(db, newUser)
-	if err != nil {
-		return err
-	}
-
-	classId, _, err := CreateClass(db, clock, schoolId, "tt@tt.com", "math", 1)
-	if err != nil {
-		return
-	}
-
-	path := PathId{
-		schoolId:  schoolId,
-		classId:   classId,
-		teacherId: "tt@tt.com",
-	}
-
-	newUser = UserInfo{
-		Name:        "ss@ss.com",
-		FirstName:   "ss",
-		LastName:    "ss",
-		Email:       "ss@ss.com",
-		Confirmed:   true,
-		PasswordSha: EncodePassword(config.SeedPassword),
-		SchoolId:    schoolId,
-		Role:        UserRoleStudent,
-		Job:         getJobId(db, KeyJobs),
-	}
-
-	err = createStudent(db, newUser, path)
-	if err != nil {
-		return err
-	}
-
-	newUser = UserInfo{
-		Name:        "ss1@ss.com",
-		FirstName:   "ss1",
-		LastName:    "ss1",
-		Email:       "ss1@ss.com",
-		Confirmed:   true,
-		PasswordSha: EncodePassword(config.SeedPassword),
-		SchoolId:    schoolId,
-		Role:        UserRoleStudent,
-		Job:         getJobId(db, KeyJobs),
-	}
-
-	err = createStudent(db, newUser, path)
-	if err != nil {
-		return err
-	}
-
-	newUser = UserInfo{
-		Name:        "ss2@ss.com",
-		FirstName:   "ss2",
-		LastName:    "ss2",
-		Email:       "ss2@ss.com",
-		Confirmed:   true,
-		PasswordSha: EncodePassword(config.SeedPassword),
-		SchoolId:    schoolId,
-		Role:        UserRoleStudent,
-		Job:         getJobId(db, KeyJobs),
-		College:     true,
-		CollegeEnd:  time.Now(),
-	}
-
-	err = createStudent(db, newUser, path)
-	if err != nil {
-		return err
-	}
-
-	newUser = UserInfo{
-		Name:        "ss3@ss.com",
-		FirstName:   "ss3",
-		LastName:    "ss3",
-		Email:       "ss3@ss.com",
-		Confirmed:   true,
-		PasswordSha: EncodePassword(config.SeedPassword),
-		SchoolId:    schoolId,
-		Role:        UserRoleStudent,
-		Job:         getJobId(db, KeyJobs),
-		College:     true,
-		CollegeEnd:  time.Now(),
-	}
-
-	err = createStudent(db, newUser, path)
+	err = createTeachers(db, clock, schoolId, config.SeedPassword)
 	if err != nil {
 		return err
 	}
