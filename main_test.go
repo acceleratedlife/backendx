@@ -244,7 +244,7 @@ func TestIntegrationAuth(t *testing.T) {
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{})
 
-	mux := createRouter(db)
+	mux, _ := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -289,7 +289,7 @@ func TestIntegrationLoginPage(t *testing.T) {
 	clock := TestClock{}
 
 	InitDefaultAccounts(db, &clock)
-	mux := createRouter(db)
+	mux, _ := createRouter(db)
 	l, _ := net.Listen("tcp", "127.0.0.1:8089")
 
 	ts := httptest.NewUnstartedServer(mux)
@@ -368,7 +368,7 @@ func TestBackupSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux := createRouter(db)
+	mux, _ := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -427,7 +427,7 @@ func TestNewSchoolSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux := createRouter(db)
+	mux, _ := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -482,7 +482,7 @@ func TestResetPasswordSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux := createRouter(db)
+	mux, _ := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -502,7 +502,7 @@ func TestResetPasswordSecured(t *testing.T) {
 
 	admins, _, _, _, _, _ := CreateTestAccounts(db, 1, 0, 0, 0)
 
-	body := resetPasswordRequest{
+	body := ResetPasswordRequest{
 		Email: admins[0],
 	}
 
@@ -534,7 +534,7 @@ func TestAddJobCollegeSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux := createRouter(db)
+	mux, _ := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -586,7 +586,7 @@ func TestAddJobSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux := createRouter(db)
+	mux, _ := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -638,7 +638,7 @@ func TestAddEventPositiveSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux := createRouter(db)
+	mux, _ := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -656,9 +656,9 @@ func TestAddEventPositiveSecured(t *testing.T) {
 
 	client := &http.Client{}
 
-	body := make([]eventRequest, 0)
+	body := make([]EventRequest, 0)
 
-	body = append(body, eventRequest{
+	body = append(body, EventRequest{
 		Positive:    true,
 		Description: "Lottery",
 		Title:       "Winner",
@@ -690,7 +690,7 @@ func TestAddEventNegativeSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux := createRouter(db)
+	mux, _ := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -708,9 +708,9 @@ func TestAddEventNegativeSecured(t *testing.T) {
 
 	client := &http.Client{}
 
-	body := make([]eventRequest, 0)
+	body := make([]EventRequest, 0)
 
-	body = append(body, eventRequest{
+	body = append(body, EventRequest{
 		Positive:    false,
 		Description: "Pay Taxes",
 		Title:       "Winner",
@@ -742,7 +742,7 @@ func TestAddAdminSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux := createRouter(db)
+	mux, _ := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -789,6 +789,7 @@ func TestAddAdminSecured(t *testing.T) {
 }
 
 func TestSeedDbSecured(t *testing.T) {
+
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
@@ -797,11 +798,11 @@ func TestSeedDbSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux := createRouter(db)
+	mux, clock2 := createRouter(db)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
-	mux.Handle("/admin/seedDb", seedDbHandler(db, &clock))
+	mux.Handle("/admin/seedDb", seedDbHandler(db, clock2))
 
 	l, _ := net.Listen("tcp", "127.0.0.1:8089")
 
@@ -815,13 +816,244 @@ func TestSeedDbSecured(t *testing.T) {
 
 	client := &http.Client{}
 
+	body1 := make([]EventRequest, 0)
+
+	body1 = append(body1, EventRequest{
+		Positive:    false,
+		Description: "Pay Taxes",
+		Title:       "Winner",
+	})
+
+	marshal1, _ := json.Marshal(body1)
+
+	body2 := make([]Job, 0)
+
+	body2 = append(body2, Job{
+		Title:       "Teacher",
+		Pay:         200,
+		Description: "Teach",
+		College:     false,
+	})
+
+	marshal2, _ := json.Marshal(body2)
+
+	marshal := append(marshal1, marshal2...)
+
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
 		"http://localhost:8089/admin/seedDb",
+		bytes.NewBuffer(marshal))
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	_, err = getUserInLocalStore(db, "tt29@tt.com")
+	require.Nil(t, err)
+
+}
+
+func TestNewDaySecured(t *testing.T) {
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	mux, clock := createRouter(db)
+
+	InitDefaultAccounts(db, clock)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/nextDay", nextDayHandler(clock))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	beforeClock := clock.Now().Add(time.Minute * 20)
+
+	client := &http.Client{}
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/nextDay",
 		nil)
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 
+	assert.True(t, clock.Now().After(beforeClock))
+}
+
+func TestNewHourSecured(t *testing.T) {
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	mux, clock := createRouter(db)
+
+	InitDefaultAccounts(db, clock)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/nextHour", nextHourHandler(clock))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	beforeClock := clock.Now().Add(time.Minute * 20)
+
+	client := &http.Client{}
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/nextHour",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	assert.True(t, clock.Now().After(beforeClock))
+}
+
+func TestNewMinutesSecured(t *testing.T) {
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	mux, clock := createRouter(db)
+
+	InitDefaultAccounts(db, clock)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/nextMinutes", nextMinutesHandler(clock))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	beforeClock := clock.Now().Add(time.Minute * 5)
+
+	client := &http.Client{}
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/nextMinutes",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	assert.True(t, clock.Now().After(beforeClock))
+}
+
+func TestNewCareerSecured(t *testing.T) {
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	mux, clock := createRouter(db)
+
+	InitDefaultAccounts(db, clock)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/nextCareer", nextCareerHandler(clock))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	beforeClock := clock.Now().Add(time.Hour * 24 * 3)
+
+	client := &http.Client{}
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/nextCareer",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	assert.True(t, clock.Now().After(beforeClock))
+}
+
+func TestNewCollegeSecured(t *testing.T) {
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	mux, clock := createRouter(db)
+
+	InitDefaultAccounts(db, clock)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/nextCollege", nextCollegeHandler(clock))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	beforeClock := clock.Now().Add(time.Hour * 24 * 13)
+
+	client := &http.Client{}
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/nextCollege",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	assert.True(t, clock.Now().After(beforeClock))
 }

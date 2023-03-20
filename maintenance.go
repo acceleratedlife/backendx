@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -39,11 +41,11 @@ type NewSchoolResponse struct {
 	AdminPassword string
 }
 
-type resetPasswordRequest struct {
+type ResetPasswordRequest struct {
 	Email string
 }
 
-type eventRequest struct {
+type EventRequest struct {
 	Positive    bool `json:",omitempty"`
 	Description string
 	Title       string `json:",omitempty"`
@@ -101,7 +103,7 @@ func newSchoolHandler(db *bolt.DB, clock Clock) http.Handler {
 
 func resetPasswordHandler(db *bolt.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var request resetPasswordRequest
+		var request ResetPasswordRequest
 		defer r.Body.Close()
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&request)
@@ -151,56 +153,10 @@ func addJobsHandler(db *bolt.DB) http.Handler {
 
 		lgr.Printf("INFO new job request: %v", requests)
 
-		for i, request := range requests {
-
-			if request.Title == "" {
-				err = fmt.Errorf("title is mandatory on: " + strconv.Itoa(i))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			if request.Pay == 0 {
-				err = fmt.Errorf("pay is mandatory on: " + strconv.Itoa(i))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			if request.Description == "" {
-				err = fmt.Errorf("description is mandatory on: " + strconv.Itoa(i))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			title := request.Title
-			request.Title = ""
-
-			if request.College {
-				request.College = false
-				marshal, err := json.Marshal(request)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				err = createJobOrEvent(db, marshal, KeyCollegeJobs, title)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-			} else {
-				marshal, err := json.Marshal(request)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				err = createJobOrEvent(db, marshal, KeyJobs, title)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-			}
-
-			lgr.Printf("job created for %s ", request.Title)
-
+		err = createJobs(db, requests)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -215,7 +171,7 @@ func addJobsHandler(db *bolt.DB) http.Handler {
 
 func addEventsHandler(db *bolt.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var requests []eventRequest
+		var requests []EventRequest
 		defer r.Body.Close()
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&requests)
@@ -227,54 +183,62 @@ func addEventsHandler(db *bolt.DB) http.Handler {
 
 		lgr.Printf("INFO new event request: %v", requests)
 
-		for i, request := range requests {
-			if request.Description == "" {
-				err = fmt.Errorf("description is mandatory on: " + strconv.Itoa(i))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			if request.Title == "" {
-				err = fmt.Errorf("title is mandatory on: " + strconv.Itoa(i))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			title := request.Title
-			request.Title = ""
-
-			if request.Positive {
-				request.Positive = false
-				marshal, err := json.Marshal(request)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				err = createJobOrEvent(db, marshal, KeyPEvents, title)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-			} else {
-				marshal, err := json.Marshal(request)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				err = createJobOrEvent(db, marshal, KeyNEvents, title)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-			}
-
-			lgr.Printf("Event created for %s ", request.Description)
-
+		err = createEvents(db, requests)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
 		err = encoder.Encode("success")
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
+func seedDbHandler(db *bolt.DB, clock *DemoClock) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on the production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO new seedDb request")
+
+		var eventRequests []EventRequest
+		defer r.Body.Close()
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&eventRequests)
+		if err != nil {
+			err = fmt.Errorf("cannot parse request body: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var jobRequests []Job
+		err = decoder.Decode(&jobRequests)
+		if err != nil {
+			err = fmt.Errorf("cannot parse request body: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = seedDb(db, clock, eventRequests, jobRequests)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("seedDB successful")
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err = encoder.Encode("")
 		if err != nil {
 			lgr.Printf("ERROR failed to send")
 		}
@@ -366,22 +330,120 @@ func addAdminHandler(db *bolt.DB) http.Handler {
 	})
 }
 
-func seedDbHandler(db *bolt.DB, clock Clock) http.Handler {
+func nextCollegeHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		lgr.Printf("INFO new seedDb request")
-
-		err := seedDb(db, clock)
-		if err != nil {
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on the production server")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		lgr.Printf("seedDB successful")
+		lgr.Printf("INFO College request")
+
+		clock.TickOne(time.Hour * 24 * 15)
+
+		lgr.Printf(clock.Now().String())
 
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
-		err = encoder.Encode("")
+		err := encoder.Encode("")
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
+func nextCareerHandler(clock *DemoClock) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on the production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO Career request")
+
+		clock.TickOne(time.Hour * 24 * 5)
+
+		lgr.Printf(clock.Now().String())
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err := encoder.Encode("")
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
+func nextDayHandler(clock *DemoClock) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on the production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO new Day request")
+
+		clock.TickOne(time.Hour * 24)
+
+		lgr.Printf(clock.Now().String())
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err := encoder.Encode("")
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
+func nextHourHandler(clock *DemoClock) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on the production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO new Hour request")
+
+		clock.TickOne(time.Hour)
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err := encoder.Encode("")
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
+func nextMinutesHandler(clock *DemoClock) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on the production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO new Minute request")
+
+		clock.TickOne(time.Minute * 10)
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err := encoder.Encode("")
 		if err != nil {
 			lgr.Printf("ERROR failed to send")
 		}
@@ -398,4 +460,157 @@ func createJobOrEvent(db *bolt.DB, marshal []byte, bucketKey, itemKey string) er
 		err = EJ.Put([]byte(itemKey), marshal)
 		return err
 	})
+}
+
+func createEvents(db *bolt.DB, events []EventRequest) (err error) {
+	for i, request := range events {
+		if request.Description == "" {
+			return fmt.Errorf("description is mandatory on: " + strconv.Itoa(i))
+		}
+
+		if request.Title == "" {
+			return fmt.Errorf("title is mandatory on: " + strconv.Itoa(i))
+		}
+
+		title := request.Title
+		request.Title = ""
+
+		if request.Positive {
+			request.Positive = false
+			marshal, err := json.Marshal(request)
+			if err != nil {
+				return err
+			}
+			err = createJobOrEvent(db, marshal, KeyPEvents, title)
+			if err != nil {
+				return err
+			}
+		} else {
+			marshal, err := json.Marshal(request)
+			if err != nil {
+				return err
+			}
+			err = createJobOrEvent(db, marshal, KeyNEvents, title)
+			if err != nil {
+				return err
+			}
+		}
+
+		lgr.Printf("Event created for %s ", request.Description)
+
+	}
+
+	return nil
+
+}
+
+func createJobs(db *bolt.DB, jobs []Job) (err error) {
+	for i, request := range jobs {
+
+		if request.Title == "" {
+			return fmt.Errorf("title is mandatory on: " + strconv.Itoa(i))
+		}
+
+		if request.Pay == 0 {
+			return fmt.Errorf("pay is mandatory on: " + strconv.Itoa(i))
+		}
+
+		if request.Description == "" {
+			return fmt.Errorf("description is mandatory on: " + strconv.Itoa(i))
+		}
+
+		title := request.Title
+		request.Title = ""
+
+		if request.College {
+			request.College = false
+			marshal, err := json.Marshal(request)
+			if err != nil {
+				return err
+			}
+			err = createJobOrEvent(db, marshal, KeyCollegeJobs, title)
+			if err != nil {
+				return err
+			}
+		} else {
+			marshal, err := json.Marshal(request)
+			if err != nil {
+				return err
+			}
+			err = createJobOrEvent(db, marshal, KeyJobs, title)
+			if err != nil {
+				return err
+			}
+		}
+
+		lgr.Printf("job created for %s ", request.Title)
+
+	}
+
+	return nil
+
+}
+
+func createTeachers(db *bolt.DB, clock Clock, schoolId, password string) (err error) {
+	for i := 0; i < 30; i++ {
+		newTeacher := UserInfo{
+			Name:        "tt" + strconv.Itoa(i) + "@tt.com",
+			FirstName:   "tt" + strconv.Itoa(i),
+			LastName:    "tt" + strconv.Itoa(i),
+			Email:       "tt" + strconv.Itoa(i) + "@tt.com",
+			Confirmed:   true,
+			PasswordSha: EncodePassword(password),
+			SchoolId:    schoolId,
+			Role:        UserRoleTeacher,
+			Settings: TeacherSettings{
+				CurrencyLock: false,
+			},
+		}
+
+		err = createTeacher(db, newTeacher)
+		if err != nil {
+			return err
+		}
+
+		lgr.Printf("Created teacher: %s ", newTeacher.Email)
+
+		for j := 0; j < 2; j++ {
+			classId, _, err := CreateClass(db, clock, schoolId, newTeacher.Email, "math"+strconv.Itoa(j), j)
+			if err != nil {
+				return err
+			}
+
+			path := PathId{
+				schoolId:  schoolId,
+				classId:   classId,
+				teacherId: newTeacher.Email,
+			}
+
+			for k := 0; k < 5; k++ {
+				newStudent := UserInfo{
+					Name:        "@ss" + strconv.Itoa((i*30)+k),
+					FirstName:   "s" + strconv.Itoa((i*30)+k),
+					LastName:    "ss" + strconv.Itoa((i*30)+k),
+					Email:       "@ss" + strconv.Itoa((i*30)+k),
+					Confirmed:   true,
+					PasswordSha: EncodePassword(password),
+					SchoolId:    schoolId,
+					Role:        UserRoleStudent,
+					Job:         getJobId(db, KeyJobs),
+				}
+
+				err = createStudent(db, newStudent, path)
+				if err != nil {
+					return err
+				}
+
+				err = pay2Student(db, clock, newStudent, decimal.NewFromInt32(int32(i+k+1)), newTeacher.Email, "start off")
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }

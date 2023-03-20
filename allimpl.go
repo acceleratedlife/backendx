@@ -333,7 +333,12 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 		userDetails.FirstName = body.FirstName
 	}
 	if body.LastName != "" {
-		userDetails.LastName = body.LastName
+		if userDetails.Role != UserRoleStudent {
+			userDetails.LastName = body.LastName
+		} else {
+			rand.Seed(time.Now().UnixNano())
+			userDetails.LastName = string(body.LastName[0]) + strconv.Itoa(rand.Intn(10000))
+		}
 	}
 	if len(body.Password) > 5 {
 		userDetails.PasswordSha = EncodePassword(body.Password)
@@ -344,9 +349,10 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 		userDetails.Income = userDetails.Income / 2
 	}
 	if body.College && !userDetails.College {
-		rand.Seed(time.Now().UnixNano())
+
 		diff := decimal.NewFromInt32(8000 - 5000)
 		low := decimal.NewFromInt32(5000)
+		rand.Seed(time.Now().UnixNano())
 		random := decimal.NewFromFloat32(rand.Float32())
 
 		cost := random.Mul(diff).Add(low).Floor()

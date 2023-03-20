@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"sort"
-	"strconv"
 	"strings"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -573,10 +571,6 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 			IsAuth: false,
 			Error:  true,
 		}), nil
-	}
-
-	if userDetails.Role == UserRoleStudent {
-		body.LastName = string(body.LastName[0]) + strconv.Itoa(rand.Intn(10000))
 	}
 
 	err = a.db.Update(func(tx *bolt.Tx) error {
