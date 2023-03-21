@@ -776,7 +776,7 @@ func getEventDescription(db *bolt.DB, typeKey string, idKey string) (description
 func getEventDescriptionRx(tx *bolt.Tx, typeKey string, idKey string) string {
 	events := tx.Bucket([]byte(typeKey))
 
-	var event eventRequest
+	var event EventRequest
 	err := json.Unmarshal(events.Get([]byte(idKey)), &event)
 	if err != nil {
 		return ""
@@ -797,6 +797,7 @@ func getEventId(db *bolt.DB, key string) (id string) {
 func getEventIdRx(tx *bolt.Tx, key string) string {
 	events := tx.Bucket([]byte(key))
 	bucketStats := events.Stats()
+	rand.Seed(time.Now().UnixNano())
 	pick := rand.Intn(bucketStats.KeyN)
 	c := events.Cursor()
 	i := 0
@@ -818,6 +819,7 @@ func getEventIdRx(tx *bolt.Tx, key string) string {
 func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change decimal.Decimal, err error) {
 	multiplier := decimal.NewFromFloat(.4)
 	one := decimal.NewFromInt(1)
+	rand.Seed(time.Now().UnixNano())
 	random := decimal.NewFromFloat32(rand.Float32())
 	count := len(students)
 	for i := range students {
