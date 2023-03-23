@@ -377,6 +377,8 @@ func nextCareerHandler(clock *DemoClock) http.Handler {
 			lgr.Printf("ERROR failed to send")
 		}
 
+		fmt.Fprintf(w, "Time: "+clock.Now().String())
+
 	})
 }
 
@@ -402,6 +404,8 @@ func nextDayHandler(clock *DemoClock) http.Handler {
 			lgr.Printf("ERROR failed to send")
 		}
 
+		fmt.Fprintf(w, "Time: "+clock.Now().String())
+
 	})
 }
 
@@ -425,6 +429,8 @@ func nextHourHandler(clock *DemoClock) http.Handler {
 			lgr.Printf("ERROR failed to send")
 		}
 
+		fmt.Fprintf(w, "Time: "+clock.Now().String())
+
 	})
 }
 
@@ -447,6 +453,8 @@ func nextMinutesHandler(clock *DemoClock) http.Handler {
 		if err != nil {
 			lgr.Printf("ERROR failed to send")
 		}
+
+		fmt.Fprintf(w, "Time: "+clock.Now().String())
 
 	})
 }
