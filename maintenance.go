@@ -352,6 +352,8 @@ func nextCollegeHandler(clock *DemoClock) http.Handler {
 			lgr.Printf("ERROR failed to send")
 		}
 
+		fmt.Fprintf(w, "Time: "+clock.Now().String())
+
 	})
 }
 
