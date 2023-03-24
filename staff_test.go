@@ -580,6 +580,39 @@ func TestAuctionReject(t *testing.T) {
 
 }
 
+// omit empty should not be on Student2students
+func TestStudent2StudentOmitEmpty(t *testing.T) {
+
+	settings := openapi.Settings{
+		Student2student: true,
+		CurrencyLock:    false,
+	}
+
+	marshal, err := json.Marshal(settings)
+	require.Nil(t, err)
+
+	var postSettings openapi.Settings
+
+	err = json.Unmarshal(marshal, &postSettings)
+	require.Nil(t, err)
+
+	require.True(t, postSettings.Student2student)
+
+	settings = openapi.Settings{
+		Student2student: false,
+		CurrencyLock:    false,
+	}
+
+	marshal, err = json.Marshal(settings)
+	require.Nil(t, err)
+
+	err = json.Unmarshal(marshal, &postSettings)
+	require.Nil(t, err)
+
+	require.False(t, postSettings.Student2student)
+
+}
+
 // if the following test is failing and you just ran the spec then it is probably because student2student has been change
 // to omitempty on openapi.Settings. This causes nothing to be sent back because false is seen as empty and is omitted.
 func TestGetSettingsAdmin(t *testing.T) {
@@ -677,6 +710,7 @@ func TestSetSettingsAdmin(t *testing.T) {
 
 	settings = openapi.Settings{
 		Student2student: true,
+		CurrencyLock:    false,
 	}
 
 	marshal, err := json.Marshal(settings)
@@ -698,6 +732,7 @@ func TestSetSettingsAdmin(t *testing.T) {
 
 	settings = openapi.Settings{
 		Student2student: false,
+		CurrencyLock:    false,
 	}
 
 	marshal, err = json.Marshal(settings)
