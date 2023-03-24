@@ -1057,3 +1057,48 @@ func TestNewCollegeSecured(t *testing.T) {
 
 	assert.True(t, clock.Now().After(beforeClock))
 }
+
+func TestResetClockSecured(t *testing.T) {
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	mux, clock := createRouter(db)
+
+	InitDefaultAccounts(db, clock)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/admin/resetClock", resetClockHandler(clock))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	clock.TickOne(time.Hour * 100)
+
+	futureClock := clock.Now()
+
+	client := &http.Client{}
+
+	assert.True(t, clock.Now().Equal(futureClock))
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/admin/resetClock",
+		nil)
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	assert.True(t, clock.Now().Before(futureClock))
+}

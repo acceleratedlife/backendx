@@ -132,6 +132,10 @@ func (t *DemoClock) TickOne(d time.Duration) {
 	t.Current = t.Current.Add(d)
 }
 
+func (t *DemoClock) ResetNow() {
+	t.Current = time.Now()
+}
+
 func (*AppClock) Now() time.Time {
 	return time.Now()
 }
@@ -189,6 +193,8 @@ func main() {
 	router.Handle("/admin/nextHour", nextHourHandler(clock))
 	//advance clock 10 minutes, dev only
 	router.Handle("/admin/nextMinutes", nextMinutesHandler(clock))
+	//reset clock to current time
+	router.Handle("/admin/resetClock", resetClockHandler(clock))
 
 	router.Use(buildAuthMiddleware(m))
 

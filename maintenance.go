@@ -339,7 +339,7 @@ func nextCollegeHandler(clock *DemoClock) http.Handler {
 			return
 		}
 
-		lgr.Printf("INFO College request")
+		lgr.Printf("INFO new College request")
 
 		clock.TickOne(time.Hour * 24 * 15)
 
@@ -366,7 +366,7 @@ func nextCareerHandler(clock *DemoClock) http.Handler {
 			return
 		}
 
-		lgr.Printf("INFO Career request")
+		lgr.Printf("INFO new Career request")
 
 		clock.TickOne(time.Hour * 24 * 5)
 
@@ -424,6 +424,8 @@ func nextHourHandler(clock *DemoClock) http.Handler {
 
 		clock.TickOne(time.Hour)
 
+		lgr.Printf(clock.Now().String())
+
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
 		err := encoder.Encode("")
@@ -448,6 +450,35 @@ func nextMinutesHandler(clock *DemoClock) http.Handler {
 		lgr.Printf("INFO new Minute request")
 
 		clock.TickOne(time.Minute * 10)
+
+		lgr.Printf(clock.Now().String())
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err := encoder.Encode("")
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+		fmt.Fprintf(w, "Time: "+clock.Now().String())
+
+	})
+}
+
+func resetClockHandler(clock *DemoClock) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if clock == nil {
+			err := fmt.Errorf("This endpoint does not work on the production server")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO ResetClock request")
+
+		clock.ResetNow()
+
+		lgr.Printf(clock.Now().String())
 
 		w.Header().Set("Content-Type", "application/json")
 		encoder := json.NewEncoder(w)
