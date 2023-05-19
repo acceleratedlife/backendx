@@ -11,8 +11,7 @@
 package openapi
 
 type Settings struct {
-
-	Student2student bool `json:"student2student,omitempty"`
+	Student2student bool `json:"student2student"`
 
 	CurrencyLock bool `json:"CurrencyLock,omitempty"`
 }

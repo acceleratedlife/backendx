@@ -779,7 +779,7 @@ func getEventDescriptionRx(tx *bolt.Tx, typeKey string, idKey string) string {
 	var event EventRequest
 	err := json.Unmarshal(events.Get([]byte(idKey)), &event)
 	if err != nil {
-		return ""
+		return "error retrieving negative event"
 	}
 
 	return event.Description
@@ -835,6 +835,10 @@ func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change d
 			max := topNetWorth.Mul(multiplier).Mul(chance)
 			min := topNetWorth.Mul(multiplier).Mul(chance.Sub(one))
 			change = max.Sub(min).Mul(random).Add(min).Floor()
+
+			if change.IsNegative() && change.Abs().GreaterThanOrEqual(decimal.NewFromFloat32(students[i].NetWorth).Mul(decimal.NewFromFloat32(.5))) {
+				change = decimal.NewFromFloat32(students[i].NetWorth).Mul(decimal.NewFromFloat32(-.2))
+			}
 			return
 		}
 	}
@@ -1118,7 +1122,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 					return err
 				}
 			} else {
-				err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, "", false)
+				err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, reference, false) //this was "" I may need to change it back
 				if err != nil {
 					return err
 				}
@@ -1605,11 +1609,12 @@ func transactionToResponseBuckTransactionTx(tx *bolt.Tx, trans Transaction) (res
 		CreatedAt:   trans.Ts,
 	}
 
-	if strings.Contains(resp.Description, "Event:") {
+	if strings.Contains(resp.Description, "Event: ") {
 		typeKey := KeyPEvents
-		if resp.Amount <= 0 {
+		if resp.Amount <= 0 || trans.CurrencyDest == KeyDebt {
 			typeKey = KeyNEvents
 		}
+
 		idKey := resp.Description[7:]
 		resp.Description = getEventDescriptionRx(tx, typeKey, idKey)
 	}
