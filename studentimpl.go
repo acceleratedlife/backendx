@@ -779,7 +779,7 @@ func getEventDescriptionRx(tx *bolt.Tx, typeKey string, idKey string) string {
 	var event EventRequest
 	err := json.Unmarshal(events.Get([]byte(idKey)), &event)
 	if err != nil {
-		return ""
+		return "error retrieving negative event"
 	}
 
 	return event.Description
@@ -1605,11 +1605,12 @@ func transactionToResponseBuckTransactionTx(tx *bolt.Tx, trans Transaction) (res
 		CreatedAt:   trans.Ts,
 	}
 
-	if strings.Contains(resp.Description, "Event:") {
+	if strings.Contains(resp.Description, "Event: ") {
 		typeKey := KeyPEvents
-		if resp.Amount <= 0 {
+		if resp.Amount <= 0 || trans.CurrencyDest == KeyDebt {
 			typeKey = KeyNEvents
 		}
+
 		idKey := resp.Description[7:]
 		resp.Description = getEventDescriptionRx(tx, typeKey, idKey)
 	}
