@@ -835,6 +835,10 @@ func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change d
 			max := topNetWorth.Mul(multiplier).Mul(chance)
 			min := topNetWorth.Mul(multiplier).Mul(chance.Sub(one))
 			change = max.Sub(min).Mul(random).Add(min).Floor()
+
+			if change.IsNegative() && change.Abs().GreaterThanOrEqual(decimal.NewFromFloat32(students[i].NetWorth).Mul(decimal.NewFromFloat32(.5))) {
+				change = decimal.NewFromFloat32(students[i].NetWorth).Mul(decimal.NewFromFloat32(-.2))
+			}
 			return
 		}
 	}
