@@ -126,6 +126,7 @@ func getStudentAccountRx(tx *bolt.Tx, bAccount *bolt.Bucket, accountId string) (
 	return
 }
 
+// looks to see if a cb account for this account exists and if it does then return the account given to it
 func getCBaccountDetailsRx(tx *bolt.Tx, userDetails UserInfo, account openapi.ResponseCurrencyExchange) (finalAccount openapi.ResponseCurrencyExchange, err error) {
 	cb, err := getCbRx(tx, userDetails.SchoolId)
 	if err != nil {

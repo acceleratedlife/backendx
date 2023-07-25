@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
@@ -107,9 +109,52 @@ func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decim
 	return
 }
 
+// adds step for pay frequency
+func addStepHelperTx(tx *bolt.Tx, schoolId string, account *bolt.Bucket, currentTrans time.Time, mma decimal.Decimal) (decimal.Decimal, error) {
+	lastTrans, err := getLastTeacherPayment(account)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	currentDiff := currentTrans.Sub(lastTrans.Ts)
+
+	var t time.Duration
+	w := account.Get([]byte(KeyPayFrequency))
+	if w != nil {
+		var last time.Duration
+		err = json.Unmarshal(w, &last)
+		if err != nil {
+			return decimal.Zero, err
+		}
+		t = time.Duration(decimal.NewFromInt(last.Nanoseconds()).Mul(decimal.NewFromFloat(99)).Add(decimal.NewFromInt(currentDiff.Nanoseconds())).Div(decimal.NewFromFloat(100)).IntPart())
+	} else {
+		t = currentDiff
+	}
+
+	marshal, err := json.Marshal(t)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	//saving average frequency of payouts
+	err = account.Put([]byte(KeyPayFrequency), marshal)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	zScore, err := getPayZScore(tx, schoolId, t)
+	if err != nil {
+		return decimal.Zero, err
+	}
+	//(1+M2/10) * N2
+	modMMA := decimal.NewFromFloat(1).Add((zScore.Div(decimal.NewFromFloat(10)))).Mul(mma)
+	return modMMA, nil
+
+}
+
 // updates MMA
 // returns MMA
-func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32) (decimal.Decimal, error) {
+func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32, currentTrans time.Time) (decimal.Decimal, error) {
 	account, err := getAccountBucketTx(tx, schoolId, currencyId)
 	if err != nil {
 		return decimal.Zero, err
@@ -127,16 +172,108 @@ func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32) 
 	} else {
 		d = decimal.NewFromFloat32(amount)
 	}
-	step, err := d.MarshalText()
+	step1, err := d.MarshalText()
 	if err != nil {
 		return decimal.Zero, err
 	}
-	err = account.Put([]byte(KeyMMA), step)
-	if err != nil {
-		return decimal.Zero, err
-	}
-	return d, nil
 
+	//saving average payouts
+	err = account.Put([]byte(KeyMMA), step1)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	modMMA, err := addStepHelperTx(tx, schoolId, account, currentTrans, d)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	return modMMA, nil
+
+}
+
+func getPayZScore(tx *bolt.Tx, schoolId string, payFreq time.Duration) (zScore decimal.Decimal, err error) {
+	cb, err := getCbRx(tx, schoolId)
+	if err != nil {
+		return
+	}
+
+	accounts := cb.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
+		return zScore, fmt.Errorf("ERROR cannot get accounts bucket")
+	}
+
+	c := accounts.Cursor()
+	var counter = int64(0)
+	var sum = time.Duration(0)
+	durations := make([]time.Duration, 0)
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		account := accounts.Bucket(k)
+		if account == nil {
+			return zScore, fmt.Errorf("ERROR cannot get account bucket")
+		}
+
+		payFreqData := accounts.Get([]byte(KeyPayFrequency))
+		if payFreqData == nil {
+			continue
+		}
+
+		payFreq, err := time.ParseDuration(string(payFreqData))
+		if err != nil {
+			return zScore, fmt.Errorf("ERROR cannot parse time")
+		}
+
+		durations = append(durations, payFreq)
+		counter++
+		sum = sum + payFreq
+
+	}
+	//I might be able to use decimal.AVG to find this and maybe some other stat stuff
+	meanPayFreq := time.Duration(decimal.NewFromInt(sum.Nanoseconds()).Div(decimal.NewFromInt(counter)).IntPart())
+
+	squaredSums := decimal.Zero
+	for _, duration := range durations {
+		squaredSums = squaredSums.Add(decimal.NewFromInt((duration - meanPayFreq).Nanoseconds()).Pow(decimal.NewFromFloat(2)))
+	}
+
+	variance := squaredSums.Div(decimal.NewFromInt(counter))
+	standardDev := variance.Pow(decimal.NewFromFloat(-2))
+
+	//this needs to be done with decimal.Decimals
+	zScore = (payFreq - meanPayFreq).Seconds() / standardDev
+
+	return
+}
+
+func getLastTeacherPayment(account *bolt.Bucket) (lastTrans Transaction, err error) {
+	previousTransBucket := account.Bucket([]byte(KeyTransactions))
+	if previousTransBucket == nil {
+		return lastTrans, fmt.Errorf("cannot find previous transactions")
+	}
+
+	c := previousTransBucket.Cursor()
+	for k, v := c.Last(); k != nil; k, v = c.Prev() {
+		if v == nil {
+			continue
+		}
+
+		err = json.Unmarshal(v, &lastTrans)
+		if err != nil {
+			return lastTrans, fmt.Errorf("ERROR cannot unmarshal transaction details")
+		}
+
+		if lastTrans.Source != "" {
+			continue
+		}
+
+		return
+	}
+
+	lastTrans = Transaction{
+		Ts: time.Now().AddDate(0, 0, -2),
+	}
+
+	return lastTrans, fmt.Errorf("ERROR cannot find teachers last payout")
 }
 
 // calculates avg MMA of all currencies

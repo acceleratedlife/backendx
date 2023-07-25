@@ -958,7 +958,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	}
 
 	if currency != CurrencyUBuck && currency != KeyDebt {
-		_, err = addStepTx(tx, userInfo.SchoolId, currency, float32(amount.InexactFloat64()))
+		_, err = addStepTx(tx, userInfo.SchoolId, currency, float32(amount.InexactFloat64()), transaction.Ts)
 		if err != nil {
 			return err
 		}

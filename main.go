@@ -88,6 +88,7 @@ const (
 	KeyTime             = "2006-01-02 15:04:05.999999999 -0700 MST"
 	KeyValue            = "value"
 	KeyMMA              = "MMA"
+	KeyPayFrequency     = "payFrequency"
 	KeyRegEnd           = "regEnd"
 	KeyCoins            = "ethereum,cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba-inu,dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,chainlink,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
 	LoanRate            = 1.015
