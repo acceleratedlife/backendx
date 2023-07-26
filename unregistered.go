@@ -108,11 +108,11 @@ func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register open
 				}), nil
 		}
 
-		rand.Seed(time.Now().UnixNano())
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		newUser := UserInfo{
 			Name:        register.Email,
 			FirstName:   register.FirstName,
-			LastName:    string(register.LastName[0]) + strconv.Itoa(rand.Intn(10000)),
+			LastName:    string(register.LastName[0]) + strconv.Itoa(r.Intn(10000)),
 			Email:       register.Email,
 			Confirmed:   false,
 			PasswordSha: EncodePassword(register.Password),

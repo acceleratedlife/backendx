@@ -95,7 +95,7 @@ func getStudentHistoryTX(tx *bolt.Tx, userName string) (history []openapi.Histor
 
 	historyData := student.Get([]byte(KeyHistory))
 	if historyData == nil {
-		return nil, fmt.Errorf("Failed to get history")
+		return nil, fmt.Errorf("failed to get history")
 	}
 	err = json.Unmarshal(historyData, &history)
 	if err != nil {
@@ -337,8 +337,8 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 		if userDetails.Role != UserRoleStudent {
 			userDetails.LastName = body.LastName
 		} else {
-			rand.Seed(time.Now().UnixNano())
-			userDetails.LastName = string(body.LastName[0]) + strconv.Itoa(rand.Intn(10000))
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			userDetails.LastName = string(body.LastName[0]) + strconv.Itoa(r.Intn(10000))
 		}
 	}
 	if len(body.Password) > 5 {
@@ -353,13 +353,13 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 
 		diff := decimal.NewFromInt32(8000 - 5000)
 		low := decimal.NewFromInt32(5000)
-		rand.Seed(time.Now().UnixNano())
-		random := decimal.NewFromFloat32(rand.Float32())
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		random := decimal.NewFromFloat32(r.Float32())
 
 		cost := random.Mul(diff).Add(low).Floor()
 		err := chargeStudentUbuckTx(tx, clock, userDetails, cost, "Paying for College", false)
 		if err != nil {
-			return fmt.Errorf("Failed to chargeStudentUbuckTx: %v", err)
+			return fmt.Errorf("failed to chargeStudentUbuckTx: %v", err)
 		}
 		userDetails.College = true
 		userDetails.CollegeEnd = clock.Now().AddDate(0, 0, 14) //14 days
@@ -368,11 +368,11 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 
 	marshal, err := json.Marshal(userDetails)
 	if err != nil {
-		return fmt.Errorf("Failed to Marshal userDetails")
+		return fmt.Errorf("failed to marshal userDetails")
 	}
 	err = users.Put([]byte(userDetails.Name), marshal)
 	if err != nil {
-		return fmt.Errorf("Failed to Put userDetails")
+		return fmt.Errorf("failed to put userDetails")
 	}
 	return nil
 }
@@ -401,13 +401,13 @@ func executeTransaction(db *bolt.DB, clock Clock, value float32, student, owner,
 
 func executeStudentTransaction(db *bolt.DB, clock Clock, value float32, student string, owner UserInfo, description string) error {
 	if student == owner.Name {
-		return fmt.Errorf("You can't pay yourself")
+		return fmt.Errorf("you can't pay yourself")
 	}
 
 	amount := decimal.NewFromFloat32(value)
 
 	if amount.LessThanOrEqual(decimal.Zero) {
-		return fmt.Errorf("Students can't deduct Ubucks")
+		return fmt.Errorf("students can't deduct Ubucks")
 	}
 
 	ubucks, err := getStudentUbuck(db, owner)
@@ -416,7 +416,7 @@ func executeStudentTransaction(db *bolt.DB, clock Clock, value float32, student 
 	}
 
 	if decimal.NewFromFloat32(ubucks.Value).LessThan(amount.Mul(decimal.NewFromFloat32(1.01))) {
-		return fmt.Errorf("Hey kid you don't have that much Ubucks, don't forget about 1%% charge")
+		return fmt.Errorf("hey kid you don't have that much Ubucks, don't forget about 1%% charge")
 	}
 
 	studentDetails, err := getUserInLocalStore(db, student)

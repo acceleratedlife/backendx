@@ -180,6 +180,7 @@ func TestUserEdit(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/users/user", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
+	require.Nil(t, err)
 	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)
@@ -261,6 +262,7 @@ func TestUserEditNegative(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/users/user", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
+	require.Nil(t, err)
 	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)
@@ -309,7 +311,7 @@ func TestSearchStudentBucks(t *testing.T) {
 	db, tearDown := FullStartTestServer("searchStudentBucks", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 3, 3, 3, 3)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 3, 3, 3, 3)
 
 	SetTestLoginUser(students[0])
 
@@ -325,6 +327,7 @@ func TestSearchStudentBucks(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
+	require.Nil(t, err)
 	defer resp.Body.Close()
 	require.Nil(t, err)
 	require.NotNil(t, resp)

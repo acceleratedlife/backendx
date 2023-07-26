@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,7 @@ func TestSchool_xRateTx(t *testing.T) {
 	// if only currency defined - it is equivalent to uBuck
 	db, teardown := OpenTestDB("currency")
 	defer teardown()
+	clock := TestClock{}
 
 	_, schools, teachers, _, _, err := CreateTestAccounts(db, 2, 10, 1, 2)
 	require.Nil(t, err)
@@ -24,21 +26,21 @@ func TestSchool_xRateTx(t *testing.T) {
 		require.NotNil(t, err2)
 
 		// add first currency in a school
-		_, _ = addStepTx(tx, schools[0], teachers[0], 10)
-		r, err2 := xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
+		_, _ = addStepTx(tx, schools[0], teachers[0], 10, clock.Now(), &clock)
+		r, _ := xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
 		require.Equal(t, 1.0, r.InexactFloat64())
 
 		// payment by 2nd teacher
-		_, _ = addStepTx(tx, schools[0], teachers[1], 20)
+		_, _ = addStepTx(tx, schools[0], teachers[1], 20, clock.Now(), &clock)
 
-		r, err2 = xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
+		r, _ = xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
 		require.Equal(t, 1.5, r.InexactFloat64())
-		r, err2 = xRateToBaseInstantRx(tx, schools[0], teachers[1], "")
+		r, _ = xRateToBaseInstantRx(tx, schools[0], teachers[1], "")
 		require.Equal(t, 0.75, r.InexactFloat64())
 
-		r, err2 = xRateToBaseInstantRx(tx, schools[0], teachers[0], teachers[1])
+		r, _ = xRateToBaseInstantRx(tx, schools[0], teachers[0], teachers[1])
 		require.Equal(t, 2.0, r.InexactFloat64())
-		r, err2 = xRateToBaseInstantRx(tx, schools[0], teachers[1], teachers[0])
+		r, _ = xRateToBaseInstantRx(tx, schools[0], teachers[1], teachers[0])
 		require.Equal(t, 0.5, r.InexactFloat64())
 
 		return nil
@@ -48,6 +50,7 @@ func TestSchool_xRateTx(t *testing.T) {
 func Test_addStepTx(t *testing.T) {
 	db, teardown := OpenTestDB("currency")
 	defer teardown()
+	clock := TestClock{}
 
 	_, schools, teachers, _, _, err := CreateTestAccounts(db, 2, 10, 1, 2)
 	require.Nil(t, err)
@@ -97,7 +100,7 @@ func Test_addStepTx(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := addStepTx(tt.args.tx, tt.args.schoolId, tt.args.currencyId, tt.args.amount)
+				got, err := addStepTx(tt.args.tx, tt.args.schoolId, tt.args.currencyId, tt.args.amount, clock.Now(), &clock)
 				if !tt.wantErr(t, err, fmt.Sprintf("addStepTx(%v, %v, %v, %v, %v)", tt.args.tx, tt.args.schoolId, tt.args.clock, tt.args.currencyId, tt.args.amount)) {
 					return
 				}
@@ -129,14 +132,14 @@ func Test_HistoricalRates(t *testing.T) {
 		accounts := cb.Bucket([]byte(KeyAccounts))
 		require.NotNil(t, accounts)
 
-		stepTx, err := addStepTx(tx, schools[0], teachers[0], 10)
+		stepTx, err := addStepTx(tx, schools[0], teachers[0], 10, clock.Now(), &clock)
 		require.Nil(t, err)
 		require.Equal(t, 10.0, stepTx.InexactFloat64())
 
 		err = updateXRatesTx(accounts, &clock)
 		require.Nil(t, err)
 
-		stepTx, err = addStepTx(tx, schools[0], teachers[0], 10)
+		stepTx, err = addStepTx(tx, schools[0], teachers[0], 10, clock.Now(), &clock)
 		require.Nil(t, err)
 		require.Equal(t, 10.0, stepTx.InexactFloat64())
 		err = updateXRatesTx(accounts, &clock)
@@ -146,7 +149,7 @@ func Test_HistoricalRates(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, 1.0, rx.InexactFloat64())
 
-		stepTx, err = addStepTx(tx, schools[0], teachers[1], 100)
+		stepTx, err = addStepTx(tx, schools[0], teachers[1], 100, clock.Now(), &clock)
 		require.Nil(t, err)
 		require.Equal(t, 100.0, stepTx.InexactFloat64())
 		err = updateXRatesTx(accounts, &clock)
@@ -198,10 +201,10 @@ func Test_convertRx(t *testing.T) {
 	db, dbTearDown := OpenTestDB("convertRx")
 	defer dbTearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 3)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 2, 2, 2, 3)
 
 	userInfo, _ := getUserInLocalStore(db, students[0])
-	err = addUbuck2Student(db, &clock, userInfo, decimal.NewFromFloat(1.0), "daily payment")
+	err := addUbuck2Student(db, &clock, userInfo, decimal.NewFromFloat(1.0), "daily payment")
 	require.Nil(t, err)
 
 	balance := StudentNetWorth(db, students[0])
@@ -218,4 +221,41 @@ func Test_convertRx(t *testing.T) {
 
 	balance = StudentNetWorth(db, students[0])
 	require.Equal(t, 2.0, balance.InexactFloat64())
+}
+
+func Test_ModMMA(t *testing.T) {
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("modMMA")
+	defer dbTearDown()
+
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 2, 2, 3)
+
+	require.True(t, StudentNetWorth(db, students[0]).Equal(StudentNetWorth(db, students[1])))
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = addBuck2Student(db, &clock, student0, decimal.NewFromFloat(100), teachers[0], "pre load")
+	require.Nil(t, err)
+	clock.TickOne(time.Second * 1)
+	err = addBuck2Student(db, &clock, student0, decimal.NewFromFloat(100), teachers[0], "pre load")
+	require.Nil(t, err)
+	clock.TickOne(time.Second * 1)
+	err = addBuck2Student(db, &clock, student0, decimal.NewFromFloat(100), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	student1, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+	err = addBuck2Student(db, &clock, student1, decimal.NewFromFloat(100), teachers[1], "pre load")
+	require.Nil(t, err)
+	clock.TickOne(time.Hour * 48)
+	err = addBuck2Student(db, &clock, student1, decimal.NewFromFloat(100), teachers[1], "pre load")
+	require.Nil(t, err)
+	clock.TickOne(time.Hour * 48)
+	err = addBuck2Student(db, &clock, student1, decimal.NewFromFloat(100), teachers[1], "pre load")
+	require.Nil(t, err)
+
+	temp0 := StudentNetWorth(db, students[0])
+	temp1 := StudentNetWorth(db, students[1])
+
+	require.True(t, temp0.LessThan(temp1))
 }

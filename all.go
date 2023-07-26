@@ -225,7 +225,7 @@ func (a *AllApiServiceImpl) MakeAuction(ctx context.Context, body openapi.Reques
 		}
 
 		if !settings.Student2student {
-			return openapi.Response(400, ""), fmt.Errorf("Disabled by Administrator")
+			return openapi.Response(400, ""), fmt.Errorf("disabled by administrator")
 		}
 		isStaff = false
 	}

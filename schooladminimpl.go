@@ -144,8 +144,8 @@ func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
 	max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
 	min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
 	diff := max.Sub(min)
-	rand.Seed(time.Now().UnixNano())
-	random := decimal.NewFromFloat32(rand.Float32())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	random := decimal.NewFromFloat32(r.Float32())
 	newUser.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 
 	newUser.CareerTransition = false
