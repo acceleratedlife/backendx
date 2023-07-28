@@ -26,12 +26,14 @@ func TestSchool_xRateTx(t *testing.T) {
 		require.NotNil(t, err2)
 
 		// add first currency in a school
-		_, _ = addStepTx(tx, schools[0], teachers[0], 10, clock.Now(), &clock)
+		mma, _ := addStepTx(tx, schools[0], teachers[0], 10)
+		_, _ = addStepHelperTx(tx, schools[0], teachers[0], clock.Now(), mma, &clock)
 		r, _ := xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
 		require.Equal(t, 1.0, r.InexactFloat64())
 
 		// payment by 2nd teacher
-		_, _ = addStepTx(tx, schools[0], teachers[1], 20, clock.Now(), &clock)
+		mma, _ = addStepTx(tx, schools[0], teachers[1], 20)
+		_, _ = addStepHelperTx(tx, schools[0], teachers[1], clock.Now(), mma, &clock)
 
 		r, _ = xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
 		require.Equal(t, 1.5, r.InexactFloat64())
@@ -100,7 +102,8 @@ func Test_addStepTx(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				got, err := addStepTx(tt.args.tx, tt.args.schoolId, tt.args.currencyId, tt.args.amount, clock.Now(), &clock)
+				mma, err := addStepTx(tt.args.tx, tt.args.schoolId, tt.args.currencyId, tt.args.amount)
+				got, _ := addStepHelperTx(tt.args.tx, tt.args.schoolId, tt.args.currencyId, clock.Now(), mma, &clock)
 				if !tt.wantErr(t, err, fmt.Sprintf("addStepTx(%v, %v, %v, %v, %v)", tt.args.tx, tt.args.schoolId, tt.args.clock, tt.args.currencyId, tt.args.amount)) {
 					return
 				}
@@ -132,14 +135,16 @@ func Test_HistoricalRates(t *testing.T) {
 		accounts := cb.Bucket([]byte(KeyAccounts))
 		require.NotNil(t, accounts)
 
-		stepTx, err := addStepTx(tx, schools[0], teachers[0], 10, clock.Now(), &clock)
+		mma, err := addStepTx(tx, schools[0], teachers[0], 10)
+		stepTx, _ := addStepHelperTx(tx, schools[0], teachers[0], clock.Now(), mma, &clock)
 		require.Nil(t, err)
 		require.Equal(t, 10.0, stepTx.InexactFloat64())
 
 		err = updateXRatesTx(accounts, &clock)
 		require.Nil(t, err)
 
-		stepTx, err = addStepTx(tx, schools[0], teachers[0], 10, clock.Now(), &clock)
+		mma, err = addStepTx(tx, schools[0], teachers[0], 10)
+		stepTx, _ = addStepHelperTx(tx, schools[0], teachers[0], clock.Now(), mma, &clock)
 		require.Nil(t, err)
 		require.Equal(t, 10.0, stepTx.InexactFloat64())
 		err = updateXRatesTx(accounts, &clock)
@@ -149,7 +154,8 @@ func Test_HistoricalRates(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, 1.0, rx.InexactFloat64())
 
-		stepTx, err = addStepTx(tx, schools[0], teachers[1], 100, clock.Now(), &clock)
+		mma, err = addStepTx(tx, schools[0], teachers[1], 100)
+		stepTx, _ = addStepHelperTx(tx, schools[0], teachers[1], clock.Now(), mma, &clock)
 		require.Nil(t, err)
 		require.Equal(t, 100.0, stepTx.InexactFloat64())
 		err = updateXRatesTx(accounts, &clock)
@@ -236,10 +242,10 @@ func Test_ModMMA(t *testing.T) {
 	require.Nil(t, err)
 	err = addBuck2Student(db, &clock, student0, decimal.NewFromFloat(100), teachers[0], "pre load")
 	require.Nil(t, err)
-	clock.TickOne(time.Second * 1)
+	clock.TickOne(time.Millisecond * 1)
 	err = addBuck2Student(db, &clock, student0, decimal.NewFromFloat(100), teachers[0], "pre load")
 	require.Nil(t, err)
-	clock.TickOne(time.Second * 1)
+	clock.TickOne(time.Millisecond * 1)
 	err = addBuck2Student(db, &clock, student0, decimal.NewFromFloat(100), teachers[0], "pre load")
 	require.Nil(t, err)
 
@@ -249,6 +255,12 @@ func Test_ModMMA(t *testing.T) {
 	require.Nil(t, err)
 	clock.TickOne(time.Hour * 48)
 	err = addBuck2Student(db, &clock, student1, decimal.NewFromFloat(100), teachers[1], "pre load")
+	require.Nil(t, err)
+	clock.TickOne(time.Hour * 48)
+	err = addBuck2Student(db, &clock, student1, decimal.NewFromFloat(100), teachers[1], "pre load")
+	require.Nil(t, err)
+
+	err = addBuck2Student(db, &clock, student0, decimal.NewFromFloat(100), teachers[0], "pre load")
 	require.Nil(t, err)
 	clock.TickOne(time.Hour * 48)
 	err = addBuck2Student(db, &clock, student1, decimal.NewFromFloat(100), teachers[1], "pre load")

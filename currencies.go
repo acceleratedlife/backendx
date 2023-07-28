@@ -111,8 +111,13 @@ func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decim
 }
 
 // adds step for pay frequency
-func addStepHelperTx(tx *bolt.Tx, schoolId string, account *bolt.Bucket, currentTrans time.Time, mma decimal.Decimal, clock Clock) (decimal.Decimal, error) {
-	lastTrans, err := getLastTeacherPayment(account, clock)
+func addStepHelperTx(tx *bolt.Tx, schoolId, currencyId string, currentTrans time.Time, mma decimal.Decimal, clock Clock) (decimal.Decimal, error) {
+	account, err := getAccountBucketTx(tx, schoolId, currencyId)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	lastTrans, err := getLastTeacherPaymentRX(account, clock)
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -143,7 +148,7 @@ func addStepHelperTx(tx *bolt.Tx, schoolId string, account *bolt.Bucket, current
 		return decimal.Zero, err
 	}
 
-	zScore, err := getPayZScore(tx, schoolId, t)
+	zScore, err := getPayZScoreRx(tx, schoolId, t)
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -169,7 +174,7 @@ func addStepHelperTx(tx *bolt.Tx, schoolId string, account *bolt.Bucket, current
 
 // updates MMA
 // returns MMA
-func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32, currentTrans time.Time, clock Clock) (decimal.Decimal, error) {
+func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32) (decimal.Decimal, error) {
 	account, err := getAccountBucketTx(tx, schoolId, currencyId)
 	if err != nil {
 		return decimal.Zero, err
@@ -198,16 +203,11 @@ func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32, 
 		return decimal.Zero, err
 	}
 
-	modMMA, err := addStepHelperTx(tx, schoolId, account, currentTrans, d, clock)
-	if err != nil {
-		return decimal.Zero, err
-	}
-
-	return modMMA, nil
+	return d, nil
 
 }
 
-func getPayZScore(tx *bolt.Tx, schoolId string, payFreq time.Duration) (zScore decimal.Decimal, err error) {
+func getPayZScoreRx(tx *bolt.Tx, schoolId string, payFreq time.Duration) (zScore decimal.Decimal, err error) {
 	cb, err := getCbRx(tx, schoolId)
 	if err != nil {
 		return
@@ -267,7 +267,7 @@ func getPayZScore(tx *bolt.Tx, schoolId string, payFreq time.Duration) (zScore d
 	return
 }
 
-func getLastTeacherPayment(account *bolt.Bucket, clock Clock) (lastTrans Transaction, err error) {
+func getLastTeacherPaymentRX(account *bolt.Bucket, clock Clock) (lastTrans Transaction, err error) {
 	previousTransBucket := account.Bucket([]byte(KeyTransactions))
 	if previousTransBucket == nil {
 		lastTrans = Transaction{Ts: clock.Now().AddDate(0, 0, -2)}
