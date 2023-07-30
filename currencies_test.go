@@ -27,13 +27,13 @@ func TestSchool_xRateTx(t *testing.T) {
 
 		// add first currency in a school
 		mma, _ := addStepTx(tx, schools[0], teachers[0], 10)
-		_, _ = addStepHelperTx(tx, schools[0], teachers[0], clock.Now(), mma, &clock)
+		_, _ = modifyMmaTx(tx, schools[0], teachers[0], clock.Now(), mma, &clock)
 		r, _ := xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
 		require.Equal(t, 1.0, r.InexactFloat64())
 
 		// payment by 2nd teacher
 		mma, _ = addStepTx(tx, schools[0], teachers[1], 20)
-		_, _ = addStepHelperTx(tx, schools[0], teachers[1], clock.Now(), mma, &clock)
+		_, _ = modifyMmaTx(tx, schools[0], teachers[1], clock.Now(), mma, &clock)
 
 		r, _ = xRateToBaseInstantRx(tx, schools[0], teachers[0], "")
 		require.Equal(t, 1.5, r.InexactFloat64())
@@ -103,7 +103,7 @@ func Test_addStepTx(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				mma, err := addStepTx(tt.args.tx, tt.args.schoolId, tt.args.currencyId, tt.args.amount)
-				got, _ := addStepHelperTx(tt.args.tx, tt.args.schoolId, tt.args.currencyId, clock.Now(), mma, &clock)
+				got, _ := modifyMmaTx(tt.args.tx, tt.args.schoolId, tt.args.currencyId, clock.Now(), mma, &clock)
 				if !tt.wantErr(t, err, fmt.Sprintf("addStepTx(%v, %v, %v, %v, %v)", tt.args.tx, tt.args.schoolId, tt.args.clock, tt.args.currencyId, tt.args.amount)) {
 					return
 				}
@@ -136,7 +136,7 @@ func Test_HistoricalRates(t *testing.T) {
 		require.NotNil(t, accounts)
 
 		mma, err := addStepTx(tx, schools[0], teachers[0], 10)
-		stepTx, _ := addStepHelperTx(tx, schools[0], teachers[0], clock.Now(), mma, &clock)
+		stepTx, _ := modifyMmaTx(tx, schools[0], teachers[0], clock.Now(), mma, &clock)
 		require.Nil(t, err)
 		require.Equal(t, 10.0, stepTx.InexactFloat64())
 
@@ -144,7 +144,7 @@ func Test_HistoricalRates(t *testing.T) {
 		require.Nil(t, err)
 
 		mma, err = addStepTx(tx, schools[0], teachers[0], 10)
-		stepTx, _ = addStepHelperTx(tx, schools[0], teachers[0], clock.Now(), mma, &clock)
+		stepTx, _ = modifyMmaTx(tx, schools[0], teachers[0], clock.Now(), mma, &clock)
 		require.Nil(t, err)
 		require.Equal(t, 10.0, stepTx.InexactFloat64())
 		err = updateXRatesTx(accounts, &clock)
@@ -155,7 +155,7 @@ func Test_HistoricalRates(t *testing.T) {
 		require.Equal(t, 1.0, rx.InexactFloat64())
 
 		mma, err = addStepTx(tx, schools[0], teachers[1], 100)
-		stepTx, _ = addStepHelperTx(tx, schools[0], teachers[1], clock.Now(), mma, &clock)
+		stepTx, _ = modifyMmaTx(tx, schools[0], teachers[1], clock.Now(), mma, &clock)
 		require.Nil(t, err)
 		require.Equal(t, 100.0, stepTx.InexactFloat64())
 		err = updateXRatesTx(accounts, &clock)

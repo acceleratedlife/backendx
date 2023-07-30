@@ -954,7 +954,7 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 			return err
 		}
 
-		_, err = addStepHelperTx(tx, userInfo.SchoolId, currency, transaction.Ts, mma, clock)
+		_, err = modifyMmaTx(tx, userInfo.SchoolId, currency, transaction.Ts, mma, clock)
 		if err != nil {
 			return err
 		}

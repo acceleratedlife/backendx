@@ -110,8 +110,8 @@ func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decim
 	return
 }
 
-// adds step for pay frequency
-func addStepHelperTx(tx *bolt.Tx, schoolId, currencyId string, currentTrans time.Time, mma decimal.Decimal, clock Clock) (decimal.Decimal, error) {
+// adds step for pay frequency, modifies MMA based on mean pay frequency
+func modifyMmaTx(tx *bolt.Tx, schoolId, currencyId string, currentTrans time.Time, mma decimal.Decimal, clock Clock) (decimal.Decimal, error) {
 	account, err := getAccountBucketTx(tx, schoolId, currencyId)
 	if err != nil {
 		return decimal.Zero, err
