@@ -49,13 +49,6 @@ func btoi32(b []byte) int32 {
 	return int32(u)
 }
 
-// btoi32 returns an 8-byte big endian representation of v.
-func btoi64(b []byte) int64 {
-
-	u := binary.BigEndian.Uint64(b)
-	return int64(u)
-}
-
 func userNameToB(username string) []byte {
 	return []byte(username)
 }

@@ -468,5 +468,5 @@ func convertRx(tx *bolt.Tx, schoolId, from, to string, amount float64) (converte
 }
 
 func isTeacherAccount(id string) bool {
-	return strings.IndexAny(id, "@") != -1
+	return strings.ContainsAny(id, "@")
 }

@@ -15,7 +15,7 @@ func TestSearchAdminTeacherClass(t *testing.T) {
 	db, tearDown := FullStartTestServer("searchAdminTeacherClass", 8090, "")
 	defer tearDown()
 
-	admins, _, teachers, _, _, err := CreateTestAccounts(db, 1, 2, 1, 3)
+	admins, _, teachers, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
 
 	SetTestLoginUser(admins[0])
 
@@ -26,8 +26,8 @@ func TestSearchAdminTeacherClass(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 

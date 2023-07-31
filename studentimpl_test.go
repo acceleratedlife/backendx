@@ -20,16 +20,16 @@ func Test_ubuckFlow(t *testing.T) {
 	db, dbTearDown := OpenTestDB("")
 	defer dbTearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 3)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 2, 2, 2, 3)
 
 	userInfo, _ := getUserInLocalStore(db, students[0])
-	err = addUbuck2Student(db, &clock, userInfo, decimal.NewFromFloat(1.01), "daily payment")
+	err := addUbuck2Student(db, &clock, userInfo, decimal.NewFromFloat(1.01), "daily payment")
 	require.Nil(t, err)
 
 	balance := StudentNetWorth(db, students[0])
 	require.Equal(t, 1.01, balance.InexactFloat64())
 
-	err = chargeStudentUbuck(db, &clock, userInfo, decimal.NewFromFloat(0.51), "some reason", false)
+	_ = chargeStudentUbuck(db, &clock, userInfo, decimal.NewFromFloat(0.51), "some reason", false)
 
 	balance = StudentNetWorth(db, students[0])
 	require.Equal(t, 0.5, balance.InexactFloat64())
@@ -218,9 +218,9 @@ func TestCollege(t *testing.T) {
 		College:     true,
 	}
 
-	marshal, err := json.Marshal(job)
+	marshal, _ := json.Marshal(job)
 
-	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
+	err := createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
 	require.Nil(t, err)
 
 	r := CollegeIfNeeded(db, &clock, student)
@@ -266,9 +266,9 @@ func TestCareer(t *testing.T) {
 		College:     true,
 	}
 
-	marshal, err := json.Marshal(job)
+	marshal, _ := json.Marshal(job)
 
-	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
+	err := createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
 	require.Nil(t, err)
 
 	job2 := Job{
@@ -277,7 +277,7 @@ func TestCareer(t *testing.T) {
 		College:     false,
 	}
 
-	marshal, err = json.Marshal(job2)
+	marshal, _ = json.Marshal(job2)
 
 	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
 	require.Nil(t, err)
@@ -547,7 +547,7 @@ func TestCryptoTransaction(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, float32(0), resp.Owned)
 
-	err = cryptoTransaction(db, &clock, student, body)
+	_ = cryptoTransaction(db, &clock, student, body)
 
 	resp, err = getCryptoForStudentRequest(db, student, "Cardano")
 	require.Nil(t, err)

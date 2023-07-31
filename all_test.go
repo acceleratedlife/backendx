@@ -27,8 +27,8 @@ func TestAuth(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -50,13 +50,13 @@ func TestSearchStudents(t *testing.T) {
 	defer tearDown()
 	coinGecko(db)
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 3)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 3)
 
 	SetTestLoginUser(teachers[0])
 
 	userDetails, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
-	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(15000), CurrencyUBuck, "pre load")
+	_ = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(15000), CurrencyUBuck, "pre load")
 	body := openapi.RequestCryptoConvert{
 		Name: "cardano",
 		Buy:  10,
@@ -72,8 +72,8 @@ func TestSearchStudents(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -88,7 +88,7 @@ func TestSearchStudents(t *testing.T) {
 func TestSearchStudent(t *testing.T) {
 	db, tearDown := FullStartTestServer("searchStudent", 8090, "")
 	defer tearDown()
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 2, 6)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 2, 6)
 
 	SetTestLoginUser(teachers[0])
 
@@ -99,8 +99,8 @@ func TestSearchStudent(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -119,7 +119,7 @@ func TestSearchClass(t *testing.T) {
 	defer tearDown()
 	members := 10
 
-	_, _, _, classes, students, err := CreateTestAccounts(db, 3, 3, 3, members)
+	_, _, _, classes, students, _ := CreateTestAccounts(db, 3, 3, 3, members)
 
 	SetTestLoginUser(students[0])
 
@@ -130,8 +130,8 @@ func TestSearchClass(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -182,7 +182,6 @@ func TestUserEdit(t *testing.T) {
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
-	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -223,8 +222,8 @@ func TestUserEditStaff(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/users/user", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -264,7 +263,6 @@ func TestUserEditNegative(t *testing.T) {
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
-	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -329,7 +327,6 @@ func TestSearchStudentBucks(t *testing.T) {
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
-	require.Nil(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -345,7 +342,7 @@ func TestSearchStudentBucksNegative(t *testing.T) {
 	db, tearDown := FullStartTestServer("searchStudentBucksNegative", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 3, 3, 3, 3)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 3, 3, 3, 3)
 
 	SetTestLoginUser(students[0])
 
@@ -367,8 +364,8 @@ func TestSearchStudentBucksNegative(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -390,7 +387,7 @@ func TestSearchStudentBucksUbuck(t *testing.T) {
 	db, tearDown := FullStartTestServer("searchStudentBucksUbuck", 8090, "")
 	defer tearDown()
 
-	_, _, _, _, students, err := CreateTestAccounts(db, 3, 3, 3, 3)
+	_, _, _, _, students, _ := CreateTestAccounts(db, 3, 3, 3, 3)
 
 	SetTestLoginUser(students[0])
 
@@ -406,8 +403,8 @@ func TestSearchStudentBucksUbuck(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -424,7 +421,7 @@ func TestSearchAllBucks(t *testing.T) {
 	db, tearDown := FullStartTestServer("searchAllBucks", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 3, 1, 1)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 3, 1, 1)
 
 	SetTestLoginUser(students[0])
 
@@ -448,8 +445,8 @@ func TestSearchAllBucks(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -467,7 +464,7 @@ func TestExchangeRate(t *testing.T) {
 	defer tearDown()
 	members := 10
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 3, 3, members)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 3, 3, members)
 
 	SetTestLoginUser(students[0])
 
@@ -491,8 +488,8 @@ func TestExchangeRate(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -509,8 +506,8 @@ func TestExchangeRate(t *testing.T) {
 		nil)
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -529,7 +526,7 @@ func TestExchangeRate_ubuck(t *testing.T) {
 	defer tearDown()
 	members := 10
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 3, 3, members)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 3, 3, members)
 
 	SetTestLoginUser(students[0])
 
@@ -553,8 +550,8 @@ func TestExchangeRate_ubuck(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -574,7 +571,7 @@ func TestExchangeRate_debt(t *testing.T) {
 	defer tearDown()
 	members := 10
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 3, 3, members)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 3, 3, members)
 
 	SetTestLoginUser(students[0])
 
@@ -598,8 +595,8 @@ func TestExchangeRate_debt(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -614,8 +611,8 @@ func TestExchangeRate_debt(t *testing.T) {
 		nil)
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -629,8 +626,8 @@ func TestExchangeRate_debt(t *testing.T) {
 		nil)
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -644,8 +641,8 @@ func TestExchangeRate_debt(t *testing.T) {
 		nil)
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -660,7 +657,7 @@ func TestPayTransaction_credit(t *testing.T) {
 	db, tearDown := FullStartTestServer("payTransaction_credit", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 2, 2, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -679,8 +676,8 @@ func TestPayTransaction_credit(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -691,7 +688,7 @@ func TestPayTransaction_debit(t *testing.T) {
 	db, tearDown := FullStartTestServer("payTransaction_debit", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 2, 2, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -715,8 +712,8 @@ func TestPayTransaction_debit(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -726,7 +723,7 @@ func TestPayTransactions_credit(t *testing.T) {
 	db, tearDown := FullStartTestServer("payTransactions_credit", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 2, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -745,8 +742,8 @@ func TestPayTransactions_credit(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -757,7 +754,7 @@ func TestPayTransactions_debit(t *testing.T) {
 	db, tearDown := FullStartTestServer("payTransactions_debit", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 2, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -783,8 +780,8 @@ func TestPayTransactions_debit(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -795,7 +792,7 @@ func TestPayTransaction_student(t *testing.T) {
 	db, tearDown := FullStartTestServer("payTransactions_student", 8090, "")
 	defer tearDown()
 
-	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	admins, _, _, _, students, _ := CreateTestAccounts(db, 1, 2, 2, 2)
 
 	SetTestLoginUser(students[0])
 
@@ -826,8 +823,8 @@ func TestPayTransaction_student(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -838,7 +835,7 @@ func TestPayTransaction_studentDebt(t *testing.T) {
 	db, tearDown := FullStartTestServer("payTransactions_studentDebt", 8090, "")
 	defer tearDown()
 
-	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 2, 2, 2)
 
 	SetTestLoginUser(students[0])
 
@@ -864,8 +861,8 @@ func TestPayTransaction_studentDebt(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode)
 
@@ -876,7 +873,7 @@ func TestMakeAuction(t *testing.T) {
 	db, teardown := FullStartTestServer("makeClass", 8090, "")
 	defer teardown()
 
-	_, _, teachers, classes, _, err := CreateTestAccounts(db, 1, 1, 2, 2)
+	_, _, teachers, classes, _, _ := CreateTestAccounts(db, 1, 1, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -909,7 +906,7 @@ func TestSearchClasses(t *testing.T) {
 	defer tearDown()
 	classCount := 2
 
-	_, _, teachers, _, _, err := CreateTestAccounts(db, 2, 2, classCount, 2)
+	_, _, teachers, _, _, _ := CreateTestAccounts(db, 2, 2, classCount, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -920,8 +917,8 @@ func TestSearchClasses(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -938,7 +935,7 @@ func TestDeleteAuction(t *testing.T) {
 	db, tearDown := FullStartTestServerClock("deleteAuction", 8090, "", &clock)
 	defer tearDown()
 
-	_, _, teachers, classes, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 2, 2, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -952,10 +949,10 @@ func TestDeleteAuction(t *testing.T) {
 		Visibility:  classes,
 	}
 
-	teacherDetails, err := getUserInLocalStore(db, teachers[0])
+	teacherDetails, _ := getUserInLocalStore(db, teachers[0])
 
 	//to be deleted
-	err = MakeAuctionImpl(db, teacherDetails, body, true)
+	err := MakeAuctionImpl(db, teacherDetails, body, true)
 	require.Nil(t, err)
 	auctions, err := getTeacherAuctions(db, teacherDetails)
 	require.Nil(t, err)
@@ -963,12 +960,12 @@ func TestDeleteAuction(t *testing.T) {
 	client := &http.Client{}
 	timeId := auctions[0].Id.Format(time.RFC3339Nano)
 
-	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/auctions/auction")
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/auctions/auction")
 	q := u.Query()
 	q.Set("_id", timeId)
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest(http.MethodDelete,
+	req, _ := http.NewRequest(http.MethodDelete,
 		u.String(),
 		nil)
 
@@ -978,7 +975,7 @@ func TestDeleteAuction(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode)
 
 	//to be deleted
-	err = MakeAuctionImpl(db, teacherDetails, body, true)
+	_ = MakeAuctionImpl(db, teacherDetails, body, true)
 
 	userDetails, _ := getUserInLocalStore(db, students[0])
 	addUbuck2Student(db, &clock, userDetails, decimal.NewFromInt32(100), "loading")
@@ -989,13 +986,13 @@ func TestDeleteAuction(t *testing.T) {
 	q.Set("_id", timeId)
 	u.RawQuery = q.Encode()
 
-	req, err = http.NewRequest(http.MethodDelete,
+	req, _ = http.NewRequest(http.MethodDelete,
 		u.String(),
 		nil)
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -1010,13 +1007,13 @@ func TestDeleteAuction(t *testing.T) {
 	q.Set("_id", timeId)
 	u.RawQuery = q.Encode()
 
-	req, err = http.NewRequest(http.MethodDelete,
+	req, _ = http.NewRequest(http.MethodDelete,
 		u.String(),
 		nil)
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -1027,7 +1024,7 @@ func TestSearchMarketItems(t *testing.T) {
 	db, tearDown := FullStartTestServer("searchMarketItems", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
 	SetTestLoginUser(students[0])
 
@@ -1040,16 +1037,16 @@ func TestSearchMarketItems(t *testing.T) {
 	})
 
 	client := &http.Client{}
-	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/marketItems")
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/marketItems")
 	q := u.Query()
 	q.Set("_id", teachers[0])
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, _ := http.NewRequest(http.MethodGet, u.String(), nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 

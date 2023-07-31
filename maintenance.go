@@ -125,7 +125,7 @@ func resetPasswordHandler(db *bolt.DB) http.Handler {
 			return
 		}
 
-		response, err := resetPassword(db, user, 1)
+		response, _ := resetPassword(db, user, 1)
 
 		lgr.Printf("Password reset for %s ", request.Email)
 
@@ -203,7 +203,7 @@ func seedDbHandler(db *bolt.DB, clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if clock == nil {
-			err := fmt.Errorf("This endpoint does not work on the production server")
+			err := fmt.Errorf("this endpoint does not work on the production server")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -261,25 +261,25 @@ func addAdminHandler(db *bolt.DB) http.Handler {
 		lgr.Printf("INFO new admin request: %v", request)
 
 		if request.Email == "" {
-			err = fmt.Errorf("Email is mandatory")
+			err = fmt.Errorf("email is mandatory")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		if request.FirstName == "" {
-			err = fmt.Errorf("FirstName is mandatory")
+			err = fmt.Errorf("firstName is mandatory")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		if request.LastName == "" {
-			err = fmt.Errorf("LastName is mandatory")
+			err = fmt.Errorf("lastName is mandatory")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		if request.SchoolId == "" {
-			err = fmt.Errorf("SchoolId is mandatory")
+			err = fmt.Errorf("schoolId is mandatory")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -334,7 +334,7 @@ func nextCollegeHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if clock == nil {
-			err := fmt.Errorf("This endpoint does not work on the production server")
+			err := fmt.Errorf("this endpoint does not work on the production server")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -361,7 +361,7 @@ func nextCareerHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if clock == nil {
-			err := fmt.Errorf("This endpoint does not work on the production server")
+			err := fmt.Errorf("this endpoint does not work on the production server")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -388,7 +388,7 @@ func nextDayHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if clock == nil {
-			err := fmt.Errorf("This endpoint does not work on the production server")
+			err := fmt.Errorf("this endpoint does not work on the production server")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -415,7 +415,7 @@ func nextHourHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if clock == nil {
-			err := fmt.Errorf("This endpoint does not work on the production server")
+			err := fmt.Errorf("this endpoint does not work on the production server")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -442,7 +442,7 @@ func nextMinutesHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if clock == nil {
-			err := fmt.Errorf("This endpoint does not work on the production server")
+			err := fmt.Errorf("this endpoint does not work on the production server")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -469,7 +469,7 @@ func resetClockHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if clock == nil {
-			err := fmt.Errorf("This endpoint does not work on the production server")
+			err := fmt.Errorf("this endpoint does not work on the production server")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
