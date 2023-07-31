@@ -13,10 +13,10 @@ func Test_student2student(t *testing.T) {
 	db, dbTearDown := OpenTestDB("student2student")
 	defer dbTearDown()
 
-	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 3)
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 2, 2, 3)
 
 	student0, _ := getUserInLocalStore(db, students[0])
-	err = addUbuck2Student(db, &clock, student0, decimal.NewFromFloat(200), "daily payment")
+	err := addUbuck2Student(db, &clock, student0, decimal.NewFromFloat(200), "daily payment")
 	require.Nil(t, err)
 
 	err = executeStudentTransaction(db, &clock, 75, students[1], student0, "Pencil")

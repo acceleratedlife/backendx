@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
+	"time"
 
 	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
@@ -107,6 +110,68 @@ func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decim
 	return
 }
 
+// adds step for pay frequency, modifies MMA based on mean pay frequency
+func modifyMmaTx(tx *bolt.Tx, schoolId, currencyId string, currentTrans time.Time, mma decimal.Decimal, clock Clock) (decimal.Decimal, error) {
+	account, err := getAccountBucketTx(tx, schoolId, currencyId)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	lastTrans, err := getLastTeacherPaymentRX(account, clock)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	currentDiff := currentTrans.Sub(lastTrans.Ts)
+
+	var t time.Duration
+	w := account.Get([]byte(KeyPayFrequency))
+	if w != nil {
+		var last time.Duration
+		err = json.Unmarshal(w, &last)
+		if err != nil {
+			return decimal.Zero, err
+		}
+		t = time.Duration(decimal.NewFromInt(last.Nanoseconds()).Mul(decimal.NewFromFloat(99)).Add(decimal.NewFromInt(currentDiff.Nanoseconds())).Div(decimal.NewFromFloat(100)).IntPart())
+	} else {
+		t = currentDiff
+	}
+
+	marshal, err := json.Marshal(t)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	//saving average frequency of payouts
+	err = account.Put([]byte(KeyPayFrequency), marshal)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	zScore, err := getPayZScoreRx(tx, schoolId, t)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	//I think this should be Add but when I put it I get the answer in reverse
+	modMMA := decimal.NewFromFloat(1).Sub((zScore.Div(decimal.NewFromFloat(10)))).Mul(mma)
+
+	//saving modMMA
+	step1, err := modMMA.MarshalText()
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	//saving average payouts
+	err = account.Put([]byte(KeyModMMA), step1)
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	return modMMA, nil
+
+}
+
 // updates MMA
 // returns MMA
 func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32) (decimal.Decimal, error) {
@@ -127,16 +192,107 @@ func addStepTx(tx *bolt.Tx, schoolId string, currencyId string, amount float32) 
 	} else {
 		d = decimal.NewFromFloat32(amount)
 	}
-	step, err := d.MarshalText()
+	step1, err := d.MarshalText()
 	if err != nil {
 		return decimal.Zero, err
 	}
-	err = account.Put([]byte(KeyMMA), step)
+
+	//saving average payouts
+	err = account.Put([]byte(KeyMMA), step1)
 	if err != nil {
 		return decimal.Zero, err
 	}
+
 	return d, nil
 
+}
+
+func getPayZScoreRx(tx *bolt.Tx, schoolId string, payFreq time.Duration) (zScore decimal.Decimal, err error) {
+	cb, err := getCbRx(tx, schoolId)
+	if err != nil {
+		return
+	}
+
+	accounts := cb.Bucket([]byte(KeyAccounts))
+	if accounts == nil {
+		return zScore, fmt.Errorf("ERROR cannot get accounts bucket")
+	}
+
+	c := accounts.Cursor()
+	var counter = int64(0)
+	var sum = time.Duration(0)
+	durations := make([]time.Duration, 0)
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		account := accounts.Bucket(k)
+		if account == nil {
+			return zScore, fmt.Errorf("ERROR cannot get account bucket")
+		}
+
+		payFreqData := account.Get([]byte(KeyPayFrequency))
+		if payFreqData == nil {
+			continue
+		}
+
+		payFreq2, err := time.ParseDuration((string(payFreqData) + "ns"))
+		if err != nil {
+			return zScore, fmt.Errorf("ERROR cannot parse time")
+		}
+
+		durations = append(durations, payFreq2)
+		counter++
+		sum = sum + payFreq2
+
+	}
+
+	if counter == 0 {
+		return decimal.Zero, nil
+	}
+
+	meanPayFreq := time.Duration(decimal.NewFromInt(sum.Nanoseconds()).Div(decimal.NewFromInt(counter)).IntPart())
+
+	squaredSums := decimal.Zero
+	for _, duration := range durations {
+		squaredSums = squaredSums.Add(decimal.NewFromInt((duration - meanPayFreq).Nanoseconds()).Pow(decimal.NewFromFloat(2)))
+	}
+
+	variance := squaredSums.Div(decimal.NewFromInt(counter))
+	if variance.IsZero() {
+		return decimal.Zero, nil
+	}
+	standardDev := math.Sqrt(variance.InexactFloat64())
+	standardDev2 := decimal.NewFromFloat(standardDev)
+
+	zScore = decimal.NewFromInt((payFreq - meanPayFreq).Nanoseconds()).Div(standardDev2)
+
+	return
+}
+
+func getLastTeacherPaymentRX(account *bolt.Bucket, clock Clock) (lastTrans Transaction, err error) {
+	previousTransBucket := account.Bucket([]byte(KeyTransactions))
+	if previousTransBucket == nil {
+		lastTrans = Transaction{Ts: clock.Now().AddDate(0, 0, -2)}
+		return lastTrans, nil
+	}
+
+	c := previousTransBucket.Cursor()
+	for k, v := c.Last(); k != nil; k, v = c.Prev() {
+		if v == nil {
+			continue
+		}
+
+		err = json.Unmarshal(v, &lastTrans)
+		if err != nil {
+			return lastTrans, fmt.Errorf("ERROR cannot unmarshal transaction details")
+		}
+
+		if lastTrans.Source != "" {
+			continue
+		}
+
+		return
+	}
+
+	return lastTrans, fmt.Errorf("ERROR cannot find teachers last payout")
 }
 
 // calculates avg MMA of all currencies
@@ -283,9 +439,11 @@ func getCurrencyMMARx(tx *bolt.Tx, schoolId, currencyId string) (decimal.Decimal
 	}
 	return getCurrencyAccMMARx(account)
 }
+
+// returns modMMA
 func getCurrencyAccMMARx(account *bolt.Bucket) (decimal.Decimal, error) {
 
-	v := account.Get([]byte(KeyMMA))
+	v := account.Get([]byte(KeyModMMA))
 	if v == nil {
 		return decimal.Zero, fmt.Errorf("MMA not defined")
 	}
@@ -310,5 +468,5 @@ func convertRx(tx *bolt.Tx, schoolId, from, to string, amount float64) (converte
 }
 
 func isTeacherAccount(id string) bool {
-	return strings.IndexAny(id, "@") != -1
+	return strings.ContainsAny(id, "@")
 }

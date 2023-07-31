@@ -115,9 +115,9 @@ func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudent
 		College:     false,
 	}
 
-	marshal, err := json.Marshal(job2)
+	marshal, _ := json.Marshal(job2)
 
-	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
+	err := createJobOrEvent(db, marshal, KeyJobs, "Teacher")
 	if err != nil {
 		lgr.Printf("ERROR cannot create job: %v", err)
 		return
@@ -265,18 +265,18 @@ func TestIntegrationAuth(t *testing.T) {
 		"user":   {"test@admin.com"},
 		"passwd": {"123qwe"},
 	}
-	resp, err := http.PostForm("http://127.0.0.1:8089/auth/al/login", formData)
+	resp, _ := http.PostForm("http://127.0.0.1:8089/auth/al/login", formData)
 
 	assert.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	resp, err = http.Get("http://127.0.0.1:8089/auth/al/login?user=test@admin.com&passwd=123qwe")
+	resp, err := http.Get("http://127.0.0.1:8089/auth/al/login?user=test@admin.com&passwd=123qwe")
 
 	require.Nil(t, err)
 	assert.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	resp, err = http.Get("http://127.0.0.1:8089/api/classes/teachers")
+	resp, _ = http.Get("http://127.0.0.1:8089/api/classes/teachers")
 
 	assert.NotNil(t, resp)
 	assert.Equal(t, 401, resp.StatusCode)

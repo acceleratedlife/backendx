@@ -58,7 +58,7 @@ func TestEditClass(t *testing.T) {
 	defer tearDown()
 	members := 2
 
-	_, _, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, members)
+	_, _, teachers, classes, _, _ := CreateTestAccounts(db, 2, 2, 2, members)
 
 	SetTestLoginUser(teachers[0])
 
@@ -76,8 +76,8 @@ func TestEditClass(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -96,7 +96,7 @@ func TestKickClass(t *testing.T) {
 	defer tearDown()
 	members := 2
 
-	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, members)
+	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, members)
 
 	SetTestLoginUser(teachers[0])
 
@@ -113,8 +113,8 @@ func TestKickClass(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 }
@@ -124,19 +124,19 @@ func TestDeleteClass(t *testing.T) {
 	defer tearDown()
 	noClasses := 2
 
-	_, _, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, noClasses, 2)
+	_, _, teachers, classes, _, _ := CreateTestAccounts(db, 2, 2, noClasses, 2)
 
 	SetTestLoginUser(teachers[0])
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest(http.MethodDelete,
+	req, _ := http.NewRequest(http.MethodDelete,
 		"http://127.0.0.1:8090/api/classes/class?_id="+classes[0],
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 }
@@ -146,7 +146,7 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 	db, teardown := FullStartTestServer("searchAuctionsTeacher", 8090, "")
 	defer teardown()
 
-	_, schools, teachers, classes, _, err := CreateTestAccounts(db, 1, 1, 2, 2)
+	_, schools, teachers, classes, _, _ := CreateTestAccounts(db, 1, 1, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -160,7 +160,7 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 		Visibility:  classes,
 	}
 
-	err = MakeAuctionImpl(db, UserInfo{
+	err := MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
@@ -194,7 +194,7 @@ func TestSearchAuctionsTeacherStudent(t *testing.T) {
 	db, teardown := FullStartTestServer("searchAuctionsTeacherStudent", 8090, "")
 	defer teardown()
 
-	_, schools, _, classes, students, err := CreateTestAccounts(db, 1, 1, 2, 2)
+	_, schools, _, classes, students, _ := CreateTestAccounts(db, 1, 1, 2, 2)
 
 	SetTestLoginUser(students[0])
 
@@ -208,7 +208,7 @@ func TestSearchAuctionsTeacherStudent(t *testing.T) {
 		Visibility:  classes,
 	}
 
-	err = MakeAuctionImpl(db, UserInfo{
+	err := MakeAuctionImpl(db, UserInfo{
 		Name:     students[0],
 		SchoolId: schools[0],
 		Role:     UserRoleStudent,
@@ -243,7 +243,7 @@ func TestSearchTransactions(t *testing.T) {
 	defer tearDown()
 	numStudents := 15
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, numStudents)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, numStudents)
 
 	SetTestLoginUser(teachers[0])
 
@@ -265,8 +265,8 @@ func TestSearchTransactions(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -283,7 +283,7 @@ func TestDeleteStudent(t *testing.T) {
 	defer tearDown()
 	numStudents := 50
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, numStudents)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, numStudents)
 
 	SetTestLoginUser(teachers[0])
 
@@ -294,8 +294,8 @@ func TestDeleteStudent(t *testing.T) {
 		bytes.NewBuffer(nil))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -305,7 +305,7 @@ func TestResetPassword(t *testing.T) {
 	db, tearDown := FullStartTestServer("resetPassword", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 2, 2, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -321,8 +321,8 @@ func TestResetPassword(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -338,7 +338,7 @@ func TestSearchEvents(t *testing.T) {
 	db, tearDown := FullStartTestServer("searchEvents", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 2)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -352,7 +352,7 @@ func TestSearchEvents(t *testing.T) {
 
 	marshal, _ := json.Marshal(event)
 
-	err = createJobOrEvent(db, marshal, KeyNEvents, "Teacher")
+	err := createJobOrEvent(db, marshal, KeyNEvents, "Teacher")
 	require.Nil(t, err)
 
 	event = EventRequest{
@@ -386,8 +386,8 @@ func TestSearchEvents(t *testing.T) {
 		"http://127.0.0.1:8090/api/events", nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -405,7 +405,7 @@ func TestAuctionsAllGet(t *testing.T) {
 	db, tearDown := FullStartTestServer("auctionsAllGet", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
 	SetTestLoginUser(teachers[0])
 
@@ -445,8 +445,8 @@ func TestAuctionsAllGet(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -463,7 +463,7 @@ func TestAuctionApprove(t *testing.T) {
 	db, tearDown := FullStartTestServer("auctionApprove", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
 	SetTestLoginUser(teachers[0])
 
@@ -503,8 +503,8 @@ func TestAuctionApprove(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -515,7 +515,7 @@ func TestAuctionReject(t *testing.T) {
 	db, tearDown := FullStartTestServer("auctionReject", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
 	SetTestLoginUser(teachers[0])
 
@@ -559,18 +559,18 @@ func TestAuctionReject(t *testing.T) {
 
 	timeId := auctions[0].Id.Format(time.RFC3339Nano)
 
-	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/auctions/reject")
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/auctions/reject")
 	q := u.Query()
 	q.Set("_id", timeId)
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest(http.MethodDelete,
+	req, _ := http.NewRequest(http.MethodDelete,
 		u.String(),
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -630,8 +630,8 @@ func TestGetSettingsAdmin(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -650,8 +650,8 @@ func TestGetSettingsAdmin(t *testing.T) {
 	require.True(t, settings.Student2student)
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -676,8 +676,8 @@ func TestGetSettingsTeacher(t *testing.T) {
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -721,8 +721,8 @@ func TestSetSettingsAdmin(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -735,15 +735,15 @@ func TestSetSettingsAdmin(t *testing.T) {
 		CurrencyLock:    false,
 	}
 
-	marshal, err = json.Marshal(settings)
+	marshal, _ = json.Marshal(settings)
 
 	req, _ = http.NewRequest(http.MethodPut,
 		"http://127.0.0.1:8090/api/settings",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -779,8 +779,8 @@ func TestSetSettingsTeacher(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -792,15 +792,15 @@ func TestSetSettingsTeacher(t *testing.T) {
 		CurrencyLock: false,
 	}
 
-	marshal, err = json.Marshal(settings)
+	marshal, _ = json.Marshal(settings)
 
 	req, _ = http.NewRequest(http.MethodPut,
 		"http://127.0.0.1:8090/api/settings",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -850,8 +850,8 @@ func TestStudent2Student(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -865,8 +865,8 @@ func TestStudent2Student(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode)
 
@@ -916,8 +916,8 @@ func TestCurrencyLock(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode)
 
@@ -930,8 +930,8 @@ func TestCurrencyLock(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 }
@@ -940,7 +940,7 @@ func TestMakeMarketItem(t *testing.T) {
 	db, tearDown := FullStartTestServer("makeMarketItem", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, _, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, _, teachers, _, _, _ := CreateTestAccounts(db, 2, 2, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -958,8 +958,8 @@ func TestMakeMarketItem(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -1008,8 +1008,8 @@ func TestMarketItemResolve(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -1058,8 +1058,8 @@ func TestMarketItemRefund(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -1102,11 +1102,11 @@ func TestMarketItemDelete(t *testing.T) {
 	q.Set("_id", itemId)
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest(http.MethodDelete, u.String(), nil)
+	req, _ := http.NewRequest(http.MethodDelete, u.String(), nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 

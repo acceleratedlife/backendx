@@ -225,7 +225,7 @@ func (a *AllApiServiceImpl) MakeAuction(ctx context.Context, body openapi.Reques
 		}
 
 		if !settings.Student2student {
-			return openapi.Response(400, ""), fmt.Errorf("Disabled by Administrator")
+			return openapi.Response(400, ""), fmt.Errorf("disabled by administrator")
 		}
 		isStaff = false
 	}
@@ -294,7 +294,7 @@ func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.Req
 			return openapi.Response(400, ""), err
 		}
 		if !settings.Student2student {
-			return openapi.Response(400, ""), fmt.Errorf("Disabled by Administrator")
+			return openapi.Response(400, ""), fmt.Errorf("disabled by administrator")
 		}
 		err = executeStudentTransaction(s.db, s.clock, body.Amount, body.Student, userDetails, "")
 		if err != nil {
@@ -509,7 +509,7 @@ func (s *AllApiServiceImpl) SearchStudentBucks(ctx context.Context) (openapi.Imp
 				account.Buck.Name = owner.LastName + " Buck"
 			}
 
-			account, err = getCBaccountDetailsRx(tx, userDetails, account)
+			account, err = getCBaccountDetailsRx(tx, userDetails, account) //is it really necessary to check if a cb account exists. This seems like it can be removed.
 			if err != nil {
 				return err
 			}
@@ -611,6 +611,7 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 	return openapi.Response(200, resp), nil //this is incomplete
 }
 
+// return each all bucks with their conversion ratio
 func getCBBucksRx(tx *bolt.Tx, schoolId string) (bucks []openapi.Buck, err error) {
 	cb, err := getCbRx(tx, schoolId)
 	if err != nil {
