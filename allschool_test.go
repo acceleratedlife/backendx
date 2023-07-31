@@ -15,7 +15,7 @@ func TestAllSchoolApiServiceImpl_AddCodeClass(t *testing.T) {
 	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
 	defer tearDown()
 
-	_, _, teachers, classes, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	_, _, teachers, classes, _, _ := CreateTestAccounts(db, 2, 2, 2, 2)
 
 	SetTestLoginUser(teachers[0])
 
@@ -62,8 +62,8 @@ func TestRemoveClass(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/removeAdmin", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -94,8 +94,8 @@ func TestSearchMyClasses(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/classes/member", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -126,8 +126,8 @@ func TestAddCodeClass_adminClass(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/class/addCode", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -158,8 +158,8 @@ func TestAddCodeClass_SchoolClass(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/class/addCode", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -191,8 +191,8 @@ func TestAddCodeClass_TeacherClass(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/class/addCode", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 

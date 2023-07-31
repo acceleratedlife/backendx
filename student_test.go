@@ -106,8 +106,8 @@ func TestStudentAddClass_Teachers(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -147,8 +147,8 @@ func TestStudentAddClass_Schools(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -179,8 +179,8 @@ func TestStudentAddClass_InvalidCode(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 404, resp.StatusCode, resp)
 
@@ -210,8 +210,8 @@ func TestSearchStudentUbuck(t *testing.T) {
 
 	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/accounts/account/student", nil)
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -243,7 +243,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 		Visibility:  auctionClasses,
 	}
 
-	err = MakeAuctionImpl(db, UserInfo{
+	_ = MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
@@ -254,7 +254,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 
 	body.Visibility = auctionClasses
 
-	err = MakeAuctionImpl(db, UserInfo{
+	_ = MakeAuctionImpl(db, UserInfo{
 		Name:     teachers[0],
 		SchoolId: schools[0],
 		Role:     UserRoleTeacher,
@@ -307,8 +307,8 @@ func TestSearchAuctionsStudent(t *testing.T) {
 
 	req, _ = http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/auctions/student", nil)
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -342,8 +342,8 @@ func TestSearchBuckTransaction(t *testing.T) {
 
 	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/transactions/buckTransactions", nil)
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -378,8 +378,8 @@ func TestSearchBuckTransactionNegative(t *testing.T) {
 
 	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/transactions/buckTransactions", nil)
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -423,8 +423,8 @@ func TestBuckConvert(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -440,8 +440,8 @@ func TestBuckConvert(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode, resp)
 
@@ -482,8 +482,8 @@ func TestBuckConvertNewCurrency(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -535,8 +535,8 @@ func TestBuckConvert_ubuck(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -552,8 +552,8 @@ func TestBuckConvert_ubuck(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -593,8 +593,8 @@ func TestBuckConvert_debt(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode, resp)
 
@@ -610,8 +610,8 @@ func TestBuckConvert_debt(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -667,8 +667,8 @@ func TestBuckConvert_debt_ubuck(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -728,8 +728,8 @@ func TestAuctionBid(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode, resp)
 
@@ -746,8 +746,8 @@ func TestAuctionBid(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -763,8 +763,8 @@ func TestAuctionBid(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode, resp)
 
@@ -782,8 +782,8 @@ func TestAuctionBid(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -800,8 +800,8 @@ func TestAuctionBid(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -817,8 +817,8 @@ func TestAuctionBid(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -836,8 +836,8 @@ func TestAuctionBid(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -855,8 +855,8 @@ func TestAuctionBid(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 400, resp.StatusCode, resp)
 }
@@ -885,13 +885,13 @@ func TestSearchStudentCrypto(t *testing.T) {
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
-	err = cryptoTransaction(db, &clock, userDetails, body)
+	_ = cryptoTransaction(db, &clock, userDetails, body)
 
 	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/accounts/allCrypto", nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -922,18 +922,18 @@ func TestSearchCrypto(t *testing.T) {
 	// initialize http client
 	client := &http.Client{}
 
-	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/accounts/crypto")
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/accounts/crypto")
 	q := u.Query()
 	q.Set("name", "cardano")
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest(http.MethodGet,
+	req, _ := http.NewRequest(http.MethodGet,
 		u.String(),
 		nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -976,8 +976,8 @@ func TestCryptoConvert(t *testing.T) {
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 }
@@ -1006,15 +1006,15 @@ func TestSearchCryptoTransactions(t *testing.T) {
 		Sell: 0,
 	}
 
-	student, err := getUserInLocalStore(db, students[0])
-	err = cryptoTransaction(db, &clock, student, body)
+	student, _ := getUserInLocalStore(db, students[0])
+	_ = cryptoTransaction(db, &clock, student, body)
 
 	req, _ := http.NewRequest(http.MethodGet,
 		"http://127.0.0.1:8090/api/transactions/cryptoTransactions", nil)
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -1069,8 +1069,8 @@ func TestBuyMarketItem(t *testing.T) {
 		"http://127.0.0.1:8090/api/marketItems/buy", bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	require.Nil(t, err)
+	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
@@ -1093,7 +1093,7 @@ func TestSearchBuck(t *testing.T) {
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "pre load")
 	require.Nil(t, err)
 
-	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/bucks/buck")
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/bucks/buck")
 	q := u.Query()
 	q.Set("_id", teachers[0])
 	u.RawQuery = q.Encode()

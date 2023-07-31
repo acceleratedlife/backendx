@@ -472,8 +472,8 @@ func CollegeIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
 		min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
 		diff := max.Sub(min)
-		rand.Seed(time.Now().UnixNano())
-		random := decimal.NewFromFloat32(rand.Float32())
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		random := decimal.NewFromFloat32(r.Float32())
 
 		student.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 		student.CollegeEnd = time.Time{}
@@ -554,14 +554,14 @@ func CareerIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
-		rand.Seed(time.Now().UnixNano())
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		if student.College && student.CollegeEnd.IsZero() {
 			student.Job = getJobIdRx(tx, KeyCollegeJobs)
 			jobDetails := getJobRx(tx, KeyCollegeJobs, student.Job)
 			max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
 			min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
 			diff := max.Sub(min)
-			random := decimal.NewFromFloat32(rand.Float32())
+			random := decimal.NewFromFloat32(r.Float32())
 			student.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 		} else {
 			student.Job = getJobIdRx(tx, KeyJobs)
@@ -569,7 +569,7 @@ func CareerIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
 			min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
 			diff := max.Sub(min)
-			random := decimal.NewFromFloat32(rand.Float32())
+			random := decimal.NewFromFloat32(r.Float32())
 			student.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 		}
 
@@ -728,8 +728,8 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
-		rand.Seed(time.Now().UnixNano())
-		days := rand.Intn(5) + 4
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		days := r.Intn(5) + 4
 
 		eventTime := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour)
 		eventDate, err := eventTime.MarshalText()
@@ -797,8 +797,8 @@ func getEventId(db *bolt.DB, key string) (id string) {
 func getEventIdRx(tx *bolt.Tx, key string) string {
 	events := tx.Bucket([]byte(key))
 	bucketStats := events.Stats()
-	rand.Seed(time.Now().UnixNano())
-	pick := rand.Intn(bucketStats.KeyN)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	pick := r.Intn(bucketStats.KeyN)
 	c := events.Cursor()
 	i := 0
 	for k, _ := c.First(); k != nil && i <= pick; k, _ = c.Next() {
@@ -819,8 +819,8 @@ func getEventIdRx(tx *bolt.Tx, key string) string {
 func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change decimal.Decimal, err error) {
 	multiplier := decimal.NewFromFloat(.4)
 	one := decimal.NewFromInt(1)
-	rand.Seed(time.Now().UnixNano())
-	random := decimal.NewFromFloat32(rand.Float32())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	random := decimal.NewFromFloat32(r.Float32())
 	count := len(students)
 	for i := range students {
 		if students[i].Id == userDetails.Name {
@@ -948,6 +948,18 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		return err
 	}
 
+	if currency != CurrencyUBuck && currency != KeyDebt {
+		mma, err := addStepTx(tx, userInfo.SchoolId, currency, float32(amount.InexactFloat64()))
+		if err != nil {
+			return err
+		}
+
+		_, err = modifyMmaTx(tx, userInfo.SchoolId, currency, transaction.Ts, mma, clock)
+		if err != nil {
+			return err
+		}
+	}
+
 	cb, err := getCbTx(tx, userInfo.SchoolId)
 	if err != nil {
 		return err
@@ -955,13 +967,6 @@ func pay2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 	_, _, err = addToHolderTx(cb, currency, transaction, OperationDebit, false)
 	if err != nil {
 		return err
-	}
-
-	if currency != CurrencyUBuck && currency != KeyDebt {
-		_, err = addStepTx(tx, userInfo.SchoolId, currency, float32(amount.InexactFloat64()))
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil

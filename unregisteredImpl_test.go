@@ -49,7 +49,7 @@ func TestAddTeacher(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode)
 
 	var teach UserInfo
-	err = db.View(func(tx *bolt.Tx) error {
+	_ = db.View(func(tx *bolt.Tx) error {
 		users := tx.Bucket([]byte("users"))
 		techdata := users.Get([]byte("new@teacher.com"))
 
@@ -128,9 +128,9 @@ func TestAddStudent(t *testing.T) {
 		College:     true,
 	}
 
-	marshal, err := json.Marshal(job)
+	marshal, _ := json.Marshal(job)
 
-	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
+	err := createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
 	require.Nil(t, err)
 
 	job2 := Job{
@@ -271,9 +271,9 @@ func TestAddStudentBadUserName(t *testing.T) {
 		College:     true,
 	}
 
-	marshal, err := json.Marshal(job)
+	marshal, _ := json.Marshal(job)
 
-	err = createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
+	err := createJobOrEvent(db, marshal, KeyCollegeJobs, "Teacher")
 	require.Nil(t, err)
 
 	job2 := Job{
@@ -282,7 +282,7 @@ func TestAddStudentBadUserName(t *testing.T) {
 		College:     false,
 	}
 
-	marshal, err = json.Marshal(job2)
+	marshal, _ = json.Marshal(job2)
 
 	err = createJobOrEvent(db, marshal, KeyJobs, "Teacher")
 	require.Nil(t, err)
