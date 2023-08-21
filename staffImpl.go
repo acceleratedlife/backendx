@@ -1276,3 +1276,28 @@ func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt
 
 	return
 }
+
+func getStudentCount(db *bolt.DB, schoolId string) (count int, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		count, err = getStudentCountRx(tx, schoolId)
+		return err
+	})
+
+	return
+}
+
+func getStudentCountRx(tx *bolt.Tx, schoolId string) (count int, err error) {
+	school, err := SchoolByIdTx(tx, schoolId)
+	if err != nil {
+		return
+	}
+
+	students := school.Bucket([]byte(KeyStudents))
+	if students == nil {
+		return count, fmt.Errorf("cannot find students bucket")
+	}
+
+	count = students.Stats().BucketN - 1
+
+	return
+}

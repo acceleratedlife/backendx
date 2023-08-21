@@ -957,7 +957,8 @@ paths:
       tags:
       - Staff
     put:
-      description: school admin can change settings for school
+      description: school admin can change settings for school, teacher can change
+        setting for their own currency
       operationId: setSettings
       requestBody:
         content:
@@ -1860,6 +1861,8 @@ components:
       type: object
     Settings:
       example:
+        odds: 0
+        lottery: true
         student2student: true
         CurrencyLock: true
       properties:
@@ -1867,6 +1870,10 @@ components:
           type: boolean
         CurrencyLock:
           type: boolean
+        lottery:
+          type: boolean
+        odds:
+          type: integer
       type: object
     School:
       example:
