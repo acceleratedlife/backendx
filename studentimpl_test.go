@@ -192,7 +192,7 @@ func TestEventsLowUbuck(t *testing.T) {
 			return fmt.Errorf("cannot find cb account debt trans")
 		}
 
-		keys = trans.Stats().KeyN
+		keys = trans.Stats().KeyN //KeyN is failing elsewhere so I need to check that it is working true
 		return nil
 	})
 
