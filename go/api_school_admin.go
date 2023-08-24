@@ -49,12 +49,33 @@ func NewSchoolAdminApiController(s SchoolAdminApiServicer, opts ...SchoolAdminAp
 func (c *SchoolAdminApiController) Routes() Routes {
 	return Routes{
 		{
+			"GetStudentCount",
+			strings.ToUpper("Get"),
+			"/api/schools/school/count",
+			c.GetStudentCount,
+		},
+		{
 			"SearchAdminTeacherClass",
 			strings.ToUpper("Get"),
 			"/api/classes/teachers",
 			c.SearchAdminTeacherClass,
 		},
 	}
+}
+
+// GetStudentCount - gets student count for a school
+func (c *SchoolAdminApiController) GetStudentCount(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	schoolIdParam := query.Get("schoolId")
+	result, err := c.service.GetStudentCount(r.Context(), schoolIdParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
 }
 
 // SearchAdminTeacherClass - gets the teacher class of an admin and all the teacher that are its members

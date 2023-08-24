@@ -147,6 +147,34 @@ paths:
       summary: edit school
       tags:
       - SysAdmin
+  /schools/school/count:
+    get:
+      description: by passing in a school id you will receive the total number of
+        students
+      operationId: getStudentCount
+      parameters:
+      - description: id of school
+        explode: true
+        in: query
+        name: schoolId
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseStudentCount'
+                type: array
+          description: count of students from given school
+        "404":
+          description: No account found
+      summary: gets student count for a school
+      tags:
+      - SchoolAdmin
   /accounts/account:
     delete:
       description: delete an account
@@ -2318,6 +2346,13 @@ components:
           example: 123.45
           format: float
           type: number
+      type: object
+    ResponseStudentCount:
+      example:
+        count: 0
+      properties:
+        count:
+          type: integer
       type: object
     ResponseTeachers:
       example:

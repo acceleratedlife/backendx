@@ -895,10 +895,10 @@ func TestStudent2Student(t *testing.T) {
 
 }
 
-// this is currently testing the same as student2student. Need to rewrite once the logic has been implemented.
+// ********** this is currently testing the same as student2student. Need to rewrite once the logic has been implemented.
 func TestLottery(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("payTransactions_student", 8090, "")
+	db, tearDown := FullStartTestServer("lottery", 8090, "")
 	defer tearDown()
 
 	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
@@ -1208,6 +1208,6 @@ func TestGetStudentCount(t *testing.T) {
 	count, err := getStudentCount(db, schools[0])
 	require.Nil(t, err)
 
-	require.Equal(t, 40, count)
+	require.Equal(t, int32(40), count)
 
 }

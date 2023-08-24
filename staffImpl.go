@@ -1277,7 +1277,7 @@ func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt
 	return
 }
 
-func getStudentCount(db *bolt.DB, schoolId string) (count int, err error) {
+func getStudentCount(db *bolt.DB, schoolId string) (count int32, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
 		count, err = getStudentCountRx(tx, schoolId)
 		return err
@@ -1286,7 +1286,7 @@ func getStudentCount(db *bolt.DB, schoolId string) (count int, err error) {
 	return
 }
 
-func getStudentCountRx(tx *bolt.Tx, schoolId string) (count int, err error) {
+func getStudentCountRx(tx *bolt.Tx, schoolId string) (count int32, err error) {
 	school, err := SchoolByIdTx(tx, schoolId)
 	if err != nil {
 		return
@@ -1297,7 +1297,12 @@ func getStudentCountRx(tx *bolt.Tx, schoolId string) (count int, err error) {
 		return count, fmt.Errorf("cannot find students bucket")
 	}
 
-	count = students.Stats().BucketN - 1
+	c := students.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		count += 1
+	}
+
+	// count = int32(students.Stats().BucketN - 1) //this works in testing but fails with real db. don't know why
 
 	return
 }
