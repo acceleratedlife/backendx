@@ -451,7 +451,7 @@ func placeBid(db *bolt.DB, clock Clock, userDetails UserInfo, item string, bid i
 }
 
 func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid int32) (message string, err error) {
-	school, err := getSchoolBucketTx(tx, userDetails)
+	school, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return message, err
 	}

@@ -483,10 +483,6 @@ func (s *StaffApiServiceImpl) GetSettings(ctx context.Context) (openapi.ImplResp
 		return openapi.Response(404, nil), nil
 	}
 
-	if userDetails.Role == UserRoleStudent {
-		return openapi.Response(401, ""), nil
-	}
-
 	if userDetails.Role == UserRoleTeacher {
 		return openapi.Response(200, userDetails.Settings), nil
 	}
@@ -520,6 +516,18 @@ func (s *StaffApiServiceImpl) SetSettings(ctx context.Context, body openapi.Sett
 		}
 
 		return openapi.Response(200, nil), nil
+	}
+
+	settings, err := getSettings(s.db, userDetails)
+	if err != nil {
+		return openapi.Response(500, "{}"), err
+	}
+
+	if !settings.Lottery && body.Lottery {
+		err = initializeLottery(s.db, userDetails, body, s.clock)
+		if err != nil {
+			return openapi.Response(500, "{}"), err
+		}
 	}
 
 	err = setSettings(s.db, userDetails, body)

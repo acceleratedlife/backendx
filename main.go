@@ -96,6 +96,8 @@ const (
 	KeyMarket           = "market"
 	KeyMarketData       = "marketData"
 	KeyBuyers           = "buyers"
+	KeyLotteries        = "lotteries"
+	KeyPricePerTicket   = 5
 )
 
 var build_date string

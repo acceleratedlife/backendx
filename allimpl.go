@@ -540,7 +540,7 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 
 	Id = newTime.Truncate(time.Millisecond).String()
 
-	schoolBucket, err := getSchoolBucketTx(tx, userDetails)
+	schoolBucket, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return err
 	}
@@ -606,7 +606,7 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 
 func getTeachers(db *bolt.DB, userDetails UserInfo) (teachers []openapi.ResponseTeachers, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		school, err := getSchoolBucketTx(tx, userDetails)
+		school, err := getSchoolBucketRx(tx, userDetails)
 		if err != nil {
 			return err
 		}

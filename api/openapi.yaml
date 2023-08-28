@@ -1887,6 +1887,21 @@ components:
       - updatedAt
       - usd
       type: object
+    Lottery:
+      properties:
+        odds:
+          type: integer
+        jackpot:
+          type: integer
+        number:
+          type: integer
+        winner:
+          type: string
+      required:
+      - jackpot
+      - number
+      - odds
+      type: object
     Settings:
       example:
         odds: 0

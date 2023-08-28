@@ -1362,7 +1362,7 @@ func getStudentClasses(db *bolt.DB, userDetails UserInfo) (classes []openapi.Cla
 }
 
 func getStudentClassesRx(tx *bolt.Tx, userDetails UserInfo) (classes []openapi.Class, err error) {
-	school, err := getSchoolBucketTx(tx, userDetails)
+	school, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return classes, fmt.Errorf("cannot get schools %s: %v", userDetails.Name, err)
 	}
@@ -2159,4 +2159,30 @@ func cryptoConvert(basis, usd, amount decimal.Decimal) decimal.Decimal {
 	}
 
 	return newPercent.Mul(basis).Mul(amount)
+}
+
+func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets int32) (winner bool, err error) {
+	err = chargeStudent(db, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Lotto", true)
+	if err != nil {
+		return
+	}
+
+	lottery, err := getNewestLotto(db, studentDetails)
+	if err != nil {
+		return
+	}
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 1; i < int(tickets); i++ {
+		play := r.Intn(int(lottery.Odds))
+		if play == int(lottery.Number) {
+			//not exactly sure where I am. it appears I was testing initialize lottery in staffimpl. I need to make an actual winner so I needed to make this
+			//I am creating a random number for a ticket and then comparing it to the winning number
+			//I need to add 1 ubuck for each ticket purchased
+			//then if it is a match I need to pay out to the winner and then probably run initialize lotto again
+			//I currently can't figure out how I am going to show the winner of the last game
+			//I think it will be easy from the second game forward but what about the first game when there is no previous winner
+		}
+	}
+
 }

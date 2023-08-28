@@ -91,12 +91,27 @@ go tool cover -html cover.out
                 - addCode: string
                 "students"
                     user-id: ''
+        "lottery"
+            [lotto-id]: date-time
+                - odds: int32
+                - amount: int32
+                - number: int32
+                - winner: user-id
                 
 "users"
     [userName]: UserInfo
 
-"orders"
-  datetime: OrderInfo
+"collegeJobs"
+  datetime: incomplete
+
+"jobs"
+  datetime: incomplete
+
+"negativeEvents"
+  datetime: incomplete
+
+"posotiveEvents"
+  datetime: incomplete
 
 "cryptos"
     [crypto] (crypto name)

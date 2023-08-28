@@ -572,3 +572,69 @@ func TestMarketItemDeleteTx(t *testing.T) {
 	require.Nil(t, err)
 
 }
+
+func TestInitializeLottery(t *testing.T) {
+
+	lgr.Printf("INFO TestInitializeLottery")
+	t.Log("INFO TestInitializeLottery")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("InitializeLottery")
+	defer dbTearDown()
+	admins, _, _, _, _, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+
+	adminDetails, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	settings := openapi.Settings{
+		Lottery: true,
+		Odds:    10,
+	}
+
+	err = setSettings(db, adminDetails, settings)
+	require.Nil(t, err)
+
+	err = initializeLottery(db, adminDetails, settings, &clock)
+	require.Nil(t, err)
+
+	lottery, err := getNewestLotto(db, adminDetails)
+	require.Nil(t, err)
+
+	require.Equal(t, settings.Odds, lottery.Odds)
+	require.Equal(t, "", lottery.Winner)
+
+	settings2 := openapi.Settings{
+		Lottery: false,
+		Odds:    10,
+	}
+
+	err = setSettings(db, adminDetails, settings2)
+	require.Nil(t, err)
+
+	lottery, err = getNewestLotto(db, adminDetails)
+	require.Nil(t, err)
+
+	require.Equal(t, settings.Odds, lottery.Odds)
+	require.Equal(t, "", lottery.Winner)
+
+	settings3 := openapi.Settings{
+		Lottery: true,
+		Odds:    20,
+	}
+
+	err = setSettings(db, adminDetails, settings3)
+	require.Nil(t, err)
+
+	//newest settings have odds of 20 but that game is not over so you should still see an odds of 10 on the current game
+	err = initializeLottery(db, adminDetails, settings, &clock)
+	require.Nil(t, err)
+
+	lottery, err = getNewestLotto(db, adminDetails)
+	require.Nil(t, err)
+
+	require.Equal(t, settings.Odds, lottery.Odds)
+	require.Equal(t, "", lottery.Winner)
+
+	//should have winner chosen and new lottery should be created
+
+}

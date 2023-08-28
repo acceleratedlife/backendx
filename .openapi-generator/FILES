@@ -41,6 +41,7 @@ go/model_inline_response_200_1_transaction.go
 go/model_inline_response_200_1_transaction_asset_id.go
 go/model_inline_response_200_2.go
 go/model_inline_response_404.go
+go/model_lottery.go
 go/model_request_add_class.go
 go/model_request_auction_action.go
 go/model_request_auction_bid.go
