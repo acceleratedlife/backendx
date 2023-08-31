@@ -256,6 +256,15 @@ func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (ranked int, err e
 }
 
 // get all the students from a school, update the rank to the top students
+func getSchoolStudents(db *bolt.DB, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		resp, ranked, err = getSchoolStudentsTx(tx, userDetails)
+		return err
+	})
+
+	return
+}
+
 func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
 	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {

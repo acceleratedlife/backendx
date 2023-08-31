@@ -2167,6 +2167,11 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 		return
 	}
 
+	err = updateLatestLotto(db, studentDetails, tickets, "")
+	if err != nil {
+		return
+	}
+
 	lottery, err := getNewestLotto(db, studentDetails)
 	if err != nil {
 		return
@@ -2176,13 +2181,35 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 	for i := 1; i < int(tickets); i++ {
 		play := r.Intn(int(lottery.Odds))
 		if play == int(lottery.Number) {
-			//not exactly sure where I am. it appears I was testing initialize lottery in staffimpl. I need to make an actual winner so I needed to make this
-			//I am creating a random number for a ticket and then comparing it to the winning number
-			//I need to add 1 ubuck for each ticket purchased
-			//then if it is a match I need to pay out to the winner and then probably run initialize lotto again
+
+			err = pay2Student(db, clock, studentDetails, decimal.NewFromInt32(lottery.Jackpot), CurrencyUBuck, "Lotto Winner"+clock.Now().Format("02/03/2006"))
+			if err != nil {
+				return false, err
+			}
+
+			err = updateLatestLotto(db, studentDetails, 0, studentDetails.Email)
+			if err != nil {
+				return false, err
+			}
+
+			settings, err := getSettings(db, studentDetails)
+			if err != nil {
+				return false, err
+			}
+
+			if settings.Lottery {
+				err = initializeLottery(db, studentDetails, settings, clock)
+				if err != nil {
+					return false, err
+				}
+			}
+
+			return true, nil
 			//I currently can't figure out how I am going to show the winner of the last game
 			//I think it will be easy from the second game forward but what about the first game when there is no previous winner
 		}
 	}
+
+	return false, nil
 
 }
