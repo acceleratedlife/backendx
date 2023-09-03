@@ -283,7 +283,7 @@ func (s *AllApiService) SearchTeachers(ctx context.Context) (ImplResponse, error
 }
 
 // UserEdit - edit a user
-func (s *AllApiService) UserEdit(ctx context.Context, usersUserBody UsersUserBody) (ImplResponse, error) {
+func (s *AllApiService) UserEdit(ctx context.Context, requestUserEdit RequestUserEdit) (ImplResponse, error) {
 	// TODO - update UserEdit with the required logic for this service method.
 	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 

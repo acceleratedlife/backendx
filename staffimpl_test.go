@@ -597,7 +597,7 @@ func TestInitializeLottery(t *testing.T) {
 	err = initializeLottery(db, adminDetails, settings, &clock)
 	require.Nil(t, err)
 
-	lottery, err := getNewestLotto(db, adminDetails)
+	lottery, err := getLottoLatest(db, adminDetails)
 	require.Nil(t, err)
 
 	require.Equal(t, settings.Odds, lottery.Odds)
@@ -611,7 +611,7 @@ func TestInitializeLottery(t *testing.T) {
 	err = setSettings(db, adminDetails, settings2)
 	require.Nil(t, err)
 
-	lottery, err = getNewestLotto(db, adminDetails)
+	lottery, err = getLottoLatest(db, adminDetails)
 	require.Nil(t, err)
 
 	require.Equal(t, settings.Odds, lottery.Odds)
@@ -629,7 +629,7 @@ func TestInitializeLottery(t *testing.T) {
 	err = initializeLottery(db, adminDetails, settings, &clock)
 	require.Nil(t, err)
 
-	lottery, err = getNewestLotto(db, adminDetails)
+	lottery, err = getLottoLatest(db, adminDetails)
 	require.Nil(t, err)
 
 	require.Equal(t, settings.Odds, lottery.Odds)
@@ -646,7 +646,7 @@ func TestInitializeLottery(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, winner)
 
-	lottery, err = getNewestLotto(db, adminDetails)
+	lottery, err = getLottoLatest(db, adminDetails)
 	require.Nil(t, err)
 
 	require.Equal(t, settings3.Odds, lottery.Odds)
@@ -689,7 +689,7 @@ func TestLotteryProgression(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, winner)
 
-	lottery, err := getNewestLotto(db, adminDetails)
+	lottery, err := getLottoLatest(db, adminDetails)
 	require.Nil(t, err)
 
 	mean, err := getMeanNetworth(db, student)
@@ -727,9 +727,9 @@ func TestLotteryLastWinner(t *testing.T) {
 	student, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
 
-	winnerId, err := getLottoLastWinner(db, student)
+	prevLotto, err := getLottoPrevious(db, student)
 	require.Nil(t, err)
-	require.Equal(t, "No Previous Lotto", winnerId)
+	require.Equal(t, "No Previous Lotto", prevLotto.Winner)
 
 	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
@@ -744,8 +744,8 @@ func TestLotteryLastWinner(t *testing.T) {
 	_, _, err = getSchoolStudents(db, student)
 	require.Nil(t, err)
 
-	winnerId, err = getLottoLastWinner(db, student)
+	prevLotto, err = getLottoPrevious(db, student)
 	require.Nil(t, err)
-	require.Equal(t, student.Email, winnerId)
+	require.Equal(t, student.Email, prevLotto.Winner)
 
 }

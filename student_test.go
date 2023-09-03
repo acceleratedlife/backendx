@@ -222,6 +222,103 @@ func TestSearchStudentUbuck(t *testing.T) {
 	require.Equal(t, float32(10000), v.Value)
 }
 
+func TestLatestLotto(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("LatestLotto", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	settings := openapi.Settings{
+		Lottery: true,
+		Odds:    10,
+	}
+
+	err = initializeLottery(db, userDetails, settings, &clock)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/lottery/latest", nil)
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v openapi.ResponseLottoLatest
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, settings.Odds, v.Odds)
+	require.Equal(t, "", v.Winner)
+}
+
+func TestPreviousLotto(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("PreviousLotto", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	settings := openapi.Settings{
+		Lottery: true,
+		Odds:    3,
+	}
+
+	err = setSettings(db, userDetails, settings)
+	require.Nil(t, err)
+
+	err = initializeLottery(db, userDetails, settings, &clock)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/lottery/previous", nil)
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var v openapi.ResponseLottoLatest
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, "No Previous Lotto", v.Winner)
+
+	winner, err := purchaseLotto(db, &clock, userDetails, 20)
+	require.Nil(t, err)
+	require.True(t, winner)
+
+	resp, err = client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	decoder = json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+	require.Equal(t, userDetails.Email, v.Winner)
+}
+
 func TestSearchAuctionsStudent(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServerClock("searchAuctionsStudent", 8090, "test@admin.com", &clock)

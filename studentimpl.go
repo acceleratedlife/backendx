@@ -211,7 +211,7 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	}
 
 	if balance.Round(5).Sign() < 0 && negBlock {
-		errR = fmt.Errorf("Insufficient funds")
+		errR = fmt.Errorf("insufficient funds")
 		return
 	}
 
@@ -2162,54 +2162,76 @@ func cryptoConvert(basis, usd, amount decimal.Decimal) decimal.Decimal {
 }
 
 func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets int32) (winner bool, err error) {
-	err = chargeStudent(db, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Lotto", true)
-	if err != nil {
-		return
-	}
 
-	err = updateLatestLotto(db, studentDetails, tickets, "")
-	if err != nil {
-		return
-	}
-
-	lottery, err := getNewestLotto(db, studentDetails)
-	if err != nil {
-		return
-	}
-
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 1; i < int(tickets); i++ {
-		play := r.Intn(int(lottery.Odds))
-		if play == int(lottery.Number) {
-
-			err = pay2Student(db, clock, studentDetails, decimal.NewFromInt32(lottery.Jackpot), CurrencyUBuck, "Lotto Winner"+clock.Now().Format("02/03/2006"))
-			if err != nil {
-				return false, err
-			}
-
-			err = updateLatestLotto(db, studentDetails, 0, studentDetails.Email)
-			if err != nil {
-				return false, err
-			}
-
-			settings, err := getSettings(db, studentDetails)
-			if err != nil {
-				return false, err
-			}
-
-			if settings.Lottery {
-				err = initializeLottery(db, studentDetails, settings, clock)
-				if err != nil {
-					return false, err
-				}
-			}
-
-			return true, nil
-			//I currently can't figure out how I am going to show the winner of the last game
-			//I think it will be easy from the second game forward but what about the first game when there is no previous winner
+	err = db.Update(func(tx *bolt.Tx) error {
+		chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Lotto", true)
+		if err != nil {
+			return err
 		}
-	}
 
-	return false, nil
+		userUpdates := openapi.RequestUserEdit{
+			LottoPlay: tickets * KeyPricePerTicket,
+		}
+
+		lottery, err := getLottoLatestTx(tx, studentDetails)
+		if err != nil {
+			return err
+		}
+
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		for i := 1; i < int(tickets); i++ {
+			play := r.Intn(int(lottery.Odds))
+			if play == int(lottery.Number) {
+
+				err = pay2StudentTx(tx, clock, studentDetails, decimal.NewFromInt32(lottery.Jackpot), CurrencyUBuck, "Lotto Winner "+clock.Now().Format("02/03/2006"))
+				if err != nil {
+					return err
+				}
+
+				userUpdates.LottoWin = lottery.Jackpot + tickets
+
+				err = userEditTx(tx, clock, studentDetails, userUpdates)
+				if err != nil {
+					return err
+				}
+
+				err = updateLottoLatestTx(tx, studentDetails, tickets, studentDetails.Email)
+				if err != nil {
+					return err
+				}
+
+				settings, err := getSettingsRx(tx, studentDetails)
+				if err != nil {
+					return err
+				}
+
+				if settings.Lottery {
+					err = initializeLotteryTx(tx, studentDetails, settings, clock)
+					if err != nil {
+						return err
+					}
+				}
+
+				winner = true
+
+				return nil
+
+			}
+		}
+
+		err = userEditTx(tx, clock, studentDetails, userUpdates)
+		if err != nil {
+			return err
+		}
+
+		err = updateLottoLatestTx(tx, studentDetails, tickets, "")
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
 
 }

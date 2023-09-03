@@ -453,18 +453,18 @@ func (c *AllApiController) SearchTeachers(w http.ResponseWriter, r *http.Request
 
 // UserEdit - edit a user
 func (c *AllApiController) UserEdit(w http.ResponseWriter, r *http.Request) {
-	usersUserBodyParam := UsersUserBody{}
+	requestUserEditParam := RequestUserEdit{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&usersUserBodyParam); err != nil {
+	if err := d.Decode(&requestUserEditParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertUsersUserBodyRequired(usersUserBodyParam); err != nil {
+	if err := AssertRequestUserEditRequired(requestUserEditParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.UserEdit(r.Context(), usersUserBodyParam)
+	result, err := c.service.UserEdit(r.Context(), requestUserEditParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

@@ -226,7 +226,7 @@ func TestCollege(t *testing.T) {
 	r := CollegeIfNeeded(db, &clock, student)
 	require.False(t, r)
 
-	body := openapi.UsersUserBody{
+	body := openapi.RequestUserEdit{
 		College: true,
 	}
 
@@ -285,7 +285,7 @@ func TestCareer(t *testing.T) {
 	r := CareerIfNeeded(db, &clock, student)
 	require.False(t, r)
 
-	body := openapi.UsersUserBody{
+	body := openapi.RequestUserEdit{
 		CareerTransition: true,
 	}
 

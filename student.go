@@ -42,6 +42,73 @@ func (a *StudentApiServiceImpl) SearchBuck(ctx context.Context, teacherId string
 
 }
 
+func (a *StudentApiServiceImpl) LatestLotto(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	lottery, err := getLottoLatest(a.db, userDetails)
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	resp := openapi.ResponseLottoLatest{
+		Jackpot: lottery.Jackpot,
+		Odds:    lottery.Odds,
+	}
+
+	return openapi.Response(200, resp), nil
+
+}
+
+func (a *StudentApiServiceImpl) LottoPurchase(ctx context.Context, tickets int32) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	winner, err := purchaseLotto(a.db, a.clock, userDetails, tickets)
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, winner), nil
+
+}
+
+func (a *StudentApiServiceImpl) PreviousLotto(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	lotteryPrev, err := getLottoPrevious(a.db, userDetails)
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	resp := openapi.ResponseLottoLatest{
+		Jackpot: lotteryPrev.Jackpot,
+		Winner:  lotteryPrev.Winner,
+	}
+
+	return openapi.Response(200, resp), nil
+
+}
+
 func (a *StudentApiServiceImpl) MarketItemBuy(ctx context.Context, body openapi.RequestMarketRefund) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)

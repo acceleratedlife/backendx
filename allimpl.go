@@ -322,13 +322,13 @@ func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.User
 	return
 }
 
-func userEdit(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.UsersUserBody) error {
+func userEdit(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestUserEdit) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		return userEditTx(tx, clock, userDetails, body)
 	})
 }
 
-func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.UsersUserBody) error {
+func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.RequestUserEdit) error {
 	users := tx.Bucket([]byte(KeyUsers))
 	if users == nil {
 		return fmt.Errorf("users do not exist")
@@ -374,6 +374,22 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 		userDetails.College = true
 		userDetails.CollegeEnd = clock.Now().AddDate(0, 0, 14) //14 days
 		userDetails.Income = userDetails.Income / 2
+	}
+
+	if body.LottoPlay > 0 {
+		if userDetails.LottoPlay == 0 {
+			userDetails.LottoPlay = body.LottoPlay
+		} else {
+			userDetails.LottoPlay += body.LottoPlay
+		}
+	}
+
+	if body.LottoWin > 0 {
+		if userDetails.LottoWin == 0 {
+			userDetails.LottoWin = body.LottoWin
+		} else {
+			userDetails.LottoWin += body.LottoWin
+		}
 	}
 
 	marshal, err := json.Marshal(userDetails)

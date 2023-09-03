@@ -971,7 +971,7 @@ func TestCurrencyLock(t *testing.T) {
 	require.Nil(t, err)
 
 	teacher.Settings.CurrencyLock = true
-	err = userEdit(db, &clock, teacher, openapi.UsersUserBody{})
+	err = userEdit(db, &clock, teacher, openapi.RequestUserEdit{})
 	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])
@@ -1009,7 +1009,7 @@ func TestCurrencyLock(t *testing.T) {
 	assert.Equal(t, 400, resp.StatusCode)
 
 	teacher.Settings.CurrencyLock = false
-	err = userEdit(db, &clock, teacher, openapi.UsersUserBody{})
+	err = userEdit(db, &clock, teacher, openapi.RequestUserEdit{})
 	require.Nil(t, err)
 
 	req, _ = http.NewRequest(http.MethodPost,

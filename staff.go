@@ -510,7 +510,7 @@ func (s *StaffApiServiceImpl) SetSettings(ctx context.Context, body openapi.Sett
 	if userDetails.Role == UserRoleTeacher {
 		updatedTeacher := userDetails
 		updatedTeacher.Settings.CurrencyLock = body.CurrencyLock
-		err := userEdit(s.db, s.clock, updatedTeacher, openapi.UsersUserBody{})
+		err := userEdit(s.db, s.clock, updatedTeacher, openapi.RequestUserEdit{})
 		if err != nil {
 			return openapi.Response(400, ""), nil
 		}
