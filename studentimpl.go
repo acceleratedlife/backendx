@@ -1120,7 +1120,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 	}
 	_, _, err = addToHolderTx(student, currency, transaction, OperationDebit, true)
 	if err != nil {
-		if err.Error() == "Insufficient funds" && !sPurchase {
+		if err.Error() == "insufficient funds" && !sPurchase {
 			if strings.Contains(reference, "Event: ") {
 				err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, reference, false)
 				if err != nil {

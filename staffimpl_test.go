@@ -329,7 +329,7 @@ func TestMakeMarketItemImplBuyers1multi(t *testing.T) {
 
 	_, err = buyMarketItem(db, &clock, student0, teacher, id)
 	require.NotNil(t, err)
-	require.Equal(t, "Insufficient funds", err.Error())
+	require.Equal(t, "insufficient funds", err.Error())
 
 	_ = db.View(func(tx *bolt.Tx) error {
 		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
