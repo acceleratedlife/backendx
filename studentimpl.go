@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
@@ -2164,6 +2165,16 @@ func cryptoConvert(basis, usd, amount decimal.Decimal) decimal.Decimal {
 func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets int32) (winner bool, err error) {
 
 	err = db.Update(func(tx *bolt.Tx) error {
+
+		lottery, err := getLottoLatestTx(tx, studentDetails)
+		if err != nil {
+			return err
+		}
+
+		if lottery.Winner != "" {
+			return fmt.Errorf("last winner " + lottery.Winner + " with " + strconv.Itoa(int(lottery.Jackpot)) + "...lottery has been disabled")
+		}
+
 		chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Lotto", true)
 		if err != nil {
 			return err
@@ -2173,17 +2184,17 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 			LottoPlay: tickets * KeyPricePerTicket,
 		}
 
-		lottery, err := getLottoLatestTx(tx, studentDetails)
-		if err != nil {
-			return err
-		}
-
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
-		for i := 1; i < int(tickets); i++ {
+		for i := 0; i < int(tickets); i++ {
 			play := r.Intn(int(lottery.Odds))
 			if play == int(lottery.Number) {
 
-				err = pay2StudentTx(tx, clock, studentDetails, decimal.NewFromInt32(lottery.Jackpot), CurrencyUBuck, "Lotto Winner "+clock.Now().Format("02/03/2006"))
+				err = updateLottoLatestTx(tx, studentDetails, tickets, studentDetails.Email)
+				if err != nil {
+					return err
+				}
+
+				err = pay2StudentTx(tx, clock, studentDetails, decimal.NewFromInt32(lottery.Jackpot+tickets), CurrencyUBuck, "Lotto Winner "+clock.Now().Format("02/03/2006"))
 				if err != nil {
 					return err
 				}
@@ -2191,11 +2202,6 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 				userUpdates.LottoWin = lottery.Jackpot + tickets
 
 				err = userEditTx(tx, clock, studentDetails, userUpdates)
-				if err != nil {
-					return err
-				}
-
-				err = updateLottoLatestTx(tx, studentDetails, tickets, studentDetails.Email)
 				if err != nil {
 					return err
 				}

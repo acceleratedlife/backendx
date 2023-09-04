@@ -1131,6 +1131,10 @@ func updateLottoLatestTx(tx *bolt.Tx, userDetails UserInfo, tickets int32, winne
 
 	if winner != "" {
 		lottery.Winner = winner
+	}
+
+	if lottery.Jackpot == 0 {
+		lottery.Jackpot = tickets
 	} else {
 		lottery.Jackpot += tickets
 	}
@@ -1193,10 +1197,6 @@ func initializeLottery(db *bolt.DB, userDetails UserInfo, settings openapi.Setti
 }
 
 func initializeLotteryTx(tx *bolt.Tx, userDetails UserInfo, settings openapi.Settings, clock Clock) (err error) {
-	school, err := getSchoolBucketRx(tx, userDetails)
-	if err != nil {
-		return err
-	}
 
 	lottery, err := getLottoLatestTx(tx, userDetails)
 	if err != nil {
@@ -1205,6 +1205,11 @@ func initializeLotteryTx(tx *bolt.Tx, userDetails UserInfo, settings openapi.Set
 
 	//first initialization of lottery or a stopped game, maybe a recent winner. Not sure I gotta run
 	if lottery.Jackpot == 0 || lottery.Winner != "" {
+		school, err := getSchoolBucketRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
 		lotteries, err := school.CreateBucketIfNotExists([]byte(KeyLotteries))
 		if err != nil {
 			return err
@@ -1241,6 +1246,16 @@ func initializeLotteryTx(tx *bolt.Tx, userDetails UserInfo, settings openapi.Set
 		tsB, err := ts.MarshalText()
 		if err != nil {
 			return err
+		}
+
+		oldLotto := lotteries.Get(tsB)
+		for oldLotto != nil {
+			ts = ts.Add(time.Millisecond * 1)
+			tsB, err = ts.MarshalText()
+			if err != nil {
+				return err
+			}
+			oldLotto = lotteries.Get(tsB)
 		}
 
 		err = lotteries.Put(tsB, marshal)
