@@ -2175,6 +2175,10 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 			return fmt.Errorf("last winner " + lottery.Winner + " with " + strconv.Itoa(int(lottery.Jackpot)) + "...lottery has been disabled")
 		}
 
+		if lottery.Odds == 0 && lottery.Jackpot == 0 {
+			return fmt.Errorf("the lotto has not been initialized")
+		}
+
 		chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Lotto", true)
 		if err != nil {
 			return err
