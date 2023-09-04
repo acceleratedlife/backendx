@@ -68,10 +68,28 @@ func (c *StudentApiController) Routes() Routes {
 			c.CryptoConvert,
 		},
 		{
+			"LatestLotto",
+			strings.ToUpper("Get"),
+			"/api/lottery/latest",
+			c.LatestLotto,
+		},
+		{
+			"LottoPurchase",
+			strings.ToUpper("Put"),
+			"/api/lottery/purchase",
+			c.LottoPurchase,
+		},
+		{
 			"MarketItemBuy",
 			strings.ToUpper("Put"),
 			"/api/marketItems/buy",
 			c.MarketItemBuy,
+		},
+		{
+			"PreviousLotto",
+			strings.ToUpper("Get"),
+			"/api/lottery/previous",
+			c.PreviousLotto,
 		},
 		{
 			"SearchAuctionsStudent",
@@ -196,6 +214,38 @@ func (c *StudentApiController) CryptoConvert(w http.ResponseWriter, r *http.Requ
 
 }
 
+// LatestLotto - get current lotto game
+func (c *StudentApiController) LatestLotto(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.LatestLotto(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// LottoPurchase - get previous lotto game
+func (c *StudentApiController) LottoPurchase(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	quantityParam, err := parseInt32Parameter(query.Get("quantity"), true)
+	if err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	result, err := c.service.LottoPurchase(r.Context(), quantityParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
 // MarketItemBuy - market purchase
 func (c *StudentApiController) MarketItemBuy(w http.ResponseWriter, r *http.Request) {
 	requestMarketRefundParam := RequestMarketRefund{}
@@ -210,6 +260,19 @@ func (c *StudentApiController) MarketItemBuy(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	result, err := c.service.MarketItemBuy(r.Context(), requestMarketRefundParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// PreviousLotto - get previous lotto game
+func (c *StudentApiController) PreviousLotto(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.PreviousLotto(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

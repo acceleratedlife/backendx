@@ -83,6 +83,8 @@ func (a *AllApiServiceImpl) AuthUser(ctx context.Context) (user openapi.ImplResp
 			Role:      userDetails.Role,
 			SchoolId:  userDetails.SchoolId,
 			Id:        userDetails.Name,
+			LottoPlay: userDetails.LottoPlay,
+			LottoWin:  userDetails.LottoWin,
 		}), nil
 }
 
@@ -444,8 +446,7 @@ func (s *AllApiServiceImpl) SearchClasses(ctx context.Context) (openapi.ImplResp
 	sort.Slice(data, func(i, j int) bool {
 		return data[i].Period < data[j].Period
 	})
-	return openapi.Response(200,
-		data), nil
+	return openapi.Response(200, data), nil
 
 }
 
@@ -563,7 +564,7 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 	return openapi.Response(200, resp[:ranked]), nil
 }
 
-func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUserBody) (openapi.ImplResponse, error) {
+func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.RequestUserEdit) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -573,9 +574,7 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.UsersUser
 		}), nil
 	}
 
-	err = a.db.Update(func(tx *bolt.Tx) error {
-		return userEditTx(tx, a.clock, userDetails, body)
-	})
+	err = userEdit(a.db, a.clock, userDetails, body)
 
 	if err != nil {
 		return openapi.Response(500, nil), err

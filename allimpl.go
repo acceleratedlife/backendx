@@ -255,6 +255,16 @@ func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (ranked int, err e
 	return
 }
 
+// get all the students from a school, update the rank to the top students
+func getSchoolStudents(db *bolt.DB, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		resp, ranked, err = getSchoolStudentsTx(tx, userDetails)
+		return err
+	})
+
+	return
+}
+
 func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
 	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {
@@ -312,13 +322,13 @@ func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.User
 	return
 }
 
-func userEdit(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.UsersUserBody) error {
+func userEdit(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestUserEdit) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		return userEditTx(tx, clock, userDetails, body)
 	})
 }
 
-func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.UsersUserBody) error {
+func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.RequestUserEdit) error {
 	users := tx.Bucket([]byte(KeyUsers))
 	if users == nil {
 		return fmt.Errorf("users do not exist")
@@ -364,6 +374,22 @@ func userEditTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, body openapi.Use
 		userDetails.College = true
 		userDetails.CollegeEnd = clock.Now().AddDate(0, 0, 14) //14 days
 		userDetails.Income = userDetails.Income / 2
+	}
+
+	if body.LottoPlay > 0 {
+		if userDetails.LottoPlay == 0 {
+			userDetails.LottoPlay = body.LottoPlay
+		} else {
+			userDetails.LottoPlay += body.LottoPlay
+		}
+	}
+
+	if body.LottoWin > 0 {
+		if userDetails.LottoWin == 0 {
+			userDetails.LottoWin = body.LottoWin
+		} else {
+			userDetails.LottoWin += body.LottoWin
+		}
 	}
 
 	marshal, err := json.Marshal(userDetails)
@@ -539,7 +565,7 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 
 	Id = newTime.Truncate(time.Millisecond).String()
 
-	schoolBucket, err := getSchoolBucketTx(tx, userDetails)
+	schoolBucket, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return err
 	}
@@ -605,7 +631,7 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 
 func getTeachers(db *bolt.DB, userDetails UserInfo) (teachers []openapi.ResponseTeachers, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		school, err := getSchoolBucketTx(tx, userDetails)
+		school, err := getSchoolBucketRx(tx, userDetails)
 		if err != nil {
 			return err
 		}

@@ -12,9 +12,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -96,6 +96,8 @@ const (
 	KeyMarket           = "market"
 	KeyMarketData       = "marketData"
 	KeyBuyers           = "buyers"
+	KeyLotteries        = "lotteries"
+	KeyPricePerTicket   = 5
 )
 
 var build_date string
@@ -385,7 +387,7 @@ func loadConfig() ServerConfig {
 		Production:    false,
 	}
 
-	yamlFile, err := ioutil.ReadFile("./alcfg.yml")
+	yamlFile, err := os.ReadFile("./alcfg.yml")
 	if err != nil {
 		lgr.Printf("ERROR cannot load config %v", err)
 		return config

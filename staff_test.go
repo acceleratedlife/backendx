@@ -580,27 +580,32 @@ func TestAuctionReject(t *testing.T) {
 
 }
 
-// omit empty should not be on Student2students
+// omit empty should not be on Student2students or Lottery
 func TestStudent2StudentOmitEmpty(t *testing.T) {
 
 	settings := openapi.Settings{
 		Student2student: true,
 		CurrencyLock:    false,
+		Lottery:         true,
+		Odds:            5000,
 	}
 
 	marshal, err := json.Marshal(settings)
 	require.Nil(t, err)
 
-	var postSettings openapi.Settings
+	var postSettings openapi.Settings //testing to see that omit empty is in the correct places
 
 	err = json.Unmarshal(marshal, &postSettings)
 	require.Nil(t, err)
 
 	require.True(t, postSettings.Student2student)
+	require.True(t, postSettings.Lottery)
+	require.Equal(t, int32(5000), postSettings.Odds)
 
 	settings = openapi.Settings{
 		Student2student: false,
 		CurrencyLock:    false,
+		Lottery:         false,
 	}
 
 	marshal, err = json.Marshal(settings)
@@ -610,14 +615,17 @@ func TestStudent2StudentOmitEmpty(t *testing.T) {
 	require.Nil(t, err)
 
 	require.False(t, postSettings.Student2student)
+	require.False(t, postSettings.Lottery)
 
 }
 
-// if the following test is failing and you just ran the spec then it is probably because student2student has been change
+// if the following test is failing and you just ran the spec then it is probably because student2student and/or Lottery has been changed
 // to omitempty on openapi.Settings. This causes nothing to be sent back because false is seen as empty and is omitted.
 func TestGetSettingsAdmin(t *testing.T) {
 	db, tearDown := FullStartTestServer("getSettings", 8090, "")
 	defer tearDown()
+
+	clock := TestClock{}
 
 	admins, _, _, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
 
@@ -640,14 +648,22 @@ func TestGetSettingsAdmin(t *testing.T) {
 	_ = decoder.Decode(&data)
 
 	require.False(t, data.Student2student)
+	require.False(t, data.Lottery)
 
 	admin, err := getUserInLocalStore(db, admins[0])
 	require.Nil(t, err)
 
-	setSettings(db, admin, openapi.Settings{Student2student: true})
+	setSettings(db, &clock, admin, openapi.Settings{
+		Student2student: true,
+		Lottery:         true,
+		Odds:            2010,
+	})
+
 	settings, err := getSettings(db, admin)
 	require.Nil(t, err)
 	require.True(t, settings.Student2student)
+	require.True(t, settings.Lottery)
+	require.Equal(t, int32(2010), settings.Odds)
 
 	resp, err = client.Do(req)
 	require.Nil(t, err)
@@ -659,6 +675,8 @@ func TestGetSettingsAdmin(t *testing.T) {
 	_ = decoder.Decode(&data)
 
 	require.True(t, data.Student2student)
+	require.True(t, settings.Lottery)
+	require.Equal(t, int32(2010), settings.Odds)
 }
 
 func TestGetSettingsTeacher(t *testing.T) {
@@ -688,7 +706,7 @@ func TestGetSettingsTeacher(t *testing.T) {
 	require.False(t, data.CurrencyLock)
 }
 
-// if the following test is failing and you just ran the spec then it is probably because you set student2student as required in the spec
+// if the following test is failing and you just ran the spec then it is probably because you set student2student and/or lottery as required in the spec
 // This causes openapi.Settings to require student2student to be true so when you make it false marshal does not know what to do with it.
 // The only solution at this time is to omit the requirement in spec. This will make getsettings fail until you delete omitempty
 func TestSetSettingsAdmin(t *testing.T) {
@@ -707,10 +725,13 @@ func TestSetSettingsAdmin(t *testing.T) {
 	settings, err := getSettings(db, admin)
 	require.Nil(t, err)
 	require.False(t, settings.Student2student)
+	require.False(t, settings.Lottery)
 
 	settings = openapi.Settings{
 		Student2student: true,
 		CurrencyLock:    false,
+		Lottery:         true,
+		Odds:            2012,
 	}
 
 	marshal, err := json.Marshal(settings)
@@ -729,10 +750,13 @@ func TestSetSettingsAdmin(t *testing.T) {
 	settings, err = getSettings(db, admin)
 	require.Nil(t, err)
 	require.True(t, settings.Student2student)
+	require.True(t, settings.Lottery)
+	require.Equal(t, int32(2012), settings.Odds)
 
 	settings = openapi.Settings{
 		Student2student: false,
 		CurrencyLock:    false,
+		Lottery:         false,
 	}
 
 	marshal, _ = json.Marshal(settings)
@@ -750,6 +774,7 @@ func TestSetSettingsAdmin(t *testing.T) {
 	settings, err = getSettings(db, admin)
 	require.Nil(t, err)
 	require.False(t, settings.Student2student)
+	require.False(t, settings.Lottery)
 }
 
 func TestSetSettingsTeacher(t *testing.T) {
@@ -820,7 +845,8 @@ func TestStudent2Student(t *testing.T) {
 	admin, err := getUserInLocalStore(db, admins[0])
 	require.Nil(t, err)
 
-	setSettings(db, admin, openapi.Settings{Student2student: true})
+	err = setSettings(db, &clock, admin, openapi.Settings{Student2student: true})
+	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])
 
@@ -855,7 +881,7 @@ func TestStudent2Student(t *testing.T) {
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	setSettings(db, admin, openapi.Settings{Student2student: false})
+	setSettings(db, &clock, admin, openapi.Settings{Student2student: false})
 	settings, err = getSettings(db, admin)
 	require.Nil(t, err)
 	require.False(t, settings.Student2student)
@@ -884,7 +910,7 @@ func TestCurrencyLock(t *testing.T) {
 	require.Nil(t, err)
 
 	teacher.Settings.CurrencyLock = true
-	err = userEdit(db, &clock, teacher, openapi.UsersUserBody{})
+	err = userEdit(db, &clock, teacher, openapi.RequestUserEdit{})
 	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])
@@ -922,7 +948,7 @@ func TestCurrencyLock(t *testing.T) {
 	assert.Equal(t, 400, resp.StatusCode)
 
 	teacher.Settings.CurrencyLock = false
-	err = userEdit(db, &clock, teacher, openapi.UsersUserBody{})
+	err = userEdit(db, &clock, teacher, openapi.RequestUserEdit{})
 	require.Nil(t, err)
 
 	req, _ = http.NewRequest(http.MethodPost,
@@ -1109,5 +1135,18 @@ func TestMarketItemDelete(t *testing.T) {
 	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
+
+}
+
+func TestGetStudentCount(t *testing.T) {
+	db, tearDown := FullStartTestServer("getStudentCount", 8090, "")
+	defer tearDown()
+
+	_, schools, _, _, _, _ := CreateTestAccounts(db, 1, 2, 2, 10)
+
+	count, err := getStudentCount(db, schools[0])
+	require.Nil(t, err)
+
+	require.Equal(t, int32(40), count)
 
 }

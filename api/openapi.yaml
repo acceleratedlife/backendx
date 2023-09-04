@@ -147,6 +147,34 @@ paths:
       summary: edit school
       tags:
       - SysAdmin
+  /schools/school/count:
+    get:
+      description: by passing in a school id you will receive the total number of
+        students
+      operationId: getStudentCount
+      parameters:
+      - description: id of school
+        explode: true
+        in: query
+        name: schoolId
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseStudentCount'
+                type: array
+          description: count of students from given school
+        "404":
+          description: No account found
+      summary: gets student count for a school
+      tags:
+      - SchoolAdmin
   /accounts/account:
     delete:
       description: delete an account
@@ -957,7 +985,8 @@ paths:
       tags:
       - Staff
     put:
-      description: school admin can change settings for school
+      description: school admin can change settings for school, teacher can change
+        setting for their own currency
       operationId: setSettings
       requestBody:
         content:
@@ -1396,7 +1425,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/users_user_body'
+              $ref: '#/components/schemas/RequestUserEdit'
       responses:
         "200":
           content:
@@ -1595,6 +1624,63 @@ paths:
       summary: confirm email
       tags:
       - All
+  /lottery/latest:
+    get:
+      description: gets the latest lotto from the users school
+      operationId: latestLotto
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseLottoLatest'
+          description: latest lottery game
+        "404":
+          description: No latest lotto found for this school
+      summary: get current lotto game
+      tags:
+      - Student
+  /lottery/previous:
+    get:
+      description: gets the previous lotto from the users school
+      operationId: previousLotto
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseLottoLatest'
+          description: previous lottery game
+        "404":
+          description: No previous lotto found for this school
+      summary: get previous lotto game
+      tags:
+      - Student
+  /lottery/purchase:
+    put:
+      description: gets the previous lotto from the users school
+      operationId: lottoPurchase
+      parameters:
+      - description: number of tickets to buy
+        explode: true
+        in: query
+        name: quantity
+        required: true
+        schema:
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseRegister2'
+          description: previous lottery game
+        "404":
+          description: No previous lotto found for this school
+      summary: get previous lotto game
+      tags:
+      - Student
 components:
   schemas:
     Account:
@@ -1858,8 +1944,25 @@ components:
       - updatedAt
       - usd
       type: object
+    Lottery:
+      properties:
+        odds:
+          type: integer
+        jackpot:
+          type: integer
+        number:
+          type: integer
+        winner:
+          type: string
+      required:
+      - jackpot
+      - number
+      - odds
+      type: object
     Settings:
       example:
+        odds: 0
+        lottery: true
         student2student: true
         CurrencyLock: true
       properties:
@@ -1867,6 +1970,10 @@ components:
           type: boolean
         CurrencyLock:
           type: boolean
+        lottery:
+          type: boolean
+        odds:
+          type: integer
       type: object
     School:
       example:
@@ -1961,8 +2068,10 @@ components:
         isAuth: true
         role: 0
         school_id: 613eab19e58cc511801af657
+        lottoPlay: 0
         isAdmin: true
         _id: 613eab19e58cc511801af657
+        lottoWin: 6
         email: aa@aa.com
       properties:
         email:
@@ -1987,6 +2096,10 @@ components:
         _id:
           example: 613eab19e58cc511801af657
           type: string
+        lottoPlay:
+          type: integer
+        lottoWin:
+          type: integer
       required:
       - isAdmin
       - isAuth
@@ -2312,6 +2425,13 @@ components:
           format: float
           type: number
       type: object
+    ResponseStudentCount:
+      example:
+        count: 0
+      properties:
+        count:
+          type: integer
+      type: object
     ResponseTeachers:
       example:
         name: Jay Leno
@@ -2614,6 +2734,54 @@ components:
           example: 2
           type: integer
       type: object
+    RequestUserEdit:
+      example:
+        college: true
+        firstName: Tom
+        lastName: Jones
+        password: passw0rd
+        LottoWin: 6
+        LottoPlay: 0
+        email: ss@ss.com
+        careerTransition: true
+      properties:
+        email:
+          example: ss@ss.com
+          format: email
+          type: string
+        firstName:
+          example: Tom
+          type: string
+        lastName:
+          example: Jones
+          type: string
+        password:
+          example: passw0rd
+          type: string
+        college:
+          example: true
+          type: boolean
+        careerTransition:
+          example: true
+          type: boolean
+        LottoPlay:
+          type: integer
+        LottoWin:
+          type: integer
+      type: object
+    ResponseLottoLatest:
+      example:
+        winner: winner
+        jackpot: 0
+        odds: 6
+      properties:
+        jackpot:
+          type: integer
+        odds:
+          type: integer
+        winner:
+          type: string
+      type: object
     ResponseResetPassword:
       example:
         password: wetSwd
@@ -2734,6 +2902,8 @@ components:
         lastName: Welling
         collegeEnd: 2000-01-23T04:56:07.000+00:00
         role: 2
+        lottoPlay: 6
+        lottoWin: 1
         confirmed: true
         careerTransition: false
         firstName: Tom
@@ -2806,6 +2976,10 @@ components:
           type: number
         job:
           $ref: '#/components/schemas/UserNoHistory_job'
+        lottoPlay:
+          type: integer
+        lottoWin:
+          type: integer
       required:
       - _id
       - careerTransition
@@ -2983,28 +3157,6 @@ components:
           items:
             $ref: '#/components/schemas/inline_response_200_1_accounts'
           type: array
-      type: object
-    users_user_body:
-      properties:
-        email:
-          example: ss@ss.com
-          format: email
-          type: string
-        firstName:
-          example: Tom
-          type: string
-        lastName:
-          example: Jones
-          type: string
-        password:
-          example: passw0rd
-          type: string
-        college:
-          example: true
-          type: boolean
-        careerTransition:
-          example: true
-          type: boolean
       type: object
     inline_response_200_2:
       example:

@@ -261,7 +261,7 @@ func deleteStudentTx(tx *bolt.Tx, studentId string) (err error) {
 		return fmt.Errorf("failed to delete user")
 	}
 
-	school, err := getSchoolBucketTx(tx, studentInfo)
+	school, err := getSchoolBucketRx(tx, studentInfo)
 	if err != nil {
 		return fmt.Errorf("cannot get school: %v", err)
 	}
@@ -407,7 +407,7 @@ func getAuctionBucketTx(tx *bolt.Tx, schoolBucket *bolt.Bucket, auctionId string
 
 func getSchoolBucket(db *bolt.DB, userDetails UserInfo) (school *bolt.Bucket, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		school, err = getSchoolBucketTx(tx, userDetails)
+		school, err = getSchoolBucketRx(tx, userDetails)
 		if err != nil {
 			return err
 		}
@@ -422,7 +422,7 @@ func getSchoolBucket(db *bolt.DB, userDetails UserInfo) (school *bolt.Bucket, er
 	return
 }
 
-func getSchoolBucketTx(tx *bolt.Tx, userDetails UserInfo) (school *bolt.Bucket, err error) {
+func getSchoolBucketRx(tx *bolt.Tx, userDetails UserInfo) (school *bolt.Bucket, err error) {
 	schools := tx.Bucket([]byte(KeySchools))
 	if schools == nil {
 		return nil, fmt.Errorf("cannot find schools bucket")
@@ -438,7 +438,7 @@ func getSchoolBucketTx(tx *bolt.Tx, userDetails UserInfo) (school *bolt.Bucket, 
 
 func getTeacherAuctions(db *bolt.DB, userDetails UserInfo) (auctions []openapi.Auction, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		school, err := getSchoolBucketTx(tx, userDetails)
+		school, err := getSchoolBucketRx(tx, userDetails)
 		if err != nil {
 			return err
 		}
@@ -751,7 +751,7 @@ func getAllAuctions(db *bolt.DB, clock Clock, userDetails UserInfo) (resp []open
 }
 
 func getAllAuctionsRx(tx *bolt.Tx, clock Clock, userDetails UserInfo) (resp []openapi.ResponseAuctionStudent, err error) {
-	school, err := getSchoolBucketTx(tx, userDetails)
+	school, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return
 	}
@@ -968,7 +968,7 @@ func approveAuctionTx(tx *bolt.Tx, userDetails UserInfo, body openapi.RequestAuc
 	if err != nil {
 		return err
 	}
-	school, err := getSchoolBucketTx(tx, userDetails)
+	school, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return err
 	}
@@ -1016,7 +1016,7 @@ func rejectAuctionTx(tx *bolt.Tx, userDetails UserInfo, auctionId string) (err e
 
 	auctionId = newTime.String()
 
-	school, err := getSchoolBucketTx(tx, userDetails)
+	school, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return err
 	}
@@ -1038,26 +1038,51 @@ func rejectAuctionTx(tx *bolt.Tx, userDetails UserInfo, auctionId string) (err e
 
 func getSettings(db *bolt.DB, userDetails UserInfo) (settings openapi.Settings, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		school, err := getSchoolBucketTx(tx, userDetails)
+
+		settings, err = getSettingsRx(tx, userDetails)
 		if err != nil {
 			return err
 		}
 
-		settingsData := school.Get([]byte(KeySettings))
-		err = json.Unmarshal(settingsData, &settings)
-		if err != nil {
-			return err
-		}
-
-		return err
+		return nil
 	})
 
 	return
 }
 
-func setSettings(db *bolt.DB, userDetails UserInfo, body openapi.Settings) (err error) {
+func getSettingsRx(tx *bolt.Tx, userDetails UserInfo) (settings openapi.Settings, err error) {
+	school, err := getSchoolBucketRx(tx, userDetails)
+	if err != nil {
+		return
+	}
+
+	settingsData := school.Get([]byte(KeySettings))
+	err = json.Unmarshal(settingsData, &settings)
+	if err != nil {
+		return
+	}
+
+	return
+
+}
+
+func setSettings(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.Settings) (err error) {
+
 	err = db.Update(func(tx *bolt.Tx) error {
-		school, err := getSchoolBucketTx(tx, userDetails)
+
+		settings, err := getSettingsRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		if !settings.Lottery && body.Lottery {
+			err = initializeLotteryTx(tx, userDetails, body, clock)
+			if err != nil {
+				return err
+			}
+		}
+
+		school, err := getSchoolBucketRx(tx, userDetails)
 		if err != nil {
 			return err
 		}
@@ -1076,6 +1101,185 @@ func setSettings(db *bolt.DB, userDetails UserInfo, body openapi.Settings) (err 
 	})
 
 	return
+}
+
+func updateLottoLatest(db *bolt.DB, userDetails UserInfo, tickets int32, winner string) (err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+
+		err = updateLottoLatestTx(tx, userDetails, tickets, winner)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+
+}
+
+func updateLottoLatestTx(tx *bolt.Tx, userDetails UserInfo, tickets int32, winner string) (err error) {
+	school, err := getSchoolBucketRx(tx, userDetails)
+	if err != nil {
+		return err
+	}
+
+	lotteriesBucket := school.Bucket([]byte(KeyLotteries))
+	if lotteriesBucket == nil {
+		return fmt.Errorf("cannot find lotteries bucket")
+	}
+
+	c := lotteriesBucket.Cursor()
+	k, _ := c.Last()
+	if k == nil {
+		return fmt.Errorf("cannot find current lotto")
+	}
+
+	lotteryData := lotteriesBucket.Get(k)
+	var lottery openapi.Lottery
+	err = json.Unmarshal(lotteryData, &lottery)
+	if err != nil {
+		return err
+	}
+
+	if winner != "" {
+		lottery.Winner = winner
+	}
+
+	if lottery.Jackpot == 0 {
+		lottery.Jackpot = tickets
+	} else {
+		lottery.Jackpot += tickets
+	}
+
+	marshal, _ := json.Marshal(lottery)
+	err = lotteriesBucket.Put(k, marshal)
+	if err != nil {
+		return err
+	}
+
+	return
+}
+
+func getLottoLatest(db *bolt.DB, userDetails UserInfo) (lottery openapi.Lottery, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+
+		lottery, err = getLottoLatestTx(tx, userDetails)
+		return err
+	})
+
+	return
+}
+
+func getLottoLatestTx(tx *bolt.Tx, userDetails UserInfo) (lottery openapi.Lottery, err error) {
+	school, err := getSchoolBucketRx(tx, userDetails)
+	if err != nil {
+		return
+	}
+
+	lotteries, err := school.CreateBucketIfNotExists([]byte(KeyLotteries))
+	if err != nil {
+		return lottery, err
+	}
+
+	c := lotteries.Cursor()
+	k, _ := c.Last()
+	if k == nil {
+		return
+	}
+	lotteryData := lotteries.Get(k)
+
+	err = json.Unmarshal(lotteryData, &lottery)
+	if err != nil {
+		return lottery, err
+	}
+
+	return
+}
+
+func initializeLottery(db *bolt.DB, userDetails UserInfo, settings openapi.Settings, clock Clock) (err error) {
+
+	err = db.Update(func(tx *bolt.Tx) error {
+
+		err = initializeLotteryTx(tx, userDetails, settings, clock)
+		return err
+
+	})
+
+	return
+}
+
+func initializeLotteryTx(tx *bolt.Tx, userDetails UserInfo, settings openapi.Settings, clock Clock) (err error) {
+
+	lottery, err := getLottoLatestTx(tx, userDetails)
+	if err != nil {
+		return err
+	}
+
+	//first initialization of lottery or a stopped game, maybe a recent winner. Not sure I gotta run
+	if lottery.Jackpot == 0 || lottery.Winner != "" {
+		school, err := getSchoolBucketRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		lotteries, err := school.CreateBucketIfNotExists([]byte(KeyLotteries))
+		if err != nil {
+			return err
+		}
+
+		ts := clock.Now().Truncate(time.Millisecond)
+
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+		mean, err := getMeanNetworthRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		if settings.Odds == 0 {
+			count, err := getStudentCountRx(tx, userDetails.SchoolId)
+			if err != nil {
+				return err
+			}
+			settings.Odds = count * 10
+		}
+
+		newLottery := openapi.Lottery{
+			Odds:    settings.Odds,
+			Jackpot: int32(mean.IntPart()), //this might be too high of a start and need to be adjusted down
+			Number:  int32(r.Intn(int(settings.Odds))),
+		}
+
+		marshal, err := json.Marshal(newLottery)
+		if err != nil {
+			return err
+		}
+
+		tsB, err := ts.MarshalText()
+		if err != nil {
+			return err
+		}
+
+		oldLotto := lotteries.Get(tsB)
+		for oldLotto != nil {
+			ts = ts.Add(time.Millisecond * 1)
+			tsB, err = ts.MarshalText()
+			if err != nil {
+				return err
+			}
+			oldLotto = lotteries.Get(tsB)
+		}
+
+		err = lotteries.Put(tsB, marshal)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
 }
 
 func marketItemResolveTx(marketBucket, itemBucket *bolt.Bucket, studentPurchaseId string) (err error) {
@@ -1273,6 +1477,124 @@ func marketItemDeleteTx(tx *bolt.Tx, clock Clock, marketBucket, itemBucket *bolt
 	if err != nil {
 		return fmt.Errorf("ERROR cannot put item data")
 	}
+
+	return
+}
+
+func getStudentCount(db *bolt.DB, schoolId string) (count int32, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		count, err = getStudentCountRx(tx, schoolId)
+		return err
+	})
+
+	return
+}
+
+func getStudentCountRx(tx *bolt.Tx, schoolId string) (count int32, err error) {
+	school, err := SchoolByIdTx(tx, schoolId)
+	if err != nil {
+		return
+	}
+
+	students := school.Bucket([]byte(KeyStudents))
+	if students == nil {
+		return count, fmt.Errorf("cannot find students bucket")
+	}
+
+	students.ForEach(func(k, v []byte) error {
+		count += 1
+		return nil
+	})
+
+	return
+}
+
+func getMeanNetworth(db *bolt.DB, userDetails UserInfo) (mean decimal.Decimal, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		mean, err = getMeanNetworthRx(tx, userDetails)
+		return err
+	})
+
+	return
+}
+
+func getMeanNetworthRx(tx *bolt.Tx, userDetails UserInfo) (mean decimal.Decimal, err error) {
+	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+	if err != nil {
+		return
+	}
+
+	students := school.Bucket([]byte(KeyStudents))
+	if students == nil {
+		return mean, fmt.Errorf("cannot find students bucket")
+	}
+
+	c := students.Cursor()
+
+	users := tx.Bucket([]byte(KeyUsers))
+
+	var netWorths []decimal.Decimal
+
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		studentData := users.Get([]byte(k))
+		var student UserInfo
+		err = json.Unmarshal(studentData, &student)
+		if err != nil {
+			lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+			continue
+		}
+		if student.Role != UserRoleStudent {
+			lgr.Printf("ERROR student %s has role %d", k, student.Role)
+			continue
+		}
+
+		netWorths = append(netWorths, decimal.NewFromFloat32(student.NetWorth))
+
+	}
+
+	mean = decimal.Avg(netWorths[0], netWorths[1:]...)
+
+	if mean.IsZero() {
+		mean = decimal.NewFromInt32(250)
+	}
+
+	return
+}
+
+func getLottoPrevious(db *bolt.DB, userDetails UserInfo) (prevLottery openapi.Lottery, err error) {
+
+	err = db.View(func(tx *bolt.Tx) error {
+		school, err := getSchoolBucketRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		lotteriesBucket := school.Bucket([]byte(KeyLotteries))
+		if lotteriesBucket == nil {
+			return fmt.Errorf("cannot find lotteries bucket")
+		}
+
+		c := lotteriesBucket.Cursor()
+		k, _ := c.Last()
+		if k == nil {
+			prevLottery.Winner = "No Current Lotto"
+			return err
+		}
+
+		k, _ = c.Prev()
+		if k == nil {
+			prevLottery.Winner = "No Previous Lotto"
+			return err
+		}
+
+		lotteryData := lotteriesBucket.Get(k)
+		err = json.Unmarshal(lotteryData, &prevLottery)
+		if err != nil {
+			return err
+		}
+
+		return err
+	})
 
 	return
 }

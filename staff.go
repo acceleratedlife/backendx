@@ -483,10 +483,6 @@ func (s *StaffApiServiceImpl) GetSettings(ctx context.Context) (openapi.ImplResp
 		return openapi.Response(404, nil), nil
 	}
 
-	if userDetails.Role == UserRoleStudent {
-		return openapi.Response(401, ""), nil
-	}
-
 	if userDetails.Role == UserRoleTeacher {
 		return openapi.Response(200, userDetails.Settings), nil
 	}
@@ -514,7 +510,7 @@ func (s *StaffApiServiceImpl) SetSettings(ctx context.Context, body openapi.Sett
 	if userDetails.Role == UserRoleTeacher {
 		updatedTeacher := userDetails
 		updatedTeacher.Settings.CurrencyLock = body.CurrencyLock
-		err := userEdit(s.db, s.clock, updatedTeacher, openapi.UsersUserBody{})
+		err := userEdit(s.db, s.clock, updatedTeacher, openapi.RequestUserEdit{})
 		if err != nil {
 			return openapi.Response(400, ""), nil
 		}
@@ -522,9 +518,8 @@ func (s *StaffApiServiceImpl) SetSettings(ctx context.Context, body openapi.Sett
 		return openapi.Response(200, nil), nil
 	}
 
-	err = setSettings(s.db, userDetails, body)
+	err = setSettings(s.db, s.clock, userDetails, body)
 	if err != nil {
-		lgr.Printf("ERROR cannot set: %v", err)
 		return openapi.Response(500, "{}"), err
 	}
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
@@ -211,7 +212,7 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	}
 
 	if balance.Round(5).Sign() < 0 && negBlock {
-		errR = fmt.Errorf("Insufficient funds")
+		errR = fmt.Errorf("insufficient funds")
 		return
 	}
 
@@ -1120,7 +1121,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 	}
 	_, _, err = addToHolderTx(student, currency, transaction, OperationDebit, true)
 	if err != nil {
-		if err.Error() == "Insufficient funds" && !sPurchase {
+		if err.Error() == "insufficient funds" && !sPurchase {
 			if strings.Contains(reference, "Event: ") {
 				err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, reference, false)
 				if err != nil {
@@ -1362,7 +1363,7 @@ func getStudentClasses(db *bolt.DB, userDetails UserInfo) (classes []openapi.Cla
 }
 
 func getStudentClassesRx(tx *bolt.Tx, userDetails UserInfo) (classes []openapi.Class, err error) {
-	school, err := getSchoolBucketTx(tx, userDetails)
+	school, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return classes, fmt.Errorf("cannot get schools %s: %v", userDetails.Name, err)
 	}
@@ -2159,4 +2160,88 @@ func cryptoConvert(basis, usd, amount decimal.Decimal) decimal.Decimal {
 	}
 
 	return newPercent.Mul(basis).Mul(amount)
+}
+
+func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets int32) (winner bool, err error) {
+
+	err = db.Update(func(tx *bolt.Tx) error {
+
+		lottery, err := getLottoLatestTx(tx, studentDetails)
+		if err != nil {
+			return err
+		}
+
+		if lottery.Winner != "" {
+			return fmt.Errorf("last winner " + lottery.Winner + " with " + strconv.Itoa(int(lottery.Jackpot)) + "...lottery has been disabled")
+		}
+
+		if lottery.Odds == 0 && lottery.Jackpot == 0 {
+			return fmt.Errorf("the lotto has not been initialized")
+		}
+
+		chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Lotto", true)
+		if err != nil {
+			return err
+		}
+
+		userUpdates := openapi.RequestUserEdit{
+			LottoPlay: tickets * KeyPricePerTicket,
+		}
+
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		for i := 0; i < int(tickets); i++ {
+			play := r.Intn(int(lottery.Odds))
+			if play == int(lottery.Number) {
+
+				err = updateLottoLatestTx(tx, studentDetails, tickets, studentDetails.Email)
+				if err != nil {
+					return err
+				}
+
+				err = pay2StudentTx(tx, clock, studentDetails, decimal.NewFromInt32(lottery.Jackpot+tickets), CurrencyUBuck, "Lotto Winner "+clock.Now().Format("02/03/2006"))
+				if err != nil {
+					return err
+				}
+
+				userUpdates.LottoWin = lottery.Jackpot + tickets
+
+				err = userEditTx(tx, clock, studentDetails, userUpdates)
+				if err != nil {
+					return err
+				}
+
+				settings, err := getSettingsRx(tx, studentDetails)
+				if err != nil {
+					return err
+				}
+
+				if settings.Lottery {
+					err = initializeLotteryTx(tx, studentDetails, settings, clock)
+					if err != nil {
+						return err
+					}
+				}
+
+				winner = true
+
+				return nil
+
+			}
+		}
+
+		err = userEditTx(tx, clock, studentDetails, userUpdates)
+		if err != nil {
+			return err
+		}
+
+		err = updateLottoLatestTx(tx, studentDetails, tickets, "")
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+
 }

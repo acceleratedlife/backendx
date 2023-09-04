@@ -169,7 +169,7 @@ func TestUserEdit(t *testing.T) {
 	// initialize http client
 	client := &http.Client{}
 
-	body := openapi.UsersUserBody{
+	body := openapi.RequestUserEdit{
 		FirstName:        "test",
 		LastName:         "user",
 		Password:         "123qwe",
@@ -211,7 +211,7 @@ func TestUserEditStaff(t *testing.T) {
 	// initialize http client
 	client := &http.Client{}
 
-	body := openapi.UsersUserBody{
+	body := openapi.RequestUserEdit{
 		FirstName:        "test",
 		LastName:         "user",
 		Password:         "123qwe",
@@ -250,7 +250,7 @@ func TestUserEditNegative(t *testing.T) {
 	client := &http.Client{}
 	require.Nil(t, err)
 
-	body := openapi.UsersUserBody{
+	body := openapi.RequestUserEdit{
 		FirstName:        "test",
 		LastName:         "user",
 		Password:         "123qwe",
@@ -799,7 +799,8 @@ func TestPayTransaction_student(t *testing.T) {
 	admin, err := getUserInLocalStore(db, admins[0])
 	require.Nil(t, err)
 
-	setSettings(db, admin, openapi.Settings{Student2student: true})
+	err = setSettings(db, &clock, admin, openapi.Settings{Student2student: true})
+	require.Nil(t, err)
 
 	client := &http.Client{}
 	body := openapi.RequestPayTransaction{

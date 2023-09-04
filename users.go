@@ -34,6 +34,8 @@ type UserInfo struct {
 	NetWorth         float32
 	Job              string
 	Settings         TeacherSettings `json:",omitempty"`
+	LottoPlay        int32           `json:",omitempty"`
+	LottoWin         int32           `json:",omitempty"`
 }
 
 type TeacherSettings struct {

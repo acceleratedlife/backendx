@@ -148,10 +148,8 @@ func CreateTestAccounts(db *bolt.DB, noSchools, noTeachers, noClasses, noStudent
 		admins = append(admins, admin.Name)
 
 		schoolClasses := getSchoolClasses(db, schoolId)
-		if schoolClasses != nil {
-			for _, class := range schoolClasses {
-				mandatoryClasses = append(mandatoryClasses, class.Id)
-			}
+		for _, class := range schoolClasses {
+			mandatoryClasses = append(mandatoryClasses, class.Id)
 		}
 
 		for t := 0; t < noTeachers; t++ {

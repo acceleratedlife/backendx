@@ -27,6 +27,10 @@ type ResponseAuth2 struct {
 	SchoolId string `json:"school_id,omitempty"`
 
 	Id string `json:"_id,omitempty"`
+
+	LottoPlay int32 `json:"lottoPlay,omitempty"`
+
+	LottoWin int32 `json:"lottoWin,omitempty"`
 }
 
 // AssertResponseAuth2Required checks if the required fields are not zero-ed

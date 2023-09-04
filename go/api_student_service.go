@@ -69,6 +69,34 @@ func (s *StudentApiService) CryptoConvert(ctx context.Context, requestCryptoConv
 	return Response(http.StatusNotImplemented, nil), errors.New("CryptoConvert method not implemented")
 }
 
+// LatestLotto - get current lotto game
+func (s *StudentApiService) LatestLotto(ctx context.Context) (ImplResponse, error) {
+	// TODO - update LatestLotto with the required logic for this service method.
+	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, ResponseLottoLatest{}) or use other options such as http.Ok ...
+	//return Response(200, ResponseLottoLatest{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("LatestLotto method not implemented")
+}
+
+// LottoPurchase - get previous lotto game
+func (s *StudentApiService) LottoPurchase(ctx context.Context, quantity int32) (ImplResponse, error) {
+	// TODO - update LottoPurchase with the required logic for this service method.
+	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, ResponseRegister2{}) or use other options such as http.Ok ...
+	//return Response(200, ResponseRegister2{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("LottoPurchase method not implemented")
+}
+
 // MarketItemBuy - market purchase
 func (s *StudentApiService) MarketItemBuy(ctx context.Context, requestMarketRefund RequestMarketRefund) (ImplResponse, error) {
 	// TODO - update MarketItemBuy with the required logic for this service method.
@@ -81,6 +109,20 @@ func (s *StudentApiService) MarketItemBuy(ctx context.Context, requestMarketRefu
 	//return Response(400, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("MarketItemBuy method not implemented")
+}
+
+// PreviousLotto - get previous lotto game
+func (s *StudentApiService) PreviousLotto(ctx context.Context) (ImplResponse, error) {
+	// TODO - update PreviousLotto with the required logic for this service method.
+	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, ResponseLottoLatest{}) or use other options such as http.Ok ...
+	//return Response(200, ResponseLottoLatest{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("PreviousLotto method not implemented")
 }
 
 // SearchAuctionsStudent - searches auctions
