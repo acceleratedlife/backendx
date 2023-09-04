@@ -1256,18 +1256,12 @@ func initializeLotteryTx(tx *bolt.Tx, userDetails UserInfo, settings openapi.Set
 			return err
 		}
 
-		tsB, err := ts.MarshalText()
-		if err != nil {
-			return err
-		}
+		tsB := []byte(ts.Format("2006-01-02 15:04:05.000"))
 
 		oldLotto := lotteries.Get(tsB)
 		for oldLotto != nil {
 			ts = ts.Add(time.Millisecond * 1)
-			tsB, err = ts.MarshalText()
-			if err != nil {
-				return err
-			}
+			tsB = []byte(ts.Format("2006-01-02 15:04:05.000"))
 			oldLotto = lotteries.Get(tsB)
 		}
 
