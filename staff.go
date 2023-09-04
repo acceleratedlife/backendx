@@ -518,21 +518,8 @@ func (s *StaffApiServiceImpl) SetSettings(ctx context.Context, body openapi.Sett
 		return openapi.Response(200, nil), nil
 	}
 
-	settings, err := getSettings(s.db, userDetails)
+	err = setSettings(s.db, s.clock, userDetails, body)
 	if err != nil {
-		return openapi.Response(500, "{}"), err
-	}
-
-	if !settings.Lottery && body.Lottery {
-		err = initializeLottery(s.db, userDetails, body, s.clock)
-		if err != nil {
-			return openapi.Response(500, "{}"), err
-		}
-	}
-
-	err = setSettings(s.db, userDetails, body)
-	if err != nil {
-		lgr.Printf("ERROR cannot set: %v", err)
 		return openapi.Response(500, "{}"), err
 	}
 

@@ -1066,9 +1066,22 @@ func getSettingsRx(tx *bolt.Tx, userDetails UserInfo) (settings openapi.Settings
 
 }
 
-func setSettings(db *bolt.DB, userDetails UserInfo, body openapi.Settings) (err error) {
+func setSettings(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.Settings) (err error) {
 
 	err = db.Update(func(tx *bolt.Tx) error {
+
+		settings, err := getSettingsRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		if !settings.Lottery && body.Lottery {
+			err = initializeLotteryTx(tx, userDetails, body, clock)
+			if err != nil {
+				return err
+			}
+		}
+
 		school, err := getSchoolBucketRx(tx, userDetails)
 		if err != nil {
 			return err

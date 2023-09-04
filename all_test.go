@@ -799,7 +799,8 @@ func TestPayTransaction_student(t *testing.T) {
 	admin, err := getUserInLocalStore(db, admins[0])
 	require.Nil(t, err)
 
-	setSettings(db, admin, openapi.Settings{Student2student: true})
+	err = setSettings(db, &clock, admin, openapi.Settings{Student2student: true})
+	require.Nil(t, err)
 
 	client := &http.Client{}
 	body := openapi.RequestPayTransaction{

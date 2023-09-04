@@ -53,26 +53,6 @@ func Test_addUbuck2Student(t *testing.T) {
 	assert.Equal(t, 1.01, studentNetWo.InexactFloat64())
 }
 
-//func TestStudentNetWorthTx(t *testing.T) {
-//	type args struct {
-//		tx       *bolt.Tx
-//		userName string
-//	}
-//	tests := []struct {
-//		name    string
-//		args    args
-//		wantRes decimal.Decimal
-//	}{
-//		{name: , args: , wantRes: },
-//		// TODO: Add test cases.
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			assert.Equalf(t, tt.wantRes, StudentNetWorthTx(tt.args.tx, tt.args.userName), "StudentNetWorthTx(%v, %v)", tt.args.tx, tt.args.userName)
-//		})
-//	}
-//}
-
 func TestStudentAddClass_Teachers(t *testing.T) {
 	db, tearDown := FullStartTestServer("studentAddClass_Teachers", 8090, "test@admin.com")
 	defer tearDown()
@@ -284,10 +264,7 @@ func TestPreviousLotto(t *testing.T) {
 		Odds:    3,
 	}
 
-	err = setSettings(db, userDetails, settings)
-	require.Nil(t, err)
-
-	err = initializeLottery(db, userDetails, settings, &clock)
+	err = setSettings(db, &clock, userDetails, settings)
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/lottery/previous", nil)
@@ -1236,10 +1213,7 @@ func TestLottoPurchase(t *testing.T) {
 		Odds:            10,
 	}
 
-	err = setSettings(db, userDetails, settings)
-	require.Nil(t, err)
-
-	err = initializeLottery(db, userDetails, settings, &clock)
+	err = setSettings(db, &clock, userDetails, settings)
 	require.Nil(t, err)
 
 	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/lottery/purchase")

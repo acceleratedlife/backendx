@@ -625,6 +625,8 @@ func TestGetSettingsAdmin(t *testing.T) {
 	db, tearDown := FullStartTestServer("getSettings", 8090, "")
 	defer tearDown()
 
+	clock := TestClock{}
+
 	admins, _, _, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
 
 	SetTestLoginUser(admins[0])
@@ -651,7 +653,7 @@ func TestGetSettingsAdmin(t *testing.T) {
 	admin, err := getUserInLocalStore(db, admins[0])
 	require.Nil(t, err)
 
-	setSettings(db, admin, openapi.Settings{
+	setSettings(db, &clock, admin, openapi.Settings{
 		Student2student: true,
 		Lottery:         true,
 		Odds:            2010,
@@ -843,7 +845,8 @@ func TestStudent2Student(t *testing.T) {
 	admin, err := getUserInLocalStore(db, admins[0])
 	require.Nil(t, err)
 
-	setSettings(db, admin, openapi.Settings{Student2student: true})
+	err = setSettings(db, &clock, admin, openapi.Settings{Student2student: true})
+	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])
 
@@ -878,71 +881,7 @@ func TestStudent2Student(t *testing.T) {
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	setSettings(db, admin, openapi.Settings{Student2student: false})
-	settings, err = getSettings(db, admin)
-	require.Nil(t, err)
-	require.False(t, settings.Student2student)
-
-	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/payTransaction",
-		bytes.NewBuffer(marshal))
-
-	resp, err = client.Do(req)
-	require.Nil(t, err)
-	defer resp.Body.Close()
-	require.NotNil(t, resp)
-	assert.Equal(t, 400, resp.StatusCode)
-
-}
-
-// ********** this is currently testing the same as student2student. Need to rewrite once the logic has been implemented.
-func TestLottery(t *testing.T) {
-	clock := TestClock{}
-	db, tearDown := FullStartTestServer("lottery", 8090, "")
-	defer tearDown()
-
-	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
-	require.Nil(t, err)
-
-	admin, err := getUserInLocalStore(db, admins[0])
-	require.Nil(t, err)
-
-	setSettings(db, admin, openapi.Settings{Student2student: true})
-
-	SetTestLoginUser(students[0])
-
-	client := &http.Client{}
-	body := openapi.RequestPayTransaction{
-		OwnerId:     students[0],
-		Description: "student2student",
-		Amount:      100,
-		Student:     students[1],
-	}
-
-	for _, student := range students {
-		userDetails, err := getUserInLocalStore(db, student)
-		require.Nil(t, err)
-		err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(1000), "pre load")
-		require.Nil(t, err)
-	}
-
-	marshal, _ := json.Marshal(body)
-
-	settings, err := getSettings(db, admin)
-	require.Nil(t, err)
-	require.True(t, settings.Student2student)
-
-	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/payTransaction",
-		bytes.NewBuffer(marshal))
-
-	resp, err := client.Do(req)
-	require.Nil(t, err)
-	defer resp.Body.Close()
-	require.NotNil(t, resp)
-	assert.Equal(t, 200, resp.StatusCode)
-
-	setSettings(db, admin, openapi.Settings{Student2student: false})
+	setSettings(db, &clock, admin, openapi.Settings{Student2student: false})
 	settings, err = getSettings(db, admin)
 	require.Nil(t, err)
 	require.False(t, settings.Student2student)

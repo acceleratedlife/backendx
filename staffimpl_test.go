@@ -591,10 +591,7 @@ func TestInitializeLottery(t *testing.T) {
 		Odds:    10,
 	}
 
-	err = setSettings(db, adminDetails, settings)
-	require.Nil(t, err)
-
-	err = initializeLottery(db, adminDetails, settings, &clock)
+	err = setSettings(db, &clock, adminDetails, settings)
 	require.Nil(t, err)
 
 	lottery, err := getLottoLatest(db, adminDetails)
@@ -608,7 +605,7 @@ func TestInitializeLottery(t *testing.T) {
 		Odds:    10,
 	}
 
-	err = setSettings(db, adminDetails, settings2)
+	err = setSettings(db, &clock, adminDetails, settings2)
 	require.Nil(t, err)
 
 	lottery, err = getLottoLatest(db, adminDetails)
@@ -622,13 +619,10 @@ func TestInitializeLottery(t *testing.T) {
 		Odds:    20,
 	}
 
-	err = setSettings(db, adminDetails, settings3)
+	err = setSettings(db, &clock, adminDetails, settings3)
 	require.Nil(t, err)
 
 	//newest settings have odds of 20 but that game is not over so you should still see an odds of 10 on the current game
-	err = initializeLottery(db, adminDetails, settings, &clock)
-	require.Nil(t, err)
-
 	lottery, err = getLottoLatest(db, adminDetails)
 	require.Nil(t, err)
 
@@ -672,10 +666,7 @@ func TestLotteryProgression(t *testing.T) {
 		Odds:    10000,
 	}
 
-	err = setSettings(db, adminDetails, settings)
-	require.Nil(t, err)
-
-	err = initializeLottery(db, adminDetails, settings, &clock)
+	err = setSettings(db, &clock, adminDetails, settings)
 	require.Nil(t, err)
 
 	student, err := getUserInLocalStore(db, students[0])
@@ -718,7 +709,7 @@ func TestLotteryLastWinner(t *testing.T) {
 		Odds:    10,
 	}
 
-	err = setSettings(db, adminDetails, settings)
+	err = setSettings(db, &clock, adminDetails, settings)
 	require.Nil(t, err)
 
 	err = initializeLottery(db, adminDetails, settings, &clock)
