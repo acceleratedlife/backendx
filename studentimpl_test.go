@@ -192,7 +192,7 @@ func TestEventsLowUbuck(t *testing.T) {
 			return fmt.Errorf("cannot find cb account debt trans")
 		}
 
-		keys = trans.Stats().KeyN
+		keys = trans.Stats().KeyN //KeyN is failing elsewhere so I need to check that it is working true
 		return nil
 	})
 
@@ -226,7 +226,7 @@ func TestCollege(t *testing.T) {
 	r := CollegeIfNeeded(db, &clock, student)
 	require.False(t, r)
 
-	body := openapi.UsersUserBody{
+	body := openapi.RequestUserEdit{
 		College: true,
 	}
 
@@ -285,7 +285,7 @@ func TestCareer(t *testing.T) {
 	r := CareerIfNeeded(db, &clock, student)
 	require.False(t, r)
 
-	body := openapi.UsersUserBody{
+	body := openapi.RequestUserEdit{
 		CareerTransition: true,
 	}
 
@@ -687,4 +687,52 @@ func TestTrueAuctionTrue(t *testing.T) {
 
 	require.NotEqual(t, timeId, auctions[0].EndDate.Format((time.RFC3339Nano)))
 
+}
+
+func TestPurchaseLottoOff(t *testing.T) {
+
+	lgr.Printf("INFO TestPurchaseLottoOff")
+	t.Log("INFO TestPurchaseLottoOff")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("purchaseLottoOff")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	_, err = purchaseLotto(db, &clock, student, 5)
+	require.Equal(t, "the lotto has not been initialized", err.Error())
+
+	var settings = openapi.Settings{
+		Lottery: true,
+		Odds:    20,
+	}
+
+	err = setSettings(db, &clock, student, settings)
+	require.Nil(t, err)
+
+	var settings2 = openapi.Settings{
+		Lottery: false,
+		Odds:    20,
+	}
+
+	err = setSettings(db, &clock, student, settings2)
+	require.Nil(t, err)
+
+	winner, err := purchaseLotto(db, &clock, student, 60)
+	require.Nil(t, err)
+	require.True(t, winner)
+
+	_, err = purchaseLotto(db, &clock, student, 60)
+	require.NotNil(t, err)
+
+	err = setSettings(db, &clock, student, settings)
+	require.Nil(t, err)
+
+	winner, err = purchaseLotto(db, &clock, student, 60)
+	require.Nil(t, err)
+	require.True(t, winner)
 }

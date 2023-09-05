@@ -47,6 +47,10 @@ type UserNoHistory struct {
 	NetWorth float32 `json:"netWorth"`
 
 	Job UserNoHistoryJob `json:"job"`
+
+	LottoPlay int32 `json:"lottoPlay,omitempty"`
+
+	LottoWin int32 `json:"lottoWin,omitempty"`
 }
 
 // AssertUserNoHistoryRequired checks if the required fields are not zero-ed

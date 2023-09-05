@@ -54,6 +54,7 @@ type AllSchoolApiRouter interface {
 // The SchoolAdminApiRouter implementation should parse necessary information from the http request,
 // pass the data to a SchoolAdminApiServicer to perform the required actions, then write the service results to the http response.
 type SchoolAdminApiRouter interface { 
+	GetStudentCount(http.ResponseWriter, *http.Request)
 	SearchAdminTeacherClass(http.ResponseWriter, *http.Request)
 }
 // StaffApiRouter defines the required methods for binding the api requests to a responses for the StaffApi
@@ -87,7 +88,10 @@ type StudentApiRouter interface {
 	AuctionBid(http.ResponseWriter, *http.Request)
 	BuckConvert(http.ResponseWriter, *http.Request)
 	CryptoConvert(http.ResponseWriter, *http.Request)
+	LatestLotto(http.ResponseWriter, *http.Request)
+	LottoPurchase(http.ResponseWriter, *http.Request)
 	MarketItemBuy(http.ResponseWriter, *http.Request)
+	PreviousLotto(http.ResponseWriter, *http.Request)
 	SearchAuctionsStudent(http.ResponseWriter, *http.Request)
 	SearchBuck(http.ResponseWriter, *http.Request)
 	SearchBuckTransactions(http.ResponseWriter, *http.Request)
@@ -146,7 +150,7 @@ type AllApiServicer interface {
 	SearchStudentBucks(context.Context) (ImplResponse, error)
 	SearchStudents(context.Context) (ImplResponse, error)
 	SearchTeachers(context.Context) (ImplResponse, error)
-	UserEdit(context.Context, UsersUserBody) (ImplResponse, error)
+	UserEdit(context.Context, RequestUserEdit) (ImplResponse, error)
 }
 
 
@@ -167,6 +171,7 @@ type AllSchoolApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type SchoolAdminApiServicer interface { 
+	GetStudentCount(context.Context, string) (ImplResponse, error)
 	SearchAdminTeacherClass(context.Context, string) (ImplResponse, error)
 }
 
@@ -206,7 +211,10 @@ type StudentApiServicer interface {
 	AuctionBid(context.Context, RequestAuctionBid) (ImplResponse, error)
 	BuckConvert(context.Context, RequestBuckConvert) (ImplResponse, error)
 	CryptoConvert(context.Context, RequestCryptoConvert) (ImplResponse, error)
+	LatestLotto(context.Context) (ImplResponse, error)
+	LottoPurchase(context.Context, int32) (ImplResponse, error)
 	MarketItemBuy(context.Context, RequestMarketRefund) (ImplResponse, error)
+	PreviousLotto(context.Context) (ImplResponse, error)
 	SearchAuctionsStudent(context.Context) (ImplResponse, error)
 	SearchBuck(context.Context, string) (ImplResponse, error)
 	SearchBuckTransactions(context.Context) (ImplResponse, error)

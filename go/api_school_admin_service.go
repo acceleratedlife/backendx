@@ -27,6 +27,20 @@ func NewSchoolAdminApiService() SchoolAdminApiServicer {
 	return &SchoolAdminApiService{}
 }
 
+// GetStudentCount - gets student count for a school
+func (s *SchoolAdminApiService) GetStudentCount(ctx context.Context, schoolId string) (ImplResponse, error) {
+	// TODO - update GetStudentCount with the required logic for this service method.
+	// Add api_school_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []ResponseStudentCount{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseStudentCount{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("GetStudentCount method not implemented")
+}
+
 // SearchAdminTeacherClass - gets the teacher class of an admin and all the teacher that are its members
 func (s *SchoolAdminApiService) SearchAdminTeacherClass(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update SearchAdminTeacherClass with the required logic for this service method.

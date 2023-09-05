@@ -75,6 +75,30 @@ func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, Id
 
 }
 
+func (s *SchoolAdminServiceImpl) GetStudentCount(ctx context.Context, schoolId string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, nil), nil
+	}
+
+	if userDetails.Role != UserRoleAdmin {
+		return openapi.Response(401, ""), nil
+	}
+
+	count, err := getStudentCount(s.db, schoolId)
+	if err != nil {
+		lgr.Printf("ERROR cannot get student count for : %s %v", schoolId, err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	resp := openapi.ResponseStudentCount{
+		Count: count,
+	}
+
+	return openapi.Response(200, resp), nil
+}
+
 func NewSchoolAdminServiceImpl(db *bolt.DB) openapi.SchoolAdminApiServicer {
 	return &SchoolAdminServiceImpl{
 		db: db,

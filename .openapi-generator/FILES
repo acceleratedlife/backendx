@@ -41,6 +41,7 @@ go/model_inline_response_200_1_transaction.go
 go/model_inline_response_200_1_transaction_asset_id.go
 go/model_inline_response_200_2.go
 go/model_inline_response_404.go
+go/model_lottery.go
 go/model_request_add_class.go
 go/model_request_auction_action.go
 go/model_request_auction_bid.go
@@ -57,6 +58,7 @@ go/model_request_pay_transaction.go
 go/model_request_pay_transactions.go
 go/model_request_register.go
 go/model_request_user.go
+go/model_request_user_edit.go
 go/model_response_auction_student.go
 go/model_response_auction_student_owner_id.go
 go/model_response_auth2.go
@@ -71,6 +73,7 @@ go/model_response_events.go
 go/model_response_kick_class.go
 go/model_response_login2.go
 go/model_response_login4.go
+go/model_response_lotto_latest.go
 go/model_response_market_item.go
 go/model_response_member_class.go
 go/model_response_member_class_owner.go
@@ -80,6 +83,7 @@ go/model_response_register4.go
 go/model_response_reset_password.go
 go/model_response_schools.go
 go/model_response_search_student_ubuck.go
+go/model_response_student_count.go
 go/model_response_teachers.go
 go/model_response_transactions.go
 go/model_school.go
@@ -90,5 +94,4 @@ go/model_transaction.go
 go/model_user.go
 go/model_user_no_history.go
 go/model_user_no_history_job.go
-go/model_users_user_body.go
 go/routers.go

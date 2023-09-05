@@ -329,7 +329,7 @@ func TestMakeMarketItemImplBuyers1multi(t *testing.T) {
 
 	_, err = buyMarketItem(db, &clock, student0, teacher, id)
 	require.NotNil(t, err)
-	require.Equal(t, "Insufficient funds", err.Error())
+	require.Equal(t, "insufficient funds", err.Error())
 
 	_ = db.View(func(tx *bolt.Tx) error {
 		_, itemBucket, err := getMarketItemRx(tx, teacher, id)
@@ -570,5 +570,173 @@ func TestMarketItemDeleteTx(t *testing.T) {
 
 	_, _, err = getMarketItem(db, teacher, id)
 	require.Nil(t, err)
+
+}
+
+func TestInitializeLottery(t *testing.T) {
+
+	lgr.Printf("INFO TestInitializeLottery")
+	t.Log("INFO TestInitializeLottery")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("InitializeLottery")
+	defer dbTearDown()
+	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+
+	adminDetails, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	settings := openapi.Settings{
+		Lottery: true,
+		Odds:    10,
+	}
+
+	err = setSettings(db, &clock, adminDetails, settings)
+	require.Nil(t, err)
+
+	lottery, err := getLottoLatest(db, adminDetails)
+	require.Nil(t, err)
+
+	require.Equal(t, settings.Odds, lottery.Odds)
+	require.Equal(t, "", lottery.Winner)
+
+	settings2 := openapi.Settings{
+		Lottery: false,
+		Odds:    10,
+	}
+
+	err = setSettings(db, &clock, adminDetails, settings2)
+	require.Nil(t, err)
+
+	lottery, err = getLottoLatest(db, adminDetails)
+	require.Nil(t, err)
+
+	require.Equal(t, settings.Odds, lottery.Odds)
+	require.Equal(t, "", lottery.Winner)
+
+	settings3 := openapi.Settings{
+		Lottery: true,
+		Odds:    20,
+	}
+
+	err = setSettings(db, &clock, adminDetails, settings3)
+	require.Nil(t, err)
+
+	//newest settings have odds of 20 but that game is not over so you should still see an odds of 10 on the current game
+	lottery, err = getLottoLatest(db, adminDetails)
+	require.Nil(t, err)
+
+	require.Equal(t, settings.Odds, lottery.Odds)
+	require.Equal(t, "", lottery.Winner)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(800), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	//should have winner chosen and new lottery should be created
+	winner, err := purchaseLotto(db, &clock, student, 300)
+	require.Nil(t, err)
+	require.True(t, winner)
+
+	lottery, err = getLottoLatest(db, adminDetails)
+	require.Nil(t, err)
+
+	require.Equal(t, settings3.Odds, lottery.Odds)
+	require.Equal(t, "", lottery.Winner)
+
+}
+
+func TestLotteryProgression(t *testing.T) {
+
+	lgr.Printf("INFO TestLotteryProgression")
+	t.Log("INFO TestLotteryProgression")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("LotteryProgression")
+	defer dbTearDown()
+	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+
+	adminDetails, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	settings := openapi.Settings{
+		Lottery: true,
+		Odds:    10000,
+	}
+
+	err = setSettings(db, &clock, adminDetails, settings)
+	require.Nil(t, err)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	//should have winner chosen and new lottery should be created
+	winner, err := purchaseLotto(db, &clock, student, 10)
+	require.Nil(t, err)
+	require.False(t, winner)
+
+	lottery, err := getLottoLatest(db, adminDetails)
+	require.Nil(t, err)
+
+	mean, err := getMeanNetworth(db, student)
+	require.Nil(t, err)
+	jp := mean.IntPart() + 10
+
+	require.Equal(t, int32(jp), lottery.Jackpot)
+
+}
+
+func TestLotteryLastWinner(t *testing.T) {
+
+	lgr.Printf("INFO TestLotteryLastWinner")
+	t.Log("INFO TestLotteryLastWinner")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("LotteryLastWinner")
+	defer dbTearDown()
+	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+
+	adminDetails, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	settings := openapi.Settings{
+		Lottery: true,
+		Odds:    10,
+	}
+
+	err = setSettings(db, &clock, adminDetails, settings)
+	require.Nil(t, err)
+
+	err = initializeLottery(db, adminDetails, settings, &clock)
+	require.Nil(t, err)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	prevLotto, err := getLottoPrevious(db, student)
+	require.Nil(t, err)
+	require.Equal(t, "No Previous Lotto", prevLotto.Winner)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	_, _, err = getSchoolStudents(db, student)
+	require.Nil(t, err)
+
+	winner, err := purchaseLotto(db, &clock, student, 100)
+	require.Nil(t, err)
+	require.True(t, winner)
+
+	_, _, err = getSchoolStudents(db, student)
+	require.Nil(t, err)
+
+	prevLotto, err = getLottoPrevious(db, student)
+	require.Nil(t, err)
+	require.Equal(t, student.Email, prevLotto.Winner)
 
 }
