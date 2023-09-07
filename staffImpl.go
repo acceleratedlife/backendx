@@ -1237,6 +1237,10 @@ func initializeLotteryTx(tx *bolt.Tx, userDetails UserInfo, settings openapi.Set
 			return err
 		}
 
+		if mean.LessThan(decimal.NewFromInt32(100)) {
+			mean = decimal.NewFromInt32(100)
+		}
+
 		if settings.Odds == 0 {
 			count, err := getStudentCountRx(tx, userDetails.SchoolId)
 			if err != nil {
