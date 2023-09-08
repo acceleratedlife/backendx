@@ -899,7 +899,10 @@ func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo, words int) (resp openapi
 	if user == nil {
 		return resp, fmt.Errorf("user does not exist")
 	}
-	password := randomPassword(words)
+
+	_, pwds := constSlice()
+	password := randomWords(1, 10, pwds)
+
 	resp.Password = password
 	userDetails.PasswordSha = EncodePassword(password)
 
@@ -916,14 +919,115 @@ func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo, words int) (resp openapi
 	return
 }
 
-func randomPassword(words int) (pass string) {
+func freeAddCode(db *bolt.DB, code string) (free bool, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		free, err = freeAddCodeRx(tx, code)
+		return nil
+	})
+
+	return
+}
+
+func freeAddCodeRx(tx *bolt.Tx, code string) (free bool, err error) {
+	free = true
+	schools := tx.Bucket([]byte(KeySchools))
+	if schools == nil {
+		return free, fmt.Errorf("schools not found")
+	}
+
+	c := schools.Cursor()
+
+	for currentSchoolId, v := c.First(); currentSchoolId != nil; currentSchoolId, v = c.Next() {
+		if v != nil {
+			continue
+		}
+
+		school := schools.Bucket(currentSchoolId)
+		if school == nil {
+			lgr.Printf("ERROR school %s not found. bucket is nil", string(currentSchoolId))
+			continue
+		}
+
+		addCodeTx := school.Get([]byte(KeyAddCode))
+		if addCodeTx != nil && string(addCodeTx) == code {
+			return false, nil
+		}
+
+		schoolClasses := school.Bucket([]byte(KeyClasses))
+		if schoolClasses != nil {
+			c := schoolClasses.Cursor()
+			for currentClassId, v := c.First(); currentClassId != nil; currentClassId, v = c.Next() {
+				if v != nil {
+					continue
+				}
+				class := schoolClasses.Bucket(currentClassId)
+				if class == nil {
+					return free, fmt.Errorf("class not found")
+				}
+				addCodeTx := class.Get([]byte(KeyAddCode))
+
+				if addCodeTx != nil && string(addCodeTx) == code {
+					return false, nil
+				}
+			}
+		}
+
+		teachers := school.Bucket([]byte(KeyTeachers))
+		if teachers == nil {
+			continue
+		}
+
+		err = teachers.ForEach(func(teacherId, v []byte) error {
+			if v != nil {
+				return nil
+			}
+			teacher := teachers.Bucket(teacherId)
+			if teacher == nil {
+				return nil
+			}
+			classesBucket := teacher.Bucket([]byte(KeyClasses))
+			if classesBucket == nil {
+				return nil
+			}
+
+			err = classesBucket.ForEach(func(currentClassId, v []byte) error {
+				if v != nil {
+					return nil
+				}
+				class := classesBucket.Bucket(currentClassId)
+				if class == nil {
+					return nil
+				}
+				addCodeTx := class.Get([]byte(KeyAddCode))
+
+				if addCodeTx != nil && string(addCodeTx) == code {
+					free = false
+					return nil
+				}
+				return nil
+			})
+
+			return nil
+		})
+
+	}
+
+	return free, err
+}
+
+func constSlice() (addCodes, passwords [100]string) {
+	passwords = [100]string{"apple", "about", "after", "again", "being", "beach", "bread", "bring", "catch", "child", "clean", "clear", "drink", "dream", "drive", "dance", "every", "extra", "early", "enter", "final", "first", "floor", "follow", "great", "green", "group", "grown", "happy", "heart", "house", "heavy", "ideas", "image", "inside", "issue", "jumbo", "joins", "juice", "jumper", "kinds", "kings", "kneel", "knife", "large", "learn", "least", "leave", "music", "model", "money", "month", "night", "north", "noted", "nurse", "offer", "often", "order", "other", "peace", "party", "place", "plant", "quick", "quiet", "queue", "quote", "right", "reach", "ready", "round", "sound", "south", "small", "spend", "table", "teach", "taste", "today", "under", "until", "upset", "using", "value", "virus", "visit", "voice", "water", "watch", "wheel", "while", "xerox", "x-ray", "young", "years", "yells", "yolks", "zebra", "zoned"}
+	addCodes = [100]string{"age", "air", "art", "act", "bat", "bag", "big", "bus", "bed", "cat", "cup", "dog", "day", "eye", "ear", "egg", "fan", "fox", "fit", "fun", "gap", "gun", "hat", "hot", "ink", "ice", "joy", "key", "kid", "leg", "log", "map", "man", "mud", "net", "new", "pen", "pig", "pat", "pot", "red", "run", "rat", "sky", "sun", "tag", "top", "toy", "van", "web", "win", "zip", "axe", "bee", "box", "car", "cry", "cow", "cue", "dot", "dry", "due", "eve", "fly", "fur", "gem", "gas", "gym", "hen", "jam", "job", "law", "lip", "lot", "low", "mix", "nap", "nut", "oak", "owl", "pop", "pie", "pod", "rug", "sad", "tax", "tea", "tie", "wet", "yak", "yes", "zen"}
+	return addCodes, passwords
+}
+
+func randomWords(words, nums int, pwds [100]string) (pass string) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	pwds := [100]string{"apple", "about", "after", "again", "being", "beach", "bread", "bring", "catch", "child", "clean", "clear", "drink", "dream", "drive", "dance", "every", "extra", "early", "enter", "final", "first", "floor", "follow", "great", "green", "group", "grown", "happy", "heart", "house", "heavy", "ideas", "image", "inside", "issue", "jumbo", "joins", "juice", "jumper", "kinds", "kings", "kneel", "knife", "large", "learn", "least", "leave", "music", "model", "money", "month", "night", "north", "noted", "nurse", "offer", "often", "order", "other", "peace", "party", "place", "plant", "quick", "quiet", "queue", "quote", "right", "reach", "ready", "round", "sound", "south", "small", "spend", "table", "teach", "taste", "today", "under", "until", "upset", "using", "value", "virus", "visit", "voice", "water", "watch", "wheel", "while", "xerox", "x-ray", "young", "years", "yells", "yolks", "zebra", "zoned"}
 	for i := 0; i < words; i++ {
 		if i == 0 {
-			pass = pwds[r.Intn(len(pwds))] + strconv.Itoa(r.Intn(10))
+			pass = pwds[r.Intn(len(pwds))] + strconv.Itoa(r.Intn(nums))
 		} else {
-			pass = pass + "-" + pwds[r.Intn(len(pwds))] + strconv.Itoa(r.Intn(10))
+			pass = pass + "-" + pwds[r.Intn(len(pwds))] + strconv.Itoa(r.Intn(nums))
 		}
 	}
 
