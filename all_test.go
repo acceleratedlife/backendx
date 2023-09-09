@@ -271,7 +271,7 @@ func TestUserEditNegative(t *testing.T) {
 	err = decoder.Decode(&v)
 	require.Nil(t, err)
 
-	regex, err := regexp.Compile(string(body.LastName[0]) + "[0-9]{4}")
+	regex, err := regexp.Compile(string(body.LastName[0]) + "\\d{1,4}$")
 	require.Nil(t, err)
 
 	assert.Equal(t, body.FirstName, v.FirstName)
