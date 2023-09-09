@@ -2191,6 +2191,7 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		for i := 0; i < int(tickets); i++ {
 			play := r.Intn(int(lottery.Odds))
+			lgr.Printf("win: " + strconv.Itoa(int(lottery.Number)) + " play: " + strconv.Itoa(play))
 			if play == int(lottery.Number) {
 
 				err = updateLottoLatestTx(tx, studentDetails, tickets, studentDetails.Email)

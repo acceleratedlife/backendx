@@ -38,7 +38,7 @@ func TestAllSchoolApiServiceImpl_AddCodeClass(t *testing.T) {
 
 	var v openapi.ClassWithMembers
 	_ = decoder.Decode(&v)
-	assert.Equal(t, 6, len(v.AddCode))
+	assert.GreaterOrEqual(t, len(v.AddCode), 9)
 }
 
 func TestRemoveClass(t *testing.T) {

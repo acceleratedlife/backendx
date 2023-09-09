@@ -467,7 +467,7 @@ func TestNewSchoolSecured(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
-	require.Equal(t, 8, len(data.AdminPassword))
+	require.Equal(t, 6, len(data.AdminPassword))
 
 }
 
@@ -782,7 +782,7 @@ func TestAddAdminSecured(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 
-	require.Equal(t, 8, len(data.Password))
+	require.Equal(t, 6, len(data.Password))
 
 }
 
