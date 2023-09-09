@@ -49,7 +49,7 @@ func TestMakeClass(t *testing.T) {
 	_ = decoder.Decode(&respData)
 
 	assert.Equal(t, 3, len(respData))
-	assert.Equal(t, 6, len(respData[0].AddCode))
+	assert.GreaterOrEqual(t, len(respData[0].AddCode), 9)
 
 }
 

@@ -212,7 +212,7 @@ func TestAddStudent(t *testing.T) {
 		Period:  0,
 	})
 
-	assert.Equal(t, 6, len(classes[0].AddCode))
+	assert.GreaterOrEqual(t, len(classes[0].AddCode), 9)
 
 	regResponse, err = s.Register(nil, openapi.RequestRegister{
 		Email:     "@student",

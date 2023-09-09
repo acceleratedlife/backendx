@@ -78,9 +78,10 @@ func newSchoolHandler(db *bolt.DB, clock Clock) http.Handler {
 
 		/////////////////////////////
 		// custom logic to create a new school
-
+		_, passwords := constSlice()
+		password := randomWords(1, 10, passwords)
 		response := NewSchoolResponse{
-			AdminPassword: RandomString(8),
+			AdminPassword: password,
 		}
 		err = createNewSchool(db, clock, request, response.AdminPassword)
 		if err != nil {
@@ -284,9 +285,11 @@ func addAdminHandler(db *bolt.DB) http.Handler {
 			return
 		}
 
+		_, passwords := constSlice()
+		password := randomWords(1, 10, passwords)
+
 		request.Role = UserRoleAdmin
 		request.Name = request.Email
-		password := RandomString(8)
 		request.PasswordSha = EncodePassword(password)
 
 		_, err = CreateSchoolAdmin(db, request)

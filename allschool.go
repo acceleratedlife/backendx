@@ -32,21 +32,21 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 	}
 
 	addCodes, _ := constSlice()
-	password := randomWords(2, 100, addCodes)
-	free, err := freeAddCode(a.db, password)
+	addCode := randomWords(2, 100, addCodes)
+	free, err := freeAddCode(a.db, addCode)
 	if err != nil {
 		return openapi.Response(403, nil), err
 	}
 	for !free {
-		password = randomWords(2, 100, addCodes)
-		free, err = freeAddCode(a.db, password)
+		addCode = randomWords(2, 100, addCodes)
+		free, err = freeAddCode(a.db, addCode)
 		if err != nil {
 			return openapi.Response(403, nil), err
 		}
 	}
 
 	if userDetails.Role == UserRoleTeacher {
-		newCode := password
+		newCode := addCode
 
 		class := openapi.ClassWithMembers{
 			Id:      userDetails.SchoolId,
@@ -83,7 +83,7 @@ func (a *AllSchoolApiServiceImpl) AddCodeClass(ctx context.Context, body openapi
 	}
 
 	if userDetails.Role == UserRoleAdmin {
-		newCode := password
+		newCode := addCode
 
 		class := openapi.ClassWithMembers{
 			Id:      userDetails.SchoolId,

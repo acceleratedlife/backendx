@@ -60,7 +60,21 @@ func FindOrCreateSchool(db *bolt.DB, clock Clock, name string, city string, zip 
 			return err
 		}
 
-		err = school.Put([]byte(KeyAddCode), []byte(RandomString(6)))
+		addCodes, _ := constSlice()
+		addCode := randomWords(2, 100, addCodes)
+		free, err := freeAddCodeRx(tx, addCode)
+		if err != nil {
+			return err
+		}
+		for !free {
+			addCode = randomWords(2, 100, addCodes)
+			free, err = freeAddCodeRx(tx, addCode)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = school.Put([]byte(KeyAddCode), []byte(addCode))
 		if err != nil {
 			return err
 		}
@@ -109,7 +123,7 @@ func FindOrCreateSchool(db *bolt.DB, clock Clock, name string, city string, zip 
 		}
 
 		for _, c := range def {
-			_, err = addClassDetailsTx(classes, clock, c.name, c.period, true)
+			_, err = addClassDetailsTx(tx, classes, clock, c.name, c.period, true)
 			if err != nil {
 				return err
 			}

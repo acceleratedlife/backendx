@@ -566,7 +566,7 @@ func CreateClass(db *bolt.DB, clock Clock, schoolId, teacherId, className string
 			return fmt.Errorf("problem finding classesBucket")
 		}
 
-		classId, err = addClassDetailsTx(classesBucket, clock, className, period, false)
+		classId, err = addClassDetailsTx(tx, classesBucket, clock, className, period, false)
 		if err != nil {
 			return err
 		}
@@ -650,7 +650,7 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 	return
 }
 
-func addClassDetailsTx(bucket *bolt.Bucket, clock Clock, className string, period int, adminClass bool) (classId string, err error) {
+func addClassDetailsTx(tx *bolt.Tx, bucket *bolt.Bucket, clock Clock, className string, period int, adminClass bool) (classId string, err error) {
 	if adminClass {
 		classId = className
 	} else {
@@ -669,7 +669,21 @@ func addClassDetailsTx(bucket *bolt.Bucket, clock Clock, className string, perio
 	if err != nil {
 		return "", err
 	}
-	addCode := RandomString(6)
+
+	addCodes, _ := constSlice()
+	addCode := randomWords(2, 100, addCodes)
+	free, err := freeAddCodeRx(tx, addCode)
+	if err != nil {
+		return
+	}
+	for !free {
+		addCode = randomWords(2, 100, addCodes)
+		free, err = freeAddCodeRx(tx, addCode)
+		if err != nil {
+			return
+		}
+	}
+
 	err = class.Put([]byte(KeyAddCode), []byte(addCode))
 	if err != nil {
 		return "", err
@@ -1017,17 +1031,17 @@ func freeAddCodeRx(tx *bolt.Tx, code string) (free bool, err error) {
 
 func constSlice() (addCodes, passwords [100]string) {
 	passwords = [100]string{"apple", "about", "after", "again", "being", "beach", "bread", "bring", "catch", "child", "clean", "clear", "drink", "dream", "drive", "dance", "every", "extra", "early", "enter", "final", "first", "floor", "follow", "great", "green", "group", "grown", "happy", "heart", "house", "heavy", "ideas", "image", "inside", "issue", "jumbo", "joins", "juice", "jumper", "kinds", "kings", "kneel", "knife", "large", "learn", "least", "leave", "music", "model", "money", "month", "night", "north", "noted", "nurse", "offer", "often", "order", "other", "peace", "party", "place", "plant", "quick", "quiet", "queue", "quote", "right", "reach", "ready", "round", "sound", "south", "small", "spend", "table", "teach", "taste", "today", "under", "until", "upset", "using", "value", "virus", "visit", "voice", "water", "watch", "wheel", "while", "xerox", "x-ray", "young", "years", "yells", "yolks", "zebra", "zoned"}
-	addCodes = [100]string{"age", "air", "art", "act", "bat", "bag", "big", "bus", "bed", "cat", "cup", "dog", "day", "eye", "ear", "egg", "fan", "fox", "fit", "fun", "gap", "gun", "hat", "hot", "ink", "ice", "joy", "key", "kid", "leg", "log", "map", "man", "mud", "net", "new", "pen", "pig", "pat", "pot", "red", "run", "rat", "sky", "sun", "tag", "top", "toy", "van", "web", "win", "zip", "axe", "bee", "box", "car", "cry", "cow", "cue", "dot", "dry", "due", "eve", "fly", "fur", "gem", "gas", "gym", "hen", "jam", "job", "law", "lip", "lot", "low", "mix", "nap", "nut", "oak", "owl", "pop", "pie", "pod", "rug", "sad", "tax", "tea", "tie", "wet", "yak", "yes", "zen"}
+	addCodes = [100]string{"ace", "act", "add", "age", "aid", "air", "ale", "all", "amp", "and", "ant", "any", "ape", "apt", "arc", "ark", "arm", "art", "ash", "ask", "axe", "bad", "bag", "bat", "bee", "big", "bin", "bit", "boa", "box", "boy", "bug", "bus", "buy", "bye", "can", "cap", "car", "cat", "cow", "cry", "cup", "cut", "day", "den", "dip", "dog", "dot", "dry", "dug", "ear", "eat", "eel", "egg", "elm", "end", "eye", "far", "fat", "fix", "fly", "fog", "for", "fox", "fun", "fur", "gas", "gem", "get", "gin", "got", "gum", "gun", "hat", "hot", "ink", "jam", "jar", "jaw", "jet", "joy", "key", "kid", "kit", "law", "leg", "let", "lid", "lip", "log", "lot", "man", "mat", "mud", "nap", "net", "new", "nit", "oak", "zap"}
 	return addCodes, passwords
 }
 
-func randomWords(words, nums int, pwds [100]string) (pass string) {
+func randomWords(words, nums int, stringSlice [100]string) (pass string) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < words; i++ {
 		if i == 0 {
-			pass = pwds[r.Intn(len(pwds))] + strconv.Itoa(r.Intn(nums))
+			pass = stringSlice[r.Intn(len(stringSlice))] + strconv.Itoa(r.Intn(nums))
 		} else {
-			pass = pass + "-" + pwds[r.Intn(len(pwds))] + strconv.Itoa(r.Intn(nums))
+			pass = pass + "-" + stringSlice[r.Intn(len(stringSlice))] + strconv.Itoa(r.Intn(nums))
 		}
 	}
 
