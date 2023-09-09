@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 	"testing"
 	"time"
 
@@ -734,5 +735,41 @@ func TestPurchaseLottoOff(t *testing.T) {
 
 	winner, err = purchaseLotto(db, &clock, student, 60)
 	require.Nil(t, err)
+	require.True(t, winner)
+}
+
+func TestPurchaseLottoSingle(t *testing.T) {
+
+	lgr.Printf("INFO TestPurchaseLottoSingle")
+	t.Log("INFO TestPurchaseLottoSingle")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("purchaseLottoSingle")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	var settings = openapi.Settings{
+		Lottery: true,
+		Odds:    30,
+	}
+
+	err = setSettings(db, &clock, student, settings)
+	require.Nil(t, err)
+
+	winner, err := purchaseLotto(db, &clock, student, 1)
+	require.Nil(t, err)
+	count := 0
+
+	for !winner {
+		winner, err = purchaseLotto(db, &clock, student, 1)
+		require.Nil(t, err)
+		count++
+		lgr.Printf(strconv.Itoa(count))
+	}
+
 	require.True(t, winner)
 }

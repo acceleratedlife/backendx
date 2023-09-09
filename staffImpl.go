@@ -566,7 +566,7 @@ func CreateClass(db *bolt.DB, clock Clock, schoolId, teacherId, className string
 			return fmt.Errorf("problem finding classesBucket")
 		}
 
-		classId, err = addClassDetailsTx(classesBucket, clock, className, period, false)
+		classId, err = addClassDetailsTx(tx, classesBucket, clock, className, period, false)
 		if err != nil {
 			return err
 		}
@@ -650,7 +650,7 @@ func addAuctionDetailsTx(bucket *bolt.Bucket, request openapi.RequestMakeAuction
 	return
 }
 
-func addClassDetailsTx(bucket *bolt.Bucket, clock Clock, className string, period int, adminClass bool) (classId string, err error) {
+func addClassDetailsTx(tx *bolt.Tx, bucket *bolt.Bucket, clock Clock, className string, period int, adminClass bool) (classId string, err error) {
 	if adminClass {
 		classId = className
 	} else {
@@ -669,7 +669,21 @@ func addClassDetailsTx(bucket *bolt.Bucket, clock Clock, className string, perio
 	if err != nil {
 		return "", err
 	}
-	addCode := RandomString(6)
+
+	addCodes, _ := constSlice()
+	addCode := randomWords(2, 100, addCodes)
+	free, err := freeAddCodeRx(tx, addCode)
+	if err != nil {
+		return
+	}
+	for !free {
+		addCode = randomWords(2, 100, addCodes)
+		free, err = freeAddCodeRx(tx, addCode)
+		if err != nil {
+			return
+		}
+	}
+
 	err = class.Put([]byte(KeyAddCode), []byte(addCode))
 	if err != nil {
 		return "", err
@@ -899,7 +913,10 @@ func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo, words int) (resp openapi
 	if user == nil {
 		return resp, fmt.Errorf("user does not exist")
 	}
-	password := randomPassword(words)
+
+	_, pwds := constSlice()
+	password := randomWords(1, 10, pwds)
+
 	resp.Password = password
 	userDetails.PasswordSha = EncodePassword(password)
 
@@ -916,14 +933,115 @@ func resetPasswordTx(tx *bolt.Tx, userDetails UserInfo, words int) (resp openapi
 	return
 }
 
-func randomPassword(words int) (pass string) {
+func freeAddCode(db *bolt.DB, code string) (free bool, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		free, err = freeAddCodeRx(tx, code)
+		return nil
+	})
+
+	return
+}
+
+func freeAddCodeRx(tx *bolt.Tx, code string) (free bool, err error) {
+	free = true
+	schools := tx.Bucket([]byte(KeySchools))
+	if schools == nil {
+		return free, fmt.Errorf("schools not found")
+	}
+
+	c := schools.Cursor()
+
+	for currentSchoolId, v := c.First(); currentSchoolId != nil; currentSchoolId, v = c.Next() {
+		if v != nil {
+			continue
+		}
+
+		school := schools.Bucket(currentSchoolId)
+		if school == nil {
+			lgr.Printf("ERROR school %s not found. bucket is nil", string(currentSchoolId))
+			continue
+		}
+
+		addCodeTx := school.Get([]byte(KeyAddCode))
+		if addCodeTx != nil && string(addCodeTx) == code {
+			return false, nil
+		}
+
+		schoolClasses := school.Bucket([]byte(KeyClasses))
+		if schoolClasses != nil {
+			c := schoolClasses.Cursor()
+			for currentClassId, v := c.First(); currentClassId != nil; currentClassId, v = c.Next() {
+				if v != nil {
+					continue
+				}
+				class := schoolClasses.Bucket(currentClassId)
+				if class == nil {
+					return free, fmt.Errorf("class not found")
+				}
+				addCodeTx := class.Get([]byte(KeyAddCode))
+
+				if addCodeTx != nil && string(addCodeTx) == code {
+					return false, nil
+				}
+			}
+		}
+
+		teachers := school.Bucket([]byte(KeyTeachers))
+		if teachers == nil {
+			continue
+		}
+
+		err = teachers.ForEach(func(teacherId, v []byte) error {
+			if v != nil {
+				return nil
+			}
+			teacher := teachers.Bucket(teacherId)
+			if teacher == nil {
+				return nil
+			}
+			classesBucket := teacher.Bucket([]byte(KeyClasses))
+			if classesBucket == nil {
+				return nil
+			}
+
+			err = classesBucket.ForEach(func(currentClassId, v []byte) error {
+				if v != nil {
+					return nil
+				}
+				class := classesBucket.Bucket(currentClassId)
+				if class == nil {
+					return nil
+				}
+				addCodeTx := class.Get([]byte(KeyAddCode))
+
+				if addCodeTx != nil && string(addCodeTx) == code {
+					free = false
+					return nil
+				}
+				return nil
+			})
+
+			return nil
+		})
+
+	}
+
+	return free, err
+}
+
+func constSlice() (addCodes, passwords [100]string) {
+	passwords = [100]string{"apple", "about", "after", "again", "being", "beach", "bread", "bring", "catch", "child", "clean", "clear", "drink", "dream", "drive", "dance", "every", "extra", "early", "enter", "final", "first", "floor", "follow", "great", "green", "group", "grown", "happy", "heart", "house", "heavy", "ideas", "image", "inside", "issue", "jumbo", "joins", "juice", "jumper", "kinds", "kings", "kneel", "knife", "large", "learn", "least", "leave", "music", "model", "money", "month", "night", "north", "noted", "nurse", "offer", "often", "order", "other", "peace", "party", "place", "plant", "quick", "quiet", "queue", "quote", "right", "reach", "ready", "round", "sound", "south", "small", "spend", "table", "teach", "taste", "today", "under", "until", "upset", "using", "value", "virus", "visit", "voice", "water", "watch", "wheel", "while", "xerox", "x-ray", "young", "years", "yells", "yolks", "zebra", "zoned"}
+	addCodes = [100]string{"ace", "act", "add", "age", "aid", "air", "ale", "all", "amp", "and", "ant", "any", "ape", "apt", "arc", "ark", "arm", "art", "ash", "ask", "axe", "bad", "bag", "bat", "bee", "big", "bin", "bit", "boa", "box", "boy", "bug", "bus", "buy", "bye", "can", "cap", "car", "cat", "cow", "cry", "cup", "cut", "day", "den", "dip", "dog", "dot", "dry", "dug", "ear", "eat", "eel", "egg", "elm", "end", "eye", "far", "fat", "fix", "fly", "fog", "for", "fox", "fun", "fur", "gas", "gem", "get", "gin", "got", "gum", "gun", "hat", "hot", "ink", "jam", "jar", "jaw", "jet", "joy", "key", "kid", "kit", "law", "leg", "let", "lid", "lip", "log", "lot", "man", "mat", "mud", "nap", "net", "new", "nit", "oak", "zap"}
+	return addCodes, passwords
+}
+
+func randomWords(words, nums int, stringSlice [100]string) (pass string) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	pwds := [100]string{"apple", "about", "after", "again", "being", "beach", "bread", "bring", "catch", "child", "clean", "clear", "drink", "dream", "drive", "dance", "every", "extra", "early", "enter", "final", "first", "floor", "follow", "great", "green", "group", "grown", "happy", "heart", "house", "heavy", "ideas", "image", "inside", "issue", "jumbo", "joins", "juice", "jumper", "kinds", "kings", "kneel", "knife", "large", "learn", "least", "leave", "music", "model", "money", "month", "night", "north", "noted", "nurse", "offer", "often", "order", "other", "peace", "party", "place", "plant", "quick", "quiet", "queue", "quote", "right", "reach", "ready", "round", "sound", "south", "small", "spend", "table", "teach", "taste", "today", "under", "until", "upset", "using", "value", "virus", "visit", "voice", "water", "watch", "wheel", "while", "xerox", "x-ray", "young", "years", "yells", "yolks", "zebra", "zoned"}
 	for i := 0; i < words; i++ {
 		if i == 0 {
-			pass = pwds[r.Intn(len(pwds))] + strconv.Itoa(r.Intn(10))
+			pass = stringSlice[r.Intn(len(stringSlice))] + strconv.Itoa(r.Intn(nums))
 		} else {
-			pass = pass + "-" + pwds[r.Intn(len(pwds))] + strconv.Itoa(r.Intn(10))
+			pass = pass + "-" + stringSlice[r.Intn(len(stringSlice))] + strconv.Itoa(r.Intn(nums))
 		}
 	}
 
