@@ -1689,13 +1689,13 @@ func getLottoPrevious(db *bolt.DB, userDetails UserInfo) (prevLottery openapi.Lo
 		c := lotteriesBucket.Cursor()
 		k, _ := c.Last()
 		if k == nil {
-			prevLottery.Winner = "No Current Lotto"
+			prevLottery.Winner = "No Current Raffle"
 			return err
 		}
 
 		k, _ = c.Prev()
 		if k == nil {
-			prevLottery.Winner = "No Previous Lotto"
+			prevLottery.Winner = "No Previous Raffle"
 			return err
 		}
 
