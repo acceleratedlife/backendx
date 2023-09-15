@@ -720,7 +720,7 @@ func TestLotteryLastWinner(t *testing.T) {
 
 	prevLotto, err := getLottoPrevious(db, student)
 	require.Nil(t, err)
-	require.Equal(t, "No Previous Lotto", prevLotto.Winner)
+	require.Equal(t, "No Previous Raffle", prevLotto.Winner)
 
 	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)

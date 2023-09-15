@@ -278,7 +278,7 @@ func TestPreviousLotto(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&v)
 	require.Nil(t, err)
-	require.Equal(t, "No Previous Lotto", v.Winner)
+	require.Equal(t, "No Previous Raffle", v.Winner)
 
 	winner, err := purchaseLotto(db, &clock, userDetails, 20)
 	require.Nil(t, err)
