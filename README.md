@@ -20,9 +20,9 @@ go tool cover -html cover.out
         - addCode
         "cb"
             "accounts"     
-                [account-id]  (ubuck/teacher-id)
+                [account-id]  (ubuck/teacher-id/crypto)
                     -MMA: decimal // valid  MMAs
-                    "value"  // history of value. Value is how much uBuck you can buy for 1 buck - more number means more valuable currency
+                    -value: decimal  // history of value. Value is how much uBuck you can buy for 1 buck - more number means more valuable currency
                        "date": decimal  
                     -name
                     "transactions"
@@ -31,6 +31,20 @@ go tool cover -html cover.out
                             -account-id
                             -xrate
                             -amount
+                "CertificateOfDeposit"
+                    [cd-id]
+                        -principal investmant
+                        -mature date
+                        -current value
+                        -refund value
+                    "transactions"
+                        [transaction-id]
+                        -dateTime
+                        -account-id
+                        -xrate
+                        -amount
+
+                        
         "auctions"
             [auction-id]
                 - bid

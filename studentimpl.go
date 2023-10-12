@@ -261,6 +261,24 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	return
 }
 
+func addToCDHolderTx(holder *bolt.Bucket, transaction Transaction) (errR error) {
+	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
+	if err != nil {
+		errR = err
+		return
+	}
+
+	CDBucket, err := accounts.CreateBucketIfNotExists([]byte(KeyCertificateOfDeposit))
+	if err != nil {
+		errR = err
+		return
+	}
+
+	// need to use openapi.ResponseCD as the shape for the cds and have the key be the time
+	// need to create a KeyTransactions bucket and marshal and put the transaction into the bucket with the time as the key
+	return
+}
+
 func StudentNetWorth(db *bolt.DB, userName string) (res decimal.Decimal) {
 	_ = db.View(func(tx *bolt.Tx) error {
 		res = StudentNetWorthTx(tx, userName)
@@ -1745,6 +1763,9 @@ func getStudentCryptoRx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp 
 func getCryptoForStudentRequest(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.ResponseCrypto, err error) {
 	crypto = strings.ToLower(crypto)
 	usd, err := getOrUpdateCrypto(db, crypto)
+	if err != nil {
+		return
+	}
 
 	ubuck, err := getStudentUbuck(db, userDetails)
 	if err != nil {
@@ -1768,7 +1789,6 @@ func getCryptoForStudentRequest(db *bolt.DB, userDetails UserInfo, crypto string
 }
 
 func getOrUpdateCrypto(db *bolt.DB, crypto string) (usd float32, err error) {
-	// crypto = strings.ToLower(crypto)
 	needToAdd := false
 	var cryptoInfoOut openapi.CryptoCb
 	err = db.View(func(tx *bolt.Tx) error {
@@ -2248,4 +2268,71 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 
 	return
 
+}
+
+func buyCD(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestBuyCd) (err error) {
+	return db.Update(func(tx *bolt.Tx) error {
+		return buyCDTx(tx, clock, userDetails, body)
+	})
+
+}
+
+func buyCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, body openapi.RequestBuyCd) (err error) {
+
+	prinInv := decimal.NewFromInt32(body.PrinInv)
+
+	if prinInv.Sign() <= 0 {
+		return fmt.Errorf("amount must be positive")
+	}
+
+	ts := clock.Now().Truncate(time.Millisecond)
+	mature := ts.Add(time.Hour * 24 * time.Duration(body.Time))
+
+	transaction := Transaction{
+		Ts:             ts,
+		Source:         userInfo.Email,
+		Destination:    userInfo.Email,
+		CurrencySource: CurrencyUBuck,
+		CurrencyDest:   KeyCertificateOfDeposit,
+		AmountSource:   prinInv,
+		AmountDest:     prinInv,
+		XRate:          decimal.NewFromInt32(1),
+		Reference:      "Ubuck to " + string(body.Time) + " day CD",
+		FromSource:     true,
+	}
+
+	student, err := getStudentBucketTx(tx, userInfo.Name)
+	if err != nil {
+		return err
+	}
+	_, _, err = addToHolderTx(student, CurrencyUBuck, transaction, OperationDebit, true)
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = false
+
+	err = addToCDHolderTx(student, transaction)
+	if err != nil {
+		return err
+	}
+
+	cb, err := getCbTx(tx, userInfo.SchoolId)
+	if err != nil {
+		return err
+	}
+
+	err = addToCDHolderTx(cb, transaction)
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = true
+
+	_, _, err = addToHolderTx(cb, CurrencyUBuck, transaction, OperationDebit, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

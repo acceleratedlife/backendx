@@ -18,7 +18,7 @@ import (
 
 // AllApiController binds http requests to an api service and writes the service results to the http response
 type AllApiController struct {
-	service      AllApiServicer
+	service AllApiServicer
 	errorHandler ErrorHandler
 }
 
@@ -48,7 +48,7 @@ func NewAllApiController(s AllApiServicer, opts ...AllApiOption) Router {
 
 // Routes returns all of the api route for the AllApiController
 func (c *AllApiController) Routes() Routes {
-	return Routes{
+	return Routes{ 
 		{
 			"AuthUser",
 			strings.ToUpper("Get"),

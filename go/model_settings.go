@@ -11,11 +11,12 @@
 package openapi
 
 type Settings struct {
-	Student2student bool `json:"student2student"`
+
+	Student2student bool `json:"student2student,omitempty"`
 
 	CurrencyLock bool `json:"CurrencyLock,omitempty"`
 
-	Lottery bool `json:"lottery"`
+	Lottery bool `json:"lottery,omitempty"`
 
 	Odds int32 `json:"odds,omitempty"`
 }

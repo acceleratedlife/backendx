@@ -18,6 +18,102 @@ type StudentApiServiceImpl struct {
 	clock Clock
 }
 
+func (a *StudentApiServiceImpl) BuyCD(ctx context.Context, CD_details openapi.RequestBuyCd) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = buyCD(a.db, a.clock, userDetails, CD_Details)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
+
+}
+
+func (a *StudentApiServiceImpl) RefundCD(ctx context.Context, CD_id openapi.RequestUser) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	// resp, err := getStudentBuck(a.db, userDetails, CD_Details)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
+
+}
+
+func (a *StudentApiServiceImpl) SearchCDS(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	// resp, err := getStudentBuck(a.db, userDetails, CD_Details)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
+
+}
+
+func (a *StudentApiServiceImpl) SearchCDTransactions(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleStudent {
+		return openapi.Response(401, ""), nil
+	}
+
+	// resp, err := getStudentBuck(a.db, userDetails, CD_Details)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
+
+}
+
 func (a *StudentApiServiceImpl) SearchBuck(ctx context.Context, teacherId string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
@@ -419,8 +515,6 @@ func (a *StudentApiServiceImpl) SearchStudentUbuck(ctx context.Context) (openapi
 	return openapi.Response(200, ubucks), nil
 
 }
-
-//StudentAddClass(context.Context, RequestAddClass) (ImplResponse, error)
 
 func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openapi.RequestAddClass) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)

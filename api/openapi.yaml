@@ -336,6 +336,24 @@ paths:
         the user has.
       tags:
       - Student
+  /accounts/CDS:
+    get:
+      description: returns active certificate of deposit portfolio
+      operationId: searchCDS
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseCD'
+                type: array
+          description: active certificate of deposit portfolio
+        "404":
+          description: No active CDS found
+      summary: returns active certificate of deposit portfolio
+      tags:
+      - Student
   /accounts/all:
     get:
       description: users user._id to find all buck accounts for that user. Need to
@@ -1235,6 +1253,24 @@ paths:
       summary: searches for buck transactions
       tags:
       - Student
+  /transactions/CDTransactions:
+    get:
+      description: search last 25 transactions from user and sort by date
+      operationId: searchCDTransactions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseCDTransaction'
+                type: array
+          description: transaction matching criteria
+        "400":
+          description: No transaction found with that data
+      summary: searches for CD transactions
+      tags:
+      - Student
   /transactions/cryptoTransactions:
     get:
       description: query account kind by Crypto and owner by _id. Then query transaction
@@ -1320,6 +1356,40 @@ paths:
         "404":
           description: transactions cannot be made with that data
       summary: When a student is converting between 2 bucks
+      tags:
+      - Student
+  /transactions/CDTransaction:
+    post:
+      description: create transaction for CB and student. create account for student
+      operationId: buyCD
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestBuyCD'
+      responses:
+        "200":
+          description: status code
+        "404":
+          description: transactions cannot be made with that data
+      summary: When a student is buying a cd
+      tags:
+      - Student
+  /transactions/CDRefund:
+    put:
+      description: refund the given CD
+      operationId: refundCD
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestUser'
+      responses:
+        "200":
+          description: status code
+        "404":
+          description: transactions cannot be made with that data
+      summary: When a student is buying a cd
       tags:
       - Student
   /transactions/cryptoTransaction:
@@ -1658,7 +1728,7 @@ paths:
       - Student
   /lottery/purchase:
     put:
-      description: gets the previous lotto from the users school
+      description: purchases a ticket
       operationId: lottoPurchase
       parameters:
       - description: number of tickets to buy
@@ -1671,14 +1741,10 @@ paths:
         style: form
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResponseRegister2'
-          description: previous lottery game
+          description: true for winner false for loser or an error code
         "404":
           description: No previous lotto found for this school
-      summary: get previous lotto game
+      summary: purchase lotto ticket
       tags:
       - Student
 components:
@@ -2158,6 +2224,59 @@ components:
       - description
       - name
       type: object
+    ResponseCD:
+      example:
+        principal: 123
+        refundValue: 123.45
+        interest: 0.8008282
+        maturity: 2000-01-23T04:56:07.000+00:00
+        currentValue: 123
+      properties:
+        principal:
+          example: 123
+          type: integer
+        currentValue:
+          example: 123
+          format: float
+          type: number
+        refundValue:
+          example: 123.45
+          format: float
+          type: number
+        interest:
+          format: float
+          type: number
+        maturity:
+          format: date-time
+          type: string
+      type: object
+    ResponseCDTransaction:
+      example:
+        principal: 123.45
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        mature: 2000-01-23T04:56:07.000+00:00
+        value: 123.45
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        mature:
+          format: date-time
+          type: string
+        principal:
+          example: 123.45
+          format: float
+          type: number
+        value:
+          example: 123.45
+          format: float
+          type: number
+      required:
+      - createdAt
+      - mature
+      - principal
+      - value
+      type: object
     ResponseCurrencyExchange:
       example:
         balance: 123.45
@@ -2512,6 +2631,13 @@ components:
           example: 123.45
           format: float
           type: number
+      type: object
+    RequestBuyCD:
+      properties:
+        prinInv:
+          type: integer
+        time:
+          type: integer
       type: object
     RequestCryptoConvert:
       example:
