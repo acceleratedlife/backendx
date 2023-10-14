@@ -32,7 +32,7 @@ func (a *StudentApiServiceImpl) BuyCD(ctx context.Context, CD_details openapi.Re
 		return openapi.Response(401, ""), nil
 	}
 
-	err = buyCD(a.db, a.clock, userDetails, CD_Details)
+	err = buyCD(a.db, a.clock, userDetails, CD_details)
 
 	if err != nil {
 		return openapi.Response(400, nil), err
@@ -42,7 +42,7 @@ func (a *StudentApiServiceImpl) BuyCD(ctx context.Context, CD_details openapi.Re
 
 }
 
-func (a *StudentApiServiceImpl) RefundCD(ctx context.Context, CD_id openapi.RequestUser) (openapi.ImplResponse, error) {
+func (a *StudentApiServiceImpl) RefundCD(ctx context.Context, CD openapi.RequestUser) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -56,7 +56,7 @@ func (a *StudentApiServiceImpl) RefundCD(ctx context.Context, CD_id openapi.Requ
 		return openapi.Response(401, ""), nil
 	}
 
-	// resp, err := getStudentBuck(a.db, userDetails, CD_Details)
+	err = refundCD(a.db, a.clock, userDetails, CD.Id)
 
 	if err != nil {
 		return openapi.Response(400, nil), err
@@ -80,13 +80,13 @@ func (a *StudentApiServiceImpl) SearchCDS(ctx context.Context) (openapi.ImplResp
 		return openapi.Response(401, ""), nil
 	}
 
-	// resp, err := getStudentBuck(a.db, userDetails, CD_Details)
+	resp, err := getCDS(a.db, userDetails)
 
 	if err != nil {
 		return openapi.Response(400, nil), err
 	}
 
-	return openapi.Response(200, nil), nil
+	return openapi.Response(200, resp), nil
 
 }
 
@@ -104,13 +104,13 @@ func (a *StudentApiServiceImpl) SearchCDTransactions(ctx context.Context) (opena
 		return openapi.Response(401, ""), nil
 	}
 
-	// resp, err := getStudentBuck(a.db, userDetails, CD_Details)
+	resp, err := getCDTransactions(a.db, userDetails)
 
 	if err != nil {
 		return openapi.Response(400, nil), err
 	}
 
-	return openapi.Response(200, nil), nil
+	return openapi.Response(200, resp), nil
 
 }
 

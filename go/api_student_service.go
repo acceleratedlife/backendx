@@ -214,8 +214,8 @@ func (s *StudentApiService) SearchCDTransactions(ctx context.Context) (ImplRespo
 	// TODO - update SearchCDTransactions with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseCdTransaction{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseCdTransaction{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseTransactions{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseTransactions{}), nil
 
 	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
 	//return Response(400, nil),nil

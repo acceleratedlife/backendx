@@ -1263,7 +1263,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ResponseCDTransaction'
+                  $ref: '#/components/schemas/ResponseTransactions'
                 type: array
           description: transaction matching criteria
         "400":
@@ -2231,7 +2231,11 @@ components:
         interest: 0.8008282
         maturity: 2000-01-23T04:56:07.000+00:00
         currentValue: 123
+        Ts: 2000-01-23T04:56:07.000+00:00
       properties:
+        Ts:
+          format: date-time
+          type: string
         principal:
           example: 123
           type: integer
@@ -2249,33 +2253,6 @@ components:
         maturity:
           format: date-time
           type: string
-      type: object
-    ResponseCDTransaction:
-      example:
-        principal: 123.45
-        createdAt: 2000-01-23T04:56:07.000+00:00
-        mature: 2000-01-23T04:56:07.000+00:00
-        value: 123.45
-      properties:
-        createdAt:
-          format: date-time
-          type: string
-        mature:
-          format: date-time
-          type: string
-        principal:
-          example: 123.45
-          format: float
-          type: number
-        value:
-          example: 123.45
-          format: float
-          type: number
-      required:
-      - createdAt
-      - mature
-      - principal
-      - value
       type: object
     ResponseCurrencyExchange:
       example:

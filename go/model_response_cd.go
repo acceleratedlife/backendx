@@ -16,6 +16,8 @@ import (
 
 type ResponseCd struct {
 
+	Ts time.Time `json:"Ts,omitempty"`
+
 	Principal int32 `json:"principal,omitempty"`
 
 	CurrentValue float32 `json:"currentValue,omitempty"`

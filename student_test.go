@@ -1237,3 +1237,133 @@ func TestLottoPurchase(t *testing.T) {
 	assert.Equal(t, userDetails.Email, lottery.Winner)
 
 }
+
+func TestBuyCDEndpoint(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("BuyCDEndpoint", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(199), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    7,
+	}
+
+	marshal, err := json.Marshal(body)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/CDTransaction", bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/transactions/CDTransaction", bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 400, resp.StatusCode, resp)
+}
+
+func TestSearchCDEndpoint(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("SearchCDEndpoint", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(500), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    7,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = buyCD(db, &clock, userDetails, body)
+		require.Nil(t, err)
+	}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/accounts/CDS", nil)
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var data []openapi.ResponseCd
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+	require.Equal(t, 5, len(data))
+}
+
+func TestSearchCDTransaction(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("SearchCDTransaction", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(500), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    7,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = buyCD(db, &clock, userDetails, body)
+		require.Nil(t, err)
+	}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/transactions/CDTransactions", nil)
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
+	var data []openapi.ResponseTransactions
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+	require.Equal(t, 5, len(data))
+}

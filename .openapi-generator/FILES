@@ -66,7 +66,6 @@ go/model_response_auth2.go
 go/model_response_auth4.go
 go/model_response_buck_transaction.go
 go/model_response_cd.go
-go/model_response_cd_transaction.go
 go/model_response_cookie.go
 go/model_response_crypto.go
 go/model_response_crypto_transaction.go

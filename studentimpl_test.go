@@ -773,3 +773,153 @@ func TestPurchaseLottoSingle(t *testing.T) {
 
 	require.True(t, winner)
 }
+
+func TestBuyCDFunction(t *testing.T) {
+
+	lgr.Printf("INFO TestBuyCDFunction")
+	t.Log("INFO TestBuyCDFunction")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("buyCDFunction")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(199), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    60,
+	}
+	err = buyCD(db, &clock, student, body)
+	require.Nil(t, err)
+	err = buyCD(db, &clock, student, body)
+	require.NotNil(t, err)
+}
+
+func TestGetCDSFunction(t *testing.T) {
+
+	lgr.Printf("INFO TestGetCDSFunction")
+	t.Log("INFO TestGetCDSFunction")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("getCDSFunction")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    60,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = buyCD(db, &clock, student, body)
+		require.Nil(t, err)
+	}
+
+	resp, err := getCDS(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 5, len(resp))
+
+}
+
+func TestGetCDTransaction(t *testing.T) {
+
+	lgr.Printf("INFO TestGetCDTransaction")
+	t.Log("INFO TestGetCDTransaction")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("getCDTransaction")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    60,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = buyCD(db, &clock, student, body)
+		require.Nil(t, err)
+	}
+
+	resp, err := getCDTransactions(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 5, len(resp))
+
+	for i := 0; i < 30; i++ {
+		err = buyCD(db, &clock, student, body)
+		require.Nil(t, err)
+	}
+
+	resp, err = getCDTransactions(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 25, len(resp))
+
+}
+
+func TestRefundCDFunction(t *testing.T) {
+
+	lgr.Printf("INFO TestRefundCDFunction")
+	t.Log("INFO TestRefundCDFunction")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("refundCDFunction")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(500), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    60,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = buyCD(db, &clock, student, body)
+		require.Nil(t, err)
+	}
+
+	resp, err := getCDS(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 5, len(resp))
+
+	trans, err := getCDTransactions(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 5, len(trans))
+
+	err = refundCD(db, &clock, student, resp[0].Ts.Format(time.RFC3339Nano))
+	require.Nil(t, err)
+
+	resp, err = getCDS(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 4, len(resp))
+
+	trans, err = getCDTransactions(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 6, len(trans))
+
+	netWorth := StudentNetWorth(db, student.Email)
+
+	require.True(t, netWorth.Equal(decimal.NewFromInt32(450)))
+
+	//I think this test is working correctly but I need another one that uses multiple different lengths and I need to make the time change with tick
+}

@@ -539,6 +539,7 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 	}
 
 	if userDetails.Role == UserRoleStudent {
+		CertificateOfDepositIfNeeded(a.db, a.clock, userDetails)
 		CollegeIfNeeded(a.db, a.clock, userDetails)
 		CareerIfNeeded(a.db, a.clock, userDetails)
 		DebtIfNeeded(a.db, a.clock, userDetails)
