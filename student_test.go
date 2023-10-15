@@ -776,8 +776,8 @@ func TestAuctionBid(t *testing.T) {
 		Bid:         0,
 		MaxBid:      0,
 		Description: "test auc",
-		EndDate:     time.Now().Add(time.Minute),
-		StartDate:   time.Now(),
+		EndDate:     clock.Now().Add(time.Minute),
+		StartDate:   clock.Now(),
 		OwnerId:     teacher.Name,
 		Visibility:  classes,
 	}, true)

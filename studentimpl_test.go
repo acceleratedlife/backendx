@@ -520,7 +520,7 @@ func TestGetCryptoForStudentRequest(t *testing.T) {
 
 	require.Nil(t, err)
 
-	require.Less(t, time.Now().Truncate(time.Second).Sub(bitcoin.UpdatedAt), time.Second*5)
+	require.Less(t, clock.Now().Truncate(time.Second).Sub(bitcoin.UpdatedAt), time.Second*5)
 }
 
 func TestCryptoTransaction(t *testing.T) {
@@ -610,8 +610,8 @@ func TestTrueAuctionFalse(t *testing.T) {
 		Bid:         0,
 		MaxBid:      0,
 		Description: "test auc",
-		EndDate:     time.Now().Add(time.Minute),
-		StartDate:   time.Now(),
+		EndDate:     clock.Now().Add(time.Minute),
+		StartDate:   clock.Now(),
 		OwnerId:     teacher.Name,
 		Visibility:  classes,
 		TrueAuction: false,
@@ -664,8 +664,8 @@ func TestTrueAuctionTrue(t *testing.T) {
 		Bid:         0,
 		MaxBid:      0,
 		Description: "test auc",
-		EndDate:     time.Now().Add(time.Minute),
-		StartDate:   time.Now(),
+		EndDate:     clock.Now().Add(time.Minute),
+		StartDate:   clock.Now(),
 		OwnerId:     teacher.Name,
 		Visibility:  classes,
 		TrueAuction: true,
