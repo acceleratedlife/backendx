@@ -1258,7 +1258,7 @@ func TestBuyCDEndpoint(t *testing.T) {
 
 	body := openapi.RequestBuyCd{
 		PrinInv: 100,
-		Time:    7,
+		Time:    14,
 	}
 
 	marshal, err := json.Marshal(body)
@@ -1302,7 +1302,7 @@ func TestSearchCDEndpoint(t *testing.T) {
 
 	body := openapi.RequestBuyCd{
 		PrinInv: 100,
-		Time:    7,
+		Time:    14,
 	}
 
 	for i := 0; i < 5; i++ {
@@ -1345,7 +1345,7 @@ func TestSearchCDTransaction(t *testing.T) {
 
 	body := openapi.RequestBuyCd{
 		PrinInv: 100,
-		Time:    7,
+		Time:    14,
 	}
 
 	for i := 0; i < 5; i++ {
@@ -1366,4 +1366,53 @@ func TestSearchCDTransaction(t *testing.T) {
 	decoder := json.NewDecoder(resp.Body)
 	_ = decoder.Decode(&data)
 	require.Equal(t, 5, len(data))
+}
+
+func TestRefundCD(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("refundCD", 8090, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	// initialize http client
+	client := &http.Client{}
+
+	userDetails, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(500), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    14,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = buyCD(db, &clock, userDetails, body)
+		require.Nil(t, err)
+	}
+
+	items, err := getCDS(db, userDetails)
+	require.Nil(t, err)
+
+	payload := openapi.RequestUser{
+		Id: items[0].Ts.Format(time.RFC3339Nano),
+	}
+
+	marshal, err := json.Marshal(payload)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/transactions/CDRefund", bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode, resp)
+
 }

@@ -484,11 +484,11 @@ func CertificateOfDepositIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo
 				continue
 			}
 
-			if deposit.Maturity.Before(time.Now()) {
+			if deposit.Maturity.Before(clock.Now()) {
 				deposit.CurrentValue = decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(deposit.Interest).Pow(decimal.NewFromInt(InterestToTime(deposit.Interest))))
 				deposit.RefundValue = deposit.CurrentValue
 			} else {
-				diff := time.Since(deposit.Ts)
+				diff := clock.Now().Sub(deposit.Ts)
 				days := math.Floor(diff.Hours() / 24)
 				deposit.CurrentValue = decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(deposit.Interest).Pow(decimal.NewFromFloat(days)))
 				interest := timeToInterest(int32(days))
@@ -2431,16 +2431,16 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 }
 
 func timeToInterest(time int32) float32 {
-	if time < 7 {
+	if time <= 14 {
 		return 1.03
 	}
-	if time < 14 {
+	if time <= 30 {
 		return 1.04
 	}
-	if time < 30 {
+	if time <= 50 {
 		return 1.05
 	}
-	if time < 60 {
+	if time <= 70 {
 		return 1.06
 	}
 	return 1.07
@@ -2644,16 +2644,16 @@ func getCDTransactionsRx(tx *bolt.Tx, userInfo UserInfo) (resp []openapi.Respons
 
 func InterestToTime(interest float32) int64 {
 	if interest == 1.03 {
-		return 7
-	}
-	if interest == 1.04 {
 		return 14
 	}
-	if interest == 1.05 {
+	if interest == 1.04 {
 		return 30
 	}
+	if interest == 1.05 {
+		return 50
+	}
 	if interest == 1.06 {
-		return 60
+		return 70
 	}
 	return 90
 }
