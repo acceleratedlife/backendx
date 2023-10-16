@@ -2667,7 +2667,7 @@ func InterestToTime(interest float32) int64 {
 }
 
 func matureCheck(CD CertificateOfDeposit) string {
-	if CD.CurrentValue == CD.RefundValue {
+	if CD.CurrentValue.Equal(CD.RefundValue) {
 		return "Fully Matured"
 	}
 	return "Early Refund"
