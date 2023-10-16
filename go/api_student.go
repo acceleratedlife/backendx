@@ -62,6 +62,12 @@ func (c *StudentApiController) Routes() Routes {
 			c.BuckConvert,
 		},
 		{
+			"BuyCD",
+			strings.ToUpper("Post"),
+			"/api/transactions/CDTransaction",
+			c.BuyCD,
+		},
+		{
 			"CryptoConvert",
 			strings.ToUpper("Post"),
 			"/api/transactions/cryptoTransaction",
@@ -92,6 +98,12 @@ func (c *StudentApiController) Routes() Routes {
 			c.PreviousLotto,
 		},
 		{
+			"RefundCD",
+			strings.ToUpper("Put"),
+			"/api/transactions/CDRefund",
+			c.RefundCD,
+		},
+		{
 			"SearchAuctionsStudent",
 			strings.ToUpper("Get"),
 			"/api/auctions/student",
@@ -108,6 +120,18 @@ func (c *StudentApiController) Routes() Routes {
 			strings.ToUpper("Get"),
 			"/api/transactions/buckTransactions",
 			c.SearchBuckTransactions,
+		},
+		{
+			"SearchCDS",
+			strings.ToUpper("Get"),
+			"/api/accounts/CDS",
+			c.SearchCDS,
+		},
+		{
+			"SearchCDTransactions",
+			strings.ToUpper("Get"),
+			"/api/transactions/CDTransactions",
+			c.SearchCDTransactions,
 		},
 		{
 			"SearchCrypto",
@@ -190,6 +214,30 @@ func (c *StudentApiController) BuckConvert(w http.ResponseWriter, r *http.Reques
 
 }
 
+// BuyCD - When a student is buying a cd
+func (c *StudentApiController) BuyCD(w http.ResponseWriter, r *http.Request) {
+	requestBuyCdParam := RequestBuyCd{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestBuyCdParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestBuyCdRequired(requestBuyCdParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.BuyCD(r.Context(), requestBuyCdParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
 // CryptoConvert - When a student is converting between uBucks and Cryptos
 func (c *StudentApiController) CryptoConvert(w http.ResponseWriter, r *http.Request) {
 	requestCryptoConvertParam := RequestCryptoConvert{}
@@ -227,7 +275,7 @@ func (c *StudentApiController) LatestLotto(w http.ResponseWriter, r *http.Reques
 
 }
 
-// LottoPurchase - get previous lotto game
+// LottoPurchase - purchase lotto ticket
 func (c *StudentApiController) LottoPurchase(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	quantityParam, err := parseInt32Parameter(query.Get("quantity"), true)
@@ -283,6 +331,30 @@ func (c *StudentApiController) PreviousLotto(w http.ResponseWriter, r *http.Requ
 
 }
 
+// RefundCD - When a student is buying a cd
+func (c *StudentApiController) RefundCD(w http.ResponseWriter, r *http.Request) {
+	requestUserParam := RequestUser{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestUserParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestUserRequired(requestUserParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.RefundCD(r.Context(), requestUserParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
 // SearchAuctionsStudent - searches auctions
 func (c *StudentApiController) SearchAuctionsStudent(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.SearchAuctionsStudent(r.Context())
@@ -314,6 +386,32 @@ func (c *StudentApiController) SearchBuck(w http.ResponseWriter, r *http.Request
 // SearchBuckTransactions - searches for buck transactions
 func (c *StudentApiController) SearchBuckTransactions(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.SearchBuckTransactions(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SearchCDS - returns active certificate of deposit portfolio
+func (c *StudentApiController) SearchCDS(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.SearchCDS(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SearchCDTransactions - searches for CD transactions
+func (c *StudentApiController) SearchCDTransactions(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.SearchCDTransactions(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

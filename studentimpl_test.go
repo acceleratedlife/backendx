@@ -520,7 +520,7 @@ func TestGetCryptoForStudentRequest(t *testing.T) {
 
 	require.Nil(t, err)
 
-	require.Less(t, time.Now().Truncate(time.Second).Sub(bitcoin.UpdatedAt), time.Second*5)
+	require.Less(t, clock.Now().Truncate(time.Second).Sub(bitcoin.UpdatedAt), time.Second*5)
 }
 
 func TestCryptoTransaction(t *testing.T) {
@@ -610,8 +610,8 @@ func TestTrueAuctionFalse(t *testing.T) {
 		Bid:         0,
 		MaxBid:      0,
 		Description: "test auc",
-		EndDate:     time.Now().Add(time.Minute),
-		StartDate:   time.Now(),
+		EndDate:     clock.Now().Add(time.Minute),
+		StartDate:   clock.Now(),
 		OwnerId:     teacher.Name,
 		Visibility:  classes,
 		TrueAuction: false,
@@ -664,8 +664,8 @@ func TestTrueAuctionTrue(t *testing.T) {
 		Bid:         0,
 		MaxBid:      0,
 		Description: "test auc",
-		EndDate:     time.Now().Add(time.Minute),
-		StartDate:   time.Now(),
+		EndDate:     clock.Now().Add(time.Minute),
+		StartDate:   clock.Now(),
 		OwnerId:     teacher.Name,
 		Visibility:  classes,
 		TrueAuction: true,
@@ -772,4 +772,258 @@ func TestPurchaseLottoSingle(t *testing.T) {
 	}
 
 	require.True(t, winner)
+}
+
+func TestBuyCDFunction(t *testing.T) {
+
+	lgr.Printf("INFO TestBuyCDFunction")
+	t.Log("INFO TestBuyCDFunction")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("buyCDFunction")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(199), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    50,
+	}
+	err = buyCD(db, &clock, student, body)
+	require.Nil(t, err)
+	err = buyCD(db, &clock, student, body)
+	require.NotNil(t, err)
+}
+
+func TestGetCDSFunction(t *testing.T) {
+
+	lgr.Printf("INFO TestGetCDSFunction")
+	t.Log("INFO TestGetCDSFunction")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("getCDSFunction")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    50,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = buyCD(db, &clock, student, body)
+		require.Nil(t, err)
+	}
+
+	resp, err := getCDS(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 5, len(resp))
+
+}
+
+func TestGetCDTransaction(t *testing.T) {
+
+	lgr.Printf("INFO TestGetCDTransaction")
+	t.Log("INFO TestGetCDTransaction")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("getCDTransaction")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    50,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = buyCD(db, &clock, student, body)
+		require.Nil(t, err)
+	}
+
+	resp, err := getCDTransactions(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 5, len(resp))
+
+	for i := 0; i < 30; i++ {
+		err = buyCD(db, &clock, student, body)
+		require.Nil(t, err)
+	}
+
+	resp, err = getCDTransactions(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 25, len(resp))
+
+}
+
+func TestRefundCDFunction(t *testing.T) {
+
+	lgr.Printf("INFO TestRefundCDFunction")
+	t.Log("INFO TestRefundCDFunction")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("refundCDFunction")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(500), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    50,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = buyCD(db, &clock, student, body)
+		require.Nil(t, err)
+	}
+
+	resp, err := getCDS(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 5, len(resp))
+
+	trans, err := getCDTransactions(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 5, len(trans))
+
+	err = refundCD(db, &clock, student, resp[0].Ts.Format(time.RFC3339Nano))
+	require.Nil(t, err)
+
+	resp, err = getCDS(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 4, len(resp))
+
+	trans, err = getCDTransactions(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, 6, len(trans))
+
+	netWorth := StudentNetWorth(db, student.Email)
+
+	require.True(t, netWorth.Equal(decimal.NewFromInt32(450)))
+
+}
+
+func TestCDWithTimeChanges(t *testing.T) {
+
+	lgr.Printf("INFO TestCDWithTimeChanges")
+	t.Log("INFO TestCDWithTimeChanges")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("CDWithTimeChanges")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(500), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body14 := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    14,
+	}
+	err = buyCD(db, &clock, student, body14)
+	require.Nil(t, err)
+
+	body30 := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    30,
+	}
+	err = buyCD(db, &clock, student, body30)
+	require.Nil(t, err)
+
+	body50 := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    50,
+	}
+	err = buyCD(db, &clock, student, body50)
+	require.Nil(t, err)
+
+	body70 := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    70,
+	}
+	err = buyCD(db, &clock, student, body70)
+	require.Nil(t, err)
+
+	body90 := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    90,
+	}
+	err = buyCD(db, &clock, student, body90)
+	require.Nil(t, err)
+
+	clock.TickOne(time.Hour * 24 * 13)
+
+	CertificateOfDepositIfNeeded(db, &clock, student)
+
+	netWorth := StudentNetWorth(db, student.Email).InexactFloat64()
+
+	require.True(t, netWorth > 660 && netWorth < 661)
+
+	clock.TickOne(time.Hour * 24 * 16)
+
+	CertificateOfDepositIfNeeded(db, &clock, student)
+
+	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
+
+	require.True(t, netWorth > 1273 && netWorth < 1274)
+
+	clock.TickOne(time.Hour * 24 * 20)
+
+	CertificateOfDepositIfNeeded(db, &clock, student)
+
+	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
+
+	require.True(t, netWorth > 3424 && netWorth < 3425)
+
+	clock.TickOne(time.Hour * 24 * 20)
+
+	CertificateOfDepositIfNeeded(db, &clock, student)
+
+	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
+
+	require.True(t, netWorth > 11654 && netWorth < 11655)
+
+	clock.TickOne(time.Hour * 24 * 20)
+
+	CertificateOfDepositIfNeeded(db, &clock, student)
+
+	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
+
+	require.True(t, netWorth > 44632 && netWorth < 44633)
+
+	clock.TickOne(time.Hour * 24 * 20)
+
+	needed := CertificateOfDepositIfNeeded(db, &clock, student)
+	require.True(t, needed)
+	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
+
+	require.True(t, netWorth > 51640 && netWorth < 51641)
+
+	needed = DailyPayIfNeeded(db, &clock, student)
+	require.True(t, needed)
+
+	needed = CertificateOfDepositIfNeeded(db, &clock, student)
+	require.False(t, needed)
+
 }
