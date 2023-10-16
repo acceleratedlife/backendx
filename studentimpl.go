@@ -297,6 +297,7 @@ func addToCDHolderTx(holder *bolt.Bucket, transaction Transaction, CD Certificat
 	oldTransaction := transactions.Get(tsB)
 	for oldTransaction != nil || oldCD != nil {
 		transaction.Ts = transaction.Ts.Add(time.Millisecond * 1)
+		CD.Ts = transaction.Ts
 		tsB, err = transaction.Ts.MarshalText()
 		if err != nil {
 			return
@@ -326,7 +327,14 @@ func addToCDHolderTx(holder *bolt.Bucket, transaction Transaction, CD Certificat
 			return err
 		}
 
+		CD.Ts = newId
+
 		tsB, err = newId.MarshalText()
+		if err != nil {
+			return err
+		}
+
+		CDB, err := json.Marshal(CD)
 		if err != nil {
 			return err
 		}
@@ -2698,6 +2706,10 @@ func refundCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, CD_id string) (err 
 	err = json.Unmarshal(CD_data, &CD)
 	if err != nil {
 		return err
+	}
+
+	if !CD.Active {
+		return nil
 	}
 
 	ts := clock.Now().Truncate(time.Millisecond)

@@ -35,7 +35,7 @@ func (a *StudentApiServiceImpl) BuyCD(ctx context.Context, CD_details openapi.Re
 	err = buyCD(a.db, a.clock, userDetails, CD_details)
 
 	if err != nil {
-		return openapi.Response(400, nil), err
+		return openapi.Response(404, nil), err
 	}
 
 	return openapi.Response(200, nil), nil
@@ -83,7 +83,8 @@ func (a *StudentApiServiceImpl) SearchCDS(ctx context.Context) (openapi.ImplResp
 	resp, err := getCDS(a.db, userDetails)
 
 	if err != nil {
-		return openapi.Response(400, nil), err
+		lgr.Printf(err.Error())
+		return openapi.Response(404, nil), nil
 	}
 
 	return openapi.Response(200, resp), nil
@@ -107,7 +108,8 @@ func (a *StudentApiServiceImpl) SearchCDTransactions(ctx context.Context) (opena
 	resp, err := getCDTransactions(a.db, userDetails)
 
 	if err != nil {
-		return openapi.Response(400, nil), err
+		lgr.Printf(err.Error())
+		return openapi.Response(404, nil), nil
 	}
 
 	return openapi.Response(200, resp), nil
