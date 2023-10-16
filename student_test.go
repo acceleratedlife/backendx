@@ -1279,7 +1279,7 @@ func TestBuyCDEndpoint(t *testing.T) {
 	require.Nil(t, err)
 	defer resp.Body.Close()
 	require.NotNil(t, resp)
-	assert.Equal(t, 400, resp.StatusCode, resp)
+	assert.Equal(t, 404, resp.StatusCode, resp)
 }
 
 func TestSearchCDEndpoint(t *testing.T) {
