@@ -128,7 +128,7 @@ type DemoClock struct {
 
 func (t *DemoClock) Now() time.Time {
 	if t.Current.IsZero() {
-		t.Current = time.Now()
+		return time.Now()
 	}
 	lgr.Printf("DEBUG current time - %v", t.Current)
 	return t.Current

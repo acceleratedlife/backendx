@@ -876,6 +876,7 @@ func TestNewDaySecured(t *testing.T) {
 		ts.Close()
 	}()
 
+	clock.TickOne(time.Minute * 20)
 	beforeClock := clock.Now().Add(time.Minute * 20)
 
 	client := &http.Client{}
@@ -917,6 +918,7 @@ func TestNewHourSecured(t *testing.T) {
 		ts.Close()
 	}()
 
+	clock.TickOne(time.Minute * 20)
 	beforeClock := clock.Now().Add(time.Minute * 20)
 
 	client := &http.Client{}
@@ -958,6 +960,7 @@ func TestNewMinutesSecured(t *testing.T) {
 		ts.Close()
 	}()
 
+	clock.TickOne(time.Minute * 5)
 	beforeClock := clock.Now().Add(time.Minute * 5)
 
 	client := &http.Client{}
@@ -999,6 +1002,7 @@ func TestNewCareerSecured(t *testing.T) {
 		ts.Close()
 	}()
 
+	clock.TickOne(time.Hour * 24 * 3)
 	beforeClock := clock.Now().Add(time.Hour * 24 * 3)
 
 	client := &http.Client{}
@@ -1040,6 +1044,7 @@ func TestNewCollegeSecured(t *testing.T) {
 		ts.Close()
 	}()
 
+	clock.TickOne(time.Hour * 24 * 13)
 	beforeClock := clock.Now().Add(time.Hour * 24 * 13)
 
 	client := &http.Client{}
@@ -1081,13 +1086,19 @@ func TestResetClockSecured(t *testing.T) {
 		ts.Close()
 	}()
 
+	time1 := clock.Now()
+	time.Sleep(time.Nanosecond)
+	time2 := clock.Now()
+	assert.True(t, time1.Before(time2))
+
 	clock.TickOne(time.Hour * 100)
 
-	futureClock := clock.Now()
-
 	client := &http.Client{}
-
-	assert.True(t, clock.Now().Equal(futureClock))
+	//this is because once a tick is executed it will freeze time until resetClock is run again
+	time3 := clock.Now()
+	time.Sleep(time.Nanosecond)
+	time4 := clock.Now()
+	assert.True(t, time3.Equal(time4))
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
@@ -1098,5 +1109,10 @@ func TestResetClockSecured(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	assert.True(t, clock.Now().Before(futureClock))
+	time5 := clock.Now()
+	time.Sleep(time.Nanosecond)
+	time6 := clock.Now()
+	//resetClock has ran so time is normal again.
+	assert.True(t, time5.Before(time6))
+
 }
