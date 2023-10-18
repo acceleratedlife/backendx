@@ -138,7 +138,7 @@ func (t *DemoClock) TickOne(d time.Duration) {
 }
 
 func (t *DemoClock) ResetNow() {
-	t.Current = time.Time{}
+	t.Current = time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)
 }
 
 func (*AppClock) Now() time.Time {
