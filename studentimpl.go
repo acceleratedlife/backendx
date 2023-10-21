@@ -2247,7 +2247,7 @@ func getStudentCryptoTransactionsRx(tx *bolt.Tx, userDetails UserInfo) (resp []o
 	accounts := student.Bucket([]byte(KeyAccounts))
 	c := accounts.Cursor()
 	for k, _ := c.First(); k != nil; k, _ = c.Next() {
-		if string(k) == CurrencyUBuck || string(k) == KeyDebt || strings.Contains(string(k), "@") {
+		if string(k) == CurrencyUBuck || string(k) == KeyDebt || strings.Contains(string(k), "@") || string(k) == KeyCertificateOfDeposit {
 			continue
 		}
 

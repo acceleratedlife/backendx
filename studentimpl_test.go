@@ -701,39 +701,43 @@ func TestPurchaseLottoOff(t *testing.T) {
 
 	student, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
-	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
-	require.Nil(t, err)
 
 	_, err = purchaseLotto(db, &clock, student, 5)
 	require.Equal(t, "the lotto has not been initialized", err.Error())
 
 	var settings = openapi.Settings{
 		Lottery: true,
-		Odds:    20,
+		Odds:    250,
 	}
 
 	err = setSettings(db, &clock, student, settings)
 	require.Nil(t, err)
 
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
 	var settings2 = openapi.Settings{
 		Lottery: false,
-		Odds:    20,
+		Odds:    250,
 	}
 
 	err = setSettings(db, &clock, student, settings2)
 	require.Nil(t, err)
 
-	winner, err := purchaseLotto(db, &clock, student, 60)
+	winner, err := purchaseLotto(db, &clock, student, 700)
 	require.Nil(t, err)
 	require.True(t, winner)
 
-	_, err = purchaseLotto(db, &clock, student, 60)
+	_, err = purchaseLotto(db, &clock, student, 700)
 	require.NotNil(t, err)
 
 	err = setSettings(db, &clock, student, settings)
 	require.Nil(t, err)
 
-	winner, err = purchaseLotto(db, &clock, student, 60)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	winner, err = purchaseLotto(db, &clock, student, 30000)
 	require.Nil(t, err)
 	require.True(t, winner)
 }
@@ -749,15 +753,17 @@ func TestPurchaseLottoSingle(t *testing.T) {
 
 	student, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
-	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
-	require.Nil(t, err)
 
+	//the lotto should still have an odds of 250 as that is the lowest possible
 	var settings = openapi.Settings{
 		Lottery: true,
 		Odds:    30,
 	}
 
 	err = setSettings(db, &clock, student, settings)
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
 	winner, err := purchaseLotto(db, &clock, student, 1)
@@ -1025,5 +1031,62 @@ func TestCDWithTimeChanges(t *testing.T) {
 
 	needed = CertificateOfDepositIfNeeded(db, &clock, student)
 	require.False(t, needed)
+
+}
+
+func TestCDComments(t *testing.T) {
+
+	lgr.Printf("INFO TestCDComments")
+	t.Log("INFO TestCDComments")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("CDComments")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(500), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body14 := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    14,
+	}
+	err = buyCD(db, &clock, student, body14)
+	require.Nil(t, err)
+
+	body30 := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    30,
+	}
+	err = buyCD(db, &clock, student, body30)
+	require.Nil(t, err)
+
+	clock.TickOne(time.Hour * 24 * 13)
+
+	CertificateOfDepositIfNeeded(db, &clock, student)
+
+	resp, err := getCDS(db, student)
+	require.Nil(t, err)
+
+	err = refundCD(db, &clock, student, resp[0].Ts.Format(time.RFC3339Nano))
+	require.Nil(t, err)
+
+	trans, err := getCDTransactions(db, student)
+	require.Nil(t, err)
+
+	require.Contains(t, trans[2].Description, "Early Refund")
+
+	clock.TickOne(time.Hour * 24 * 18)
+
+	CertificateOfDepositIfNeeded(db, &clock, student)
+
+	err = refundCD(db, &clock, student, resp[1].Ts.Format(time.RFC3339Nano))
+	require.Nil(t, err)
+
+	trans, err = getCDTransactions(db, student)
+	require.Nil(t, err)
+
+	require.Contains(t, trans[3].Description, "Fully Matured")
 
 }
