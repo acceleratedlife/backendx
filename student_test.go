@@ -1203,22 +1203,22 @@ func TestLottoPurchase(t *testing.T) {
 	userDetails, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
 
-	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "pre load")
-	require.Nil(t, err)
-
 	var settings = openapi.Settings{
 		Student2student: true,
 		CurrencyLock:    false,
 		Lottery:         true,
-		Odds:            10,
+		Odds:            250,
 	}
 
 	err = setSettings(db, &clock, userDetails, settings)
 	require.Nil(t, err)
 
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "pre load")
+	require.Nil(t, err)
+
 	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/lottery/purchase")
 	q := u.Query()
-	q.Set("quantity", "300")
+	q.Set("quantity", "1000")
 	u.RawQuery = q.Encode()
 
 	req, _ := http.NewRequest(http.MethodPut,
