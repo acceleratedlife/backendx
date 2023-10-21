@@ -11,6 +11,7 @@
 package openapi
 
 type RequestUserEdit struct {
+
 	Email string `json:"email,omitempty"`
 
 	FirstName string `json:"firstName,omitempty"`

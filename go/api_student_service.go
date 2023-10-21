@@ -55,6 +55,20 @@ func (s *StudentApiService) BuckConvert(ctx context.Context, requestBuckConvert 
 	return Response(http.StatusNotImplemented, nil), errors.New("BuckConvert method not implemented")
 }
 
+// BuyCD - When a student is buying a cd
+func (s *StudentApiService) BuyCD(ctx context.Context, requestBuyCd RequestBuyCd) (ImplResponse, error) {
+	// TODO - update BuyCD with the required logic for this service method.
+	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("BuyCD method not implemented")
+}
+
 // CryptoConvert - When a student is converting between uBucks and Cryptos
 func (s *StudentApiService) CryptoConvert(ctx context.Context, requestCryptoConvert RequestCryptoConvert) (ImplResponse, error) {
 	// TODO - update CryptoConvert with the required logic for this service method.
@@ -83,13 +97,13 @@ func (s *StudentApiService) LatestLotto(ctx context.Context) (ImplResponse, erro
 	return Response(http.StatusNotImplemented, nil), errors.New("LatestLotto method not implemented")
 }
 
-// LottoPurchase - get previous lotto game
+// LottoPurchase - purchase lotto ticket
 func (s *StudentApiService) LottoPurchase(ctx context.Context, quantity int32) (ImplResponse, error) {
 	// TODO - update LottoPurchase with the required logic for this service method.
 	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, ResponseRegister2{}) or use other options such as http.Ok ...
-	//return Response(200, ResponseRegister2{}), nil
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
@@ -123,6 +137,20 @@ func (s *StudentApiService) PreviousLotto(ctx context.Context) (ImplResponse, er
 	//return Response(404, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("PreviousLotto method not implemented")
+}
+
+// RefundCD - When a student is buying a cd
+func (s *StudentApiService) RefundCD(ctx context.Context, requestUser RequestUser) (ImplResponse, error) {
+	// TODO - update RefundCD with the required logic for this service method.
+	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("RefundCD method not implemented")
 }
 
 // SearchAuctionsStudent - searches auctions
@@ -165,6 +193,34 @@ func (s *StudentApiService) SearchBuckTransactions(ctx context.Context) (ImplRes
 	//return Response(400, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("SearchBuckTransactions method not implemented")
+}
+
+// SearchCDS - returns active certificate of deposit portfolio
+func (s *StudentApiService) SearchCDS(ctx context.Context) (ImplResponse, error) {
+	// TODO - update SearchCDS with the required logic for this service method.
+	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []ResponseCd{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseCd{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("SearchCDS method not implemented")
+}
+
+// SearchCDTransactions - searches for CD transactions
+func (s *StudentApiService) SearchCDTransactions(ctx context.Context) (ImplResponse, error) {
+	// TODO - update SearchCDTransactions with the required logic for this service method.
+	// Add api_student_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []ResponseTransactions{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseTransactions{}), nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("SearchCDTransactions method not implemented")
 }
 
 // SearchCrypto - returns the given crypto price, how many are owned and how many ubucks the user has.

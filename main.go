@@ -32,72 +32,73 @@ import (
 )
 
 const (
-	OperationDebit      = 1
-	OperationCredit     = 2
-	keyCharge           = 1.01
-	KeyDebt             = "debt"
-	CurrencyUBuck       = "ubuck"
-	KeyCollegeJobs      = "collegeJobs"
-	KeyJobs             = "jobs"
-	KeyPEvents          = "positiveEvents"
-	KeyNEvents          = "negativeEvents"
-	KeyAuctions         = "auctions"
-	KeyCB               = "cb"
-	KeyUsers            = "users"
-	KeyAccounts         = "accounts"
-	KeyCryptos          = "cryptos"
-	KeyConversion       = "conversion"
-	KeyBalance          = "balance"
-	KeyBasis            = "basis"
-	KeyTransactions     = "transactions"
-	KeyTeachers         = "teachers"
-	KeySchools          = "schools"
-	KeyStudents         = "students"
-	KeyClasses          = "classes"
-	KeyAddCode          = "addCode"
-	KeySettings         = "settings"
-	KeyName             = "name"
-	KeyCity             = "city"
-	KeyZip              = "zip"
-	KeyDayPayment       = "dayPayment"
-	KeyDayEvent         = "dayEvent"
-	KeyPeriod           = "period"
-	KeyAdmins           = "admins"
-	KeyEmail            = "Email"
-	KeyFirstName        = "FirstName"
-	KeyLastName         = "LastName"
-	KeyCollege          = "College"
-	KeyCareerTransition = "CareerTransition"
-	KeyCareerEnd        = "CareerEnd"
-	KeyCollegeEnd       = "CollegeEnd"
-	KeyHistory          = "History"
-	KeyEntireSchool     = "Entire School"
-	KeyTeacherClasses   = "teacherClasses"
-	KeyFreshman         = "Freshman"
-	KeySophomores       = "Sophomores"
-	KeyJuniors          = "Juniors"
-	KeySeniors          = "Seniors"
-	KeyBid              = "bid"
-	KeyMaxBid           = "maxBid"
-	KeyDescription      = "description"
-	KeyEndDate          = "endDate"
-	KeyStartDate        = "startDate"
-	KeyOwnerId          = "owner_id"
-	KeyVisibility       = "visibility"
-	KeyWinnerId         = "winner_id"
-	KeyTime             = "2006-01-02 15:04:05.999999999 -0700 MST"
-	KeyValue            = "value"
-	KeyMMA              = "MMA"
-	KeyModMMA           = "modMMA"
-	KeyPayFrequency     = "payFrequency"
-	KeyRegEnd           = "regEnd"
-	KeyCoins            = "ethereum,cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba-inu,dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,chainlink,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
-	LoanRate            = 1.015
-	KeyMarket           = "market"
-	KeyMarketData       = "marketData"
-	KeyBuyers           = "buyers"
-	KeyLotteries        = "lotteries"
-	KeyPricePerTicket   = 5
+	OperationDebit          = 1
+	OperationCredit         = 2
+	keyCharge               = 1.01
+	KeyDebt                 = "debt"
+	CurrencyUBuck           = "ubuck"
+	KeyCollegeJobs          = "collegeJobs"
+	KeyJobs                 = "jobs"
+	KeyPEvents              = "positiveEvents"
+	KeyNEvents              = "negativeEvents"
+	KeyAuctions             = "auctions"
+	KeyCB                   = "cb"
+	KeyUsers                = "users"
+	KeyAccounts             = "accounts"
+	KeyCryptos              = "cryptos"
+	KeyConversion           = "conversion"
+	KeyBalance              = "balance"
+	KeyBasis                = "basis"
+	KeyTransactions         = "transactions"
+	KeyTeachers             = "teachers"
+	KeySchools              = "schools"
+	KeyStudents             = "students"
+	KeyClasses              = "classes"
+	KeyAddCode              = "addCode"
+	KeySettings             = "settings"
+	KeyName                 = "name"
+	KeyCity                 = "city"
+	KeyZip                  = "zip"
+	KeyDayPayment           = "dayPayment"
+	KeyDayEvent             = "dayEvent"
+	KeyPeriod               = "period"
+	KeyAdmins               = "admins"
+	KeyEmail                = "Email"
+	KeyFirstName            = "FirstName"
+	KeyLastName             = "LastName"
+	KeyCollege              = "College"
+	KeyCareerTransition     = "CareerTransition"
+	KeyCareerEnd            = "CareerEnd"
+	KeyCollegeEnd           = "CollegeEnd"
+	KeyHistory              = "History"
+	KeyEntireSchool         = "Entire School"
+	KeyTeacherClasses       = "teacherClasses"
+	KeyFreshman             = "Freshman"
+	KeySophomores           = "Sophomores"
+	KeyJuniors              = "Juniors"
+	KeySeniors              = "Seniors"
+	KeyBid                  = "bid"
+	KeyMaxBid               = "maxBid"
+	KeyDescription          = "description"
+	KeyEndDate              = "endDate"
+	KeyStartDate            = "startDate"
+	KeyOwnerId              = "owner_id"
+	KeyVisibility           = "visibility"
+	KeyWinnerId             = "winner_id"
+	KeyTime                 = "2006-01-02 15:04:05.999999999 -0700 MST"
+	KeyValue                = "value"
+	KeyMMA                  = "MMA"
+	KeyModMMA               = "modMMA"
+	KeyPayFrequency         = "payFrequency"
+	KeyRegEnd               = "regEnd"
+	KeyCoins                = "ethereum,cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba-inu,dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
+	LoanRate                = 1.015
+	KeyMarket               = "market"
+	KeyMarketData           = "marketData"
+	KeyBuyers               = "buyers"
+	KeyLotteries            = "lotteries"
+	KeyPricePerTicket       = 5
+	KeyCertificateOfDeposit = "certificateOfDeposit"
 )
 
 var build_date string
@@ -127,7 +128,7 @@ type DemoClock struct {
 
 func (t *DemoClock) Now() time.Time {
 	if t.Current.IsZero() {
-		t.Current = time.Now()
+		return time.Now()
 	}
 	lgr.Printf("DEBUG current time - %v", t.Current)
 	return t.Current
@@ -137,7 +138,7 @@ func (t *DemoClock) TickOne(d time.Duration) {
 }
 
 func (t *DemoClock) ResetNow() {
-	t.Current = time.Now()
+	t.Current = time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)
 }
 
 func (*AppClock) Now() time.Time {

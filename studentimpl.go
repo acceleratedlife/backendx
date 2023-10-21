@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -48,6 +49,16 @@ type Transaction struct {
 	Net            decimal.Decimal `json:"-"`
 	Balance        decimal.Decimal `json:"-"`
 	Ubuck          decimal.Decimal `json:"-"`
+}
+
+type CertificateOfDeposit struct {
+	Ts           time.Time
+	Principal    int32
+	CurrentValue decimal.Decimal
+	RefundValue  decimal.Decimal
+	Interest     float32
+	Maturity     time.Time
+	Active       bool `json:"active,omitempty"`
 }
 
 func buyMarketItem(db *bolt.DB, clock Clock, student UserInfo, teacher UserInfo, itemId string) (purchaseId string, err error) {
@@ -261,6 +272,83 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	return
 }
 
+func addToCDHolderTx(holder *bolt.Bucket, transaction Transaction, CD CertificateOfDeposit, CD_id string) (err error) {
+	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
+	if err != nil {
+		return
+	}
+
+	CDBucket, err := accounts.CreateBucketIfNotExists([]byte(KeyCertificateOfDeposit))
+	if err != nil {
+		return
+	}
+
+	transactions, err := CDBucket.CreateBucketIfNotExists([]byte(KeyTransactions))
+	if err != nil {
+		return
+	}
+
+	tsB, err := transaction.Ts.MarshalText()
+	if err != nil {
+		return
+	}
+
+	oldCD := CDBucket.Get(tsB)
+	oldTransaction := transactions.Get(tsB)
+	for oldTransaction != nil || oldCD != nil {
+		transaction.Ts = transaction.Ts.Add(time.Millisecond * 1)
+		CD.Ts = transaction.Ts
+		tsB, err = transaction.Ts.MarshalText()
+		if err != nil {
+			return
+		}
+		oldTransaction = transactions.Get(tsB)
+		oldCD = CDBucket.Get(tsB)
+	}
+
+	CDB, err := json.Marshal(CD)
+	if err != nil {
+		return
+	}
+
+	transactionB, err := json.Marshal(transaction)
+	if err != nil {
+		return
+	}
+
+	err = transactions.Put(tsB, transactionB)
+	if err != nil {
+		return
+	}
+
+	if CD_id != "" {
+		newId, err := time.Parse(time.RFC3339, CD_id)
+		if err != nil {
+			return err
+		}
+
+		CD.Ts = newId
+
+		tsB, err = newId.MarshalText()
+		if err != nil {
+			return err
+		}
+
+		CDB, err := json.Marshal(CD)
+		if err != nil {
+			return err
+		}
+
+		err = CDBucket.Put(tsB, CDB)
+
+		return err
+	}
+
+	err = CDBucket.Put(tsB, CDB)
+
+	return
+}
+
 func StudentNetWorth(db *bolt.DB, userName string) (res decimal.Decimal) {
 	_ = db.View(func(tx *bolt.Tx) error {
 		res = StudentNetWorthTx(tx, userName)
@@ -289,6 +377,11 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 
 		account := accounts.Bucket(k)
 		if account == nil {
+			continue
+		}
+
+		if string(k) == KeyCertificateOfDeposit {
+			res = res.Add(CDSumTx(tx, account))
 			continue
 		}
 
@@ -337,6 +430,99 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 	}
 
 	return
+}
+
+func CertificateOfDepositIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
+	if userDetails.Role != UserRoleStudent {
+		return false
+	}
+
+	needToAdd := false
+	_ = db.View(func(tx *bolt.Tx) error {
+		student, _ := getStudentBucketRx(tx, userDetails.Name)
+		if student == nil {
+			needToAdd = true
+			return nil
+		}
+
+		needToAdd = IsDailyPayNeeded(student, clock)
+		return nil
+	})
+
+	if !needToAdd {
+		return false
+	}
+	err := db.Update(func(tx *bolt.Tx) error {
+		student, _ := getStudentBucketRx(tx, userDetails.Name)
+		if student == nil {
+			needToAdd = true
+			return nil
+		}
+
+		needToAdd := IsDailyPayNeeded(student, clock)
+
+		if !needToAdd {
+			return nil
+		}
+
+		accountsBucket := student.Bucket([]byte(KeyAccounts))
+		if accountsBucket == nil {
+			return fmt.Errorf("cannot find accounts bucket")
+		}
+
+		CDS_bucket := accountsBucket.Bucket([]byte(KeyCertificateOfDeposit))
+		if CDS_bucket == nil {
+			return fmt.Errorf("cannot find CDS bucket")
+		}
+
+		c := CDS_bucket.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if v == nil {
+				continue
+			}
+
+			var deposit CertificateOfDeposit
+			err := json.Unmarshal(v, &deposit)
+			if err != nil {
+				return err
+			}
+
+			if !deposit.Active {
+				continue
+			}
+
+			if deposit.Maturity.Before(clock.Now()) {
+				deposit.CurrentValue = decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(deposit.Interest).Pow(decimal.NewFromInt(InterestToTime(deposit.Interest))))
+				deposit.RefundValue = deposit.CurrentValue
+			} else {
+				diff := clock.Now().Sub(deposit.Ts)
+				days := math.Floor(diff.Hours() / 24)
+				deposit.CurrentValue = decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(deposit.Interest).Pow(decimal.NewFromFloat(days)))
+				interest := timeToInterest(int32(days))
+				deposit.RefundValue = (decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(interest).Pow(decimal.NewFromFloat(days)))).Mul(decimal.NewFromFloat32(.9))
+			}
+
+			data, err := json.Marshal(deposit)
+			if err != nil {
+				return err
+			}
+
+			err = CDS_bucket.Put(k, data)
+			if err != nil {
+				return err
+			}
+
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR checking college on %s: %v", userDetails.Name, err)
+		return false
+	}
+	return needToAdd
 }
 
 func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
@@ -1745,6 +1931,9 @@ func getStudentCryptoRx(tx *bolt.Tx, userDetails UserInfo, crypto string) (resp 
 func getCryptoForStudentRequest(db *bolt.DB, userDetails UserInfo, crypto string) (resp openapi.ResponseCrypto, err error) {
 	crypto = strings.ToLower(crypto)
 	usd, err := getOrUpdateCrypto(db, crypto)
+	if err != nil {
+		return
+	}
 
 	ubuck, err := getStudentUbuck(db, userDetails)
 	if err != nil {
@@ -1768,7 +1957,6 @@ func getCryptoForStudentRequest(db *bolt.DB, userDetails UserInfo, crypto string
 }
 
 func getOrUpdateCrypto(db *bolt.DB, crypto string) (usd float32, err error) {
-	// crypto = strings.ToLower(crypto)
 	needToAdd := false
 	var cryptoInfoOut openapi.CryptoCb
 	err = db.View(func(tx *bolt.Tx) error {
@@ -2059,7 +2247,7 @@ func getStudentCryptoTransactionsRx(tx *bolt.Tx, userDetails UserInfo) (resp []o
 	accounts := student.Bucket([]byte(KeyAccounts))
 	c := accounts.Cursor()
 	for k, _ := c.First(); k != nil; k, _ = c.Next() {
-		if string(k) == CurrencyUBuck || string(k) == KeyDebt || strings.Contains(string(k), "@") {
+		if string(k) == CurrencyUBuck || string(k) == KeyDebt || strings.Contains(string(k), "@") || string(k) == KeyCertificateOfDeposit {
 			continue
 		}
 
@@ -2248,4 +2436,348 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 
 	return
 
+}
+
+func timeToInterest(time int32) float32 {
+	if time <= 14 {
+		return 1.03
+	}
+	if time <= 30 {
+		return 1.04
+	}
+	if time <= 50 {
+		return 1.05
+	}
+	if time <= 70 {
+		return 1.06
+	}
+	return 1.07
+}
+
+func buyCD(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestBuyCd) (err error) {
+	return db.Update(func(tx *bolt.Tx) error {
+		return buyCDTx(tx, clock, userDetails, body)
+	})
+
+}
+
+func buyCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, body openapi.RequestBuyCd) (err error) {
+
+	prinInv := decimal.NewFromInt32(body.PrinInv)
+
+	if prinInv.Sign() <= 0 {
+		return fmt.Errorf("amount must be positive")
+	}
+
+	ts := clock.Now().Truncate(time.Millisecond)
+	mature := ts.Add(time.Hour * 24 * time.Duration(body.Time))
+
+	transaction := Transaction{
+		Ts:             ts,
+		Source:         userInfo.Email,
+		Destination:    userInfo.Email,
+		CurrencySource: CurrencyUBuck,
+		CurrencyDest:   KeyCertificateOfDeposit,
+		AmountSource:   prinInv,
+		AmountDest:     prinInv,
+		XRate:          decimal.NewFromInt32(1),
+		Reference:      "Ubuck to " + strconv.FormatInt(int64(body.Time), 10) + " day CD",
+		FromSource:     true,
+	}
+
+	CD := CertificateOfDeposit{
+		Ts:           ts,
+		Principal:    body.PrinInv,
+		CurrentValue: prinInv,
+		RefundValue:  prinInv.Mul(decimal.NewFromFloat32(.9)),
+		Interest:     timeToInterest(body.Time),
+		Maturity:     mature,
+		Active:       true,
+	}
+
+	student, err := getStudentBucketTx(tx, userInfo.Name)
+	if err != nil {
+		return err
+	}
+	_, _, err = addToHolderTx(student, CurrencyUBuck, transaction, OperationDebit, true)
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = false
+
+	err = addToCDHolderTx(student, transaction, CD, "")
+	if err != nil {
+		return err
+	}
+
+	cb, err := getCbTx(tx, userInfo.SchoolId)
+	if err != nil {
+		return err
+	}
+
+	err = addToCDHolderTx(cb, transaction, CD, "")
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = true
+
+	_, _, err = addToHolderTx(cb, CurrencyUBuck, transaction, OperationDebit, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getCDS(db *bolt.DB, userDetails UserInfo) (resp []openapi.ResponseCd, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getCDSRx(tx, userDetails)
+		return err
+	})
+
+	return
+
+}
+
+func getCDSRx(tx *bolt.Tx, userInfo UserInfo) (resp []openapi.ResponseCd, err error) {
+
+	student, err := getStudentBucketRx(tx, userInfo.Name)
+	if err != nil {
+		return
+	}
+
+	accountsBucket := student.Bucket([]byte(KeyAccounts))
+	if accountsBucket == nil {
+		return resp, fmt.Errorf("cannot find accounts bucket")
+	}
+
+	CDS_bucket := accountsBucket.Bucket([]byte(KeyCertificateOfDeposit))
+	if CDS_bucket == nil {
+		return resp, fmt.Errorf("cannot find CDS bucket")
+	}
+
+	c := CDS_bucket.Cursor()
+
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v == nil {
+			continue
+		}
+
+		CD_data := CDS_bucket.Get(k)
+
+		var deposit CertificateOfDeposit
+		err = json.Unmarshal(CD_data, &deposit)
+		if err != nil {
+			return resp, err
+		}
+
+		if deposit.Active {
+			item := openapi.ResponseCd{
+				Ts:           deposit.Ts,
+				Principal:    deposit.Principal,
+				CurrentValue: float32(deposit.CurrentValue.InexactFloat64()),
+				Interest:     deposit.Interest,
+				Maturity:     deposit.Maturity,
+				RefundValue:  float32(deposit.RefundValue.InexactFloat64()),
+			}
+			resp = append(resp, item)
+		}
+
+	}
+
+	return
+}
+
+func getCDTransactions(db *bolt.DB, userDetails UserInfo) (resp []openapi.ResponseTransactions, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getCDTransactionsRx(tx, userDetails)
+		return err
+	})
+
+	return
+
+}
+
+func getCDTransactionsRx(tx *bolt.Tx, userInfo UserInfo) (resp []openapi.ResponseTransactions, err error) {
+
+	student, err := getStudentBucketRx(tx, userInfo.Name)
+	if err != nil {
+		return
+	}
+
+	accountsBucket := student.Bucket([]byte(KeyAccounts))
+	if accountsBucket == nil {
+		return resp, fmt.Errorf("cannot find accounts bucket")
+	}
+
+	CDS_bucket := accountsBucket.Bucket([]byte(KeyCertificateOfDeposit))
+	if CDS_bucket == nil {
+		return resp, fmt.Errorf("cannot find CDS bucket")
+	}
+
+	transactionsBucket := CDS_bucket.Bucket([]byte(KeyTransactions))
+	if transactionsBucket == nil {
+		return resp, fmt.Errorf("cannot find transactions bucket")
+	}
+
+	c := transactionsBucket.Cursor()
+
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v == nil {
+			continue
+		}
+
+		var trans Transaction
+		err = json.Unmarshal(v, &trans)
+		if err != nil {
+			return resp, err
+		}
+
+		item := openapi.ResponseTransactions{
+			CreatedAt:   trans.Ts,
+			Amount:      float32(trans.AmountSource.InexactFloat64()),
+			Description: trans.Reference,
+		}
+		resp = append(resp, item)
+
+		if len(resp) > 24 {
+			break
+		}
+	}
+
+	return
+}
+
+func InterestToTime(interest float32) int64 {
+	if interest == 1.03 {
+		return 14
+	}
+	if interest == 1.04 {
+		return 30
+	}
+	if interest == 1.05 {
+		return 50
+	}
+	if interest == 1.06 {
+		return 70
+	}
+	return 90
+}
+
+func matureCheck(CD CertificateOfDeposit) string {
+	if CD.CurrentValue.Equal(CD.RefundValue) {
+		return "Fully Matured"
+	}
+	return "Early Refund"
+}
+
+func refundCD(db *bolt.DB, clock Clock, userDetails UserInfo, CD_id string) (err error) {
+	return db.Update(func(tx *bolt.Tx) error {
+		return refundCDTx(tx, clock, userDetails, CD_id)
+	})
+
+}
+
+func refundCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, CD_id string) (err error) {
+
+	student, err := getStudentBucketRx(tx, userInfo.Name)
+	if err != nil {
+		return
+	}
+
+	accountsBucket := student.Bucket([]byte(KeyAccounts))
+	if accountsBucket == nil {
+		return fmt.Errorf("cannot find accounts bucket")
+	}
+
+	CDS_bucket := accountsBucket.Bucket([]byte(KeyCertificateOfDeposit))
+	if CDS_bucket == nil {
+		return fmt.Errorf("cannot find CDS bucket")
+	}
+
+	CD_data := CDS_bucket.Get([]byte(CD_id))
+	if CD_data == nil {
+		return fmt.Errorf("cannot find the CD")
+	}
+
+	var CD CertificateOfDeposit
+	err = json.Unmarshal(CD_data, &CD)
+	if err != nil {
+		return err
+	}
+
+	if !CD.Active {
+		return nil
+	}
+
+	ts := clock.Now().Truncate(time.Millisecond)
+
+	transaction := Transaction{
+		Ts:             ts,
+		Source:         userInfo.Email,
+		Destination:    userInfo.Email,
+		CurrencySource: KeyCertificateOfDeposit,
+		CurrencyDest:   CurrencyUBuck,
+		AmountSource:   CD.RefundValue,
+		AmountDest:     CD.RefundValue,
+		XRate:          decimal.NewFromInt32(1),
+		Reference:      strconv.FormatInt(InterestToTime(CD.Interest), 10) + " day CD to Ubuck: " + matureCheck(CD),
+		FromSource:     true,
+	}
+
+	CD.Active = false
+
+	_, _, err = addToHolderTx(student, CurrencyUBuck, transaction, OperationCredit, true)
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = false
+
+	err = addToCDHolderTx(student, transaction, CD, CD_id)
+	if err != nil {
+		return err
+	}
+
+	cb, err := getCbTx(tx, userInfo.SchoolId)
+	if err != nil {
+		return err
+	}
+
+	err = addToCDHolderTx(cb, transaction, CD, CD_id)
+	if err != nil {
+		return err
+	}
+
+	transaction.FromSource = true
+
+	_, _, err = addToHolderTx(cb, CurrencyUBuck, transaction, OperationCredit, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CDSumTx(tx *bolt.Tx, account *bolt.Bucket) (sum decimal.Decimal) {
+	sum = decimal.Zero
+	c := account.Cursor()
+
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v == nil {
+			continue
+		}
+
+		var deposit CertificateOfDeposit
+		_ = json.Unmarshal(v, &deposit)
+
+		if deposit.Active {
+			sum = sum.Add(deposit.RefundValue)
+		}
+
+	}
+
+	return
 }
