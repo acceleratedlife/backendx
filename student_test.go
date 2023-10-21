@@ -221,7 +221,7 @@ func TestLatestLotto(t *testing.T) {
 
 	settings := openapi.Settings{
 		Lottery: true,
-		Odds:    10,
+		Odds:    750,
 	}
 
 	err = initializeLottery(db, userDetails, settings, &clock)
@@ -256,12 +256,12 @@ func TestPreviousLotto(t *testing.T) {
 
 	userDetails, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
-	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
 	settings := openapi.Settings{
 		Lottery: true,
-		Odds:    3,
+		Odds:    8000,
 	}
 
 	err = setSettings(db, &clock, userDetails, settings)
@@ -280,7 +280,7 @@ func TestPreviousLotto(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, "No Previous Raffle", v.Winner)
 
-	winner, err := purchaseLotto(db, &clock, userDetails, 20)
+	winner, err := purchaseLotto(db, &clock, userDetails, 20000)
 	require.Nil(t, err)
 	require.True(t, winner)
 

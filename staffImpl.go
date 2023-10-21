@@ -1350,22 +1350,23 @@ func initializeLotteryTx(tx *bolt.Tx, userDetails UserInfo, settings openapi.Set
 
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
+		_, _, err = getSchoolStudentsTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
 		mean, err := getMeanNetworthRx(tx, userDetails)
 		if err != nil {
 			return err
 		}
 
-		if settings.Odds == 0 {
-			count, err := getStudentCountRx(tx, userDetails.SchoolId)
-			if err != nil {
-				return err
-			}
-			settings.Odds = count * 10
+		if settings.Odds < int32(mean.Mul(decimal.NewFromFloat32(.6)).IntPart()) {
+			settings.Odds = int32(mean.IntPart())
 		}
 
 		newLottery := openapi.Lottery{
 			Odds:    settings.Odds,
-			Jackpot: int32(mean.IntPart()), //this might be too high of a start and need to be adjusted down
+			Jackpot: int32(mean.IntPart()),
 			Number:  int32(r.Intn(int(settings.Odds))),
 		}
 
@@ -1666,7 +1667,7 @@ func getMeanNetworthRx(tx *bolt.Tx, userDetails UserInfo) (mean decimal.Decimal,
 
 	mean = decimal.Avg(netWorths[0], netWorths[1:]...)
 
-	if mean.LessThanOrEqual(decimal.Zero) {
+	if mean.LessThanOrEqual(decimal.NewFromInt32(250)) {
 		mean = decimal.NewFromInt32(250)
 	}
 

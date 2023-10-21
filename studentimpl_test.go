@@ -701,39 +701,43 @@ func TestPurchaseLottoOff(t *testing.T) {
 
 	student, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
-	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
-	require.Nil(t, err)
 
 	_, err = purchaseLotto(db, &clock, student, 5)
 	require.Equal(t, "the lotto has not been initialized", err.Error())
 
 	var settings = openapi.Settings{
 		Lottery: true,
-		Odds:    20,
+		Odds:    250,
 	}
 
 	err = setSettings(db, &clock, student, settings)
 	require.Nil(t, err)
 
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
 	var settings2 = openapi.Settings{
 		Lottery: false,
-		Odds:    20,
+		Odds:    250,
 	}
 
 	err = setSettings(db, &clock, student, settings2)
 	require.Nil(t, err)
 
-	winner, err := purchaseLotto(db, &clock, student, 60)
+	winner, err := purchaseLotto(db, &clock, student, 700)
 	require.Nil(t, err)
 	require.True(t, winner)
 
-	_, err = purchaseLotto(db, &clock, student, 60)
+	_, err = purchaseLotto(db, &clock, student, 700)
 	require.NotNil(t, err)
 
 	err = setSettings(db, &clock, student, settings)
 	require.Nil(t, err)
 
-	winner, err = purchaseLotto(db, &clock, student, 60)
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	winner, err = purchaseLotto(db, &clock, student, 30000)
 	require.Nil(t, err)
 	require.True(t, winner)
 }
@@ -749,15 +753,17 @@ func TestPurchaseLottoSingle(t *testing.T) {
 
 	student, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
-	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
-	require.Nil(t, err)
 
+	//the lotto should still have an odds of 250 as that is the lowest possible
 	var settings = openapi.Settings{
 		Lottery: true,
 		Odds:    30,
 	}
 
 	err = setSettings(db, &clock, student, settings)
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
 	winner, err := purchaseLotto(db, &clock, student, 1)

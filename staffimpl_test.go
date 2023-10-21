@@ -588,7 +588,7 @@ func TestInitializeLottery(t *testing.T) {
 
 	settings := openapi.Settings{
 		Lottery: true,
-		Odds:    10,
+		Odds:    300,
 	}
 
 	err = setSettings(db, &clock, adminDetails, settings)
@@ -602,7 +602,7 @@ func TestInitializeLottery(t *testing.T) {
 
 	settings2 := openapi.Settings{
 		Lottery: false,
-		Odds:    10,
+		Odds:    400,
 	}
 
 	err = setSettings(db, &clock, adminDetails, settings2)
@@ -616,13 +616,13 @@ func TestInitializeLottery(t *testing.T) {
 
 	settings3 := openapi.Settings{
 		Lottery: true,
-		Odds:    20,
+		Odds:    8000,
 	}
 
 	err = setSettings(db, &clock, adminDetails, settings3)
 	require.Nil(t, err)
 
-	//newest settings have odds of 20 but that game is not over so you should still see an odds of 10 on the current game
+	//newest settings have odds of 8000 but that game is not over so you should still see an odds of 300 on the current game
 	lottery, err = getLottoLatest(db, adminDetails)
 	require.Nil(t, err)
 
@@ -632,11 +632,11 @@ func TestInitializeLottery(t *testing.T) {
 	student, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
 
-	err = pay2Student(db, &clock, student, decimal.NewFromFloat(800), CurrencyUBuck, "pre load")
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
 	//should have winner chosen and new lottery should be created
-	winner, err := purchaseLotto(db, &clock, student, 300)
+	winner, err := purchaseLotto(db, &clock, student, 1000)
 	require.Nil(t, err)
 	require.True(t, winner)
 
@@ -644,6 +644,76 @@ func TestInitializeLottery(t *testing.T) {
 	require.Nil(t, err)
 
 	require.Equal(t, settings3.Odds, lottery.Odds)
+	require.Equal(t, "", lottery.Winner)
+
+}
+
+func TestInitializeLotteryTooLowOdds(t *testing.T) {
+
+	lgr.Printf("INFO TestInitializeLotteryTooLowOdds")
+	t.Log("INFO TestInitializeLotteryTooLowOdds")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("InitializeLotteryTooLowOdds")
+	defer dbTearDown()
+	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+
+	adminDetails, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	settings := openapi.Settings{
+		Lottery: true,
+		Odds:    10,
+	}
+
+	err = setSettings(db, &clock, adminDetails, settings)
+	require.Nil(t, err)
+
+	lottery, err := getLottoLatest(db, adminDetails)
+	require.Nil(t, err)
+
+	require.Equal(t, int32(10000), lottery.Odds)
+	require.Equal(t, "", lottery.Winner)
+
+}
+
+func TestInitializeLotteryMinimalOdds(t *testing.T) {
+
+	lgr.Printf("INFO TestInitializeLotteryMinimalOdds")
+	t.Log("INFO TestInitializeLotteryMinimalOdds")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("InitializeLotteryMinimalOdds")
+	defer dbTearDown()
+	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+
+	adminDetails, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	settings2 := openapi.Settings{
+		Lottery: true,
+		Odds:    10000 * .6,
+	}
+
+	err = setSettings(db, &clock, adminDetails, settings2)
+	require.Nil(t, err)
+
+	lottery, err := getLottoLatest(db, adminDetails)
+	require.Nil(t, err)
+
+	require.Equal(t, settings2.Odds, lottery.Odds)
 	require.Equal(t, "", lottery.Winner)
 
 }
@@ -706,7 +776,7 @@ func TestLotteryLastWinner(t *testing.T) {
 
 	settings := openapi.Settings{
 		Lottery: true,
-		Odds:    10,
+		Odds:    300,
 	}
 
 	err = setSettings(db, &clock, adminDetails, settings)
@@ -722,18 +792,12 @@ func TestLotteryLastWinner(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, "No Previous Raffle", prevLotto.Winner)
 
-	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "pre load")
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
-	_, _, err = getSchoolStudents(db, student)
-	require.Nil(t, err)
-
-	winner, err := purchaseLotto(db, &clock, student, 100)
+	winner, err := purchaseLotto(db, &clock, student, 600)
 	require.Nil(t, err)
 	require.True(t, winner)
-
-	_, _, err = getSchoolStudents(db, student)
-	require.Nil(t, err)
 
 	prevLotto, err = getLottoPrevious(db, student)
 	require.Nil(t, err)
