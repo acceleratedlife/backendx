@@ -636,7 +636,7 @@ func TestInitializeLottery(t *testing.T) {
 	require.Nil(t, err)
 
 	//should have winner chosen and new lottery should be created
-	winner, err := purchaseLotto(db, &clock, student, 1000)
+	winner, err := purchaseLotto(db, &clock, student, 2000)
 	require.Nil(t, err)
 	require.True(t, winner)
 
@@ -795,7 +795,7 @@ func TestLotteryLastWinner(t *testing.T) {
 	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
-	winner, err := purchaseLotto(db, &clock, student, 600)
+	winner, err := purchaseLotto(db, &clock, student, 2000)
 	require.Nil(t, err)
 	require.True(t, winner)
 

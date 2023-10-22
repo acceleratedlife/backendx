@@ -256,15 +256,16 @@ func TestPreviousLotto(t *testing.T) {
 
 	userDetails, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
-	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
-	require.Nil(t, err)
 
 	settings := openapi.Settings{
 		Lottery: true,
-		Odds:    8000,
+		Odds:    250,
 	}
 
 	err = setSettings(db, &clock, userDetails, settings)
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/lottery/previous", nil)
@@ -1218,7 +1219,7 @@ func TestLottoPurchase(t *testing.T) {
 
 	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/lottery/purchase")
 	q := u.Query()
-	q.Set("quantity", "1000")
+	q.Set("quantity", "2000")
 	u.RawQuery = q.Encode()
 
 	req, _ := http.NewRequest(http.MethodPut,
