@@ -1094,11 +1094,12 @@ func TestResetClockSecured(t *testing.T) {
 	clock.TickOne(time.Hour * 100)
 
 	client := &http.Client{}
-	//this is because once a tick is executed it will freeze time until resetClock is run again
+
 	time3 := clock.Now()
 	time.Sleep(time.Nanosecond)
-	time4 := clock.Now()
-	assert.True(t, time3.Equal(time4))
+	//clock.Now() should be time.Now() + tickOne duraction
+	time4 := time.Now()
+	assert.True(t, time3.After(time4))
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
@@ -1111,8 +1112,8 @@ func TestResetClockSecured(t *testing.T) {
 
 	time5 := clock.Now()
 	time.Sleep(time.Nanosecond)
-	time6 := clock.Now()
-	//resetClock has ran so time is normal again.
+	time6 := time.Now()
+	//resetClock has ran so clock and time should be the same but different one nano in this case
 	assert.True(t, time5.Before(time6))
 
 }
