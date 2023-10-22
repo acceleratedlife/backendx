@@ -123,22 +123,19 @@ type AppClock struct {
 }
 
 type DemoClock struct {
-	Current time.Time
+	Future time.Duration
 }
 
 func (t *DemoClock) Now() time.Time {
-	if t.Current.IsZero() {
-		return time.Now()
-	}
-	lgr.Printf("DEBUG current time - %v", t.Current)
-	return t.Current
+	lgr.Printf("DEBUG current time - %v", time.Now().Add(t.Future))
+	return time.Now().Add(t.Future)
 }
 func (t *DemoClock) TickOne(d time.Duration) {
-	t.Current = t.Current.Add(d)
+	t.Future = t.Future + d
 }
 
 func (t *DemoClock) ResetNow() {
-	t.Current = time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)
+	t.Future = time.Duration(0)
 }
 
 func (*AppClock) Now() time.Time {
