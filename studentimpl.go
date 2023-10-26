@@ -1308,7 +1308,7 @@ func chargeStudentTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, amount deci
 	_, _, err = addToHolderTx(student, currency, transaction, OperationDebit, true)
 	if err != nil {
 		if err.Error() == "insufficient funds" && !sPurchase {
-			if strings.Contains(reference, "Event: ") {
+			if strings.Contains(reference, "Event: ") { //I don't think I need this if as it is doing the same thing regardless
 				err := studentConvertTx(tx, clock, userDetails, amount, currency, KeyDebt, reference, false)
 				if err != nil {
 					return err
@@ -2367,7 +2367,7 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 			return fmt.Errorf("the lotto has not been initialized")
 		}
 
-		chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Lotto", true)
+		chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Raffle", true)
 		if err != nil {
 			return err
 		}
@@ -2388,7 +2388,7 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 					return err
 				}
 
-				err = pay2StudentTx(tx, clock, studentDetails, decimal.NewFromInt32(lottery.Jackpot+tickets), CurrencyUBuck, "Lotto Winner "+clock.Now().Format("02/03/2006"))
+				err = pay2StudentTx(tx, clock, studentDetails, decimal.NewFromInt32(lottery.Jackpot+tickets), CurrencyUBuck, "Raffle Winner "+clock.Now().Format("02/03/2006"))
 				if err != nil {
 					return err
 				}
