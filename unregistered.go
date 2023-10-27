@@ -48,6 +48,14 @@ func (s *UnregisteredApiServiceImpl) ResetStaffPassword(ctx context.Context, bod
 
 func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register openapi.RequestRegister) (openapi.ImplResponse, error) {
 
+	_, err := getUserInLocalStore(u.db, register.Email)
+	if err == nil {
+		return openapi.Response(404,
+			openapi.ResponseRegister4{
+				Message: "That email is already in use",
+			}), nil
+	}
+
 	role, pathId, err := RoleByAddCode(u.db, register.AddCode, u.clock)
 	if err != nil {
 		return openapi.Response(404,
