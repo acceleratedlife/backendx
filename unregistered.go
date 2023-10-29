@@ -16,6 +16,17 @@ type UnregisteredApiServiceImpl struct {
 	clock Clock
 }
 
+func (s *UnregisteredApiServiceImpl) GetCryptos(ctx context.Context) (openapi.ImplResponse, error) {
+
+	cryptos, err := getCryptos(s.db)
+
+	if err != nil {
+		return openapi.Response(404, ""), err
+	}
+
+	return openapi.Response(200, cryptos), nil
+}
+
 func (s *UnregisteredApiServiceImpl) ResetStaffPassword(ctx context.Context, body openapi.RequestUser) (openapi.ImplResponse, error) {
 	staffDetails, err := getUserInLocalStore(s.db, body.Id)
 	if err != nil {
