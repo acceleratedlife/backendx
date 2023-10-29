@@ -780,13 +780,21 @@ func getAllAuctionsRx(tx *bolt.Tx, clock Clock, userDetails UserInfo) (resp []op
 			return
 		}
 
-		if clock.Now().After(auction.Id) {
+		if clock.Now().After(auction.Id.Add(time.Hour * 24 * 2)) {
 			break
+		}
+
+		if !auction.Active {
+			continue
 		}
 
 		owner, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
 		if err != nil {
 			return resp, err
+		}
+
+		if owner.Role != UserRoleStudent {
+			continue
 		}
 
 		if auction.WinnerId.Id != "" {
