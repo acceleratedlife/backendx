@@ -126,6 +126,7 @@ type SysAdminApiRouter interface {
 // The UnregisteredApiRouter implementation should parse necessary information from the http request,
 // pass the data to a UnregisteredApiServicer to perform the required actions, then write the service results to the http response.
 type UnregisteredApiRouter interface { 
+	GetCryptos(http.ResponseWriter, *http.Request)
 	Register(http.ResponseWriter, *http.Request)
 	ResetStaffPassword(http.ResponseWriter, *http.Request)
 }
@@ -259,6 +260,7 @@ type SysAdminApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type UnregisteredApiServicer interface { 
+	GetCryptos(context.Context) (ImplResponse, error)
 	Register(context.Context, RequestRegister) (ImplResponse, error)
 	ResetStaffPassword(context.Context, RequestUser) (ImplResponse, error)
 }
