@@ -56,7 +56,7 @@ func TestAuctionsAll(t *testing.T) {
 	auctions, err := getAllAuctions(db, &clock, teacher)
 	require.Nil(t, err)
 
-	require.Equal(t, 2, len(auctions))
+	require.Equal(t, 1, len(auctions))
 
 	clock.TickOne(time.Minute * 12)
 
@@ -64,6 +64,13 @@ func TestAuctionsAll(t *testing.T) {
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(auctions))
+
+	clock.TickOne(time.Hour * 24 * 2)
+
+	auctions, err = getAllAuctions(db, &clock, teacher)
+	require.Nil(t, err)
+
+	require.Equal(t, 0, len(auctions))
 }
 
 func TestApproveAuction(t *testing.T) {
