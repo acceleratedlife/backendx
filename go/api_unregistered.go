@@ -50,6 +50,12 @@ func NewUnregisteredApiController(s UnregisteredApiServicer, opts ...Unregistere
 func (c *UnregisteredApiController) Routes() Routes {
 	return Routes{
 		{
+			"GetCryptos",
+			strings.ToUpper("Get"),
+			"/api/allCrypto",
+			c.GetCryptos,
+		},
+		{
 			"Register",
 			strings.ToUpper("Post"),
 			"/api/users/register",
@@ -62,6 +68,19 @@ func (c *UnregisteredApiController) Routes() Routes {
 			c.ResetStaffPassword,
 		},
 	}
+}
+
+// GetCryptos - returns all cryptos current values
+func (c *UnregisteredApiController) GetCryptos(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.GetCryptos(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
 }
 
 // Register - Users register

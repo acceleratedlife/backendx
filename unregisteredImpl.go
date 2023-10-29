@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"time"
 
+	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
 )
@@ -210,6 +212,34 @@ func getJobIdRx(tx *bolt.Tx, key string) (job string) {
 		job = string(k)
 
 	}
+
+	return
+}
+
+func getCryptos(db *bolt.DB) (cryptos []openapi.ResponseCryptoPrice, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		cryptoBucket := tx.Bucket([]byte(KeyCryptos))
+		if cryptoBucket == nil {
+			return fmt.Errorf("cannot get crypto bucket")
+		}
+
+		c := cryptoBucket.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var cryptoInfo openapi.CryptoCb
+			err = json.Unmarshal(v, &cryptoInfo)
+			if err != nil {
+				return fmt.Errorf("ERROR cannot unmarshal crypto")
+			}
+			crypto := openapi.ResponseCryptoPrice{
+				Name:  string(k),
+				Price: cryptoInfo.Usd,
+			}
+
+			cryptos = append(cryptos, crypto)
+		}
+
+		return nil
+	})
 
 	return
 }

@@ -283,6 +283,24 @@ paths:
       summary: searches accounts for UBuck for this student at this school
       tags:
       - Student
+  /allCrypto:
+    get:
+      description: return the crypto name and its price
+      operationId: getCryptos
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseCryptoPrice'
+                type: array
+          description: cryptos
+        "404":
+          description: No cryptos found
+      summary: returns all cryptos current values
+      tags:
+      - Unregistered
   /accounts/allCrypto:
     get:
       description: users user._id to find all crypto accounts for that user that has
@@ -2253,6 +2271,17 @@ components:
         maturity:
           format: date-time
           type: string
+      type: object
+    ResponseCryptoPrice:
+      example:
+        price: 0.8008282
+        name: name
+      properties:
+        name:
+          type: string
+        price:
+          format: float
+          type: number
       type: object
     ResponseCurrencyExchange:
       example:
