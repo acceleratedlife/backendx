@@ -7,7 +7,7 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: AL
-  version: 1.0.1
+  version: 1.0.2
 servers:
 - description: SwaggerHub API Auto Mocking
   url: https://accelerated-life-demo.herokuapp.com/api
@@ -589,7 +589,7 @@ paths:
       responses:
         "200":
           content:
-            application/json:
+            text/event-stream:
               schema:
                 items:
                   $ref: '#/components/schemas/ResponseAuctionStudent'
