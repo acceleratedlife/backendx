@@ -4,6 +4,7 @@ import (
 	"context"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/go-pkgz/auth/token"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -51,6 +52,11 @@ func (s SysAdminApiServiceImpl) EditSchool(ctx context.Context, body openapi.Sch
 	panic("implement me")
 }
 
+func (s SysAdminApiServiceImpl) GetAllUsers(ctx context.Context) (openapi.ImplResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (s SysAdminApiServiceImpl) MakeAccount(ctx context.Context, body1 openapi.AccountsAccountBody1) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
@@ -66,11 +72,23 @@ func (s SysAdminApiServiceImpl) SearchAllBucks(ctx context.Context, s2 string) (
 	panic("implement me")
 }
 
-func (s *SysAdminApiServiceImpl) SearchSchools(ctx context.Context, zip int32) (openapi.ImplResponse, error) {
+func (s *SysAdminApiServiceImpl) SearchSchools(ctx context.Context, zip int32) (openapi.ImplResponse, error) { //needs to be tested
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleSysAdmin {
+		return openapi.Response(401, ""), nil
+	}
 
 	res, err := schoolsByZip(s.db, zip)
 
-	if res != nil {
+	if err != nil {
 		return openapi.Response(500, nil), err
 	}
 	return openapi.Response(200, res), nil

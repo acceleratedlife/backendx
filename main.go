@@ -183,6 +183,8 @@ func main() {
 	router.Handle("/admin/addEvents", addEventsHandler(db))
 	//add admin
 	router.Handle("/admin/addAdmin", addAdminHandler(db))
+	//add sysAdmin
+	router.Handle("/sysAdmin/addSysAdmin", addSysAdminHandler(db))
 	//seed db, dev only
 	router.Handle("/admin/seedDb", seedDbHandler(db, clock))
 	//advance clock 15 days, dev only

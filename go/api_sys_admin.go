@@ -98,6 +98,12 @@ func (c *SysAdminApiController) Routes() Routes {
 			c.EditSchool,
 		},
 		{
+			"GetAllUsers",
+			strings.ToUpper("Get"),
+			"/api/sysAdmin/users",
+			c.GetAllUsers,
+		},
+		{
 			"MakeAccount",
 			strings.ToUpper("Post"),
 			"/api/accounts/account",
@@ -280,6 +286,19 @@ func (c *SysAdminApiController) EditSchool(w http.ResponseWriter, r *http.Reques
 
 }
 
+// GetAllUsers - get all users excluding sysAdmins
+func (c *SysAdminApiController) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.GetAllUsers(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
 // MakeAccount - make account
 func (c *SysAdminApiController) MakeAccount(w http.ResponseWriter, r *http.Request) {
 	accountsAccountBody1Param := AccountsAccountBody1{}
@@ -331,7 +350,7 @@ func (c *SysAdminApiController) MakeSchool(w http.ResponseWriter, r *http.Reques
 // SearchSchools - searches schools
 func (c *SysAdminApiController) SearchSchools(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	zipParam, err := parseInt32Parameter(query.Get("zip"), true)
+	zipParam, err := parseInt32Parameter(query.Get("zip"), false)
 	if err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return

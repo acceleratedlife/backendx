@@ -37,7 +37,7 @@ paths:
         explode: true
         in: query
         name: zip
-        required: true
+        required: false
         schema:
           type: integer
         style: form
@@ -1171,6 +1171,24 @@ paths:
       summary: all the teachers that are at the same school of the user
       tags:
       - All
+  /sysAdmin/users:
+    get:
+      description: returns students, teacher and admins
+      operationId: getAllUsers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseAllUsers'
+                type: array
+          description: users of the site
+        "401":
+          description: unauthorized
+      summary: get all users excluding sysAdmins
+      tags:
+      - SysAdmin
   /transactions:
     get:
       description: By passing in the staffs _id you can find a transactions that they
@@ -2089,6 +2107,31 @@ components:
       - name
       - zip
       type: object
+    ResponseAllUsers:
+      example:
+        firstName: firstName
+        lastName: lastName
+        role: 0
+        school: school
+        _id: _id
+      properties:
+        _id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        school:
+          type: string
+        role:
+          type: integer
+      required:
+      - _id
+      - firstName
+      - lastName
+      - role
+      - school
+      type: object
     ResponseAuctionStudent:
       example:
         approver: approver
@@ -2531,7 +2574,10 @@ components:
       type: object
     ResponseSchools:
       example:
+        zip: 0
+        city: Medford
         name: East High
+        students: 6
         _id: dlkjdlkjdfslkjdfs93
       properties:
         name:
@@ -2540,6 +2586,13 @@ components:
         _id:
           example: dlkjdlkjdfslkjdfs93
           type: string
+        city:
+          example: Medford
+          type: string
+        zip:
+          type: integer
+        students:
+          type: integer
       type: object
     ResponseSearchStudentUbuck:
       example:

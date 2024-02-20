@@ -9,6 +9,7 @@ import (
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -940,7 +941,9 @@ func TestSearchStudentCrypto(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchStudentCrypto", 8090, "test@admin.com")
 	defer tearDown()
-	coinGecko(db)
+	lgr.Printf("INFO TestSearchStudentCrypto")
+	err := coinGecko(db)
+	require.Nil(t, err)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
 
@@ -983,7 +986,9 @@ func TestSearchCrypto(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchCrypto", 8090, "test@admin.com")
 	defer tearDown()
-	coinGecko(db)
+	lgr.Printf("INFO TestSearchCrypto")
+	err := coinGecko(db)
+	require.Nil(t, err)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
 
@@ -1025,7 +1030,9 @@ func TestCryptoConvert(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("cryptoConvert", 8090, "test@admin.com")
 	defer tearDown()
-	coinGecko(db)
+	lgr.Printf("INFO TestCryptoConvert")
+	err := coinGecko(db)
+	require.Nil(t, err)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
 
@@ -1061,7 +1068,9 @@ func TestSearchCryptoTransactions(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchCryptoTransactions", 8090, "test@admin.com")
 	defer tearDown()
-	coinGecko(db)
+	lgr.Printf("INFO TestSearchCryptoTransactions")
+	err := coinGecko(db)
+	require.Nil(t, err)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
 

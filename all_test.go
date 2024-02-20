@@ -10,6 +10,7 @@ import (
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 
@@ -48,7 +49,9 @@ func TestSearchStudents(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("searchStudents", 8090, "")
 	defer tearDown()
-	coinGecko(db)
+	lgr.Printf("INFO TestSearchStudents")
+	err := coinGecko(db)
+	require.Nil(t, err)
 
 	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 3)
 

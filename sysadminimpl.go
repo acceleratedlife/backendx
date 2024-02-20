@@ -144,8 +144,8 @@ func FindOrCreateSchool(db *bolt.DB, clock Clock, name string, city string, zip 
 	return id, err
 }
 
-func schoolsByZip(db *bolt.DB, zip int32) ([]openapi.ResponseSchoolsInner, error) {
-	res := make([]openapi.ResponseSchoolsInner, 0)
+func schoolsByZip(db *bolt.DB, zip int32) ([]openapi.ResponseSchools, error) { //needs to be tested
+	res := make([]openapi.ResponseSchools, 0)
 
 	err := db.View(func(tx *bolt.Tx) error {
 		schools := tx.Bucket([]byte("schools"))
@@ -162,19 +162,64 @@ func schoolsByZip(db *bolt.DB, zip int32) ([]openapi.ResponseSchoolsInner, error
 
 			school := schools.Bucket(k)
 
-			if btoi32(school.Get([]byte("zip"))) != zip {
+			schoolZip := btoi32(school.Get([]byte(KeyZip)))
+
+			if zip != 0 && schoolZip != zip {
 				continue
 			}
+
 			schoolId := string(k)
-			schoolName := string(school.Get([]byte("name")))
-			res = append(res, openapi.ResponseSchoolsInner{
-				Name: schoolName,
-				Id:   schoolId,
+			schoolName := string(school.Get([]byte(KeyName)))
+			schoolCity := string(school.Get([]byte(KeyCity)))
+			studentsBucket := school.Bucket([]byte(KeyStudents))
+
+			cursor := studentsBucket.Cursor()
+			studentCount := int32(0)
+			for key, _ := cursor.First(); key != nil; key, _ = cursor.Next() {
+				studentCount++
+			}
+
+			res = append(res, openapi.ResponseSchools{
+				Name:     schoolName,
+				Id:       schoolId,
+				City:     schoolCity,
+				Zip:      schoolZip,
+				Students: studentCount,
 			})
-			return nil
 		}
 		return nil
 	})
 
 	return res, err
+}
+
+func CreateSysAdmin(db *bolt.DB, body UserInfo) (openapi.ImplResponse, error) {
+
+	if body.Role != UserRoleSysAdmin {
+		return openapi.ImplResponse{}, fmt.Errorf("not a sysAdmin")
+	}
+	v := openapi.ImplResponse{}
+
+	err := db.Update(func(tx *bolt.Tx) error {
+
+		newUser := UserInfo{
+			Name:        body.Name,
+			FirstName:   body.FirstName,
+			LastName:    body.LastName,
+			Email:       body.Email,
+			Confirmed:   true,
+			PasswordSha: body.PasswordSha,
+			SchoolId:    body.SchoolId,
+			Role:        UserRoleSysAdmin,
+		}
+
+		err := AddUserTx(tx, newUser)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return v, err
 }

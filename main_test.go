@@ -786,6 +786,60 @@ func TestAddAdminSecured(t *testing.T) {
 
 }
 
+func TestAddSysAdminSecured(t *testing.T) {
+	clock := TestClock{}
+	db, teardown := OpenTestDB("-integration")
+	defer teardown()
+
+	InitDefaultAccounts(db, &clock)
+	auth := initAuth(db, ServerConfig{
+		AdminPassword: "test1",
+	})
+	mux, _ := createRouter(db)
+
+	m := auth.Middleware()
+	mux.Use(buildAuthMiddleware(m))
+	mux.Handle("/sysAdmin/addSysAdmin", addSysAdminHandler(db))
+
+	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+
+	ts := httptest.NewUnstartedServer(mux)
+	assert.NoError(t, ts.Listener.Close())
+	ts.Listener = l
+	ts.Start()
+	defer func() {
+		ts.Close()
+	}()
+
+	client := &http.Client{}
+
+	CreateTestAccounts(db, 1, 0, 0, 0)
+
+	body := UserInfo{
+		Email:     "test@test.com",
+		FirstName: "first",
+		LastName:  "last",
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	// access allowed
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://localhost:8089/sysAdmin/addSysAdmin",
+		bytes.NewBuffer(marshal))
+	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.ResponseResetPassword
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.Equal(t, 6, len(data.Password))
+
+}
+
 func TestSeedDbSecured(t *testing.T) {
 
 	clock := TestClock{}

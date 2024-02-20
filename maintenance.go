@@ -333,6 +333,67 @@ func addAdminHandler(db *bolt.DB) http.Handler {
 	})
 }
 
+func addSysAdminHandler(db *bolt.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request UserInfo
+		defer r.Body.Close()
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&request)
+		if err != nil {
+			err = fmt.Errorf("cannot parse request body: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		lgr.Printf("INFO new sysAdmin request: %v", request)
+
+		if request.Email == "" {
+			err = fmt.Errorf("email is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if request.FirstName == "" {
+			err = fmt.Errorf("firstName is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if request.LastName == "" {
+			err = fmt.Errorf("lastName is mandatory")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_, passwords := constSlice()
+		password := randomWords(1, 10, passwords)
+
+		request.Role = UserRoleSysAdmin
+		request.Name = request.Email
+		request.PasswordSha = EncodePassword(password)
+
+		_, err = CreateSysAdmin(db, request)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		response := openapi.ResponseResetPassword{
+			Password: password,
+		}
+
+		lgr.Printf("sysAdmin created for %s ", request.Email)
+
+		w.Header().Set("Content-Type", "application/json")
+		encoder := json.NewEncoder(w)
+		err = encoder.Encode(response)
+		if err != nil {
+			lgr.Printf("ERROR failed to send")
+		}
+
+	})
+}
+
 func nextCollegeHandler(clock *DemoClock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
