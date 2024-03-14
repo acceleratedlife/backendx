@@ -2461,6 +2461,10 @@ func buyCD(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestB
 
 }
 
+func truncateToDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}
+
 func buyCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, body openapi.RequestBuyCd) (err error) {
 
 	prinInv := decimal.NewFromInt32(body.PrinInv)
@@ -2470,7 +2474,7 @@ func buyCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, body openapi.RequestBu
 	}
 
 	ts := clock.Now().Truncate(time.Millisecond)
-	mature := ts.Add(time.Hour * 24 * time.Duration(body.Time))
+	mature := truncateToDay(ts.Add(time.Hour * 24 * time.Duration(body.Time)))
 
 	transaction := Transaction{
 		Ts:             ts,
