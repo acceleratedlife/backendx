@@ -483,7 +483,11 @@ func TestDebtInterest(t *testing.T) {
 	require.Greater(t, account.Balance, float32(2000))
 }
 
+<<<<<<< HEAD
 //** its a good test but coinGecko won't let it hit so often. Need to run the test solo.
+=======
+//****** good test but needs to be ran on its own due to coingecko chanages
+>>>>>>> main
 // func TestGetCryptoForStudentRequest(t *testing.T) {
 
 // 	lgr.Printf("INFO TestGetCryptoForStudentRequest")
@@ -491,8 +495,12 @@ func TestDebtInterest(t *testing.T) {
 // 	clock := TestClock{}
 // 	db, dbTearDown := OpenTestDB("getCryptoForStudentRequest")
 // 	defer dbTearDown()
+<<<<<<< HEAD
 // 	err := coinGecko(db)
 // 	require.Nil(t, err)
+=======
+// 	coinGecko(db)
+>>>>>>> main
 // 	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
 // 	student, err := getUserInLocalStore(db, students[0])
@@ -525,6 +533,7 @@ func TestDebtInterest(t *testing.T) {
 // 	require.Less(t, clock.Now().Truncate(time.Second).Sub(bitcoin.UpdatedAt), time.Second*5)
 // }
 
+<<<<<<< HEAD
 //** its a good test but coinGecko won't let it hit so often. Need to run the test solo.
 // func TestCryptoTransaction(t *testing.T) {
 
@@ -577,6 +586,64 @@ func TestDebtInterest(t *testing.T) {
 // 	resp, err = getCryptoForStudentRequest(db, student, "Cardano")
 // 	require.Nil(t, err)
 // 	require.Equal(t, float32(5), resp.Owned)
+=======
+//****** good test but needs to be ran on its own due to coingecko chanages
+
+// func TestCryptoTransaction(t *testing.T) {
+
+// 	lgr.Printf("INFO TestCryptoTransaction")
+// 	t.Log("INFO TestCryptoTransaction")
+// 	clock := TestClock{}
+// 	db, dbTearDown := OpenTestDB("cryptoTransaction")
+// 	defer dbTearDown()
+// 	coinGecko(db)
+// 	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+// 	student, err := getUserInLocalStore(db, students[0])
+// 	require.Nil(t, err)
+// 	err = pay2Student(db, &clock, student, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
+// 	require.Nil(t, err)
+
+// 	body := openapi.RequestCryptoConvert{
+// 		Name: "cardano",
+// 		Buy:  10,
+// 		Sell: 0,
+// 	}
+
+// 	resp, err := getCryptoForStudentRequest(db, student, "Cardano")
+// 	require.Nil(t, err)
+// 	require.Equal(t, float32(0), resp.Owned)
+
+// 	_ = cryptoTransaction(db, &clock, student, body)
+
+// 	resp, err = getCryptoForStudentRequest(db, student, "Cardano")
+// 	require.Nil(t, err)
+// 	require.Equal(t, float32(10), resp.Owned)
+
+// 	resp2, _, err := getStudentCrypto(db, student, "cardano")
+// 	require.Nil(t, err)
+// 	require.NotZero(t, resp2.Basis)
+
+// 	clock.TickOne(time.Minute * 2)
+
+// 	body.Buy = 0
+// 	body.Sell = 11
+
+// 	err = cryptoTransaction(db, &clock, student, body)
+// 	require.NotNil(t, err)
+
+// 	body.Sell = 5
+>>>>>>> main
+
+// 	err = cryptoTransaction(db, &clock, student, body)
+// 	require.Nil(t, err)
+// 	resp, err = getCryptoForStudentRequest(db, student, "Cardano")
+// 	require.Nil(t, err)
+<<<<<<< HEAD
+// 	require.Equal(t, float32(0), resp.Owned)
+
+=======
+// 	require.Equal(t, float32(5), resp.Owned)
 
 // 	err = cryptoTransaction(db, &clock, student, body)
 // 	require.Nil(t, err)
@@ -584,6 +651,7 @@ func TestDebtInterest(t *testing.T) {
 // 	require.Nil(t, err)
 // 	require.Equal(t, float32(0), resp.Owned)
 
+>>>>>>> main
 // }
 
 func TestTrueAuctionFalse(t *testing.T) {

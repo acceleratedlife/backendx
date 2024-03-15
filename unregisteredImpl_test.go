@@ -13,6 +13,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+<<<<<<< HEAD
 //** its a good test but coinGecko won't let it hit so often. Need to run the test solo.
 // func TestGetCryptoFunction(t *testing.T) {
 // 	db, tearDown := FullStartTestServer("getCryptoFunction", 8090, "test@admin.com")
@@ -23,6 +24,18 @@ import (
 // 	cryptos, err := getCryptos(db)
 // 	require.Nil(t, err)
 
+=======
+// good test just run solo due to coin gecko changes
+
+// func TestGetCryptoFunction(t *testing.T) {
+// 	db, tearDown := FullStartTestServer("getCryptoFunction", 8090, "test@admin.com")
+// 	defer tearDown()
+// 	err := coinGecko(db)
+// 	require.Nil(t, err)
+// 	cryptos, err := getCryptos(db)
+// 	require.Nil(t, err)
+
+>>>>>>> main
 // 	require.Greater(t, len(cryptos), 20)
 // }
 
