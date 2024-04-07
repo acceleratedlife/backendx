@@ -10,8 +10,11 @@
 
 package openapi
 
-type Lottery struct {
+import (
+	"time"
+)
 
+type Lottery struct {
 	Odds int32 `json:"odds"`
 
 	Jackpot int32 `json:"jackpot"`
@@ -19,14 +22,17 @@ type Lottery struct {
 	Number int32 `json:"number"`
 
 	Winner string `json:"winner,omitempty"`
+
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // AssertLotteryRequired checks if the required fields are not zero-ed
 func AssertLotteryRequired(obj Lottery) error {
 	elements := map[string]interface{}{
-		"odds": obj.Odds,
-		"jackpot": obj.Jackpot,
-		"number": obj.Number,
+		"odds":      obj.Odds,
+		"jackpot":   obj.Jackpot,
+		"number":    obj.Number,
+		"updatedAt": obj.UpdatedAt,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

@@ -432,6 +432,81 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 	return
 }
 
+func LotteryIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
+
+	needToAdd := false
+	_ = db.View(func(tx *bolt.Tx) error {
+		lottery, err := getLottoLatestRx(tx, userDetails)
+		if err != nil {
+			lgr.Printf("failed getting lotto latest: %v", err)
+			return err
+		}
+
+		needToAdd = clock.Now().After(lottery.UpdatedAt)
+
+		return nil
+	})
+
+	if !needToAdd {
+		return false
+	}
+	err := db.Update(func(tx *bolt.Tx) error {
+		lottery, err := getLottoLatestTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		needToAdd = clock.Now().After(lottery.UpdatedAt)
+
+		if !needToAdd {
+			return nil
+		}
+
+		lotteryBucket, err := getLottoBucketTx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		if lotteryBucket == nil {
+			return nil
+		}
+
+		c := lotteryBucket.Cursor()
+		k, _ := c.Last()
+		if k == nil {
+			return nil
+		}
+		lotteryData := lotteryBucket.Get(k)
+
+		var lotteryLatest openapi.Lottery
+		err = json.Unmarshal(lotteryData, &lotteryLatest)
+		if err != nil {
+			return err
+		}
+
+		lotteryLatest.UpdatedAt = clock.Now().Add(time.Hour * 24).Truncate(time.Hour * 24)
+		lotteryLatest.Jackpot = int32(decimal.NewFromInt32(lotteryLatest.Jackpot).Mul(decimal.NewFromFloat32(KeyLottoGrowth)).IntPart())
+
+		marshal, err := json.Marshal(lotteryLatest)
+		if err != nil {
+			return err
+		}
+
+		err = lotteryBucket.Put(k, marshal)
+		if err != nil {
+			return fmt.Errorf("cannot save lottery data: %v", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		lgr.Printf("ERROR checking college on %s: %v", userDetails.Name, err)
+		return false
+	}
+	return needToAdd
+}
+
 func CertificateOfDepositIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 	if userDetails.Role != UserRoleStudent {
 		return false

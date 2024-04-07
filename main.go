@@ -99,6 +99,7 @@ const (
 	KeyLotteries            = "lotteries"
 	KeyPricePerTicket       = 5
 	KeyCertificateOfDeposit = "certificateOfDeposit"
+	KeyLottoGrowth          = 1.0333
 )
 
 var build_date string
