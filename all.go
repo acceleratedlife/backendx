@@ -545,6 +545,7 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 		DebtIfNeeded(a.db, a.clock, userDetails)
 		DailyPayIfNeeded(a.db, a.clock, userDetails)
 		EventIfNeeded(a.db, a.clock, userDetails)
+		LotteryIfNeeded(a.db, a.clock, userDetails)
 	}
 
 	var resp []openapi.UserNoHistory

@@ -1323,6 +1323,44 @@ func getLottoLatestTx(tx *bolt.Tx, userDetails UserInfo) (lottery openapi.Lotter
 	return
 }
 
+func getLottoLatestRx(tx *bolt.Tx, userDetails UserInfo) (lottery openapi.Lottery, err error) {
+	school, err := getSchoolBucketRx(tx, userDetails)
+	if err != nil {
+		return
+	}
+
+	lotteries := school.Bucket([]byte(KeyLotteries))
+	if lotteries == nil {
+		return lottery, fmt.Errorf("did not find lotteries bucket")
+	}
+
+	c := lotteries.Cursor()
+	k, _ := c.Last()
+	if k == nil {
+		return
+	}
+	lotteryData := lotteries.Get(k)
+
+	err = json.Unmarshal(lotteryData, &lottery)
+	if err != nil {
+		return lottery, err
+	}
+
+	return
+}
+
+func getLottoBucketTx(tx *bolt.Tx, userDetails UserInfo) (lotteryBucket *bolt.Bucket, err error) {
+
+	school, err := getSchoolBucketRx(tx, userDetails)
+	if err != nil {
+		return
+	}
+
+	lotteryBucket = school.Bucket([]byte(KeyLotteries))
+
+	return
+}
+
 func initializeLottery(db *bolt.DB, userDetails UserInfo, settings openapi.Settings, clock Clock) (err error) {
 
 	err = db.Update(func(tx *bolt.Tx) error {
@@ -1373,9 +1411,10 @@ func initializeLotteryTx(tx *bolt.Tx, userDetails UserInfo, settings openapi.Set
 		}
 
 		newLottery := openapi.Lottery{
-			Odds:    settings.Odds,
-			Jackpot: int32(mean.IntPart()),
-			Number:  int32(r.Intn(int(settings.Odds))),
+			Odds:      settings.Odds,
+			Jackpot:   int32(mean.IntPart()),
+			Number:    int32(r.Intn(int(settings.Odds))),
+			UpdatedAt: ts.Add(time.Hour * 24).Truncate(time.Hour * 24),
 		}
 
 		marshal, err := json.Marshal(newLottery)

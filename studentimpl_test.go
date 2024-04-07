@@ -1093,3 +1093,43 @@ func TestCDComments(t *testing.T) {
 	require.Contains(t, trans[3].Description, "Fully Matured")
 
 }
+
+func TestLotteryIfNeeded(t *testing.T) {
+
+	lgr.Printf("INFO LotteryIfNeeded")
+	t.Log("INFO LotteryIfNeeded")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("LotteryIfNeeded")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	lottery1, err := getLottoLatest(db, student)
+	require.Nil(t, err)
+
+	LotteryIfNeeded(db, &clock, student)
+
+	lottery2, err := getLottoLatest(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, lottery1.Jackpot, lottery2.Jackpot)
+
+	clock.TickOne(time.Hour * 24)
+
+	lottery3, err := getLottoLatest(db, student)
+	require.Nil(t, err)
+
+	growth := int32(decimal.NewFromInt32(lottery2.Jackpot).Mul(decimal.NewFromFloat32(KeyLottoGrowth)).IntPart())
+
+	require.Equal(t, growth, lottery3.Jackpot)
+
+	clock.TickOne(time.Hour * 10)
+
+	lottery4, err := getLottoLatest(db, student)
+	require.Nil(t, err)
+
+	require.Equal(t, lottery3.Jackpot, lottery4.Jackpot)
+
+}
