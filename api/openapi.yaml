@@ -37,7 +37,7 @@ paths:
         explode: true
         in: query
         name: zip
-        required: true
+        required: false
         schema:
           type: integer
         style: form
@@ -1171,6 +1171,24 @@ paths:
       summary: all the teachers that are at the same school of the user
       tags:
       - All
+  /sysAdmin/users:
+    get:
+      description: returns students, teacher and admins
+      operationId: getAllUsers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseAllUsers'
+                type: array
+          description: users of the site
+        "401":
+          description: unauthorized
+      summary: get all users excluding sysAdmins
+      tags:
+      - SysAdmin
   /transactions:
     get:
       description: By passing in the staffs _id you can find a transactions that they
@@ -2038,10 +2056,14 @@ components:
           type: integer
         winner:
           type: string
+        updatedAt:
+          format: date-time
+          type: string
       required:
       - jackpot
       - number
       - odds
+      - updatedAt
       type: object
     Settings:
       example:
@@ -2088,6 +2110,31 @@ components:
       - city
       - name
       - zip
+      type: object
+    ResponseAllUsers:
+      example:
+        firstName: firstName
+        lastName: lastName
+        role: 0
+        school: school
+        _id: _id
+      properties:
+        _id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        school:
+          type: string
+        role:
+          type: integer
+      required:
+      - _id
+      - firstName
+      - lastName
+      - role
+      - school
       type: object
     ResponseAuctionStudent:
       example:
@@ -2531,7 +2578,10 @@ components:
       type: object
     ResponseSchools:
       example:
+        zip: 0
+        city: Medford
         name: East High
+        students: 6
         _id: dlkjdlkjdfslkjdfs93
       properties:
         name:
@@ -2540,6 +2590,13 @@ components:
         _id:
           example: dlkjdlkjdfslkjdfs93
           type: string
+        city:
+          example: Medford
+          type: string
+        zip:
+          type: integer
+        students:
+          type: integer
       type: object
     ResponseSearchStudentUbuck:
       example:
@@ -3034,13 +3091,13 @@ components:
         lastName: Welling
         collegeEnd: 2000-01-23T04:56:07.000+00:00
         role: 2
+        taxableIncome: 3
         lottoPlay: 6
         lottoWin: 1
         confirmed: true
         careerTransition: false
         firstName: Tom
         school_id: 613eab19e58cc511801af657
-        children: 3
         netWorth: 123.45
         rank: 2
         _id: 613eab19e58cc511801af657
@@ -3085,7 +3142,7 @@ components:
           default: false
           example: false
           type: boolean
-        children:
+        taxableIncome:
           default: 0
           example: 3
           type: integer
@@ -3115,7 +3172,6 @@ components:
       required:
       - _id
       - careerTransition
-      - children
       - college
       - confirmed
       - email
@@ -3127,6 +3183,7 @@ components:
       - rank
       - role
       - school
+      - taxableIncome
       - token
       - tokenExp
       type: object

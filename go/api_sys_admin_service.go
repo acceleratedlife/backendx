@@ -139,6 +139,20 @@ func (s *SysAdminApiService) EditSchool(ctx context.Context, schoolsSchoolBody S
 	return Response(http.StatusNotImplemented, nil), errors.New("EditSchool method not implemented")
 }
 
+// GetAllUsers - get all users excluding sysAdmins
+func (s *SysAdminApiService) GetAllUsers(ctx context.Context) (ImplResponse, error) {
+	// TODO - update GetAllUsers with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []ResponseAllUsers{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseAllUsers{}), nil
+
+	//TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
+	//return Response(401, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("GetAllUsers method not implemented")
+}
+
 // MakeAccount - make account
 func (s *SysAdminApiService) MakeAccount(ctx context.Context, accountsAccountBody1 AccountsAccountBody1) (ImplResponse, error) {
 	// TODO - update MakeAccount with the required logic for this service method.

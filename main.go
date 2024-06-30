@@ -60,6 +60,7 @@ const (
 	KeyCity                 = "city"
 	KeyZip                  = "zip"
 	KeyDayPayment           = "dayPayment"
+	KeyTaxableIncome        = "taxableIncome"
 	KeyDayEvent             = "dayEvent"
 	KeyPeriod               = "period"
 	KeyAdmins               = "admins"

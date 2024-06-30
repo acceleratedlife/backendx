@@ -26,16 +26,15 @@ type UserInfo struct {
 	Confirmed        bool
 	PasswordSha      string
 	SchoolId         string
-	Role             int32     // 0 student, 1 teacher, 2 admin
-	Income           float32   `json:",omitempty"`
-	LastIncomePaid   time.Time `json:",omitempty"`
-	Children         int32
-	Rank             int32 `json:",omitempty"`
+	Role             int32   // 0 student, 1 teacher, 2 admin
+	Income           float32 `json:",omitempty"`
+	Rank             int32   `json:",omitempty"`
 	NetWorth         float32
 	Job              string
 	Settings         TeacherSettings `json:",omitempty"`
 	LottoPlay        int32           `json:",omitempty"`
 	LottoWin         int32           `json:",omitempty"`
+	TaxableIncome    int32
 }
 
 type TeacherSettings struct {

@@ -15,6 +15,7 @@ import (
 )
 
 type Lottery struct {
+
 	Odds int32 `json:"odds"`
 
 	Jackpot int32 `json:"jackpot"`
@@ -29,9 +30,9 @@ type Lottery struct {
 // AssertLotteryRequired checks if the required fields are not zero-ed
 func AssertLotteryRequired(obj Lottery) error {
 	elements := map[string]interface{}{
-		"odds":      obj.Odds,
-		"jackpot":   obj.Jackpot,
-		"number":    obj.Number,
+		"odds": obj.Odds,
+		"jackpot": obj.Jackpot,
+		"number": obj.Number,
 		"updatedAt": obj.UpdatedAt,
 	}
 	for name, el := range elements {

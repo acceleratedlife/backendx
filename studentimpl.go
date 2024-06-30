@@ -630,6 +630,11 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		pay := decimal.NewFromFloat32(userDetails.Income)
+		err = updateTaxTx(tx, userDetails.Name, pay)
+		if err != nil {
+			return err
+		}
+
 		haveDebt, _, balance, err := IsDebtNeeded(student, clock)
 		if err != nil {
 			return err
@@ -666,6 +671,36 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		return false
 	}
 	return true
+}
+
+func updateTax(db *bolt.DB, Id string, pay decimal.Decimal) error { //need to test
+	return db.Update(func(tx *bolt.Tx) error {
+		return updateTaxTx(tx, Id, pay)
+	})
+}
+
+func updateTaxTx(tx *bolt.Tx, Id string, pay decimal.Decimal) error {
+	usersBucket := tx.Bucket([]byte(KeyUsers))
+	user := usersBucket.Get([]byte(Id))
+	var userDetails UserInfo
+	err := json.Unmarshal(user, &userDetails)
+	if err != nil {
+		return err
+	}
+
+	userDetails.TaxableIncome = int32(decimal.NewFromInt32(userDetails.TaxableIncome).Add(pay).IntPart())
+
+	marshal, err := json.Marshal(userDetails)
+	if err != nil {
+		return err
+	}
+
+	err = usersBucket.Put([]byte(Id), marshal)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func IsDailyPayNeeded(student *bolt.Bucket, clock Clock) bool {
