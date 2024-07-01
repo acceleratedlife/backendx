@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -226,4 +227,65 @@ func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
 		return students.Put([]byte(newUser.Email), []byte(""))
 	})
 	return err
+}
+
+func taxSchool(db *bolt.DB, clock Clock, schoolId string, taxRate int32) error { //need to test
+	return db.Update(func(tx *bolt.Tx) error {
+		return taxSchoolTx(tx, clock, schoolId, taxRate)
+	})
+}
+
+func taxSchoolTx(tx *bolt.Tx, clock Clock, schoolId string, taxRate int32) error {
+	school, err := SchoolByIdTx(tx, schoolId)
+	if err != nil {
+		return err
+	}
+
+	students := school.Bucket([]byte(KeyStudents))
+	if students == nil {
+		return fmt.Errorf("cannot find students bucket")
+	}
+
+	c := students.Cursor()
+
+	users := tx.Bucket([]byte(KeyUsers))
+
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		studentData := users.Get([]byte(k))
+		var student UserInfo
+		err = json.Unmarshal(studentData, &student)
+		if err != nil {
+			lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+			continue
+		}
+		if student.Role != UserRoleStudent {
+			lgr.Printf("ERROR student %s has role %d", k, student.Role)
+			continue
+		}
+
+		if taxRate > 0 {
+			charge := decimal.NewFromInt32(taxRate).Div(decimal.NewFromInt(100)).Mul(decimal.NewFromInt32(student.TaxableIncome))
+			chargeStudentUbuckTx(tx, clock, student, charge.Abs(), "Income Tax at: "+strconv.Itoa(int(taxRate))+"%", false)
+		} else {
+			//find the average taxable income
+			//generate 7 brackets
+			//tax students according to where they are in the tax bracket
+			//this will require a helper function as it will get messy here. there will be a lot of if statements
+
+		}
+
+		student.TaxableIncome = 0
+		marshal, err := json.Marshal(student)
+		if err != nil {
+			return err
+		}
+
+		err = users.Put([]byte(k), marshal)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
 }

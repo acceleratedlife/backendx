@@ -18,7 +18,7 @@ import (
 
 // SysAdminApiController binds http requests to an api service and writes the service results to the http response
 type SysAdminApiController struct {
-	service      SysAdminApiServicer
+	service SysAdminApiServicer
 	errorHandler ErrorHandler
 }
 
@@ -48,7 +48,7 @@ func NewSysAdminApiController(s SysAdminApiServicer, opts ...SysAdminApiOption) 
 
 // Routes returns all of the api route for the SysAdminApiController
 func (c *SysAdminApiController) Routes() Routes {
-	return Routes{
+	return Routes{ 
 		{
 			"CreateBuck",
 			strings.ToUpper("Post"),

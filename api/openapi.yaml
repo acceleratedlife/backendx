@@ -175,6 +175,24 @@ paths:
       summary: gets student count for a school
       tags:
       - SchoolAdmin
+  /schools/school/tax:
+    post:
+      description: Tax all the students from one school. taxRate of 0 is a progressive
+        tax otherwise it will be a flat tax
+      operationId: executeTax
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestTax'
+      responses:
+        "200":
+          description: successfully taxed
+        "400":
+          description: tax did not happen
+      summary: When a school admin taxes
+      tags:
+      - SchoolAdmin
   /accounts/account:
     delete:
       description: delete an account
@@ -2990,6 +3008,16 @@ components:
           type: string
       required:
       - _id
+      type: object
+    RequestTax:
+      example:
+        taxRate: 25
+      properties:
+        taxRate:
+          example: 25
+          type: integer
+      required:
+      - taxRate
       type: object
     Transaction:
       example:

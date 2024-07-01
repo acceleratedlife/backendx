@@ -224,7 +224,7 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 	StudentApiServiceImpl := NewStudentApiServiceImpl(db, clock)
 	StudentApiController := openapi.NewStudentApiController(StudentApiServiceImpl)
 
-	SchoolAdminApiService := NewSchoolAdminServiceImpl(db)
+	SchoolAdminApiService := NewSchoolAdminServiceImpl(db, clock)
 	SchoolAdminApiController := openapi.NewSchoolAdminApiController(SchoolAdminApiService)
 
 	allService := NewAllApiServiceImpl(db, clock)
