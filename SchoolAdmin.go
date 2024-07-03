@@ -111,7 +111,7 @@ func (s *SchoolAdminServiceImpl) ExecuteTax(ctx context.Context, tax openapi.Req
 		return openapi.Response(401, ""), nil
 	}
 
-	err = taxSchool(s.db, s.clock, userDetails.SchoolId, tax.TaxRate)
+	err = taxSchool(s.db, s.clock, userDetails, tax.TaxRate)
 
 	if err != nil {
 		lgr.Printf("ERROR cannot cannot tax this school : %s %v", userDetails.SchoolId, err)

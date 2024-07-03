@@ -12,20 +12,11 @@ package openapi
 
 type RequestTax struct {
 
-	TaxRate int32 `json:"taxRate"`
+	TaxRate int32 `json:"taxRate,omitempty"`
 }
 
 // AssertRequestTaxRequired checks if the required fields are not zero-ed
 func AssertRequestTaxRequired(obj RequestTax) error {
-	elements := map[string]interface{}{
-		"taxRate": obj.TaxRate,
-	}
-	for name, el := range elements {
-		if isZero := IsZeroValue(el); isZero {
-			return &RequiredError{Field: name}
-		}
-	}
-
 	return nil
 }
 

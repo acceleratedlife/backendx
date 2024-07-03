@@ -3016,8 +3016,6 @@ components:
         taxRate:
           example: 25
           type: integer
-      required:
-      - taxRate
       type: object
     Transaction:
       example:

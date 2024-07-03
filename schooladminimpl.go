@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 	"strconv"
 	"time"
@@ -229,14 +230,14 @@ func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
 	return err
 }
 
-func taxSchool(db *bolt.DB, clock Clock, schoolId string, taxRate int32) error { //need to test
+func taxSchool(db *bolt.DB, clock Clock, userDetails UserInfo, taxRate int32) error {
 	return db.Update(func(tx *bolt.Tx) error {
-		return taxSchoolTx(tx, clock, schoolId, taxRate)
+		return taxSchoolTx(tx, clock, userDetails, taxRate)
 	})
 }
 
-func taxSchoolTx(tx *bolt.Tx, clock Clock, schoolId string, taxRate int32) error {
-	school, err := SchoolByIdTx(tx, schoolId)
+func taxSchoolTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, taxRate int32) error {
+	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return err
 	}
@@ -250,7 +251,158 @@ func taxSchoolTx(tx *bolt.Tx, clock Clock, schoolId string, taxRate int32) error
 
 	users := tx.Bucket([]byte(KeyUsers))
 
+	if taxRate > 0 {
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			studentData := users.Get([]byte(k))
+			var student UserInfo
+			err = json.Unmarshal(studentData, &student)
+			if err != nil {
+				lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+				continue
+			}
+			if student.Role != UserRoleStudent {
+				lgr.Printf("ERROR student %s has role %d", k, student.Role)
+				continue
+			}
+
+			adjustedTaxRate := decimal.NewFromInt32(taxRate).Div(decimal.NewFromInt(100))
+
+			charge := adjustedTaxRate.Mul(decimal.NewFromInt32(student.TaxableIncome))
+			chargeStudentUbuckTx(tx, clock, student, charge.Abs(), "Income Tax at: "+strconv.Itoa(int(taxRate))+"%", false)
+
+			student.TaxableIncome = 0
+			marshal, err := json.Marshal(student)
+			if err != nil {
+				return err
+			}
+
+			err = users.Put([]byte(k), marshal)
+			if err != nil {
+				return err
+			}
+
+		}
+
+	} else {
+		meanNW, err := getMeanNetworthRx(tx, userDetails)
+		if err != nil {
+			return err
+		}
+
+		standardDevNW, err := getStandardDevNWRx(tx, students, meanNW)
+		if err != nil {
+			return err
+		}
+
+		realTaxBrackets := realTaxBrackets(meanNW, standardDevNW)
+		summativeTaxes := summativeTaxes(realTaxBrackets)
+
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			studentData := users.Get([]byte(k))
+			var student UserInfo
+			err = json.Unmarshal(studentData, &student)
+			if err != nil {
+				lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+				continue
+			}
+			if student.Role != UserRoleStudent {
+				lgr.Printf("ERROR student %s has role %d", k, student.Role)
+				continue
+			}
+
+			zScore := (decimal.NewFromFloat32(student.NetWorth).Sub(meanNW)).Div(standardDevNW) //standardDev could be zero which will be a problem
+			adjustedTaxRate, bracketPosition := progressiveTaxRate(zScore)
+			var charge decimal.Decimal
+
+			if bracketPosition < 1 {
+				charge = adjustedTaxRate.Mul(decimal.NewFromInt32(student.TaxableIncome))
+			} else {
+				realDiff := decimal.NewFromInt32(student.TaxableIncome).Sub(realTaxBrackets[bracketPosition-1])
+				summativeTax := summativeTaxes[bracketPosition-1]
+				charge = summativeTax.Add(realDiff.Mul(adjustedTaxRate))
+			}
+
+			chargeStudentUbuckTx(tx, clock, student, charge.Abs(), "Income Tax at: "+strconv.Itoa(int(adjustedTaxRate.Mul(decimal.NewFromInt32(100)).IntPart()))+"%", false)
+
+			student.TaxableIncome = 0
+			marshal, err := json.Marshal(student)
+			if err != nil {
+				return err
+			}
+
+			err = users.Put([]byte(k), marshal)
+			if err != nil {
+				return err
+			}
+
+		}
+	}
+
+	return nil
+}
+
+func summativeTaxes(brackets []decimal.Decimal) (summativeTaxes []decimal.Decimal) {
+	summativeTaxes = append(summativeTaxes, brackets[0].Mul(decimal.NewFromFloat32(KeyTax0)))
+	diff := brackets[1].Sub(brackets[0])
+	summativeTaxes = append(summativeTaxes, summativeTaxes[0].Add(diff.Mul(decimal.NewFromFloat32(KeyTax1))))
+	diff = brackets[2].Sub(brackets[1])
+	summativeTaxes = append(summativeTaxes, summativeTaxes[1].Add(diff.Mul(decimal.NewFromFloat32(KeyTax2))))
+	diff = brackets[3].Sub(brackets[2])
+	summativeTaxes = append(summativeTaxes, summativeTaxes[2].Add(diff.Mul(decimal.NewFromFloat32(KeyTax3))))
+	diff = brackets[4].Sub(brackets[3])
+	summativeTaxes = append(summativeTaxes, summativeTaxes[3].Add(diff.Mul(decimal.NewFromFloat32(KeyTax4))))
+	diff = brackets[5].Sub(brackets[4])
+	summativeTaxes = append(summativeTaxes, summativeTaxes[4].Add(diff.Mul(decimal.NewFromFloat32(KeyTax5))))
+	return
+}
+
+func realTaxBrackets(mean, standardDev decimal.Decimal) (brackets []decimal.Decimal) {
+	brackets = append(brackets, mean.Add(standardDev.Mul(decimal.NewFromFloat32(KeyTaxZ0))))
+	brackets = append(brackets, mean.Add(standardDev.Mul(decimal.NewFromFloat32(KeyTaxZ1))))
+	brackets = append(brackets, mean.Add(standardDev.Mul(decimal.NewFromFloat32(KeyTaxZ2))))
+	brackets = append(brackets, mean.Add(standardDev.Mul(decimal.NewFromFloat32(KeyTaxZ3))))
+	brackets = append(brackets, mean.Add(standardDev.Mul(decimal.NewFromFloat32(KeyTaxZ4))))
+	brackets = append(brackets, mean.Add(standardDev.Mul(decimal.NewFromFloat32(KeyTaxZ5))))
+	return
+}
+
+func progressiveTaxRate(zScore decimal.Decimal) (decimal.Decimal, int) {
+	if zScore.LessThan(decimal.NewFromFloat32(KeyTaxZ0)) {
+		return decimal.NewFromFloat32(KeyTax0), 0
+	} else if zScore.LessThan(decimal.NewFromFloat32(KeyTaxZ1)) {
+		return decimal.NewFromFloat32(KeyTax1), 1
+	} else if zScore.LessThan(decimal.NewFromFloat32(KeyTaxZ2)) {
+		return decimal.NewFromFloat32(KeyTax2), 2
+	} else if zScore.LessThan(decimal.NewFromFloat32(KeyTaxZ3)) {
+		return decimal.NewFromFloat32(KeyTax3), 3
+	} else if zScore.LessThan(decimal.NewFromFloat32(KeyTaxZ4)) {
+		return decimal.NewFromFloat32(KeyTax4), 4
+	} else if zScore.LessThan(decimal.NewFromFloat32(KeyTaxZ5)) {
+		return decimal.NewFromFloat32(KeyTax5), 5
+	} else {
+		return decimal.NewFromFloat32(KeyTax6), 6
+	}
+}
+
+func getStandardDevNW(db *bolt.DB, studentsBucket *bolt.Bucket, mean decimal.Decimal) (standardDev decimal.Decimal, err error) { //need to test
+	err = db.View(func(tx *bolt.Tx) error {
+		standardDev, err = getStandardDevNWRx(tx, studentsBucket, mean)
+		return err
+	})
+
+	return
+}
+
+func getStandardDevNWRx(tx *bolt.Tx, studentsBucket *bolt.Bucket, mean decimal.Decimal) (standardDev decimal.Decimal, err error) {
+	c := studentsBucket.Cursor()
+
+	users := tx.Bucket([]byte(KeyUsers))
+
+	counter := int64(0)
+	squaredSums := decimal.Zero
+
 	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+
 		studentData := users.Get([]byte(k))
 		var student UserInfo
 		err = json.Unmarshal(studentData, &student)
@@ -263,29 +415,22 @@ func taxSchoolTx(tx *bolt.Tx, clock Clock, schoolId string, taxRate int32) error
 			continue
 		}
 
-		if taxRate > 0 {
-			charge := decimal.NewFromInt32(taxRate).Div(decimal.NewFromInt(100)).Mul(decimal.NewFromInt32(student.TaxableIncome))
-			chargeStudentUbuckTx(tx, clock, student, charge.Abs(), "Income Tax at: "+strconv.Itoa(int(taxRate))+"%", false)
-		} else {
-			//find the average taxable income
-			//generate 7 brackets
-			//tax students according to where they are in the tax bracket
-			//this will require a helper function as it will get messy here. there will be a lot of if statements
-
-		}
-
-		student.TaxableIncome = 0
-		marshal, err := json.Marshal(student)
-		if err != nil {
-			return err
-		}
-
-		err = users.Put([]byte(k), marshal)
-		if err != nil {
-			return err
-		}
+		squaredSums = squaredSums.Add((decimal.NewFromFloat32(student.NetWorth).Sub(mean)).Pow(decimal.NewFromFloat(2)))
+		counter++
 
 	}
 
-	return nil
+	if counter == 0 {
+		return decimal.Zero, nil
+	}
+
+	variance := squaredSums.Div(decimal.NewFromInt(counter))
+	if variance.IsZero() {
+		return decimal.Zero, nil
+	}
+
+	standardDev = decimal.NewFromFloat(math.Sqrt(variance.InexactFloat64()))
+
+	return
+
 }

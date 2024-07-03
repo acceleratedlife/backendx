@@ -737,7 +737,7 @@ func TestPurchaseLottoOff(t *testing.T) {
 	err = setSettings(db, &clock, student, settings)
 	require.Nil(t, err)
 
-	err = pay2Student(db, &clock, student, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(200000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
 	winner, err = purchaseLotto(db, &clock, student, 30000)

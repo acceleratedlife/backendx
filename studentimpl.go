@@ -415,9 +415,6 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 				return decimal.Zero
 			}
 			ubuck = cryptoConvert(basis, usd, value)
-			if err != nil {
-				return
-			}
 		} else {
 			ubuck, _, err = convertRx(tx, userData.SchoolId, string(k), "", value.InexactFloat64())
 			if err != nil {
@@ -671,12 +668,6 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		return false
 	}
 	return true
-}
-
-func updateTax(db *bolt.DB, Id string, pay decimal.Decimal) error { //need to test
-	return db.Update(func(tx *bolt.Tx) error {
-		return updateTaxTx(tx, Id, pay)
-	})
 }
 
 func updateTaxTx(tx *bolt.Tx, Id string, pay decimal.Decimal) error {
@@ -2477,7 +2468,7 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 			return fmt.Errorf("the lotto has not been initialized")
 		}
 
-		chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Raffle", true)
+		err = chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Raffle", true)
 		if err != nil {
 			return err
 		}
