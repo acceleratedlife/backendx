@@ -129,15 +129,16 @@ func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register open
 
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		newUser := UserInfo{
-			Name:        register.Email,
-			FirstName:   register.FirstName,
-			LastName:    string(register.LastName[0]) + strconv.Itoa(r.Intn(10000)),
-			Email:       register.Email,
-			Confirmed:   false,
-			PasswordSha: EncodePassword(register.Password),
-			SchoolId:    pathId.schoolId,
-			Role:        role,
-			Job:         getJobId(u.db, KeyJobs),
+			Name:          register.Email,
+			FirstName:     register.FirstName,
+			LastName:      string(register.LastName[0]) + strconv.Itoa(r.Intn(10000)),
+			Email:         register.Email,
+			Confirmed:     false,
+			PasswordSha:   EncodePassword(register.Password),
+			SchoolId:      pathId.schoolId,
+			Role:          role,
+			Job:           getJobId(u.db, KeyJobs),
+			TaxableIncome: 0,
 		}
 		err = createStudent(u.db, newUser, pathId)
 

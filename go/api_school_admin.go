@@ -11,6 +11,7 @@
 package openapi
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 )
@@ -49,6 +50,12 @@ func NewSchoolAdminApiController(s SchoolAdminApiServicer, opts ...SchoolAdminAp
 func (c *SchoolAdminApiController) Routes() Routes {
 	return Routes{
 		{
+			"ExecuteTax",
+			strings.ToUpper("Post"),
+			"/api/schools/school/tax",
+			c.ExecuteTax,
+		},
+		{
 			"GetStudentCount",
 			strings.ToUpper("Get"),
 			"/api/schools/school/count",
@@ -61,6 +68,30 @@ func (c *SchoolAdminApiController) Routes() Routes {
 			c.SearchAdminTeacherClass,
 		},
 	}
+}
+
+// ExecuteTax - When a school admin taxes
+func (c *SchoolAdminApiController) ExecuteTax(w http.ResponseWriter, r *http.Request) {
+	requestTaxParam := RequestTax{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestTaxParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestTaxRequired(requestTaxParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.ExecuteTax(r.Context(), requestTaxParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
 }
 
 // GetStudentCount - gets student count for a school

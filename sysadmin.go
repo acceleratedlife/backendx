@@ -81,6 +81,11 @@ func (s SysAdminApiServiceImpl) SearchTransaction(ctx context.Context, s2 string
 	panic("implement me")
 }
 
+func (s SysAdminApiServiceImpl) GetAllUsers(ctx context.Context) (openapi.ImplResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewSysAdminApiServiceImpl(db *bolt.DB) openapi.SysAdminApiServicer {
 	return &SysAdminApiServiceImpl{
 		db: db,

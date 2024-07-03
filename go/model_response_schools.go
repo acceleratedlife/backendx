@@ -15,6 +15,12 @@ type ResponseSchools struct {
 	Name string `json:"name,omitempty"`
 
 	Id string `json:"_id,omitempty"`
+
+	City string `json:"city,omitempty"`
+
+	Zip int32 `json:"zip,omitempty"`
+
+	Students int32 `json:"students,omitempty"`
 }
 
 // AssertResponseSchoolsRequired checks if the required fields are not zero-ed

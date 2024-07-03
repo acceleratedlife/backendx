@@ -415,9 +415,6 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 				return decimal.Zero
 			}
 			ubuck = cryptoConvert(basis, usd, value)
-			if err != nil {
-				return
-			}
 		} else {
 			ubuck, _, err = convertRx(tx, userData.SchoolId, string(k), "", value.InexactFloat64())
 			if err != nil {
@@ -630,6 +627,11 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		pay := decimal.NewFromFloat32(userDetails.Income)
+		err = updateTaxTx(tx, userDetails.Name, pay)
+		if err != nil {
+			return err
+		}
+
 		haveDebt, _, balance, err := IsDebtNeeded(student, clock)
 		if err != nil {
 			return err
@@ -666,6 +668,30 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		return false
 	}
 	return true
+}
+
+func updateTaxTx(tx *bolt.Tx, Id string, pay decimal.Decimal) error {
+	usersBucket := tx.Bucket([]byte(KeyUsers))
+	user := usersBucket.Get([]byte(Id))
+	var userDetails UserInfo
+	err := json.Unmarshal(user, &userDetails)
+	if err != nil {
+		return err
+	}
+
+	userDetails.TaxableIncome = int32(decimal.NewFromInt32(userDetails.TaxableIncome).Add(pay).IntPart())
+
+	marshal, err := json.Marshal(userDetails)
+	if err != nil {
+		return err
+	}
+
+	err = usersBucket.Put([]byte(Id), marshal)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func IsDailyPayNeeded(student *bolt.Bucket, clock Clock) bool {
@@ -2442,7 +2468,7 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 			return fmt.Errorf("the lotto has not been initialized")
 		}
 
-		chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Raffle", true)
+		err = chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Raffle", true)
 		if err != nil {
 			return err
 		}

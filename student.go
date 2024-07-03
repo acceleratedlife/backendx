@@ -250,7 +250,7 @@ func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, body openapi.Req
 
 	var message string
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		message, err = placeBidtx(tx, a.clock, userDetails, body.Item, int32(body.Bid))
+		message, err = placeBidTx(tx, a.clock, userDetails, body.Item, int32(body.Bid))
 		if err != nil {
 			return err
 		}
@@ -606,14 +606,14 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 
 func placeBid(db *bolt.DB, clock Clock, userDetails UserInfo, item string, bid int32) (message string, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
-		message, err = placeBidtx(tx, clock, userDetails, item, bid)
+		message, err = placeBidTx(tx, clock, userDetails, item, bid)
 		return err
 	})
 
 	return
 }
 
-func placeBidtx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid int32) (message string, err error) {
+func placeBidTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid int32) (message string, err error) {
 	school, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return message, err
