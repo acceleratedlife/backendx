@@ -101,7 +101,7 @@ func TestEvents(t *testing.T) {
 	r = EventIfNeeded(db, &clock, student)
 	require.False(t, r)
 
-	clock.TickOne(time.Hour * 216)
+	clock.TickOne(time.Hour * 9 * 24)
 
 	r = EventIfNeeded(db, &clock, student)
 	require.True(t, r)
@@ -109,13 +109,19 @@ func TestEvents(t *testing.T) {
 	r = EventIfNeeded(db, &clock, student)
 	require.False(t, r)
 
-	netWorth := decimal.Zero
-	_ = db.View(func(tx *bolt.Tx) error {
-		netWorth = StudentNetWorthTx(tx, students[0])
-		return nil
-	})
+	clock.TickOne(time.Hour * 27 * 24)
+
+	r = EventIfNeeded(db, &clock, student)
+	require.True(t, r)
+
+	netWorth := StudentNetWorth(db, students[0])
 
 	require.False(t, netWorth.Equal(decimal.NewFromFloat(100)))
+
+	studentDetails, _ := getUserInLocalStore(db, students[0])
+	totalEvents, err := getEventsTeacher(db, &clock, studentDetails)
+	require.Nil(t, err)
+	require.Greater(t, len(totalEvents), 3)
 
 }
 
