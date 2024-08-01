@@ -27,6 +27,20 @@ func NewSchoolAdminApiService() SchoolAdminApiServicer {
 	return &SchoolAdminApiService{}
 }
 
+// ExecuteTax - When a school admin taxes
+func (s *SchoolAdminApiService) ExecuteTax(ctx context.Context, requestTax RequestTax) (ImplResponse, error) {
+	// TODO - update ExecuteTax with the required logic for this service method.
+	// Add api_school_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("ExecuteTax method not implemented")
+}
+
 // GetStudentCount - gets student count for a school
 func (s *SchoolAdminApiService) GetStudentCount(ctx context.Context, schoolId string) (ImplResponse, error) {
 	// TODO - update GetStudentCount with the required logic for this service method.

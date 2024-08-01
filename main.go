@@ -60,6 +60,7 @@ const (
 	KeyCity                 = "city"
 	KeyZip                  = "zip"
 	KeyDayPayment           = "dayPayment"
+	KeyTaxableIncome        = "taxableIncome"
 	KeyDayEvent             = "dayEvent"
 	KeyPeriod               = "period"
 	KeyAdmins               = "admins"
@@ -100,6 +101,19 @@ const (
 	KeyPricePerTicket       = 5
 	KeyCertificateOfDeposit = "certificateOfDeposit"
 	KeyLottoGrowth          = 1.0333
+	KeyTaxZ0                = -1.07
+	KeyTaxZ1                = -.57
+	KeyTaxZ2                = -.18
+	KeyTaxZ3                = .23
+	KeyTaxZ4                = .59
+	KeyTaxZ5                = 1.06
+	KeyTax0                 = .1
+	KeyTax1                 = .12
+	KeyTax2                 = .22
+	KeyTax3                 = .24
+	KeyTax4                 = .32
+	KeyTax5                 = .35
+	KeyTax6                 = .37
 )
 
 var build_date string
@@ -223,7 +237,7 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 	StudentApiServiceImpl := NewStudentApiServiceImpl(db, clock)
 	StudentApiController := openapi.NewStudentApiController(StudentApiServiceImpl)
 
-	SchoolAdminApiService := NewSchoolAdminServiceImpl(db)
+	SchoolAdminApiService := NewSchoolAdminServiceImpl(db, clock)
 	SchoolAdminApiController := openapi.NewSchoolAdminApiController(SchoolAdminApiService)
 
 	allService := NewAllApiServiceImpl(db, clock)

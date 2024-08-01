@@ -366,13 +366,13 @@ func (a *AllApiServiceImpl) SearchStudent(ctx context.Context, Id string) (opena
 			Confirmed:        searchedUser.Confirmed,
 			SchoolId:         searchedUser.SchoolId,
 			College:          searchedUser.College,
-			Children:         searchedUser.Children,
 			Income:           searchedUser.Income,
 			Role:             searchedUser.Role,
 			Rank:             searchedUser.Rank,
 			CareerTransition: searchedUser.CareerTransition,
 			NetWorth:         float32(nWorth),
 			Job:              job,
+			TaxableIncome:    searchedUser.TaxableIncome,
 		}
 		resp = nUser
 
@@ -603,11 +603,11 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.RequestUs
 		SchoolId:         userDetails.SchoolId,
 		CareerTransition: userDetails.CareerTransition,
 		College:          userDetails.College,
-		Children:         userDetails.Children,
 		Income:           userDetails.Income,
 		Role:             userDetails.Role,
 		Rank:             userDetails.Rank,
 		NetWorth:         float32(nWorth),
+		TaxableIncome:    userDetails.TaxableIncome,
 	}
 	return openapi.Response(200, resp), nil //this is incomplete
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -72,4 +73,69 @@ func TestGetStudentCountEndpoint(t *testing.T) {
 	_ = decoder.Decode(&data)
 
 	require.Equal(t, int32(25), data.Count)
+}
+
+func TestExecuteTax(t *testing.T) {
+	db, tearDown := FullStartTestServer("ExecuteTax", 8090, "")
+	defer tearDown()
+
+	admins, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 10)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+	bodyFlat := openapi.RequestTax{
+		TaxRate: 17,
+	}
+
+	marshal, _ := json.Marshal(bodyFlat)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/schools/school/tax",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 401, resp.StatusCode)
+
+	SetTestLoginUser(teachers[0])
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/schools/school/tax",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 401, resp.StatusCode)
+
+	SetTestLoginUser(admins[0])
+
+	marshal, _ = json.Marshal(bodyFlat)
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/schools/school/tax",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	bodyProgressive := openapi.RequestTax{
+		TaxRate: 0,
+	}
+
+	marshal, _ = json.Marshal(bodyProgressive)
+	req, _ = http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8090/api/schools/school/tax",
+		bytes.NewBuffer(marshal))
+
+	resp, err = client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
 }

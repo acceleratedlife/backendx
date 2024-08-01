@@ -58,8 +58,10 @@ go/model_request_market_refund.go
 go/model_request_pay_transaction.go
 go/model_request_pay_transactions.go
 go/model_request_register.go
+go/model_request_tax.go
 go/model_request_user.go
 go/model_request_user_edit.go
+go/model_response_all_users.go
 go/model_response_auction_student.go
 go/model_response_auction_student_owner_id.go
 go/model_response_auth2.go

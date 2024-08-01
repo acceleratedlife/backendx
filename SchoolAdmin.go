@@ -10,7 +10,8 @@ import (
 )
 
 type SchoolAdminServiceImpl struct {
-	db *bolt.DB
+	db    *bolt.DB
+	clock Clock
 }
 
 func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, Id string) (openapi.ImplResponse, error) {
@@ -99,8 +100,30 @@ func (s *SchoolAdminServiceImpl) GetStudentCount(ctx context.Context, schoolId s
 	return openapi.Response(200, resp), nil
 }
 
-func NewSchoolAdminServiceImpl(db *bolt.DB) openapi.SchoolAdminApiServicer {
+func (s *SchoolAdminServiceImpl) ExecuteTax(ctx context.Context, tax openapi.RequestTax) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, nil), nil
+	}
+
+	if userDetails.Role != UserRoleAdmin {
+		return openapi.Response(401, ""), nil
+	}
+
+	err = taxSchool(s.db, s.clock, userDetails, tax.TaxRate)
+
+	if err != nil {
+		lgr.Printf("ERROR cannot cannot tax this school : %s %v", userDetails.SchoolId, err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, nil), nil
+}
+
+func NewSchoolAdminServiceImpl(db *bolt.DB, clock Clock) openapi.SchoolAdminApiServicer {
 	return &SchoolAdminServiceImpl{
-		db: db,
+		db:    db,
+		clock: clock,
 	}
 }

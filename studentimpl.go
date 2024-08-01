@@ -415,9 +415,6 @@ func StudentNetWorthTx(tx *bolt.Tx, userName string) (res decimal.Decimal) {
 				return decimal.Zero
 			}
 			ubuck = cryptoConvert(basis, usd, value)
-			if err != nil {
-				return
-			}
 		} else {
 			ubuck, _, err = convertRx(tx, userData.SchoolId, string(k), "", value.InexactFloat64())
 			if err != nil {
@@ -630,6 +627,11 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		}
 
 		pay := decimal.NewFromFloat32(userDetails.Income)
+		err = updateTaxTx(tx, userDetails.Name, pay)
+		if err != nil {
+			return err
+		}
+
 		haveDebt, _, balance, err := IsDebtNeeded(student, clock)
 		if err != nil {
 			return err
@@ -666,6 +668,30 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		return false
 	}
 	return true
+}
+
+func updateTaxTx(tx *bolt.Tx, Id string, pay decimal.Decimal) error {
+	usersBucket := tx.Bucket([]byte(KeyUsers))
+	user := usersBucket.Get([]byte(Id))
+	var userDetails UserInfo
+	err := json.Unmarshal(user, &userDetails)
+	if err != nil {
+		return err
+	}
+
+	userDetails.TaxableIncome = int32(decimal.NewFromInt32(userDetails.TaxableIncome).Add(pay).IntPart())
+
+	marshal, err := json.Marshal(userDetails)
+	if err != nil {
+		return err
+	}
+
+	err = usersBucket.Put([]byte(Id), marshal)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func IsDailyPayNeeded(student *bolt.Bucket, clock Clock) bool {
@@ -968,7 +994,7 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
-		needToAdd, _ = IsEventNeeded(student, clock, false)
+		needToAdd, _, _ = IsEventNeeded(student, clock, false)
 		return nil
 	})
 
@@ -981,13 +1007,14 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return err
 		}
 
-		needToAdd, err = IsEventNeeded(student, clock, true)
+		var missedEvents int
+		needToAdd, missedEvents, err = IsEventNeeded(student, clock, true)
 		if err != nil {
 			return err
 		}
 
 		if !needToAdd {
-			return nil
+			return err
 		}
 
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -1003,20 +1030,32 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return fmt.Errorf("cannot save event date: %v", err)
 		}
 
-		students, _, err := getSchoolStudentsTx(tx, userDetails)
-		if err != nil {
-			return err
+		for i := 0; i < missedEvents; i++ {
+
+			students, _, err := getSchoolStudentsTx(tx, userDetails)
+			if err != nil {
+				return err
+			}
+
+			change, err := makeEvent(students, userDetails)
+			if err != nil {
+				return err
+			}
+
+			if change.IsPositive() {
+				err = addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getEventIdRx(tx, KeyPEvents))
+			} else {
+				err = chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getEventIdRx(tx, KeyNEvents), false)
+			}
+
+			if err != nil {
+				return err
+			}
+
 		}
 
-		change, err := makeEvent(students, userDetails)
-		if err != nil {
-			return err
-		}
+		return err
 
-		if change.IsPositive() {
-			return addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getEventIdRx(tx, KeyPEvents))
-		}
-		return chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getEventIdRx(tx, KeyNEvents), false)
 	})
 
 	if err != nil {
@@ -1108,36 +1147,41 @@ func makeEvent(students []openapi.UserNoHistory, userDetails UserInfo) (change d
 	return change, fmt.Errorf("did not find student in slice")
 }
 
-func IsEventNeeded(student *bolt.Bucket, clock Clock, tx bool) (bool, error) {
+func IsEventNeeded(student *bolt.Bucket, clock Clock, tx bool) (bool, int, error) {
 	dayB := student.Get([]byte(KeyDayEvent))
 	if dayB == nil && tx {
 		days := rand.Intn(5) + 4
 		eventTime := clock.Now().AddDate(0, 0, days).Truncate(24 * time.Hour)
 		eventDate, err := eventTime.MarshalText()
 		if err != nil {
-			return true, err
+			return true, 0, err
 		}
 		err = student.Put([]byte(KeyDayEvent), eventDate)
 		if err != nil {
-			return false, fmt.Errorf("cannot save event date: %v", err)
+			return false, 0, fmt.Errorf("cannot save event date: %v", err)
 		}
 
-		return false, nil
+		return false, 0, nil
 	}
 
 	if dayB == nil && !tx {
-		return true, nil
+		return true, 0, nil
 	}
 
 	var day time.Time
 	err := day.UnmarshalText(dayB)
 	if err != nil {
-		return true, err
+		return true, 0, err
 	}
+
 	if clock.Now().Truncate(24 * time.Hour).After(day) {
-		return true, nil
+		events := 1
+		diffDays := int(clock.Now().Truncate(24*time.Hour).Sub(day).Hours() / 24)
+		missedEvents := int(diffDays / 4)
+		events += missedEvents
+		return true, events, nil
 	}
-	return false, nil
+	return false, 0, nil
 }
 
 func getCbTx(tx *bolt.Tx, schoolId string) (cb *bolt.Bucket, err error) {
@@ -2442,7 +2486,7 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 			return fmt.Errorf("the lotto has not been initialized")
 		}
 
-		chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Raffle", true)
+		err = chargeStudentTx(tx, clock, studentDetails, decimal.NewFromInt32(tickets).Mul(decimal.NewFromInt32(KeyPricePerTicket)), CurrencyUBuck, "Raffle", true)
 		if err != nil {
 			return err
 		}

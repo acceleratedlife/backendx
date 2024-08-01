@@ -1193,7 +1193,7 @@ func TestLottoPurchase(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("LottoPurchase", 8090, "test@admin.com")
 	defer tearDown()
-	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
 	require.Nil(t, err)
 
 	SetTestLoginUser(students[0])
@@ -1214,7 +1214,7 @@ func TestLottoPurchase(t *testing.T) {
 	err = setSettings(db, &clock, userDetails, settings)
 	require.Nil(t, err)
 
-	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "pre load")
+	err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(100000), "pre load")
 	require.Nil(t, err)
 
 	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/lottery/purchase")

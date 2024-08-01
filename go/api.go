@@ -54,6 +54,7 @@ type AllSchoolApiRouter interface {
 // The SchoolAdminApiRouter implementation should parse necessary information from the http request,
 // pass the data to a SchoolAdminApiServicer to perform the required actions, then write the service results to the http response.
 type SchoolAdminApiRouter interface { 
+	ExecuteTax(http.ResponseWriter, *http.Request)
 	GetStudentCount(http.ResponseWriter, *http.Request)
 	SearchAdminTeacherClass(http.ResponseWriter, *http.Request)
 }
@@ -117,6 +118,7 @@ type SysAdminApiRouter interface {
 	EditAccount(http.ResponseWriter, *http.Request)
 	EditBuck(http.ResponseWriter, *http.Request)
 	EditSchool(http.ResponseWriter, *http.Request)
+	GetAllUsers(http.ResponseWriter, *http.Request)
 	MakeAccount(http.ResponseWriter, *http.Request)
 	MakeSchool(http.ResponseWriter, *http.Request)
 	SearchSchools(http.ResponseWriter, *http.Request)
@@ -176,6 +178,7 @@ type AllSchoolApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type SchoolAdminApiServicer interface { 
+	ExecuteTax(context.Context, RequestTax) (ImplResponse, error)
 	GetStudentCount(context.Context, string) (ImplResponse, error)
 	SearchAdminTeacherClass(context.Context, string) (ImplResponse, error)
 }
@@ -248,6 +251,7 @@ type SysAdminApiServicer interface {
 	EditAccount(context.Context, AccountsAccountBody) (ImplResponse, error)
 	EditBuck(context.Context, BucksBuckBody) (ImplResponse, error)
 	EditSchool(context.Context, SchoolsSchoolBody) (ImplResponse, error)
+	GetAllUsers(context.Context) (ImplResponse, error)
 	MakeAccount(context.Context, AccountsAccountBody1) (ImplResponse, error)
 	MakeSchool(context.Context, SchoolsSchoolBody1) (ImplResponse, error)
 	SearchSchools(context.Context, int32) (ImplResponse, error)

@@ -36,7 +36,7 @@ type UserNoHistory struct {
 
 	CareerTransition bool `json:"careerTransition"`
 
-	Children int32 `json:"children"`
+	TaxableIncome int32 `json:"taxableIncome"`
 
 	Income float32 `json:"income"`
 
@@ -63,7 +63,7 @@ func AssertUserNoHistoryRequired(obj UserNoHistory) error {
 		"confirmed": obj.Confirmed,
 		"college": obj.College,
 		"careerTransition": obj.CareerTransition,
-		"children": obj.Children,
+		"taxableIncome": obj.TaxableIncome,
 		"income": obj.Income,
 		"role": obj.Role,
 		"rank": obj.Rank,
