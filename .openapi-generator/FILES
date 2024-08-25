@@ -80,6 +80,7 @@ go/model_response_login2.go
 go/model_response_login4.go
 go/model_response_lotto_latest.go
 go/model_response_market_item.go
+go/model_response_market_purchases.go
 go/model_response_member_class.go
 go/model_response_member_class_owner.go
 go/model_response_pay_transactions.go

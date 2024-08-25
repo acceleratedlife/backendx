@@ -1171,6 +1171,22 @@ paths:
       summary: resolve market item purchase
       tags:
       - Staff
+  /marketItems/purchases:
+    get:
+      description: returns the number of items sold but waiting for resolution
+      operationId: marketPurchases
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseMarketPurchases'
+          description: the staff users sold item count
+        "404":
+          description: staff market items cannot be found
+      summary: returns the number of items sold but waiting for resolution
+      tags:
+      - Staff
   /teachers:
     get:
       description: find the teachers
@@ -2518,6 +2534,14 @@ components:
           items:
             $ref: '#/components/schemas/ResponseMemberClassOwner'
           type: array
+      type: object
+    ResponseMarketPurchases:
+      example:
+        count: 4
+      properties:
+        count:
+          example: 4
+          type: integer
       type: object
     ResponseMemberClass:
       example:

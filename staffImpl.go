@@ -146,6 +146,69 @@ func getMarketItemRx(tx *bolt.Tx, userDetails UserInfo, itemId string) (market, 
 	return
 }
 
+func getMarketPurchases(db *bolt.DB, userDetails UserInfo) (resp openapi.ResponseMarketPurchases, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getMarketPurchasesRx(tx, userDetails)
+		return err
+	})
+
+	return
+}
+
+func getMarketPurchasesRx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.ResponseMarketPurchases, err error) {
+	teacherBucket, err := getTeacherBucketTx(tx, userDetails.SchoolId, userDetails.Email)
+	if err != nil {
+		return resp, err
+	}
+
+	marketBucket := teacherBucket.Bucket([]byte(KeyMarket))
+	if marketBucket == nil {
+		return resp, err
+	}
+
+	c := marketBucket.Cursor()
+
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		itemBucket := marketBucket.Bucket(k)
+		if itemBucket == nil {
+			continue
+		}
+
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		var details MarketItem
+		err := json.Unmarshal(itemData, &details)
+		if err != nil {
+			return resp, err
+		}
+
+		if !details.Active {
+			continue
+		}
+
+		buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
+		if buyersBucket == nil {
+			continue
+		}
+
+		d := buyersBucket.Cursor()
+		for j, _ := d.First(); j != nil; j, _ = d.Next() {
+			buyerData := buyersBucket.Get(j)
+			var buyer Buyer
+			err := json.Unmarshal(buyerData, &buyer)
+			if err != nil {
+				return resp, err
+			}
+
+			if buyer.Active {
+				resp.Count++
+			}
+		}
+
+	}
+
+	return
+}
+
 func getMarketItem(db *bolt.DB, userDetails UserInfo, itemId string) (market, item *bolt.Bucket, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
 		market, item, err = getMarketItemRx(tx, userDetails, itemId)
