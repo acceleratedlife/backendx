@@ -19,46 +19,65 @@ func TestGetMarketPurchases(t *testing.T) {
 	clock := TestClock{}
 	db, dbTearDown := OpenTestDB("GetMarketPurchases")
 	defer dbTearDown()
-	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
-
-	error is here on purpose need to make this test
+	SetTestLoginUser(teachers[0])
 
 	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), teachers[0], "pre load")
 	require.Nil(t, err)
 
 	teacher, err := getUserInLocalStore(db, teachers[0])
 	require.Nil(t, err)
 
-	body := openapi.RequestMakeAuction{
-		Bid:         4,
-		MaxBid:      4,
-		Description: "Test Auction",
-		EndDate:     clock.Now().Add(time.Minute * 100),
-		StartDate:   clock.Now().Add(time.Minute * -10),
-		OwnerId:     students[0],
-		Visibility:  classes,
+	marketItem0 := openapi.RequestMakeMarketItem{
+		Title: "item0",
+		Cost:  1,
+		Count: 10,
 	}
 
-	err = MakeAuctionImpl(db, student, body, false)
-	require.Nil(t, err)
-
-	auctions, err := getAllAuctions(db, &clock, teacher)
-	require.Nil(t, err)
-
-	require.False(t, auctions[0].Approved)
-
-	actionBody := openapi.RequestAuctionAction{
-		AuctionId: auctions[0].Id.Format(time.RFC3339Nano),
+	marketItem1 := openapi.RequestMakeMarketItem{
+		Title: "item1",
+		Cost:  1,
+		Count: 1,
 	}
 
-	err = approveAuction(db, teacher, actionBody)
+	item0, err := makeMarketItem(db, &clock, teacher, marketItem0)
 	require.Nil(t, err)
 
-	auctions, err = getAllAuctions(db, &clock, teacher)
+	item1, err := makeMarketItem(db, &clock, teacher, marketItem1)
 	require.Nil(t, err)
 
-	require.True(t, auctions[0].Approved)
+	_, err = buyMarketItem(db, &clock, student, teacher, item0)
+	require.Nil(t, err)
+	_, err = buyMarketItem(db, &clock, student, teacher, item0)
+	require.Nil(t, err)
+	purchaseId, err := buyMarketItem(db, &clock, student, teacher, item1)
+	require.Nil(t, err)
+
+	resp, err := getMarketPurchases(db, teacher)
+	require.Nil(t, err)
+
+	require.Equal(t, int32(3), resp.Count)
+
+	err = db.Update(func(tx *bolt.Tx) error {
+
+		marketBucket, itemBucket, err := getMarketItemRx(tx, teacher, item1)
+		require.Nil(t, err)
+		err = marketItemResolveTx(marketBucket, itemBucket, purchaseId)
+		require.Nil(t, err)
+		return err
+
+	})
+
+	require.Nil(t, err)
+
+	resp, err = getMarketPurchases(db, teacher)
+	require.Nil(t, err)
+
+	require.Equal(t, int32(2), resp.Count)
 
 }
 

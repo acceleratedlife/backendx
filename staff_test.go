@@ -14,59 +14,66 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 func TestMarketPurchases(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("MarketPurchases", 8090, "")
 	defer tearDown()
 
-	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
 
 	SetTestLoginUser(teachers[0])
 
 	student, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
 
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), teachers[0], "pre load")
+	require.Nil(t, err)
+
 	teacher, err := getUserInLocalStore(db, teachers[0])
 	require.Nil(t, err)
 
+	marketItem0 := openapi.RequestMakeMarketItem{
+		Title: "item0",
+		Cost:  1,
+		Count: 10,
+	}
 
-	error is here on purpose need to make this test
+	marketItem1 := openapi.RequestMakeMarketItem{
+		Title: "item1",
+		Cost:  1,
+		Count: 1,
+	}
+
+	item0, err := makeMarketItem(db, &clock, teacher, marketItem0)
+	require.Nil(t, err)
+
+	item1, err := makeMarketItem(db, &clock, teacher, marketItem1)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student, teacher, item0)
+	require.Nil(t, err)
+	_, err = buyMarketItem(db, &clock, student, teacher, item0)
+	require.Nil(t, err)
+	_, err = buyMarketItem(db, &clock, student, teacher, item1)
+	require.Nil(t, err)
 
 	client := &http.Client{}
 
-	body := openapi.RequestMakeAuction{
-		Bid:         4,
-		MaxBid:      4,
-		Description: "Test Auction",
-		EndDate:     clock.Now().Add(time.Minute * 100),
-		StartDate:   clock.Now().Add(time.Minute * -10),
-		OwnerId:     students[0],
-		Visibility:  classes,
-	}
-
-	err = MakeAuctionImpl(db, student, body, false)
-	require.Nil(t, err)
-
-	auctions, err := getAllAuctions(db, &clock, teacher)
-	require.Nil(t, err)
-
-	action := openapi.RequestAuctionAction{
-		AuctionId: auctions[0].Id.Format(time.RFC3339Nano),
-	}
-
-	marshal, err := json.Marshal(action)
-	require.Nil(t, err)
-
-	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/auctions/approve",
-		bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/marketItems/purchases",
+		nil)
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
+
+	var respData openapi.ResponseMarketPurchases
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, int32(3), respData.Count)
 
 }
 func TestMakeClass(t *testing.T) {

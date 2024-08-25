@@ -174,6 +174,17 @@ func getMarketPurchasesRx(tx *bolt.Tx, userDetails UserInfo) (resp openapi.Respo
 			continue
 		}
 
+		itemData := itemBucket.Get([]byte(KeyMarketData))
+		var details MarketItem
+		err := json.Unmarshal(itemData, &details)
+		if err != nil {
+			return resp, err
+		}
+
+		if !details.Active {
+			continue
+		}
+
 		buyersBucket := itemBucket.Bucket([]byte(KeyBuyers))
 		if buyersBucket == nil {
 			continue
