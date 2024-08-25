@@ -12,6 +12,56 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+func TestGetMarketPurchases(t *testing.T) {
+
+	lgr.Printf("INFO TestGetMarketPurchases")
+	t.Log("INFO TestGetMarketPurchases")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("GetMarketPurchases")
+	defer dbTearDown()
+	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+
+	error is here on purpose need to make this test
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(time.Minute * 100),
+		StartDate:   clock.Now().Add(time.Minute * -10),
+		OwnerId:     students[0],
+		Visibility:  classes,
+	}
+
+	err = MakeAuctionImpl(db, student, body, false)
+	require.Nil(t, err)
+
+	auctions, err := getAllAuctions(db, &clock, teacher)
+	require.Nil(t, err)
+
+	require.False(t, auctions[0].Approved)
+
+	actionBody := openapi.RequestAuctionAction{
+		AuctionId: auctions[0].Id.Format(time.RFC3339Nano),
+	}
+
+	err = approveAuction(db, teacher, actionBody)
+	require.Nil(t, err)
+
+	auctions, err = getAllAuctions(db, &clock, teacher)
+	require.Nil(t, err)
+
+	require.True(t, auctions[0].Approved)
+
+}
+
 func TestAuctionsAll(t *testing.T) {
 
 	lgr.Printf("INFO TestAuctionsAll")

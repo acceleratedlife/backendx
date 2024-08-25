@@ -14,6 +14,61 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+
+func TestMarketPurchases(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("MarketPurchases", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	SetTestLoginUser(teachers[0])
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+
+	error is here on purpose need to make this test
+
+	client := &http.Client{}
+
+	body := openapi.RequestMakeAuction{
+		Bid:         4,
+		MaxBid:      4,
+		Description: "Test Auction",
+		EndDate:     clock.Now().Add(time.Minute * 100),
+		StartDate:   clock.Now().Add(time.Minute * -10),
+		OwnerId:     students[0],
+		Visibility:  classes,
+	}
+
+	err = MakeAuctionImpl(db, student, body, false)
+	require.Nil(t, err)
+
+	auctions, err := getAllAuctions(db, &clock, teacher)
+	require.Nil(t, err)
+
+	action := openapi.RequestAuctionAction{
+		AuctionId: auctions[0].Id.Format(time.RFC3339Nano),
+	}
+
+	marshal, err := json.Marshal(action)
+	require.Nil(t, err)
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8090/api/auctions/approve",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}
 func TestMakeClass(t *testing.T) {
 
 	db, teardown := FullStartTestServer("makeClass", 8090, "")

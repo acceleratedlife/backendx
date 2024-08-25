@@ -209,6 +209,20 @@ func (s *StaffApiService) MarketItemResolve(ctx context.Context, requestMarketRe
 	return Response(http.StatusNotImplemented, nil), errors.New("MarketItemResolve method not implemented")
 }
 
+// MarketPurchases - returns the number of items sold but waiting for resolution
+func (s *StaffApiService) MarketPurchases(ctx context.Context) (ImplResponse, error) {
+	// TODO - update MarketPurchases with the required logic for this service method.
+	// Add api_staff_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, ResponseMarketPurchases{}) or use other options such as http.Ok ...
+	//return Response(200, ResponseMarketPurchases{}), nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MarketPurchases method not implemented")
+}
+
 // PayTransactions - When a teacher or admin is paying/debting an entire class
 func (s *StaffApiService) PayTransactions(ctx context.Context, requestPayTransactions RequestPayTransactions) (ImplResponse, error) {
 	// TODO - update PayTransactions with the required logic for this service method.
