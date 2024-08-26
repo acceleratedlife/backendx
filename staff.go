@@ -38,6 +38,28 @@ func (s *StaffApiServiceImpl) SearchEvents(ctx context.Context) (openapi.ImplRes
 	return openapi.Response(200, resp), nil
 }
 
+func (s *StaffApiServiceImpl) MarketPurchases(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+	if userDetails.Role != UserRoleTeacher {
+		return openapi.Response(401, ""), nil
+	}
+
+	resp, err := getMarketPurchases(s.db, userDetails)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, resp), nil
+}
+
 func (s *StaffApiServiceImpl) AuctionsAll(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)

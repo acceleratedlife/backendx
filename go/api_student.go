@@ -18,7 +18,7 @@ import (
 
 // StudentApiController binds http requests to an api service and writes the service results to the http response
 type StudentApiController struct {
-	service      StudentApiServicer
+	service StudentApiServicer
 	errorHandler ErrorHandler
 }
 
@@ -48,7 +48,7 @@ func NewStudentApiController(s StudentApiServicer, opts ...StudentApiOption) Rou
 
 // Routes returns all of the api route for the StudentApiController
 func (c *StudentApiController) Routes() Routes {
-	return Routes{
+	return Routes{ 
 		{
 			"AuctionBid",
 			strings.ToUpper("Put"),

@@ -14,6 +14,68 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMarketPurchases(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServer("MarketPurchases", 8090, "")
+	defer tearDown()
+
+	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	SetTestLoginUser(teachers[0])
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), teachers[0], "pre load")
+	require.Nil(t, err)
+
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	marketItem0 := openapi.RequestMakeMarketItem{
+		Title: "item0",
+		Cost:  1,
+		Count: 10,
+	}
+
+	marketItem1 := openapi.RequestMakeMarketItem{
+		Title: "item1",
+		Cost:  1,
+		Count: 1,
+	}
+
+	item0, err := makeMarketItem(db, &clock, teacher, marketItem0)
+	require.Nil(t, err)
+
+	item1, err := makeMarketItem(db, &clock, teacher, marketItem1)
+	require.Nil(t, err)
+
+	_, err = buyMarketItem(db, &clock, student, teacher, item0)
+	require.Nil(t, err)
+	_, err = buyMarketItem(db, &clock, student, teacher, item0)
+	require.Nil(t, err)
+	_, err = buyMarketItem(db, &clock, student, teacher, item1)
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8090/api/marketItems/purchases",
+		nil)
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var respData openapi.ResponseMarketPurchases
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&respData)
+
+	assert.Equal(t, int32(3), respData.Count)
+
+}
 func TestMakeClass(t *testing.T) {
 
 	db, teardown := FullStartTestServer("makeClass", 8090, "")

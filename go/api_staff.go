@@ -128,6 +128,12 @@ func (c *StaffApiController) Routes() Routes {
 			c.MarketItemResolve,
 		},
 		{
+			"MarketPurchases",
+			strings.ToUpper("Get"),
+			"/api/marketItems/purchases",
+			c.MarketPurchases,
+		},
+		{
 			"PayTransactions",
 			strings.ToUpper("Post"),
 			"/api/transactions/payTransactions",
@@ -410,6 +416,19 @@ func (c *StaffApiController) MarketItemResolve(w http.ResponseWriter, r *http.Re
 		return
 	}
 	result, err := c.service.MarketItemResolve(r.Context(), requestMarketRefundParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MarketPurchases - returns the number of items sold but waiting for resolution
+func (c *StaffApiController) MarketPurchases(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.MarketPurchases(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
