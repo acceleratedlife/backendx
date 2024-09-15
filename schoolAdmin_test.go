@@ -3,18 +3,20 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"testing"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	bolt "go.etcd.io/bbolt"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSearchAdminTeacherClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("searchAdminTeacherClass", 8090, "")
+	db, tearDown := FullStartTestServer("searchAdminTeacherClass", 8088, "")
 	defer tearDown()
 
 	admins, _, teachers, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
@@ -24,7 +26,7 @@ func TestSearchAdminTeacherClass(t *testing.T) {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/classes/teachers",
+		"http://127.0.0.1:8088/api/classes/teachers",
 		nil)
 
 	resp, err := client.Do(req)
@@ -44,7 +46,7 @@ func TestSearchAdminTeacherClass(t *testing.T) {
 }
 
 func TestGetStudentCountEndpoint(t *testing.T) {
-	db, tearDown := FullStartTestServer("searchAdminTeacherClass", 8090, "")
+	db, tearDown := FullStartTestServer("searchAdminTeacherClass", 8088, "")
 	defer tearDown()
 
 	admins, schools, _, _, _, _ := CreateTestAccounts(db, 1, 1, 1, 25)
@@ -53,7 +55,7 @@ func TestGetStudentCountEndpoint(t *testing.T) {
 
 	client := &http.Client{}
 
-	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/schools/school/count")
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8088/api/schools/school/count")
 	q := u.Query()
 	q.Set("schoolId", schools[0])
 	u.RawQuery = q.Encode()
@@ -76,7 +78,7 @@ func TestGetStudentCountEndpoint(t *testing.T) {
 }
 
 func TestExecuteTax(t *testing.T) {
-	db, tearDown := FullStartTestServer("ExecuteTax", 8090, "")
+	db, tearDown := FullStartTestServer("ExecuteTax", 8088, "")
 	defer tearDown()
 
 	admins, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 10)
@@ -91,7 +93,7 @@ func TestExecuteTax(t *testing.T) {
 	marshal, _ := json.Marshal(bodyFlat)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/schools/school/tax",
+		"http://127.0.0.1:8088/api/schools/school/tax",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -102,7 +104,7 @@ func TestExecuteTax(t *testing.T) {
 
 	SetTestLoginUser(teachers[0])
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/schools/school/tax",
+		"http://127.0.0.1:8088/api/schools/school/tax",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -115,7 +117,7 @@ func TestExecuteTax(t *testing.T) {
 
 	marshal, _ = json.Marshal(bodyFlat)
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/schools/school/tax",
+		"http://127.0.0.1:8088/api/schools/school/tax",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
