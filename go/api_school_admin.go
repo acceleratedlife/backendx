@@ -62,6 +62,12 @@ func (c *SchoolAdminApiController) Routes() Routes {
 			c.GetStudentCount,
 		},
 		{
+			"ProgressiveBrackets",
+			strings.ToUpper("Get"),
+			"/api/schools/school/tax",
+			c.ProgressiveBrackets,
+		},
+		{
 			"SearchAdminTeacherClass",
 			strings.ToUpper("Get"),
 			"/api/classes/teachers",
@@ -99,6 +105,19 @@ func (c *SchoolAdminApiController) GetStudentCount(w http.ResponseWriter, r *htt
 	query := r.URL.Query()
 	schoolIdParam := query.Get("schoolId")
 	result, err := c.service.GetStudentCount(r.Context(), schoolIdParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// ProgressiveBrackets - to get the tax brackets of a progressive tax
+func (c *SchoolAdminApiController) ProgressiveBrackets(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.ProgressiveBrackets(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

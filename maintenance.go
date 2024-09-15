@@ -616,8 +616,6 @@ func createTeachers(db *bolt.DB, clock Clock, schoolId, password string) (err er
 			return err
 		}
 
-		lgr.Printf("Created teacher: %s ", newTeacher.Email)
-
 		for j := 0; j < 2; j++ {
 			classId, _, err := CreateClass(db, clock, schoolId, newTeacher.Email, "math"+strconv.Itoa(j), j)
 			if err != nil {

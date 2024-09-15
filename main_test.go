@@ -249,7 +249,7 @@ func TestIntegrationAuth(t *testing.T) {
 	authRoute, _ := auth.Handlers()
 	mux.Handle("/auth/al/login", authRoute)
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -263,18 +263,18 @@ func TestIntegrationAuth(t *testing.T) {
 		"user":   {"test@admin.com"},
 		"passwd": {"123qwe"},
 	}
-	resp, _ := http.PostForm("http://127.0.0.1:8089/auth/al/login", formData)
+	resp, _ := http.PostForm("http://127.0.0.1:8088/auth/al/login", formData)
 
 	assert.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	resp, err := http.Get("http://127.0.0.1:8089/auth/al/login?user=test@admin.com&passwd=123qwe")
+	resp, err := http.Get("http://127.0.0.1:8088/auth/al/login?user=test@admin.com&passwd=123qwe")
 
 	require.Nil(t, err)
 	assert.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	resp, _ = http.Get("http://127.0.0.1:8089/api/classes/teachers")
+	resp, _ = http.Get("http://127.0.0.1:8088/api/classes/teachers")
 
 	assert.NotNil(t, resp)
 	assert.Equal(t, 401, resp.StatusCode)
@@ -288,7 +288,7 @@ func TestIntegrationLoginPage(t *testing.T) {
 
 	InitDefaultAccounts(db, &clock)
 	mux, _ := createRouter(db)
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -372,7 +372,7 @@ func TestBackupSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/backup", backUpHandler(db))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -386,7 +386,7 @@ func TestBackupSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://localhost:8089/admin/backup",
+		"http://localhost:8088/admin/backup",
 		nil)
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	get, err := client.Do(req)
@@ -396,7 +396,7 @@ func TestBackupSecured(t *testing.T) {
 
 	// wrong password
 	req, _ = http.NewRequest(http.MethodGet,
-		"http://localhost:8089/admin/backup",
+		"http://localhost:8088/admin/backup",
 		nil)
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDEx")
 	get, err = client.Do(req)
@@ -406,7 +406,7 @@ func TestBackupSecured(t *testing.T) {
 
 	// malformed password
 	req, _ = http.NewRequest(http.MethodGet,
-		"http://localhost:8089/admin/backup",
+		"http://localhost:8088/admin/backup",
 		nil)
 	req.Header.Add("Authorization", "Basic malformed")
 	get, err = client.Do(req)
@@ -431,7 +431,7 @@ func TestNewSchoolSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/new-school", newSchoolHandler(db, &clock))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -456,7 +456,7 @@ func TestNewSchoolSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/new-school",
+		"http://localhost:8088/admin/new-school",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -486,7 +486,7 @@ func TestResetPasswordSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/resetPassword", resetPasswordHandler(db))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -508,7 +508,7 @@ func TestResetPasswordSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/resetPassword",
+		"http://localhost:8088/admin/resetPassword",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -538,7 +538,7 @@ func TestAddJobCollegeSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/addJobs", addJobsHandler(db))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -563,7 +563,7 @@ func TestAddJobCollegeSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/addJobs",
+		"http://localhost:8088/admin/addJobs",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -590,7 +590,7 @@ func TestAddJobSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/addJobs", addJobsHandler(db))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -615,7 +615,7 @@ func TestAddJobSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/addJobs",
+		"http://localhost:8088/admin/addJobs",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -642,7 +642,7 @@ func TestAddEventPositiveSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/addEvents", addEventsHandler(db))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -666,7 +666,7 @@ func TestAddEventPositiveSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/addEvents",
+		"http://localhost:8088/admin/addEvents",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -694,7 +694,7 @@ func TestAddEventNegativeSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/addEvents", addEventsHandler(db))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -718,7 +718,7 @@ func TestAddEventNegativeSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/addEvents",
+		"http://localhost:8088/admin/addEvents",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -746,7 +746,7 @@ func TestAddAdminSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/addAdmin", addAdminHandler(db))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -771,7 +771,7 @@ func TestAddAdminSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/addAdmin",
+		"http://localhost:8088/admin/addAdmin",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -802,7 +802,7 @@ func TestSeedDbSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/seedDb", seedDbHandler(db, clock2))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -839,7 +839,7 @@ func TestSeedDbSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/seedDb",
+		"http://localhost:8088/admin/seedDb",
 		bytes.NewBuffer(marshal))
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -866,7 +866,7 @@ func TestNewDaySecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/nextDay", nextDayHandler(clock))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -883,7 +883,7 @@ func TestNewDaySecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/nextDay",
+		"http://localhost:8088/admin/nextDay",
 		nil)
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -908,7 +908,7 @@ func TestNewHourSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/nextHour", nextHourHandler(clock))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -925,7 +925,7 @@ func TestNewHourSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/nextHour",
+		"http://localhost:8088/admin/nextHour",
 		nil)
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -950,7 +950,7 @@ func TestNewMinutesSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/nextMinutes", nextMinutesHandler(clock))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -967,7 +967,7 @@ func TestNewMinutesSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/nextMinutes",
+		"http://localhost:8088/admin/nextMinutes",
 		nil)
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -992,7 +992,7 @@ func TestNewCareerSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/nextCareer", nextCareerHandler(clock))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -1009,7 +1009,7 @@ func TestNewCareerSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/nextCareer",
+		"http://localhost:8088/admin/nextCareer",
 		nil)
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -1034,7 +1034,7 @@ func TestNewCollegeSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/nextCollege", nextCollegeHandler(clock))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -1051,7 +1051,7 @@ func TestNewCollegeSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/nextCollege",
+		"http://localhost:8088/admin/nextCollege",
 		nil)
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)
@@ -1076,7 +1076,7 @@ func TestResetClockSecured(t *testing.T) {
 	mux.Use(buildAuthMiddleware(m))
 	mux.Handle("/admin/resetClock", resetClockHandler(clock))
 
-	l, _ := net.Listen("tcp", "127.0.0.1:8089")
+	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
 	assert.NoError(t, ts.Listener.Close())
@@ -1103,7 +1103,7 @@ func TestResetClockSecured(t *testing.T) {
 
 	// access allowed
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://localhost:8089/admin/resetClock",
+		"http://localhost:8088/admin/resetClock",
 		nil)
 	req.Header.Add("Authorization", "Basic YWRtaW46dGVzdDE=")
 	resp, err := client.Do(req)

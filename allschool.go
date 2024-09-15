@@ -193,10 +193,18 @@ func (a *AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, Id string
 			Error:  true,
 		}), nil
 	}
-	resp, err := classesWithOwnerDetails(a.db, userDetails.SchoolId, userDetails.Email)
+
+	resp := make([]openapi.ResponseMemberClass, 0)
+	if Id == "" {
+		resp, err = classesWithOwnerDetails(a.db, userDetails.SchoolId, userDetails.Email)
+	} else {
+		resp, err = classesWithOwnerDetails(a.db, userDetails.SchoolId, Id)
+	}
+
 	if err != nil {
 		return openapi.Response(500, "{}"), nil
 	}
+
 	return openapi.Response(200, resp), nil
 }
 

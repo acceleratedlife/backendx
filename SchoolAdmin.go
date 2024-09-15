@@ -121,6 +121,27 @@ func (s *SchoolAdminServiceImpl) ExecuteTax(ctx context.Context, tax openapi.Req
 	return openapi.Response(200, nil), nil
 }
 
+func (s *SchoolAdminServiceImpl) ProgressiveBrackets(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, nil), nil
+	}
+
+	if userDetails.Role != UserRoleAdmin {
+		return openapi.Response(401, ""), nil
+	}
+
+	resp, err := taxBrackets(s.db, userDetails)
+
+	if err != nil {
+		lgr.Printf("ERROR cannot cannot tax this school : %s %v", userDetails.SchoolId, err)
+		return openapi.Response(500, "{}"), err
+	}
+
+	return openapi.Response(200, resp), nil
+}
+
 func NewSchoolAdminServiceImpl(db *bolt.DB, clock Clock) openapi.SchoolAdminApiServicer {
 	return &SchoolAdminServiceImpl{
 		db:    db,

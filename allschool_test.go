@@ -12,7 +12,7 @@ import (
 )
 
 func TestAllSchoolApiServiceImpl_AddCodeClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCode", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("addCode", 8088, "test@admin.com")
 	defer tearDown()
 
 	_, _, teachers, classes, _, _ := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -27,7 +27,7 @@ func TestAllSchoolApiServiceImpl_AddCodeClass(t *testing.T) {
 	}
 
 	marshal, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/class/addCode", bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/class/addCode", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	require.NotNil(t, resp)
@@ -42,7 +42,7 @@ func TestAllSchoolApiServiceImpl_AddCodeClass(t *testing.T) {
 }
 
 func TestRemoveClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("RemoveClass", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("RemoveClass", 8088, "test@admin.com")
 	defer tearDown()
 	members := 2
 	_, _, _, classes, students, err := CreateTestAccounts(db, 1, 2, 2, members)
@@ -60,7 +60,7 @@ func TestRemoveClass(t *testing.T) {
 	}
 
 	marshal, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/removeAdmin", bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/removeAdmin", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -77,7 +77,7 @@ func TestRemoveClass(t *testing.T) {
 }
 
 func TestSearchMyClasses(t *testing.T) {
-	db, tearDown := FullStartTestServer("searchMyClasses", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("searchMyClasses", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
 	require.Nil(t, err)
@@ -92,7 +92,7 @@ func TestSearchMyClasses(t *testing.T) {
 	}
 
 	marshal, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/classes/member", bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8088/api/classes/member", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -109,7 +109,7 @@ func TestSearchMyClasses(t *testing.T) {
 
 // changes the add code for frosh, soph, jr, sr. Students need it to register
 func TestAddCodeClass_adminClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCodeClass", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("addCodeClass", 8088, "test@admin.com")
 	defer tearDown()
 	admins, _, _, classes, _, err := CreateTestAccounts(db, 1, 2, 2, 2)
 	require.Nil(t, err)
@@ -124,7 +124,7 @@ func TestAddCodeClass_adminClass(t *testing.T) {
 	}
 
 	marshal, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/class/addCode", bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/class/addCode", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -141,7 +141,7 @@ func TestAddCodeClass_adminClass(t *testing.T) {
 
 // changes the school code that teachers use to register
 func TestAddCodeClass_SchoolClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCodeClass", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("addCodeClass", 8088, "test@admin.com")
 	defer tearDown()
 	admins, schools, _, _, _, err := CreateTestAccounts(db, 1, 1, 1, 1)
 	require.Nil(t, err)
@@ -156,7 +156,7 @@ func TestAddCodeClass_SchoolClass(t *testing.T) {
 	}
 
 	marshal, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/class/addCode", bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/class/addCode", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -173,7 +173,7 @@ func TestAddCodeClass_SchoolClass(t *testing.T) {
 
 // changes the add code for a teachers class. The students will use this to register
 func TestAddCodeClass_TeacherClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("addCodeClass", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("addCodeClass", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, classes, _, err := CreateTestAccounts(db, 1, 2, 2, 2)
 	require.Nil(t, err)
@@ -189,7 +189,7 @@ func TestAddCodeClass_TeacherClass(t *testing.T) {
 	}
 
 	marshal, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/class/addCode", bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/class/addCode", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
