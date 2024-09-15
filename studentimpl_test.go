@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"strconv"
 	"testing"
 	"time"
 
@@ -783,7 +782,6 @@ func TestPurchaseLottoSingle(t *testing.T) {
 		winner, err = purchaseLotto(db, &clock, student, 1)
 		require.Nil(t, err)
 		count++
-		lgr.Printf(strconv.Itoa(count))
 	}
 
 	require.True(t, winner)
