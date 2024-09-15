@@ -56,6 +56,7 @@ type AllSchoolApiRouter interface {
 type SchoolAdminApiRouter interface { 
 	ExecuteTax(http.ResponseWriter, *http.Request)
 	GetStudentCount(http.ResponseWriter, *http.Request)
+	ProgressiveBrackets(http.ResponseWriter, *http.Request)
 	SearchAdminTeacherClass(http.ResponseWriter, *http.Request)
 }
 // StaffApiRouter defines the required methods for binding the api requests to a responses for the StaffApi
@@ -181,6 +182,7 @@ type AllSchoolApiServicer interface {
 type SchoolAdminApiServicer interface { 
 	ExecuteTax(context.Context, RequestTax) (ImplResponse, error)
 	GetStudentCount(context.Context, string) (ImplResponse, error)
+	ProgressiveBrackets(context.Context) (ImplResponse, error)
 	SearchAdminTeacherClass(context.Context, string) (ImplResponse, error)
 }
 

@@ -90,6 +90,7 @@ go/model_response_reset_password.go
 go/model_response_schools.go
 go/model_response_search_student_ubuck.go
 go/model_response_student_count.go
+go/model_response_tax_bracket.go
 go/model_response_teachers.go
 go/model_response_transactions.go
 go/model_school.go

@@ -130,12 +130,86 @@ func TestExecuteTax(t *testing.T) {
 		TaxRate: 0,
 	}
 
+	err = db.Update(func(tx *bolt.Tx) error {
+		users := tx.Bucket([]byte(KeyUsers))
+		for _, d := range students {
+			studentData := users.Get([]byte(d))
+			var student UserInfo
+			err = json.Unmarshal(studentData, &student)
+			if err != nil {
+				return err
+			}
+
+			student.TaxableIncome = int32(rand.IntN(600-260) + 260)
+			marshal, err := json.Marshal(student)
+			if err != nil {
+				return err
+			}
+
+			err = users.Put([]byte(d), marshal)
+			if err != nil {
+				return err
+			}
+
+		}
+		return err
+	})
+
+	require.NotNil(t, resp)
+
 	marshal, _ = json.Marshal(bodyProgressive)
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/schools/school/tax",
+		"http://127.0.0.1:8088/api/schools/school/tax",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+}
+
+func TestProgressiveBrackets(t *testing.T) {
+	db, tearDown := FullStartTestServer("ProgressiveBrackets", 8088, "")
+	defer tearDown()
+
+	admins, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 5)
+
+	SetTestLoginUser(admins[0])
+
+	err := db.Update(func(tx *bolt.Tx) error {
+		users := tx.Bucket([]byte(KeyUsers))
+		for _, d := range students {
+			studentData := users.Get([]byte(d))
+			var student UserInfo
+			err := json.Unmarshal(studentData, &student)
+			if err != nil {
+				return err
+			}
+
+			student.TaxableIncome = int32(rand.IntN(600-260) + 260)
+			marshal, err := json.Marshal(student)
+			if err != nil {
+				return err
+			}
+
+			err = users.Put([]byte(d), marshal)
+			if err != nil {
+				return err
+			}
+
+		}
+		return nil
+	})
+	require.Nil(t, err)
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodGet,
+		"http://127.0.0.1:8088/api/schools/school/tax",
+		nil)
+
+	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
 	require.NotNil(t, resp)
