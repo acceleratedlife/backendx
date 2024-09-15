@@ -3,12 +3,14 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"math/rand/v2"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/shopspring/decimal"
 	bolt "go.etcd.io/bbolt"
 
 	"github.com/stretchr/testify/assert"
@@ -140,7 +142,11 @@ func TestExecuteTax(t *testing.T) {
 				return err
 			}
 
-			student.TaxableIncome = int32(rand.IntN(600-260) + 260)
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			random := decimal.NewFromFloat32(r.Float32())
+			income := int32(random.Mul(decimal.NewFromInt(340)).Add(decimal.NewFromInt(260)).IntPart())
+
+			student.TaxableIncome = income
 			marshal, err := json.Marshal(student)
 			if err != nil {
 				return err
@@ -187,7 +193,11 @@ func TestProgressiveBrackets(t *testing.T) {
 				return err
 			}
 
-			student.TaxableIncome = int32(rand.IntN(600-260) + 260)
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			random := decimal.NewFromFloat32(r.Float32())
+			income := int32(random.Mul(decimal.NewFromInt(340)).Add(decimal.NewFromInt(260)).IntPart())
+
+			student.TaxableIncome = income
 			marshal, err := json.Marshal(student)
 			if err != nil {
 				return err
