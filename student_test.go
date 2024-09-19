@@ -54,7 +54,7 @@ func Test_addUbuck2Student(t *testing.T) {
 }
 
 func TestStudentAddClass_Teachers(t *testing.T) {
-	db, tearDown := FullStartTestServer("studentAddClass_Teachers", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("studentAddClass_Teachers", 8088, "test@admin.com")
 	defer tearDown()
 	_, schools, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
@@ -84,7 +84,7 @@ func TestStudentAddClass_Teachers(t *testing.T) {
 	}
 
 	marshal, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/addClass", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -98,7 +98,7 @@ func TestStudentAddClass_Teachers(t *testing.T) {
 }
 
 func TestStudentAddClass_Schools(t *testing.T) {
-	db, tearDown := FullStartTestServer("studentAddClass_Schools", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("studentAddClass_Schools", 8088, "test@admin.com")
 	defer tearDown()
 	_, schools, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
@@ -125,7 +125,7 @@ func TestStudentAddClass_Schools(t *testing.T) {
 	}
 
 	marshal, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/addClass", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -141,7 +141,7 @@ func TestStudentAddClass_Schools(t *testing.T) {
 }
 
 func TestStudentAddClass_InvalidCode(t *testing.T) {
-	db, tearDown := FullStartTestServer("studentAddClass_InvalidCode", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("studentAddClass_InvalidCode", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
@@ -157,7 +157,7 @@ func TestStudentAddClass_InvalidCode(t *testing.T) {
 	}
 
 	marshal, _ := json.Marshal(body)
-	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/addClass", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -173,7 +173,7 @@ func TestStudentAddClass_InvalidCode(t *testing.T) {
 
 func TestSearchStudentUbuck(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("searchStudentUbuck", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("searchStudentUbuck", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
@@ -188,7 +188,7 @@ func TestSearchStudentUbuck(t *testing.T) {
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
-	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/accounts/account/student", nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8088/api/accounts/account/student", nil)
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -204,7 +204,7 @@ func TestSearchStudentUbuck(t *testing.T) {
 
 func TestLatestLotto(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("LatestLotto", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("LatestLotto", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
@@ -227,7 +227,7 @@ func TestLatestLotto(t *testing.T) {
 	err = initializeLottery(db, userDetails, settings, &clock)
 	require.Nil(t, err)
 
-	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/lottery/latest", nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8088/api/lottery/latest", nil)
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -244,7 +244,7 @@ func TestLatestLotto(t *testing.T) {
 
 func TestPreviousLotto(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("PreviousLotto", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("PreviousLotto", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
@@ -268,7 +268,7 @@ func TestPreviousLotto(t *testing.T) {
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
 	require.Nil(t, err)
 
-	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/lottery/previous", nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8088/api/lottery/previous", nil)
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -299,7 +299,7 @@ func TestPreviousLotto(t *testing.T) {
 
 func TestSearchAuctionsStudent(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServerClock("searchAuctionsStudent", 8090, "test@admin.com", &clock)
+	db, tearDown := FullStartTestServerClock("searchAuctionsStudent", 8088, "test@admin.com", &clock)
 	defer tearDown()
 	_, schools, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 2, 1)
 	require.Nil(t, err)
@@ -355,7 +355,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 	SetTestLoginUser(students[0])
 	marshal, _ := json.Marshal(body2)
 
-	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/addClass", bytes.NewBuffer(marshal))
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	require.NotNil(t, resp)
@@ -363,7 +363,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 
 	marshal, _ = json.Marshal(body3)
 
-	req, _ = http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/addClass", bytes.NewBuffer(marshal))
+	req, _ = http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/addClass", bytes.NewBuffer(marshal))
 	resp, err = client.Do(req)
 	require.Nil(t, err)
 	require.NotNil(t, resp)
@@ -372,7 +372,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 	SetTestLoginUser(teachers[0])
 	marshal, _ = json.Marshal(body4)
 
-	req, _ = http.NewRequest(http.MethodPut, "http://127.0.0.1:8090/api/classes/class/kick", bytes.NewBuffer(marshal))
+	req, _ = http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/classes/class/kick", bytes.NewBuffer(marshal))
 	resp, err = client.Do(req)
 	require.Nil(t, err)
 	require.NotNil(t, resp)
@@ -380,7 +380,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 
 	SetTestLoginUser(students[0])
 
-	req, _ = http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/auctions/student", nil)
+	req, _ = http.NewRequest(http.MethodGet, "http://127.0.0.1:8088/api/auctions/student", nil)
 	resp, err = client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -396,7 +396,7 @@ func TestSearchAuctionsStudent(t *testing.T) {
 
 func TestSearchBuckTransaction(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("searchBuckTransaction", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("searchBuckTransaction", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
 	require.Nil(t, err)
@@ -415,7 +415,7 @@ func TestSearchBuckTransaction(t *testing.T) {
 		require.Nil(t, err)
 	}
 
-	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/transactions/buckTransactions", nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8088/api/transactions/buckTransactions", nil)
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -432,7 +432,7 @@ func TestSearchBuckTransaction(t *testing.T) {
 
 func TestSearchBuckTransactionNegative(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("searchBuckTransactionNegative", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("searchBuckTransactionNegative", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
 	require.Nil(t, err)
@@ -451,7 +451,7 @@ func TestSearchBuckTransactionNegative(t *testing.T) {
 		require.Nil(t, err)
 	}
 
-	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/transactions/buckTransactions", nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8088/api/transactions/buckTransactions", nil)
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()
@@ -468,7 +468,7 @@ func TestSearchBuckTransactionNegative(t *testing.T) {
 
 func TestBuckConvert(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("buckConvert", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("buckConvert", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
 	require.Nil(t, err)
@@ -494,7 +494,7 @@ func TestBuckConvert(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -511,7 +511,7 @@ func TestBuckConvert(t *testing.T) {
 	marshal, _ = json.Marshal(body)
 
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -524,7 +524,7 @@ func TestBuckConvert(t *testing.T) {
 
 func TestBuckConvertNewCurrency(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("buckConvertNewCurrency", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("buckConvertNewCurrency", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
 	require.Nil(t, err)
@@ -553,7 +553,7 @@ func TestBuckConvertNewCurrency(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -578,7 +578,7 @@ func TestBuckConvertNewCurrency(t *testing.T) {
 
 func TestBuckConvert_ubuck(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("buckConvert_ubuck", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("buckConvert_ubuck", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
 	require.Nil(t, err)
@@ -606,7 +606,7 @@ func TestBuckConvert_ubuck(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -623,7 +623,7 @@ func TestBuckConvert_ubuck(t *testing.T) {
 	marshal, _ = json.Marshal(body)
 
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -636,7 +636,7 @@ func TestBuckConvert_ubuck(t *testing.T) {
 
 func TestBuckConvert_debt(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("buckConvert_debt", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("buckConvert_debt", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
 	require.Nil(t, err)
@@ -664,7 +664,7 @@ func TestBuckConvert_debt(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -681,7 +681,7 @@ func TestBuckConvert_debt(t *testing.T) {
 	marshal, _ = json.Marshal(body)
 
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -694,7 +694,7 @@ func TestBuckConvert_debt(t *testing.T) {
 
 func TestBuckConvert_debt_ubuck(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("buckConvert_debt_ubuck", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("buckConvert_debt_ubuck", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 4, 2, 2)
 	require.Nil(t, err)
@@ -722,7 +722,7 @@ func TestBuckConvert_debt_ubuck(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -738,7 +738,7 @@ func TestBuckConvert_debt_ubuck(t *testing.T) {
 	marshal, _ = json.Marshal(body)
 
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -751,7 +751,7 @@ func TestBuckConvert_debt_ubuck(t *testing.T) {
 
 func TestAuctionBid(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("auctionBid", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("auctionBid", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 2)
 	require.Nil(t, err)
@@ -799,7 +799,7 @@ func TestAuctionBid(t *testing.T) {
 	SetTestLoginUser(students[0])
 
 	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/auctions/placeBid",
+		"http://127.0.0.1:8088/api/auctions/placeBid",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -817,7 +817,7 @@ func TestAuctionBid(t *testing.T) {
 	marshal, _ = json.Marshal(body)
 
 	req, _ = http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/auctions/placeBid",
+		"http://127.0.0.1:8088/api/auctions/placeBid",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -834,7 +834,7 @@ func TestAuctionBid(t *testing.T) {
 	marshal, _ = json.Marshal(body)
 
 	req, _ = http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/auctions/placeBid",
+		"http://127.0.0.1:8088/api/auctions/placeBid",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -853,7 +853,7 @@ func TestAuctionBid(t *testing.T) {
 	SetTestLoginUser(students[1])
 
 	req, _ = http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/auctions/placeBid",
+		"http://127.0.0.1:8088/api/auctions/placeBid",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -871,7 +871,7 @@ func TestAuctionBid(t *testing.T) {
 	SetTestLoginUser(students[0])
 
 	req, _ = http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/auctions/placeBid",
+		"http://127.0.0.1:8088/api/auctions/placeBid",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -888,7 +888,7 @@ func TestAuctionBid(t *testing.T) {
 	marshal, _ = json.Marshal(body)
 
 	req, _ = http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/auctions/placeBid",
+		"http://127.0.0.1:8088/api/auctions/placeBid",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -907,7 +907,7 @@ func TestAuctionBid(t *testing.T) {
 	SetTestLoginUser(students[0])
 
 	req, _ = http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/auctions/placeBid",
+		"http://127.0.0.1:8088/api/auctions/placeBid",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -926,7 +926,7 @@ func TestAuctionBid(t *testing.T) {
 	SetTestLoginUser(students[0])
 
 	req, _ = http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/auctions/placeBid",
+		"http://127.0.0.1:8088/api/auctions/placeBid",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -938,7 +938,7 @@ func TestAuctionBid(t *testing.T) {
 
 func TestSearchStudentCrypto(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("searchStudentCrypto", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("searchStudentCrypto", 8088, "test@admin.com")
 	defer tearDown()
 	coinGecko(db)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -962,7 +962,7 @@ func TestSearchStudentCrypto(t *testing.T) {
 
 	_ = cryptoTransaction(db, &clock, userDetails, body)
 
-	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8090/api/accounts/allCrypto", nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:8088/api/accounts/allCrypto", nil)
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)
@@ -981,7 +981,7 @@ func TestSearchStudentCrypto(t *testing.T) {
 
 func TestSearchCrypto(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("searchCrypto", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("searchCrypto", 8088, "test@admin.com")
 	defer tearDown()
 	coinGecko(db)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -997,7 +997,7 @@ func TestSearchCrypto(t *testing.T) {
 	// initialize http client
 	client := &http.Client{}
 
-	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/accounts/crypto")
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8088/api/accounts/crypto")
 	q := u.Query()
 	q.Set("name", "cardano")
 	u.RawQuery = q.Encode()
@@ -1023,7 +1023,7 @@ func TestSearchCrypto(t *testing.T) {
 
 func TestCryptoConvert(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("cryptoConvert", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("cryptoConvert", 8088, "test@admin.com")
 	defer tearDown()
 	coinGecko(db)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -1047,7 +1047,7 @@ func TestCryptoConvert(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/cryptoTransaction",
+		"http://127.0.0.1:8088/api/transactions/cryptoTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -1059,7 +1059,7 @@ func TestCryptoConvert(t *testing.T) {
 
 func TestSearchCryptoTransactions(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("searchCryptoTransactions", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("searchCryptoTransactions", 8088, "test@admin.com")
 	defer tearDown()
 	coinGecko(db)
 	_, _, _, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -1085,7 +1085,7 @@ func TestSearchCryptoTransactions(t *testing.T) {
 	_ = cryptoTransaction(db, &clock, student, body)
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/transactions/cryptoTransactions", nil)
+		"http://127.0.0.1:8088/api/transactions/cryptoTransactions", nil)
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)
@@ -1103,7 +1103,7 @@ func TestSearchCryptoTransactions(t *testing.T) {
 
 func TestBuyMarketItem(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("BuyMarketItem", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("BuyMarketItem", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
 	require.Nil(t, err)
@@ -1141,7 +1141,7 @@ func TestBuyMarketItem(t *testing.T) {
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/marketItems/buy", bytes.NewBuffer(marshal))
+		"http://127.0.0.1:8088/api/marketItems/buy", bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)
@@ -1153,7 +1153,7 @@ func TestBuyMarketItem(t *testing.T) {
 
 func TestSearchBuck(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("SearchBuck", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("SearchBuck", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 2, 2, 2, 2)
 	require.Nil(t, err)
@@ -1168,7 +1168,7 @@ func TestSearchBuck(t *testing.T) {
 	err = pay2Student(db, &clock, userDetails, decimal.NewFromFloat(10000), teachers[0], "pre load")
 	require.Nil(t, err)
 
-	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/bucks/buck")
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8088/api/bucks/buck")
 	q := u.Query()
 	q.Set("_id", teachers[0])
 	u.RawQuery = q.Encode()
@@ -1191,7 +1191,7 @@ func TestSearchBuck(t *testing.T) {
 
 func TestLottoPurchase(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("LottoPurchase", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("LottoPurchase", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
 	require.Nil(t, err)
@@ -1217,7 +1217,7 @@ func TestLottoPurchase(t *testing.T) {
 	err = addUbuck2Student(db, &clock, userDetails, decimal.NewFromFloat(100000), "pre load")
 	require.Nil(t, err)
 
-	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/lottery/purchase")
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8088/api/lottery/purchase")
 	q := u.Query()
 	q.Set("quantity", "2000")
 	u.RawQuery = q.Encode()
@@ -1241,7 +1241,7 @@ func TestLottoPurchase(t *testing.T) {
 
 func TestBuyCDEndpoint(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("BuyCDEndpoint", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("BuyCDEndpoint", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
 	require.Nil(t, err)
@@ -1266,7 +1266,7 @@ func TestBuyCDEndpoint(t *testing.T) {
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/CDTransaction", bytes.NewBuffer(marshal))
+		"http://127.0.0.1:8088/api/transactions/CDTransaction", bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)
@@ -1274,7 +1274,7 @@ func TestBuyCDEndpoint(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/CDTransaction", bytes.NewBuffer(marshal))
+		"http://127.0.0.1:8088/api/transactions/CDTransaction", bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
 	require.Nil(t, err)
@@ -1285,7 +1285,7 @@ func TestBuyCDEndpoint(t *testing.T) {
 
 func TestSearchCDEndpoint(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("SearchCDEndpoint", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("SearchCDEndpoint", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
 	require.Nil(t, err)
@@ -1312,7 +1312,7 @@ func TestSearchCDEndpoint(t *testing.T) {
 	}
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/accounts/CDS", nil)
+		"http://127.0.0.1:8088/api/accounts/CDS", nil)
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)
@@ -1328,7 +1328,7 @@ func TestSearchCDEndpoint(t *testing.T) {
 
 func TestSearchCDTransaction(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("SearchCDTransaction", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("SearchCDTransaction", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
 	require.Nil(t, err)
@@ -1355,7 +1355,7 @@ func TestSearchCDTransaction(t *testing.T) {
 	}
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/transactions/CDTransactions", nil)
+		"http://127.0.0.1:8088/api/transactions/CDTransactions", nil)
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)
@@ -1371,7 +1371,7 @@ func TestSearchCDTransaction(t *testing.T) {
 
 func TestRefundCD(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("refundCD", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("refundCD", 8088, "test@admin.com")
 	defer tearDown()
 	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 3, 2)
 	require.Nil(t, err)
@@ -1408,7 +1408,7 @@ func TestRefundCD(t *testing.T) {
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/transactions/CDRefund", bytes.NewBuffer(marshal))
+		"http://127.0.0.1:8088/api/transactions/CDRefund", bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)

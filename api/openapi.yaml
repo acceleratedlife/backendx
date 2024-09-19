@@ -176,6 +176,22 @@ paths:
       tags:
       - SchoolAdmin
   /schools/school/tax:
+    get:
+      operationId: progressiveBrackets
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseTaxBracket'
+                type: array
+          description: tax brackets
+        "404":
+          description: Could not calculate tax bracket
+      summary: to get the tax brackets of a progressive tax
+      tags:
+      - SchoolAdmin
     post:
       description: Tax all the students from one school. taxRate of 0 is a progressive
         tax otherwise it will be a flat tax
@@ -2655,6 +2671,16 @@ components:
       properties:
         count:
           type: integer
+      type: object
+    ResponseTaxBracket:
+      example:
+        rate: 6.027456183070403
+        bracket: 0.8008281904610115
+      properties:
+        bracket:
+          type: number
+        rate:
+          type: number
       type: object
     ResponseTeachers:
       example:

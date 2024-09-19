@@ -16,7 +16,7 @@ import (
 
 func TestMarketPurchases(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("MarketPurchases", 8090, "")
+	db, tearDown := FullStartTestServer("MarketPurchases", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
@@ -60,7 +60,7 @@ func TestMarketPurchases(t *testing.T) {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/marketItems/purchases",
+		"http://127.0.0.1:8088/api/marketItems/purchases",
 		nil)
 
 	resp, err := client.Do(req)
@@ -78,7 +78,7 @@ func TestMarketPurchases(t *testing.T) {
 }
 func TestMakeClass(t *testing.T) {
 
-	db, teardown := FullStartTestServer("makeClass", 8090, "")
+	db, teardown := FullStartTestServer("makeClass", 8088, "")
 	defer teardown()
 
 	_, _, teachers, _, _, err := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -97,7 +97,7 @@ func TestMakeClass(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/classes/class",
+		"http://127.0.0.1:8088/api/classes/class",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -116,7 +116,7 @@ func TestMakeClass(t *testing.T) {
 }
 
 func TestEditClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("editClass", 8090, "")
+	db, tearDown := FullStartTestServer("editClass", 8088, "")
 	defer tearDown()
 	members := 2
 
@@ -134,7 +134,7 @@ func TestEditClass(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/classes/class",
+		"http://127.0.0.1:8088/api/classes/class",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -154,7 +154,7 @@ func TestEditClass(t *testing.T) {
 }
 
 func TestKickClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("kickClass", 8090, "")
+	db, tearDown := FullStartTestServer("kickClass", 8088, "")
 	defer tearDown()
 	members := 2
 
@@ -171,7 +171,7 @@ func TestKickClass(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/classes/class/kick",
+		"http://127.0.0.1:8088/api/classes/class/kick",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -182,7 +182,7 @@ func TestKickClass(t *testing.T) {
 }
 
 func TestDeleteClass(t *testing.T) {
-	db, tearDown := FullStartTestServer("DeleteClass", 8090, "")
+	db, tearDown := FullStartTestServer("DeleteClass", 8088, "")
 	defer tearDown()
 	noClasses := 2
 
@@ -193,7 +193,7 @@ func TestDeleteClass(t *testing.T) {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest(http.MethodDelete,
-		"http://127.0.0.1:8090/api/classes/class?_id="+classes[0],
+		"http://127.0.0.1:8088/api/classes/class?_id="+classes[0],
 		nil)
 
 	resp, err := client.Do(req)
@@ -205,7 +205,7 @@ func TestDeleteClass(t *testing.T) {
 
 func TestSearchAuctionsTeacher(t *testing.T) {
 	clock := TestClock{}
-	db, teardown := FullStartTestServer("searchAuctionsTeacher", 8090, "")
+	db, teardown := FullStartTestServer("searchAuctionsTeacher", 8088, "")
 	defer teardown()
 
 	_, schools, teachers, classes, _, _ := CreateTestAccounts(db, 1, 1, 2, 2)
@@ -233,7 +233,7 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/auctions",
+		"http://127.0.0.1:8088/api/auctions",
 		nil)
 
 	resp, err := client.Do(req)
@@ -253,7 +253,7 @@ func TestSearchAuctionsTeacher(t *testing.T) {
 
 func TestSearchAuctionsTeacherStudent(t *testing.T) {
 	clock := TestClock{}
-	db, teardown := FullStartTestServer("searchAuctionsTeacherStudent", 8090, "")
+	db, teardown := FullStartTestServer("searchAuctionsTeacherStudent", 8088, "")
 	defer teardown()
 
 	_, schools, _, classes, students, _ := CreateTestAccounts(db, 1, 1, 2, 2)
@@ -281,7 +281,7 @@ func TestSearchAuctionsTeacherStudent(t *testing.T) {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/auctions",
+		"http://127.0.0.1:8088/api/auctions",
 		nil)
 
 	resp, err := client.Do(req)
@@ -301,7 +301,7 @@ func TestSearchAuctionsTeacherStudent(t *testing.T) {
 
 func TestSearchTransactions(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("searchTransactions", 8090, "")
+	db, tearDown := FullStartTestServer("searchTransactions", 8088, "")
 	defer tearDown()
 	numStudents := 15
 
@@ -323,7 +323,7 @@ func TestSearchTransactions(t *testing.T) {
 	marshal, _ := json.Marshal(teachers[0])
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/transactions?_id="+teachers[0],
+		"http://127.0.0.1:8088/api/transactions?_id="+teachers[0],
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -341,7 +341,7 @@ func TestSearchTransactions(t *testing.T) {
 }
 
 func TestDeleteStudent(t *testing.T) {
-	db, tearDown := FullStartTestServer("deleteStudent", 8090, "")
+	db, tearDown := FullStartTestServer("deleteStudent", 8088, "")
 	defer tearDown()
 	numStudents := 50
 
@@ -352,7 +352,7 @@ func TestDeleteStudent(t *testing.T) {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest(http.MethodDelete,
-		"http://127.0.0.1:8090/api/users/user?_id="+students[0],
+		"http://127.0.0.1:8088/api/users/user?_id="+students[0],
 		bytes.NewBuffer(nil))
 
 	resp, err := client.Do(req)
@@ -364,7 +364,7 @@ func TestDeleteStudent(t *testing.T) {
 }
 
 func TestResetPassword(t *testing.T) {
-	db, tearDown := FullStartTestServer("resetPassword", 8090, "")
+	db, tearDown := FullStartTestServer("resetPassword", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, _, students, _ := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -379,7 +379,7 @@ func TestResetPassword(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/users/resetPassword",
+		"http://127.0.0.1:8088/api/users/resetPassword",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -397,7 +397,7 @@ func TestResetPassword(t *testing.T) {
 
 func TestSearchEvents(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("searchEvents", 8090, "")
+	db, tearDown := FullStartTestServer("searchEvents", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 2)
@@ -445,7 +445,7 @@ func TestSearchEvents(t *testing.T) {
 	}
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/events", nil)
+		"http://127.0.0.1:8088/api/events", nil)
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)
@@ -464,7 +464,7 @@ func TestSearchEvents(t *testing.T) {
 
 func TestAuctionsAllGet(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("auctionsAllGet", 8090, "")
+	db, tearDown := FullStartTestServer("auctionsAllGet", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
@@ -503,7 +503,7 @@ func TestAuctionsAllGet(t *testing.T) {
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/auctions/all",
+		"http://127.0.0.1:8088/api/auctions/all",
 		nil)
 
 	resp, err := client.Do(req)
@@ -522,7 +522,7 @@ func TestAuctionsAllGet(t *testing.T) {
 
 func TestAuctionApprove(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("auctionApprove", 8090, "")
+	db, tearDown := FullStartTestServer("auctionApprove", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
@@ -561,7 +561,7 @@ func TestAuctionApprove(t *testing.T) {
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/auctions/approve",
+		"http://127.0.0.1:8088/api/auctions/approve",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -574,7 +574,7 @@ func TestAuctionApprove(t *testing.T) {
 
 func TestAuctionReject(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("auctionReject", 8090, "")
+	db, tearDown := FullStartTestServer("auctionReject", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
@@ -621,7 +621,7 @@ func TestAuctionReject(t *testing.T) {
 
 	timeId := auctions[0].Id.Format(time.RFC3339Nano)
 
-	u, _ := url.ParseRequestURI("http://127.0.0.1:8090/api/auctions/reject")
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8088/api/auctions/reject")
 	q := u.Query()
 	q.Set("_id", timeId)
 	u.RawQuery = q.Encode()
@@ -684,7 +684,7 @@ func TestStudent2StudentOmitEmpty(t *testing.T) {
 // if the following test is failing and you just ran the spec then it is probably because student2student and/or Lottery has been changed
 // to omitempty on openapi.Settings. This causes nothing to be sent back because false is seen as empty and is omitted.
 func TestGetSettingsAdmin(t *testing.T) {
-	db, tearDown := FullStartTestServer("getSettings", 8090, "")
+	db, tearDown := FullStartTestServer("getSettings", 8088, "")
 	defer tearDown()
 
 	clock := TestClock{}
@@ -696,7 +696,7 @@ func TestGetSettingsAdmin(t *testing.T) {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/settings",
+		"http://127.0.0.1:8088/api/settings",
 		nil)
 
 	resp, err := client.Do(req)
@@ -742,7 +742,7 @@ func TestGetSettingsAdmin(t *testing.T) {
 }
 
 func TestGetSettingsTeacher(t *testing.T) {
-	db, tearDown := FullStartTestServer("getSettings", 8090, "")
+	db, tearDown := FullStartTestServer("getSettings", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
@@ -752,7 +752,7 @@ func TestGetSettingsTeacher(t *testing.T) {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8090/api/settings",
+		"http://127.0.0.1:8088/api/settings",
 		nil)
 
 	resp, err := client.Do(req)
@@ -772,7 +772,7 @@ func TestGetSettingsTeacher(t *testing.T) {
 // This causes openapi.Settings to require student2student to be true so when you make it false marshal does not know what to do with it.
 // The only solution at this time is to omit the requirement in spec. This will make getsettings fail until you delete omitempty
 func TestSetSettingsAdmin(t *testing.T) {
-	db, tearDown := FullStartTestServer("setSettings", 8090, "")
+	db, tearDown := FullStartTestServer("setSettings", 8088, "")
 	defer tearDown()
 
 	admins, _, _, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
@@ -800,7 +800,7 @@ func TestSetSettingsAdmin(t *testing.T) {
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/settings",
+		"http://127.0.0.1:8088/api/settings",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -824,7 +824,7 @@ func TestSetSettingsAdmin(t *testing.T) {
 	marshal, _ = json.Marshal(settings)
 
 	req, _ = http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/settings",
+		"http://127.0.0.1:8088/api/settings",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -840,7 +840,7 @@ func TestSetSettingsAdmin(t *testing.T) {
 }
 
 func TestSetSettingsTeacher(t *testing.T) {
-	db, tearDown := FullStartTestServer("setSettings", 8090, "")
+	db, tearDown := FullStartTestServer("setSettings", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, _, _, _ := CreateTestAccounts(db, 1, 2, 1, 3)
@@ -862,7 +862,7 @@ func TestSetSettingsTeacher(t *testing.T) {
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/settings",
+		"http://127.0.0.1:8088/api/settings",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -882,7 +882,7 @@ func TestSetSettingsTeacher(t *testing.T) {
 	marshal, _ = json.Marshal(settings)
 
 	req, _ = http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/settings",
+		"http://127.0.0.1:8088/api/settings",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -898,7 +898,7 @@ func TestSetSettingsTeacher(t *testing.T) {
 
 func TestStudent2Student(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("payTransactions_student", 8090, "")
+	db, tearDown := FullStartTestServer("payTransactions_student", 8088, "")
 	defer tearDown()
 
 	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
@@ -934,7 +934,7 @@ func TestStudent2Student(t *testing.T) {
 	require.True(t, settings.Student2student)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/payTransaction",
+		"http://127.0.0.1:8088/api/transactions/payTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -949,7 +949,7 @@ func TestStudent2Student(t *testing.T) {
 	require.False(t, settings.Student2student)
 
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/payTransaction",
+		"http://127.0.0.1:8088/api/transactions/payTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -962,7 +962,7 @@ func TestStudent2Student(t *testing.T) {
 
 func TestCurrencyLock(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("payTransactions_student", 8090, "")
+	db, tearDown := FullStartTestServer("payTransactions_student", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
@@ -1000,7 +1000,7 @@ func TestCurrencyLock(t *testing.T) {
 	require.True(t, teacher.Settings.CurrencyLock)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -1014,7 +1014,7 @@ func TestCurrencyLock(t *testing.T) {
 	require.Nil(t, err)
 
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/transactions/conversionTransaction",
+		"http://127.0.0.1:8088/api/transactions/conversionTransaction",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -1025,7 +1025,7 @@ func TestCurrencyLock(t *testing.T) {
 }
 
 func TestMakeMarketItem(t *testing.T) {
-	db, tearDown := FullStartTestServer("makeMarketItem", 8090, "")
+	db, tearDown := FullStartTestServer("makeMarketItem", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, _, _, _ := CreateTestAccounts(db, 2, 2, 2, 2)
@@ -1042,7 +1042,7 @@ func TestMakeMarketItem(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/marketItems",
+		"http://127.0.0.1:8088/api/marketItems",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -1055,7 +1055,7 @@ func TestMakeMarketItem(t *testing.T) {
 
 func TestMarketItemResolve(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("marketItemResolve", 8090, "")
+	db, tearDown := FullStartTestServer("marketItemResolve", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
@@ -1092,7 +1092,7 @@ func TestMarketItemResolve(t *testing.T) {
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/marketItems/resolve",
+		"http://127.0.0.1:8088/api/marketItems/resolve",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -1105,7 +1105,7 @@ func TestMarketItemResolve(t *testing.T) {
 
 func TestMarketItemRefund(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("marketItemRefund", 8090, "")
+	db, tearDown := FullStartTestServer("marketItemRefund", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
@@ -1142,7 +1142,7 @@ func TestMarketItemRefund(t *testing.T) {
 	require.Nil(t, err)
 
 	req, _ := http.NewRequest(http.MethodPut,
-		"http://127.0.0.1:8090/api/marketItems/refund",
+		"http://127.0.0.1:8088/api/marketItems/refund",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -1155,7 +1155,7 @@ func TestMarketItemRefund(t *testing.T) {
 
 func TestMarketItemDelete(t *testing.T) {
 	clock := TestClock{}
-	db, tearDown := FullStartTestServer("marketItemDelete", 8090, "")
+	db, tearDown := FullStartTestServer("marketItemDelete", 8088, "")
 	defer tearDown()
 
 	_, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
@@ -1183,7 +1183,7 @@ func TestMarketItemDelete(t *testing.T) {
 	_, err = buyMarketItem(db, &clock, student, teacher, itemId)
 	require.Nil(t, err)
 
-	u, err := url.ParseRequestURI("http://127.0.0.1:8090/api/marketItems")
+	u, err := url.ParseRequestURI("http://127.0.0.1:8088/api/marketItems")
 	require.Nil(t, err)
 
 	q := u.Query()
@@ -1201,7 +1201,7 @@ func TestMarketItemDelete(t *testing.T) {
 }
 
 func TestGetStudentCount(t *testing.T) {
-	db, tearDown := FullStartTestServer("getStudentCount", 8090, "")
+	db, tearDown := FullStartTestServer("getStudentCount", 8088, "")
 	defer tearDown()
 
 	_, schools, _, _, _, _ := CreateTestAccounts(db, 1, 2, 2, 10)

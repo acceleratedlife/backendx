@@ -16,7 +16,7 @@ import (
 // good test just run solo due to coin gecko changes
 
 // func TestGetCryptoFunction(t *testing.T) {
-// 	db, tearDown := FullStartTestServer("getCryptoFunction", 8090, "test@admin.com")
+// 	db, tearDown := FullStartTestServer("getCryptoFunction", 8088, "test@admin.com")
 // 	defer tearDown()
 // 	err := coinGecko(db)
 // 	require.Nil(t, err)
@@ -27,7 +27,7 @@ import (
 // }
 
 func TestAddTeacher(t *testing.T) {
-	db, tearDown := FullStartTestServer("addTeacher", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("addTeacher", 8088, "test@admin.com")
 	defer tearDown()
 	clock := TestClock{}
 
@@ -53,7 +53,7 @@ func TestAddTeacher(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/users/register",
+		"http://127.0.0.1:8088/api/users/register",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -75,7 +75,7 @@ func TestAddTeacher(t *testing.T) {
 	clock.TickOne(time.Hour * 73)
 
 	req, _ = http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/users/register",
+		"http://127.0.0.1:8088/api/users/register",
 		bytes.NewBuffer(marshal))
 
 	resp, err = client.Do(req)
@@ -85,7 +85,7 @@ func TestAddTeacher(t *testing.T) {
 }
 
 func TestAddTeacherBadEmail(t *testing.T) {
-	db, tearDown := FullStartTestServer("addTeacherBadEmail", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("addTeacherBadEmail", 8088, "test@admin.com")
 	defer tearDown()
 	clock := TestClock{}
 
@@ -111,7 +111,7 @@ func TestAddTeacherBadEmail(t *testing.T) {
 	marshal, _ := json.Marshal(body)
 
 	req, _ := http.NewRequest(http.MethodPost,
-		"http://127.0.0.1:8090/api/users/register",
+		"http://127.0.0.1:8088/api/users/register",
 		bytes.NewBuffer(marshal))
 
 	resp, err := client.Do(req)
@@ -121,7 +121,7 @@ func TestAddTeacherBadEmail(t *testing.T) {
 }
 
 func TestAddStudent(t *testing.T) {
-	db, tearDown := FullStartTestServer("addStudent", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("addStudent", 8088, "test@admin.com")
 	defer tearDown()
 	clock := TestClock{}
 
@@ -264,7 +264,7 @@ func TestAddStudent(t *testing.T) {
 }
 
 func TestAddStudentBadUserName(t *testing.T) {
-	db, tearDown := FullStartTestServer("addStudentBadUserName", 8090, "test@admin.com")
+	db, tearDown := FullStartTestServer("addStudentBadUserName", 8088, "test@admin.com")
 	defer tearDown()
 	clock := TestClock{}
 

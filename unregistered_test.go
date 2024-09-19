@@ -4,7 +4,7 @@ package main
 // This test will fail locally unless you supply the correct email and password in local config file
 // commented out the test as github will fail it
 // func TestResetStaffPassword(t *testing.T) {
-// db, tearDown := FullStartTestServer("resetStaffPassword", 8090, "")
+// db, tearDown := FullStartTestServer("resetStaffPassword", 8088, "")
 // defer tearDown()
 
 // _, _, teachers, _, _, _ := CreateTestAccounts(db, 1, 1, 0, 0)
@@ -17,7 +17,7 @@ package main
 // marshal, _ := json.Marshal(body)
 
 // req, _ := http.NewRequest(http.MethodPost,
-// 	"http://127.0.0.1:8090/api/users/resetStaffPassword",
+// 	"http://127.0.0.1:8088/api/users/resetStaffPassword",
 // 	bytes.NewBuffer(marshal))
 
 // resp, err := client.Do(req)
@@ -31,7 +31,7 @@ package main
 //works great just a new problem with coin gecko changes
 
 // func TestGetCryptos(t *testing.T) {
-// 	db, tearDown := FullStartTestServer("getCryptos", 8090, "")
+// 	db, tearDown := FullStartTestServer("getCryptos", 8088, "")
 // 	defer tearDown()
 // 	err := coinGecko(db)
 // 	require.Nil(t, err)
@@ -39,7 +39,7 @@ package main
 // 	client := &http.Client{}
 
 // 	req, _ := http.NewRequest(http.MethodGet,
-// 		"http://127.0.0.1:8090/api/allCrypto", nil)
+// 		"http://127.0.0.1:8088/api/allCrypto", nil)
 
 // 	resp, err := client.Do(req)
 // 	require.Nil(t, err)
