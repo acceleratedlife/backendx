@@ -100,8 +100,6 @@ func xRateToBaseRx(tx *bolt.Tx, schoolId, from, base string) (rate decimal.Decim
 		rate, err = xRateToBaseHistoricalRx(tx, schoolId, from, base)
 		if err == nil {
 			return
-		} else {
-			lgr.Printf("WARN historical xrate calculation failed: %v", err)
 		}
 	}
 
