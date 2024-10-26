@@ -917,13 +917,13 @@ paths:
       operationId: searchMyClasses
       parameters:
       - description: pass the _id to be searched
-        explode: true
-        in: query
+        explode: false
+        in: header
         name: _id
         required: true
         schema:
           type: string
-        style: form
+        style: simple
       responses:
         "200":
           content:
@@ -1551,13 +1551,13 @@ paths:
       operationId: searchStudent
       parameters:
       - description: pass the _id to be searched
-        explode: true
-        in: query
+        explode: false
+        in: header
         name: _id
         required: true
         schema:
           type: string
-        style: form
+        style: simple
       responses:
         "200":
           content:
