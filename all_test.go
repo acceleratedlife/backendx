@@ -95,8 +95,10 @@ func TestSearchStudent(t *testing.T) {
 	client := &http.Client{}
 
 	req, _ := http.NewRequest(http.MethodGet,
-		"http://127.0.0.1:8088/api/users/user?_id="+students[0],
+		"http://127.0.0.1:8088/api/users/user",
 		nil)
+
+	req.Header.Add("_id", students[0])
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)
