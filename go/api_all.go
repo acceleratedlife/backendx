@@ -401,8 +401,8 @@ func (c *AllApiController) SearchSchool(w http.ResponseWriter, r *http.Request) 
 
 // SearchStudent - return one student
 func (c *AllApiController) SearchStudent(w http.ResponseWriter, r *http.Request) {
-	idParam := r.Header.Get("_id")
-	lgr.Printf(idParam + "%%%%%%%%%%%%%")
+	idParam := r.Header.Get("id")
+	lgr.Printf(idParam + " %%%%%%%%%%")
 	result, err := c.service.SearchStudent(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {

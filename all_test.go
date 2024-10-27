@@ -98,7 +98,7 @@ func TestSearchStudent(t *testing.T) {
 		"http://127.0.0.1:8088/api/users/user",
 		nil)
 
-	req.Header.Add("_id", students[0])
+	req.Header.Add("id", students[0])
 
 	resp, err := client.Do(req)
 	require.Nil(t, err)

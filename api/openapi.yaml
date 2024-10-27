@@ -916,10 +916,10 @@ paths:
         lastName and _id. Sort by period ascending.
       operationId: searchMyClasses
       parameters:
-      - description: pass the _id to be searched
+      - description: pass the id to be searched
         explode: false
         in: header
-        name: _id
+        name: id
         required: true
         schema:
           type: string
@@ -1550,10 +1550,10 @@ paths:
       description: return student
       operationId: searchStudent
       parameters:
-      - description: pass the _id to be searched
+      - description: pass the id to be searched
         explode: false
         in: header
-        name: _id
+        name: id
         required: true
         schema:
           type: string

@@ -141,7 +141,7 @@ func (c *AllSchoolApiController) SearchAuctions(w http.ResponseWriter, r *http.R
 
 // SearchMyClasses - searches for users classes that the requester is a member of
 func (c *AllSchoolApiController) SearchMyClasses(w http.ResponseWriter, r *http.Request) {
-	idParam := r.Header.Get("_id")
+	idParam := r.Header.Get("id")
 	result, err := c.service.SearchMyClasses(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
