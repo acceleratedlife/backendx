@@ -14,6 +14,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+
+	"github.com/go-pkgz/lgr"
 )
 
 // AllApiController binds http requests to an api service and writes the service results to the http response
@@ -400,6 +402,7 @@ func (c *AllApiController) SearchSchool(w http.ResponseWriter, r *http.Request) 
 // SearchStudent - return one student
 func (c *AllApiController) SearchStudent(w http.ResponseWriter, r *http.Request) {
 	idParam := r.Header.Get("_id")
+	lgr.Printf(idParam + "%%%%%%%%%%%%%")
 	result, err := c.service.SearchStudent(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
