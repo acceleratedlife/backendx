@@ -1,0 +1,13 @@
+diff a/go/logger.go b/go/logger.go	(rejected hunks)
+@@ -23,3 +23,11 @@
+ 		)
+ 	})
+ }
++
++func removePort(ipAddress string) string {
++	colonIndex := strings.LastIndex(ipAddress, ":")
++	if colonIndex > -1 {
++		return ipAddress[:colonIndex] // Slice the string up to the colon
++	}
++	return ipAddress
++}
