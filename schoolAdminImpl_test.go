@@ -79,7 +79,7 @@ func TestTaxSchoolProgressive(t *testing.T) {
 	defer dbTearDown()
 	clock := TestClock{}
 
-	_, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 25)
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 100)
 	require.Nil(t, err)
 
 	var student UserInfo

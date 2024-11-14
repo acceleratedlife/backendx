@@ -32,8 +32,8 @@ import (
 )
 
 const (
-	OperationDebit          = 1
-	OperationCredit         = 2
+	OperationDebit          = 1 //assume all transaction pass through Central Bank
+	OperationCredit         = 2 //from sender to receiver: sender Debit -> CB credit then CB debit -> receiver credit
 	keyCharge               = 1.01
 	KeyDebt                 = "debt"
 	CurrencyUBuck           = "ubuck"

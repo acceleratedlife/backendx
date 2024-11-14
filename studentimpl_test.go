@@ -936,6 +936,103 @@ func TestRefundCDFunction(t *testing.T) {
 
 }
 
+func TestRefundCDWithDebtLessThan(t *testing.T) {
+
+	lgr.Printf("INFO TestRefundCDWithDebtLessThan")
+	t.Log("INFO TestRefundCDWithDebtLessThan")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("RefundCDWithDebtLessThan")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	ReqUserEdit := openapi.RequestUserEdit{
+		College: true,
+	}
+
+	clock.TickOne(time.Hour * 24 * 5)
+	paid := DailyPayIfNeeded(db, &clock, student)
+	require.True(t, paid)
+
+	err = userEdit(db, &clock, student, ReqUserEdit)
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100000,
+		Time:    50,
+	}
+
+	err = buyCD(db, &clock, student, body)
+	require.Nil(t, err)
+
+	resp, err := getCDS(db, student)
+	require.Nil(t, err)
+
+	err = refundCD(db, &clock, student, resp[0].Ts.Format(time.RFC3339Nano))
+	require.Nil(t, err)
+
+	ubucks, err := getStudentUbuck(db, student)
+	require.Nil(t, err)
+
+	require.True(t, ubucks.Value < 90000)
+
+}
+
+func TestRefundCDWithDebtGreaterThan(t *testing.T) {
+
+	lgr.Printf("INFO TestRefundCDWithDebtGreaterThan")
+	t.Log("INFO TestRefundCDWithDebtGreaterThan")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("RefundCDWithDebtGreaterThan")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	ReqUserEdit := openapi.RequestUserEdit{
+		College: true,
+	}
+
+	clock.TickOne(time.Hour * 24 * 1)
+	paid := DailyPayIfNeeded(db, &clock, student)
+	require.True(t, paid)
+
+	err = userEdit(db, &clock, student, ReqUserEdit)
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(100), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    50,
+	}
+
+	err = buyCD(db, &clock, student, body)
+	require.Nil(t, err)
+
+	resp, err := getCDS(db, student)
+	require.Nil(t, err)
+
+	ubucksPre, err := getStudentUbuck(db, student)
+	require.Nil(t, err)
+
+	err = refundCD(db, &clock, student, resp[0].Ts.Format(time.RFC3339Nano))
+	require.Nil(t, err)
+
+	ubucksPost, err := getStudentUbuck(db, student)
+	require.Nil(t, err)
+	//this line will have to change for next term when I make it garnish 100% of a CD
+	require.Equal(t, float32(45), ubucksPost.Value-ubucksPre.Value)
+
+}
+
 func TestCDWithTimeChanges(t *testing.T) {
 
 	lgr.Printf("INFO TestCDWithTimeChanges")
@@ -1082,7 +1179,7 @@ func TestCDComments(t *testing.T) {
 	trans, err := getCDTransactions(db, student)
 	require.Nil(t, err)
 
-	require.Contains(t, trans[2].Description, "Early Refund")
+	require.Contains(t, trans[0].Description, "Early Refund")
 
 	clock.TickOne(time.Hour * 24 * 18)
 
@@ -1094,7 +1191,7 @@ func TestCDComments(t *testing.T) {
 	trans, err = getCDTransactions(db, student)
 	require.Nil(t, err)
 
-	require.Contains(t, trans[3].Description, "Fully Matured")
+	require.Contains(t, trans[0].Description, "Fully Matured")
 
 }
 
