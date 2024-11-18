@@ -207,6 +207,76 @@ func TestEventsLowUbuck(t *testing.T) {
 	require.LessOrEqual(t, keys, 1)
 }
 
+func TestEventsGarnish(t *testing.T) {
+
+	lgr.Printf("INFO TestEventsGarnish")
+	t.Log("INFO TestEventsGarnish")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("-eventGarnish")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 10)
+
+	student, _ := getUserInLocalStore(db, students[0])
+
+	event := EventRequest{
+		Positive:    false,
+		Description: "Pay Taxes",
+		Title:       "Taxes",
+	}
+
+	marshal, _ := json.Marshal(event)
+
+	err := createJobOrEvent(db, marshal, KeyNEvents, "Negative")
+	require.Nil(t, err)
+
+	event = EventRequest{
+		Positive:    true,
+		Description: "Tax Refund",
+		Title:       "Taxes",
+	}
+
+	marshal, _ = json.Marshal(event)
+
+	err = createJobOrEvent(db, marshal, KeyPEvents, "Positive")
+	require.Nil(t, err)
+
+	for _, student := range students {
+		studentDetails, _ := getUserInLocalStore(db, student)
+		err := addUbuck2Student(db, &clock, studentDetails, decimal.NewFromFloat(100), "pre load")
+		require.Nil(t, err)
+
+	}
+
+	r := DailyPayIfNeeded(db, &clock, student)
+	require.True(t, r)
+
+	err = chargeStudent(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "debt load", false)
+	require.Nil(t, err)
+
+	r = EventIfNeeded(db, &clock, student)
+	require.False(t, r)
+
+	clock.TickOne(time.Hour * 24 * 10)
+
+	r = EventIfNeeded(db, &clock, student)
+	require.True(t, r)
+
+	err = db.View(func(tx *bolt.Tx) error {
+		studentBucket, err := getStudentBucketRx(tx, student.Name)
+		require.Nil(t, err)
+
+		_, _, balance, err := IsDebtNeededRx(studentBucket, &clock)
+		require.Nil(t, err)
+
+		require.Less(t, balance.InexactFloat64(), float64(1000))
+
+		return err
+	})
+
+	require.Nil(t, err)
+
+}
+
 func TestCollege(t *testing.T) {
 
 	lgr.Printf("INFO TestCollege")

@@ -634,7 +634,7 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return err
 		}
 
-		haveDebt, _, balance, err := IsDebtNeeded(student, clock)
+		haveDebt, _, balance, err := IsDebtNeededRx(student, clock)
 		if err != nil {
 			return err
 		}
@@ -910,7 +910,7 @@ func DebtIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
-		needToAdd, _, _, _ = IsDebtNeeded(student, clock)
+		needToAdd, _, _, _ = IsDebtNeededRx(student, clock)
 		return nil
 	})
 
@@ -923,7 +923,7 @@ func DebtIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return err
 		}
 
-		needToAdd, day, balance, err := IsDebtNeeded(student, clock)
+		needToAdd, day, balance, err := IsDebtNeededRx(student, clock)
 		if err != nil {
 			return err
 		}
@@ -955,7 +955,7 @@ func DebtIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 // needed: if they have debt and the last time they were paid was before today;
 // day: the date of the last day payment;
 // balance: amount of debt;
-func IsDebtNeeded(student *bolt.Bucket, clock Clock) (needed bool, day time.Time, balance decimal.Decimal, err error) {
+func IsDebtNeededRx(student *bolt.Bucket, clock Clock) (needed bool, day time.Time, balance decimal.Decimal, err error) {
 	accounts := student.Bucket([]byte(KeyAccounts))
 	if accounts == nil {
 		return false, day, balance, err
@@ -1052,6 +1052,15 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 
 			if change.IsPositive() {
 				err = addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getEventIdRx(tx, KeyPEvents))
+				if err != nil {
+					return err
+				}
+
+				garnishBody := openapi.RequestPayTransaction{
+					Student: userDetails.Name,
+					Amount:  float32(change.InexactFloat64()),
+				}
+				err = garnishHelperTx(tx, clock, garnishBody, false)
 			} else {
 				err = chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getEventIdRx(tx, KeyNEvents), false)
 			}
@@ -2334,7 +2343,14 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		return err
 	}
 
-	return nil
+	garnishBody := openapi.RequestPayTransaction{
+		Amount:  float32(ubuck.InexactFloat64()),
+		Student: userInfo.Name,
+	}
+
+	err = garnishHelperTx(tx, clock, garnishBody, false)
+
+	return
 }
 
 func getStudentCryptoBasisRx(holder *bolt.Bucket, from string) (basis decimal.Decimal, err error) {
@@ -2514,6 +2530,16 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 				}
 
 				err = pay2StudentTx(tx, clock, studentDetails, decimal.NewFromInt32(lottery.Jackpot+tickets), CurrencyUBuck, "Raffle Winner "+clock.Now().Format("02/03/2006"))
+				if err != nil {
+					return err
+				}
+
+				garnishBody := openapi.RequestPayTransaction{
+					Amount:  float32(lottery.Jackpot + tickets),
+					Student: studentDetails.Name,
+				}
+
+				err = garnishHelperTx(tx, clock, garnishBody, false)
 				if err != nil {
 					return err
 				}
@@ -2843,7 +2869,7 @@ func refundCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, CD_id string) (err 
 
 	CD.Active = false
 
-	_, _, debt, err := IsDebtNeeded(student, clock)
+	_, _, debt, err := IsDebtNeededRx(student, clock)
 	if err != nil {
 		return
 	}
@@ -2902,7 +2928,7 @@ func refundCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, CD_id string) (err 
 	//in this case you will not have enough to eliminate debt so you just subtract cd value from debt
 	//starting here is temportary request
 	//delete starting from here
-	half := CD.RefundValue.Mul(decimal.NewFromFloat32(.5))
+	half := CD.RefundValue.Mul(decimal.NewFromFloat32(KeyGarnish))
 	transaction.AmountSource = half
 	transaction.AmountDest = half
 	err = refundCDHelperTx(student, cb, transaction, OperationCredit, CD, CD_id)
