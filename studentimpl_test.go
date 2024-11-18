@@ -660,6 +660,60 @@ func TestDebtInterest(t *testing.T) {
 
 // }
 
+//****** good test but needs to be ran on its own due to coingecko chanages
+
+// func TestCryptoTransactionGarnish(t *testing.T) {
+
+// 	lgr.Printf("INFO TestCryptoTransactionGarnish")
+// 	t.Log("INFO TestCryptoTransactionGarnish")
+// 	clock := TestClock{}
+// 	db, dbTearDown := OpenTestDB("cryptoTransactionGarnish")
+// 	defer dbTearDown()
+// 	coinGecko(db)
+// 	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+// 	student, err := getUserInLocalStore(db, students[0])
+// 	require.Nil(t, err)
+
+// 	r := DailyPayIfNeeded(db, &clock, student)
+// 	require.True(t, r)
+
+// 	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "pre load")
+// 	require.Nil(t, err)
+
+// 	body := openapi.RequestCryptoConvert{
+// 		Name: "cardano",
+// 		Buy:  10,
+// 		Sell: 0,
+// 	}
+
+// 	_ = cryptoTransaction(db, &clock, student, body)
+
+// 	clock.TickOne(time.Minute * 2)
+
+// 	err = chargeStudent(db, &clock, student, decimal.NewFromInt(2000), CurrencyUBuck, "", false)
+// 	require.Nil(t, err)
+
+// 	body.Buy = 0
+// 	body.Sell = 5
+
+// 	err = cryptoTransaction(db, &clock, student, body)
+// 	require.Nil(t, err)
+
+// 	err = db.View(func(tx *bolt.Tx) error {
+// 		studentBucket, err := getStudentBucketRx(tx, student.Name)
+// 		require.Nil(t, err)
+
+// 		_, _, balance, err := IsDebtNeededRx(studentBucket, &clock)
+// 		require.Nil(t, err)
+// 		require.Less(t, balance.InexactFloat64(), float64(2000))
+// 		return err
+// 	})
+
+// 	require.Nil(t, err)
+
+// }
+
 func TestTrueAuctionFalse(t *testing.T) {
 
 	lgr.Printf("INFO TestTrueAuctionFalse")

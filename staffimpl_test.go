@@ -880,3 +880,5 @@ func TestLotteryLastWinner(t *testing.T) {
 	require.Equal(t, student.Email, prevLotto.Winner)
 
 }
+
+//copy the lotto test above and make it work to test garnishHelper
