@@ -179,7 +179,7 @@ func TestProgressiveBrackets(t *testing.T) {
 	db, tearDown := FullStartTestServer("ProgressiveBrackets", 8088, "")
 	defer tearDown()
 
-	admins, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 15)
+	admins, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 25)
 
 	SetTestLoginUser(admins[0])
 

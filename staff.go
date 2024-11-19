@@ -371,6 +371,20 @@ func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.
 				Message: student + " was not paid, error: " + err.Error(),
 			})
 		}
+
+		if body.Amount > 0 {
+			garnishBody := openapi.RequestPayTransaction{
+				OwnerId: body.Owner,
+				Amount:  body.Amount,
+				Student: student,
+			}
+			err = garnishHelper(s.db, s.clock, garnishBody, true)
+			if err != nil {
+				errors = append(errors, openapi.ResponsePayTransactions{
+					Message: student + " had a garnish error: " + err.Error(),
+				})
+			}
+		}
 	}
 	if len(errors) != 0 {
 		return openapi.Response(400, errors), nil

@@ -32,8 +32,8 @@ import (
 )
 
 const (
-	OperationDebit          = 1
-	OperationCredit         = 2
+	OperationDebit          = 1 //assume all transaction pass through Central Bank
+	OperationCredit         = 2 //from sender to receiver: sender Debit -> CB credit then CB debit -> receiver credit
 	keyCharge               = 1.01
 	KeyDebt                 = "debt"
 	CurrencyUBuck           = "ubuck"
@@ -115,6 +115,7 @@ const (
 	KeyTax5                 = .35
 	KeyTax6                 = .37
 	Key_lower_percentile    = .05
+	KeyGarnish              = .5
 )
 
 var build_date string
