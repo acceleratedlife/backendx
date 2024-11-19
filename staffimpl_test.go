@@ -881,4 +881,56 @@ func TestLotteryLastWinner(t *testing.T) {
 
 }
 
-//copy the lotto test above and make it work to test garnishHelper
+func TestLotteryGarnish(t *testing.T) {
+
+	lgr.Printf("INFO TestLotteryGarnish")
+	t.Log("INFO TestLotteryGarnish")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("LotteryGarnish")
+	defer dbTearDown()
+	admins, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.Nil(t, err)
+
+	adminDetails, err := getUserInLocalStore(db, admins[0])
+	require.Nil(t, err)
+
+	settings := openapi.Settings{
+		Lottery: true,
+		Odds:    3,
+	}
+
+	err = setSettings(db, &clock, adminDetails, settings)
+	require.Nil(t, err)
+
+	err = initializeLottery(db, adminDetails, settings, &clock)
+	require.Nil(t, err)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	r := DailyPayIfNeeded(db, &clock, student)
+	require.True(t, r)
+
+	err = chargeStudent(db, &clock, student, decimal.NewFromInt(40000), CurrencyUBuck, "", false)
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(30000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	winner, err := purchaseLotto(db, &clock, student, 1000)
+	require.Nil(t, err)
+	require.True(t, winner)
+
+	err = db.View(func(tx *bolt.Tx) error {
+		studentBucket, err := getStudentBucketRx(tx, student.Name)
+		require.Nil(t, err)
+
+		_, _, balance, err := IsDebtNeededRx(studentBucket, &clock)
+		require.Nil(t, err)
+		require.Less(t, balance.InexactFloat64(), float64(40000))
+		return err
+	})
+
+	require.Nil(t, err)
+
+}
