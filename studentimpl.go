@@ -45,7 +45,7 @@ type Transaction struct {
 	AmountDest     decimal.Decimal
 	XRate          decimal.Decimal
 	Reference      string
-	FromSource     bool
+	FromSource     bool            //transaction is recorded on both source and destination. for example Jim pays Mark so 2 transations are saved. They are identical but the one Jim records is fromSource while the one Mark records is not fromSource as he is destination
 	Net            decimal.Decimal `json:"-"`
 	Balance        decimal.Decimal `json:"-"`
 	Ubuck          decimal.Decimal `json:"-"`
@@ -154,7 +154,7 @@ func addBuck2StudentTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decim
 
 }
 
-// addToHolderTx updates balance and adds transaction
+// addToHolderTx updates balance and adds transaction,
 // debit means to remove money
 func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction, direction int, negBlock bool) (balance decimal.Decimal, basis decimal.Decimal, errR error) {
 	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
@@ -272,6 +272,8 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 	return
 }
 
+// specifically for CD's because they don't have basis and balance; it is possible that accounts, not jsut one like in other account types
+// it is simplier than addToHolder; this needs to be used whenever your dealing with CD's
 func addToCDHolderTx(holder *bolt.Bucket, transaction Transaction, CD CertificateOfDeposit, CD_id string) (err error) {
 	accounts, err := holder.CreateBucketIfNotExists([]byte(KeyAccounts))
 	if err != nil {
@@ -632,7 +634,7 @@ func DailyPayIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return err
 		}
 
-		haveDebt, _, balance, err := IsDebtNeeded(student, clock)
+		haveDebt, _, balance, err := IsDebtNeededRx(student, clock)
 		if err != nil {
 			return err
 		}
@@ -908,7 +910,7 @@ func DebtIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return nil
 		}
 
-		needToAdd, _, _, _ = IsDebtNeeded(student, clock)
+		needToAdd, _, _, _ = IsDebtNeededRx(student, clock)
 		return nil
 	})
 
@@ -921,7 +923,10 @@ func DebtIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			return err
 		}
 
-		needToAdd, day, balance, err := IsDebtNeeded(student, clock)
+		needToAdd, day, balance, err := IsDebtNeededRx(student, clock)
+		if err != nil {
+			return err
+		}
 
 		if !needToAdd {
 			return nil
@@ -947,7 +952,10 @@ func DebtIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 	return needToAdd
 }
 
-func IsDebtNeeded(student *bolt.Bucket, clock Clock) (needed bool, day time.Time, balance decimal.Decimal, err error) {
+// needed: if they have debt and the last time they were paid was before today;
+// day: the date of the last day payment;
+// balance: amount of debt;
+func IsDebtNeededRx(student *bolt.Bucket, clock Clock) (needed bool, day time.Time, balance decimal.Decimal, err error) {
 	accounts := student.Bucket([]byte(KeyAccounts))
 	if accounts == nil {
 		return false, day, balance, err
@@ -1044,6 +1052,15 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 
 			if change.IsPositive() {
 				err = addUbuck2StudentTx(tx, clock, userDetails, change, "Event: "+getEventIdRx(tx, KeyPEvents))
+				if err != nil {
+					return err
+				}
+
+				garnishBody := openapi.RequestPayTransaction{
+					Student: userDetails.Name,
+					Amount:  float32(change.InexactFloat64()),
+				}
+				err = garnishHelperTx(tx, clock, garnishBody, false)
 			} else {
 				err = chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getEventIdRx(tx, KeyNEvents), false)
 			}
@@ -2326,7 +2343,14 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		return err
 	}
 
-	return nil
+	garnishBody := openapi.RequestPayTransaction{
+		Amount:  float32(ubuck.InexactFloat64()),
+		Student: userInfo.Name,
+	}
+
+	err = garnishHelperTx(tx, clock, garnishBody, false)
+
+	return
 }
 
 func getStudentCryptoBasisRx(holder *bolt.Bucket, from string) (basis decimal.Decimal, err error) {
@@ -2506,6 +2530,16 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 				}
 
 				err = pay2StudentTx(tx, clock, studentDetails, decimal.NewFromInt32(lottery.Jackpot+tickets), CurrencyUBuck, "Raffle Winner "+clock.Now().Format("02/03/2006"))
+				if err != nil {
+					return err
+				}
+
+				garnishBody := openapi.RequestPayTransaction{
+					Amount:  float32(lottery.Jackpot + tickets),
+					Student: studentDetails.Name,
+				}
+
+				err = garnishHelperTx(tx, clock, garnishBody, false)
 				if err != nil {
 					return err
 				}
@@ -2745,7 +2779,7 @@ func getCDTransactionsRx(tx *bolt.Tx, userInfo UserInfo) (resp []openapi.Respons
 
 	c := transactionsBucket.Cursor()
 
-	for k, v := c.First(); k != nil; k, v = c.Next() {
+	for k, v := c.Last(); k != nil; k, v = c.Prev() {
 		if v == nil {
 			continue
 		}
@@ -2826,11 +2860,23 @@ func refundCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, CD_id string) (err 
 	var CD CertificateOfDeposit
 	err = json.Unmarshal(CD_data, &CD)
 	if err != nil {
-		return err
+		return
 	}
 
 	if !CD.Active {
 		return nil
+	}
+
+	CD.Active = false
+
+	_, _, debt, err := IsDebtNeededRx(student, clock)
+	if err != nil {
+		return
+	}
+
+	cb, err := getCbTx(tx, userInfo.SchoolId)
+	if err != nil {
+		return
 	}
 
 	ts := clock.Now().Truncate(time.Millisecond)
@@ -2848,38 +2894,86 @@ func refundCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, CD_id string) (err 
 		FromSource:     true,
 	}
 
-	CD.Active = false
+	if debt.IsZero() {
 
-	_, _, err = addToHolderTx(student, CurrencyUBuck, transaction, OperationCredit, true)
+		err = refundCDHelperTx(student, cb, transaction, OperationCredit, CD, CD_id)
+
+		return
+
+	}
+
+	if CD.RefundValue.GreaterThan(debt) {
+		//in this case you will totally remove debt and have some money left over
+		remainder := CD.RefundValue.Sub(debt)
+		// cd to ubuck with remainder
+		transaction.AmountSource = remainder
+		transaction.AmountDest = remainder
+		err = refundCDHelperTx(student, cb, transaction, OperationCredit, CD, CD_id)
+		if err != nil {
+			return
+		}
+
+		//cd to pay down all remaining debt
+		transaction.CurrencyDest = KeyDebt
+		transaction.AmountSource = debt
+		transaction.AmountDest = debt.Neg()
+		transaction.Reference += ": garnished"
+		//this would usually be OperationDebit but debt works opposite
+		err = refundCDHelperTx(student, cb, transaction, OperationCredit, CD, CD_id)
+
+		return
+
+	}
+
+	//in this case you will not have enough to eliminate debt so you just subtract cd value from debt
+	//starting here is temportary request
+	//delete starting from here
+	half := CD.RefundValue.Mul(decimal.NewFromFloat32(KeyGarnish))
+	transaction.AmountSource = half
+	transaction.AmountDest = half
+	err = refundCDHelperTx(student, cb, transaction, OperationCredit, CD, CD_id)
 	if err != nil {
-		return err
+		return
+	}
+	//temp request, delete all the way to here
+
+	transaction.CurrencyDest = KeyDebt
+	transaction.AmountDest = transaction.AmountDest.Neg()
+	transaction.Reference += ": garnished"
+
+	err = refundCDHelperTx(student, cb, transaction, OperationCredit, CD, CD_id)
+
+	return
+
+}
+
+// performs everything with the student bank/CD and CB bank/CD
+func refundCDHelperTx(student, cb *bolt.Bucket, transaction Transaction, direction int, CD CertificateOfDeposit, CD_id string) (err error) {
+	//add transaction to student cd bucket; money leaving cd
+	err = addToCDHolderTx(student, transaction, CD, CD_id)
+	if err != nil {
+		return
+	}
+
+	//add transaction to central bank cd bucket; recording the money being moved
+	//*** CD's work a little different. they just get recorded by the CB and don't transfer through it ***
+	err = addToCDHolderTx(cb, transaction, CD, CD_id)
+	if err != nil {
+		return
 	}
 
 	transaction.FromSource = false
 
-	err = addToCDHolderTx(student, transaction, CD, CD_id)
+	//increases ubuck balance and saves transaction into central bank ubucks; money entering ubucks CB
+	_, _, err = addToHolderTx(cb, transaction.CurrencyDest, transaction, direction, false)
 	if err != nil {
-		return err
+		return
 	}
 
-	cb, err := getCbTx(tx, userInfo.SchoolId)
-	if err != nil {
-		return err
-	}
+	//increases ubuck balance and saves transaction into student ubucks; money entering ubucks
+	_, _, err = addToHolderTx(student, transaction.CurrencyDest, transaction, direction, true)
 
-	err = addToCDHolderTx(cb, transaction, CD, CD_id)
-	if err != nil {
-		return err
-	}
-
-	transaction.FromSource = true
-
-	_, _, err = addToHolderTx(cb, CurrencyUBuck, transaction, OperationCredit, false)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return
 }
 
 func CDSumTx(tx *bolt.Tx, account *bolt.Bucket) (sum decimal.Decimal) {

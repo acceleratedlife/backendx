@@ -298,20 +298,40 @@ func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.Req
 		if !settings.Student2student {
 			return openapi.Response(400, ""), fmt.Errorf("disabled by administrator")
 		}
+
 		err = executeStudentTransaction(s.db, s.clock, body.Amount, body.Student, userDetails, "")
 		if err != nil {
 			return openapi.Response(400, ""), err
+		}
+
+		if body.Amount > 0 {
+			err = garnishHelper(s.db, s.clock, body, false)
+			if err != nil {
+				return openapi.Response(400, ""), err
+			}
 		}
 	} else if userDetails.Role == UserRoleTeacher {
 		err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
 		if err != nil {
 			return openapi.Response(400, ""), err
 		}
+		if body.Amount > 0 {
+			err = garnishHelper(s.db, s.clock, body, true)
+			if err != nil {
+				return openapi.Response(400, ""), err
+			}
+		}
 	} else {
 		body.OwnerId = body.OwnerId[:1] + "." + body.OwnerId[1:]
 		err = executeTransaction(s.db, s.clock, body.Amount, body.Student, body.OwnerId, body.Description)
 		if err != nil {
 			return openapi.Response(400, ""), err
+		}
+		if body.Amount > 0 {
+			err = garnishHelper(s.db, s.clock, body, true)
+			if err != nil {
+				return openapi.Response(400, ""), err
+			}
 		}
 	}
 

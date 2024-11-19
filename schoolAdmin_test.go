@@ -83,7 +83,7 @@ func TestExecuteTax(t *testing.T) {
 	db, tearDown := FullStartTestServer("ExecuteTax", 8088, "")
 	defer tearDown()
 
-	admins, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 10)
+	admins, _, teachers, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 50)
 
 	SetTestLoginUser(students[0])
 
@@ -144,7 +144,7 @@ func TestExecuteTax(t *testing.T) {
 
 			r := rand.New(rand.NewSource(time.Now().UnixNano()))
 			random := decimal.NewFromFloat32(r.Float32())
-			income := int32(random.Mul(decimal.NewFromInt(340)).Add(decimal.NewFromInt(260)).IntPart())
+			income := int32(random.Mul(decimal.NewFromInt(34000)).Add(decimal.NewFromInt(260)).IntPart())
 
 			student.TaxableIncome = income
 			marshal, err := json.Marshal(student)
@@ -179,7 +179,7 @@ func TestProgressiveBrackets(t *testing.T) {
 	db, tearDown := FullStartTestServer("ProgressiveBrackets", 8088, "")
 	defer tearDown()
 
-	admins, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 5)
+	admins, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 25)
 
 	SetTestLoginUser(admins[0])
 
@@ -195,7 +195,7 @@ func TestProgressiveBrackets(t *testing.T) {
 
 			r := rand.New(rand.NewSource(time.Now().UnixNano()))
 			random := decimal.NewFromFloat32(r.Float32())
-			income := int32(random.Mul(decimal.NewFromInt(340)).Add(decimal.NewFromInt(260)).IntPart())
+			income := int32(random.Mul(decimal.NewFromInt(34000)).Add(decimal.NewFromInt(260)).IntPart())
 
 			student.TaxableIncome = income
 			marshal, err := json.Marshal(student)

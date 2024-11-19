@@ -207,6 +207,76 @@ func TestEventsLowUbuck(t *testing.T) {
 	require.LessOrEqual(t, keys, 1)
 }
 
+func TestEventsGarnish(t *testing.T) {
+
+	lgr.Printf("INFO TestEventsGarnish")
+	t.Log("INFO TestEventsGarnish")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("-eventGarnish")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 10)
+
+	student, _ := getUserInLocalStore(db, students[0])
+
+	event := EventRequest{
+		Positive:    false,
+		Description: "Pay Taxes",
+		Title:       "Taxes",
+	}
+
+	marshal, _ := json.Marshal(event)
+
+	err := createJobOrEvent(db, marshal, KeyNEvents, "Negative")
+	require.Nil(t, err)
+
+	event = EventRequest{
+		Positive:    true,
+		Description: "Tax Refund",
+		Title:       "Taxes",
+	}
+
+	marshal, _ = json.Marshal(event)
+
+	err = createJobOrEvent(db, marshal, KeyPEvents, "Positive")
+	require.Nil(t, err)
+
+	for _, student := range students {
+		studentDetails, _ := getUserInLocalStore(db, student)
+		err := addUbuck2Student(db, &clock, studentDetails, decimal.NewFromFloat(100), "pre load")
+		require.Nil(t, err)
+
+	}
+
+	r := DailyPayIfNeeded(db, &clock, student)
+	require.True(t, r)
+
+	err = chargeStudent(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "debt load", false)
+	require.Nil(t, err)
+
+	r = EventIfNeeded(db, &clock, student)
+	require.False(t, r)
+
+	clock.TickOne(time.Hour * 24 * 10)
+
+	r = EventIfNeeded(db, &clock, student)
+	require.True(t, r)
+
+	err = db.View(func(tx *bolt.Tx) error {
+		studentBucket, err := getStudentBucketRx(tx, student.Name)
+		require.Nil(t, err)
+
+		_, _, balance, err := IsDebtNeededRx(studentBucket, &clock)
+		require.Nil(t, err)
+
+		require.Less(t, balance.InexactFloat64(), float64(1000))
+
+		return err
+	})
+
+	require.Nil(t, err)
+
+}
+
 func TestCollege(t *testing.T) {
 
 	lgr.Printf("INFO TestCollege")
@@ -590,6 +660,60 @@ func TestDebtInterest(t *testing.T) {
 
 // }
 
+//****** good test but needs to be ran on its own due to coingecko chanages
+
+// func TestCryptoTransactionGarnish(t *testing.T) {
+
+// 	lgr.Printf("INFO TestCryptoTransactionGarnish")
+// 	t.Log("INFO TestCryptoTransactionGarnish")
+// 	clock := TestClock{}
+// 	db, dbTearDown := OpenTestDB("cryptoTransactionGarnish")
+// 	defer dbTearDown()
+// 	coinGecko(db)
+// 	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+// 	student, err := getUserInLocalStore(db, students[0])
+// 	require.Nil(t, err)
+
+// 	r := DailyPayIfNeeded(db, &clock, student)
+// 	require.True(t, r)
+
+// 	err = pay2Student(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "pre load")
+// 	require.Nil(t, err)
+
+// 	body := openapi.RequestCryptoConvert{
+// 		Name: "cardano",
+// 		Buy:  10,
+// 		Sell: 0,
+// 	}
+
+// 	_ = cryptoTransaction(db, &clock, student, body)
+
+// 	clock.TickOne(time.Minute * 2)
+
+// 	err = chargeStudent(db, &clock, student, decimal.NewFromInt(2000), CurrencyUBuck, "", false)
+// 	require.Nil(t, err)
+
+// 	body.Buy = 0
+// 	body.Sell = 5
+
+// 	err = cryptoTransaction(db, &clock, student, body)
+// 	require.Nil(t, err)
+
+// 	err = db.View(func(tx *bolt.Tx) error {
+// 		studentBucket, err := getStudentBucketRx(tx, student.Name)
+// 		require.Nil(t, err)
+
+// 		_, _, balance, err := IsDebtNeededRx(studentBucket, &clock)
+// 		require.Nil(t, err)
+// 		require.Less(t, balance.InexactFloat64(), float64(2000))
+// 		return err
+// 	})
+
+// 	require.Nil(t, err)
+
+// }
+
 func TestTrueAuctionFalse(t *testing.T) {
 
 	lgr.Printf("INFO TestTrueAuctionFalse")
@@ -936,6 +1060,103 @@ func TestRefundCDFunction(t *testing.T) {
 
 }
 
+func TestRefundCDWithDebtLessThan(t *testing.T) {
+
+	lgr.Printf("INFO TestRefundCDWithDebtLessThan")
+	t.Log("INFO TestRefundCDWithDebtLessThan")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("RefundCDWithDebtLessThan")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	ReqUserEdit := openapi.RequestUserEdit{
+		College: true,
+	}
+
+	clock.TickOne(time.Hour * 24 * 5)
+	paid := DailyPayIfNeeded(db, &clock, student)
+	require.True(t, paid)
+
+	err = userEdit(db, &clock, student, ReqUserEdit)
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(100000), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100000,
+		Time:    50,
+	}
+
+	err = buyCD(db, &clock, student, body)
+	require.Nil(t, err)
+
+	resp, err := getCDS(db, student)
+	require.Nil(t, err)
+
+	err = refundCD(db, &clock, student, resp[0].Ts.Format(time.RFC3339Nano))
+	require.Nil(t, err)
+
+	ubucks, err := getStudentUbuck(db, student)
+	require.Nil(t, err)
+
+	require.True(t, ubucks.Value < 90000)
+
+}
+
+func TestRefundCDWithDebtGreaterThan(t *testing.T) {
+
+	lgr.Printf("INFO TestRefundCDWithDebtGreaterThan")
+	t.Log("INFO TestRefundCDWithDebtGreaterThan")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("RefundCDWithDebtGreaterThan")
+	defer dbTearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	student, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+
+	ReqUserEdit := openapi.RequestUserEdit{
+		College: true,
+	}
+
+	clock.TickOne(time.Hour * 24 * 1)
+	paid := DailyPayIfNeeded(db, &clock, student)
+	require.True(t, paid)
+
+	err = userEdit(db, &clock, student, ReqUserEdit)
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, student, decimal.NewFromFloat(100), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	body := openapi.RequestBuyCd{
+		PrinInv: 100,
+		Time:    50,
+	}
+
+	err = buyCD(db, &clock, student, body)
+	require.Nil(t, err)
+
+	resp, err := getCDS(db, student)
+	require.Nil(t, err)
+
+	ubucksPre, err := getStudentUbuck(db, student)
+	require.Nil(t, err)
+
+	err = refundCD(db, &clock, student, resp[0].Ts.Format(time.RFC3339Nano))
+	require.Nil(t, err)
+
+	ubucksPost, err := getStudentUbuck(db, student)
+	require.Nil(t, err)
+	//this line will have to change for next term when I make it garnish 100% of a CD
+	require.Equal(t, float32(45), ubucksPost.Value-ubucksPre.Value)
+
+}
+
 func TestCDWithTimeChanges(t *testing.T) {
 
 	lgr.Printf("INFO TestCDWithTimeChanges")
@@ -1082,7 +1303,7 @@ func TestCDComments(t *testing.T) {
 	trans, err := getCDTransactions(db, student)
 	require.Nil(t, err)
 
-	require.Contains(t, trans[2].Description, "Early Refund")
+	require.Contains(t, trans[0].Description, "Early Refund")
 
 	clock.TickOne(time.Hour * 24 * 18)
 
@@ -1094,7 +1315,7 @@ func TestCDComments(t *testing.T) {
 	trans, err = getCDTransactions(db, student)
 	require.Nil(t, err)
 
-	require.Contains(t, trans[3].Description, "Fully Matured")
+	require.Contains(t, trans[0].Description, "Fully Matured")
 
 }
 

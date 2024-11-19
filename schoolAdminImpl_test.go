@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 )
@@ -78,7 +79,7 @@ func TestTaxSchoolProgressive(t *testing.T) {
 	defer dbTearDown()
 	clock := TestClock{}
 
-	_, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 3)
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 100)
 	require.Nil(t, err)
 
 	var student UserInfo
@@ -180,12 +181,14 @@ func TestGetMeanAndSDTax(t *testing.T) {
 	user, err := getUserInLocalStore(db, students[0])
 	require.Nil(t, err)
 
-	mean, err := getMeanTax(db, user)
+	taxes, err := getTaxSlice(db, user)
 	require.Nil(t, err)
+
+	mean := decimal.Avg(taxes[0], taxes[1:]...)
 
 	require.Equal(t, int64(20751), mean.IntPart())
 
-	sd, err := getStandardDevTax(db, user, mean)
+	sd, err := getStandardDevTax(taxes, mean)
 	require.Nil(t, err)
 	require.Equal(t, int64(31927), sd.IntPart())
 

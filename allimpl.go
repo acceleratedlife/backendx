@@ -425,6 +425,46 @@ func executeTransaction(db *bolt.DB, clock Clock, value float32, student, owner,
 	return nil
 }
 
+func garnishHelper(db *bolt.DB, clock Clock, body openapi.RequestPayTransaction, isStaff bool) (err error) {
+	return db.Update(func(tx *bolt.Tx) error {
+		return garnishHelperTx(tx, clock, body, isStaff)
+	})
+}
+
+func garnishHelperTx(tx *bolt.Tx, clock Clock, body openapi.RequestPayTransaction, isStaff bool) (err error) {
+	student, err := getStudentBucketTx(tx, body.Student)
+	if err != nil {
+		return
+	}
+
+	_, _, balance, err := IsDebtNeededRx(student, clock)
+	if err != nil {
+		return
+	}
+
+	if !balance.GreaterThan(decimal.Zero) {
+		return nil
+	}
+
+	garnish := decimal.NewFromFloat32(body.Amount).Mul(decimal.NewFromFloat32(KeyGarnish))
+	userDetails, err := getUserInLocalStoreTx(tx, body.Student)
+	if err != nil {
+		return
+	}
+
+	if garnish.GreaterThan(balance) {
+		garnish = balance
+	}
+
+	if isStaff {
+		err = studentConvertTx(tx, clock, userDetails, garnish, body.OwnerId, KeyDebt, "Garneshed "+strconv.FormatFloat(KeyGarnish*100, 'f', 0, 32)+"% of previous payment", true)
+	} else {
+		err = studentConvertTx(tx, clock, userDetails, garnish, CurrencyUBuck, KeyDebt, "Garneshed "+strconv.FormatFloat(KeyGarnish*100, 'f', 0, 32)+"% of previous payment", true)
+	}
+
+	return
+}
+
 func executeStudentTransaction(db *bolt.DB, clock Clock, value float32, student string, owner UserInfo, description string) error {
 	if student == owner.Name {
 		return fmt.Errorf("you can't pay yourself")

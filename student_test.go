@@ -1021,6 +1021,7 @@ func TestSearchCrypto(t *testing.T) {
 	require.Greater(t, v.Usd, float32(0))
 }
 
+// if you run tests too many times this might fail due to coin gecko blocking you, wait a few minutes
 func TestCryptoConvert(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("cryptoConvert", 8088, "test@admin.com")

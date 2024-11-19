@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"sort"
 	"strconv"
 	"time"
 
@@ -283,18 +284,31 @@ func taxSchoolTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, taxRate int32) 
 		}
 
 	} else {
-		meanTax, err := getMeanTaxRx(tx, userDetails)
+		taxes, err := getTaxSliceRx(tx, userDetails)
 		if err != nil {
 			return err
 		}
 
-		standardDevTax, err := getStandardDevTaxRx(tx, userDetails, meanTax)
-		if err != nil {
-			return err
+		var meanTax, standardDevTax decimal.Decimal
+		var realTBrackets []decimal.Decimal
+
+		for i := 1; i < 20; i++ {
+			taxes = taxFilter(taxes, Key_lower_percentile*float64(i))
+
+			meanTax = decimal.Avg(taxes[0], taxes[1:]...)
+
+			standardDevTax, err = getStandardDevTax(taxes, meanTax)
+			if err != nil {
+				return err
+			}
+
+			realTBrackets = realTaxBrackets(meanTax, standardDevTax)
+			if realTBrackets[0].GreaterThan(decimal.NewFromInt32(1500)) {
+				break
+			}
 		}
 
-		realTaxBrackets := realTaxBrackets(meanTax, standardDevTax)
-		summativeTaxes := summativeTaxes(realTaxBrackets)
+		summativeTaxes := summativeTaxes(realTBrackets)
 
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
 			studentData := users.Get([]byte(k))
@@ -309,7 +323,7 @@ func taxSchoolTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, taxRate int32) 
 				continue
 			}
 
-			zScore := (decimal.NewFromInt32(student.TaxableIncome).Sub(meanTax)).Div(standardDevTax) //standardDev could be zero which will be a problem
+			zScore := (decimal.NewFromInt32(student.TaxableIncome).Sub(meanTax)).Div(standardDevTax)
 			adjustedTaxRate, bracketPosition := progressiveTaxRate(zScore)
 			var charge decimal.Decimal
 
@@ -317,7 +331,7 @@ func taxSchoolTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, taxRate int32) 
 				charge = adjustedTaxRate.Mul(decimal.NewFromInt32(student.TaxableIncome))
 			} else {
 				//realDiff calculating how far above the previous bracket you are
-				realDiff := decimal.NewFromInt32(student.TaxableIncome).Sub(realTaxBrackets[bracketPosition-1])
+				realDiff := decimal.NewFromInt32(student.TaxableIncome).Sub(realTBrackets[bracketPosition-1])
 				//collect all the tax for the brackets they already passed through
 				summativeTax := summativeTaxes[bracketPosition-1]
 				//add what they already pass through plus the real diff at their current tax rate
@@ -354,17 +368,29 @@ func taxBrackets(db *bolt.DB, userDetails UserInfo) (resp []openapi.ResponseTaxB
 
 func taxBracketsRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.ResponseTaxBracket, err error) {
 
-	meanTax, err := getMeanTaxRx(tx, userDetails)
+	taxes, err := getTaxSliceRx(tx, userDetails)
 	if err != nil {
 		return
 	}
 
-	standardDevTax, err := getStandardDevTaxRx(tx, userDetails, meanTax)
-	if err != nil {
-		return
-	}
+	var meanTax, standardDevTax decimal.Decimal
+	var brackets []decimal.Decimal
 
-	brackets := realTaxBrackets(meanTax, standardDevTax)
+	for i := 1; i < 20; i++ {
+		taxes = taxFilter(taxes, Key_lower_percentile*float64(i))
+
+		meanTax = decimal.Avg(taxes[0], taxes[1:]...)
+
+		standardDevTax, err = getStandardDevTax(taxes, meanTax)
+		if err != nil {
+			return resp, err
+		}
+
+		brackets = realTaxBrackets(meanTax, standardDevTax)
+		if brackets[0].GreaterThan(decimal.NewFromInt32(1500)) {
+			break
+		}
+	}
 
 	rates := make([]float32, 0)
 	rates = append(rates, KeyTax0)
@@ -435,81 +461,39 @@ func progressiveTaxRate(zScore decimal.Decimal) (decimal.Decimal, int) {
 	}
 }
 
-func getStandardDevTax(db *bolt.DB, userDetails UserInfo, mean decimal.Decimal) (standardDev decimal.Decimal, err error) { //need to test
-	err = db.View(func(tx *bolt.Tx) error {
-		standardDev, err = getStandardDevTaxRx(tx, userDetails, mean)
-		return err
-	})
-
-	return
-}
-
-func getStandardDevTaxRx(tx *bolt.Tx, userDetails UserInfo, mean decimal.Decimal) (standardDev decimal.Decimal, err error) {
-
-	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
-	if err != nil {
-		return
+func getStandardDevTax(taxes []decimal.Decimal, mean decimal.Decimal) (standardDev decimal.Decimal, err error) { //need to test
+	if len(taxes) == 0 {
+		return decimal.Zero, fmt.Errorf("error length is zero and: %v", err)
 	}
-
-	studentsBucket := school.Bucket([]byte(KeyStudents))
-	if studentsBucket == nil {
-		return standardDev, fmt.Errorf("cannot find students bucket")
-	}
-
-	c := studentsBucket.Cursor()
-
-	users := tx.Bucket([]byte(KeyUsers))
-
-	counter := int64(0)
 	squaredSums := decimal.Zero
 
-	for k, _ := c.First(); k != nil; k, _ = c.Next() {
-
-		studentData := users.Get([]byte(k))
-		var student UserInfo
-		err = json.Unmarshal(studentData, &student)
-		if err != nil {
-			lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
-			continue
-		}
-		if student.Role != UserRoleStudent {
-			lgr.Printf("ERROR student %s has role %d", k, student.Role)
-			continue
-		}
-
-		//if the tax brackets come out to negative then it will mess up the taxes. The 250 will have to be set dynamically. Probably some distance from the top few players
-		if student.TaxableIncome > 250 {
-			squaredSums = squaredSums.Add((decimal.NewFromInt32(student.TaxableIncome).Sub(mean)).Pow(decimal.NewFromFloat(2)))
-			counter++
-		}
-
+	for _, value := range taxes {
+		squaredSums = squaredSums.Add((value.Sub(mean)).Pow(decimal.NewFromFloat(2)))
 	}
 
-	if counter == 0 {
-		return decimal.Zero, nil
-	}
-
-	variance := squaredSums.Div(decimal.NewFromInt(counter))
+	variance := squaredSums.Div(decimal.NewFromInt(int64(len(taxes))))
 	if variance.IsZero() {
-		return decimal.Zero, nil
+		return decimal.Zero, fmt.Errorf("error Variance is zero and: %v", err)
 	}
 
 	standardDev = decimal.NewFromFloat(math.Sqrt(variance.InexactFloat64()))
+	if standardDev.IsZero() {
+		return decimal.Zero, fmt.Errorf("error Standard Deviation is zero and: %v", err)
+	}
 
 	return
-
 }
 
-func getMeanTax(db *bolt.DB, userDetails UserInfo) (mean decimal.Decimal, err error) {
+func getTaxSlice(db *bolt.DB, userDetails UserInfo) (taxes []decimal.Decimal, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		mean, err = getMeanTaxRx(tx, userDetails)
+		taxes, err = getTaxSliceRx(tx, userDetails)
 		return err
 	})
 
 	return
 }
 
-func getMeanTaxRx(tx *bolt.Tx, userDetails UserInfo) (mean decimal.Decimal, err error) {
+func getTaxSliceRx(tx *bolt.Tx, userDetails UserInfo) (taxes []decimal.Decimal, err error) {
 	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return
@@ -517,14 +501,12 @@ func getMeanTaxRx(tx *bolt.Tx, userDetails UserInfo) (mean decimal.Decimal, err 
 
 	students := school.Bucket([]byte(KeyStudents))
 	if students == nil {
-		return mean, fmt.Errorf("cannot find students bucket")
+		return taxes, fmt.Errorf("cannot find students bucket")
 	}
 
 	c := students.Cursor()
 
 	users := tx.Bucket([]byte(KeyUsers))
-
-	var taxes []decimal.Decimal
 
 	for k, _ := c.First(); k != nil; k, _ = c.Next() {
 		studentData := users.Get([]byte(k))
@@ -539,13 +521,25 @@ func getMeanTaxRx(tx *bolt.Tx, userDetails UserInfo) (mean decimal.Decimal, err 
 			continue
 		}
 
-		//250 may need to be set dynamically if you end up with negative brackets
-		if student.TaxableIncome > 250 {
-			taxes = append(taxes, decimal.NewFromInt32(student.TaxableIncome))
-		}
+		taxes = append(taxes, decimal.NewFromInt32(student.TaxableIncome))
 	}
 
-	mean = decimal.Avg(taxes[0], taxes[1:]...)
+	sort.Slice(taxes, func(i, j int) bool {
+		return taxes[i].LessThan(taxes[j])
+	})
+
+	return
+}
+
+func taxFilter(actualTaxes []decimal.Decimal, percentile float64) (adjustedTaxes []decimal.Decimal) {
+	breakpoint := int(percentile * float64(len(actualTaxes)))
+	for i, value := range actualTaxes {
+		if i <= breakpoint {
+			adjustedTaxes = append(adjustedTaxes, actualTaxes[breakpoint])
+		} else {
+			adjustedTaxes = append(adjustedTaxes, value)
+		}
+	}
 
 	return
 }
