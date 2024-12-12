@@ -180,6 +180,8 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 		balance = decimal.Zero
 	}
 
+	balance = balance.Truncate(5)
+
 	basisB := accountBucket.Get([]byte(KeyBasis))
 	if basisB != nil {
 		err = basis.UnmarshalText(basisB)
@@ -205,9 +207,6 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 		balance = balance.Add(transaction.AmountDest)
 	} else {
 		balance = balance.Sub(transaction.AmountSource)
-		if balance.IsNegative() {
-			balance = balance.Truncate(4)
-		}
 	}
 
 	if balance.IsZero() {
@@ -225,7 +224,11 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 		return
 	}
 
-	if balance.Round(5).Sign() < 0 && negBlock {
+	balance = balance.Truncate(5)
+
+	//****keep an eye here as students have been trying to buy .5 crypto and sell .50000000009
+	// it should say insufficient funds but because the negative is so small it is rounding to 0 and making it by this block
+	if balance.Sign() < 0 && negBlock {
 		errR = fmt.Errorf("insufficient funds")
 		return
 	}
