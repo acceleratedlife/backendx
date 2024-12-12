@@ -205,6 +205,9 @@ func addToHolderTx(holder *bolt.Bucket, account string, transaction Transaction,
 		balance = balance.Add(transaction.AmountDest)
 	} else {
 		balance = balance.Sub(transaction.AmountSource)
+		if balance.IsNegative() {
+			balance = balance.Truncate(4)
+		}
 	}
 
 	if balance.IsZero() {
