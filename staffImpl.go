@@ -1459,7 +1459,7 @@ func initializeLotteryTx(tx *bolt.Tx, userDetails UserInfo, settings openapi.Set
 
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-		_, _, err = getSchoolStudentsTx(tx, userDetails)
+		err = schoolsNetworthTx(tx)
 		if err != nil {
 			return err
 		}

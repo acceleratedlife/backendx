@@ -1046,7 +1046,7 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 
 		for i := 0; i < missedEvents; i++ {
 
-			students, _, err := getSchoolStudentsTx(tx, userDetails)
+			students, _, err := getSchoolStudentsRx(tx, userDetails)
 			if err != nil {
 				return err
 			}
@@ -1054,6 +1054,10 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			change, err := makeEvent(students, userDetails)
 			if err != nil {
 				return err
+			}
+
+			if change.IsZero() {
+				return fmt.Errorf("The event returned zero. schoolsNetworth() has probably never ran")
 			}
 
 			if change.IsPositive() {
@@ -2596,19 +2600,19 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 }
 
 func timeToInterest(time int32) float32 {
+	if time <= 7 {
+		return 1.01
+	}
 	if time <= 14 {
-		return 1.03
+		return 1.02
 	}
 	if time <= 30 {
+		return 1.03
+	}
+	if time <= 60 {
 		return 1.04
 	}
-	if time <= 50 {
-		return 1.05
-	}
-	if time <= 70 {
-		return 1.06
-	}
-	return 1.07
+	return 1.05
 }
 
 func buyCD(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestBuyCd) (err error) {
@@ -2812,17 +2816,17 @@ func getCDTransactionsRx(tx *bolt.Tx, userInfo UserInfo) (resp []openapi.Respons
 }
 
 func InterestToTime(interest float32) int64 {
-	if interest == 1.03 {
+	if interest == 1.01 {
+		return 7
+	}
+	if interest == 1.02 {
 		return 14
 	}
-	if interest == 1.04 {
+	if interest == 1.03 {
 		return 30
 	}
-	if interest == 1.05 {
-		return 50
-	}
-	if interest == 1.06 {
-		return 70
+	if interest == 1.04 {
+		return 60
 	}
 	return 90
 }
