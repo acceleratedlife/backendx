@@ -91,8 +91,9 @@ func TestEvents(t *testing.T) {
 		studentDetails, _ := getUserInLocalStore(db, student)
 		err := addUbuck2Student(db, &clock, studentDetails, decimal.NewFromFloat(100), "pre load")
 		require.Nil(t, err)
-
 	}
+
+	schoolsNetworth(db)
 
 	r := EventIfNeeded(db, &clock, student)
 	require.False(t, r)
@@ -162,11 +163,12 @@ func TestEventsLowUbuck(t *testing.T) {
 		studentDetails, _ := getUserInLocalStore(db, student)
 		err := addUbuck2Student(db, &clock, studentDetails, decimal.NewFromFloat(1), "pre load")
 		require.Nil(t, err)
-
 	}
 
 	err = addUbuck2Student(db, &clock, student, decimal.NewFromFloat(1000), "overload load")
 	require.Nil(t, err)
+
+	schoolsNetworth(db)
 
 	r := EventIfNeeded(db, &clock, student2)
 	require.False(t, r)
@@ -244,7 +246,6 @@ func TestEventsGarnish(t *testing.T) {
 		studentDetails, _ := getUserInLocalStore(db, student)
 		err := addUbuck2Student(db, &clock, studentDetails, decimal.NewFromFloat(100), "pre load")
 		require.Nil(t, err)
-
 	}
 
 	r := DailyPayIfNeeded(db, &clock, student)
@@ -252,6 +253,8 @@ func TestEventsGarnish(t *testing.T) {
 
 	err = chargeStudent(db, &clock, student, decimal.NewFromFloat(1000), CurrencyUBuck, "debt load", false)
 	require.Nil(t, err)
+
+	schoolsNetworth(db)
 
 	r = EventIfNeeded(db, &clock, student)
 	require.False(t, r)
@@ -1173,28 +1176,28 @@ func TestCDWithTimeChanges(t *testing.T) {
 
 	body14 := openapi.RequestBuyCd{
 		PrinInv: 100,
-		Time:    14,
+		Time:    7,
 	}
 	err = buyCD(db, &clock, student, body14)
 	require.Nil(t, err)
 
 	body30 := openapi.RequestBuyCd{
 		PrinInv: 100,
-		Time:    30,
+		Time:    14,
 	}
 	err = buyCD(db, &clock, student, body30)
 	require.Nil(t, err)
 
 	body50 := openapi.RequestBuyCd{
 		PrinInv: 100,
-		Time:    50,
+		Time:    30,
 	}
 	err = buyCD(db, &clock, student, body50)
 	require.Nil(t, err)
 
 	body70 := openapi.RequestBuyCd{
 		PrinInv: 100,
-		Time:    70,
+		Time:    60,
 	}
 	err = buyCD(db, &clock, student, body70)
 	require.Nil(t, err)
@@ -1206,13 +1209,21 @@ func TestCDWithTimeChanges(t *testing.T) {
 	err = buyCD(db, &clock, student, body90)
 	require.Nil(t, err)
 
-	clock.TickOne(time.Hour * 24 * 13)
+	clock.TickOne(time.Hour * 24 * 6)
 
 	CertificateOfDepositIfNeeded(db, &clock, student)
 
 	netWorth := StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 660 && netWorth < 661)
+	require.True(t, netWorth > 477 && netWorth < 478)
+
+	clock.TickOne(time.Hour * 24 * 7)
+
+	CertificateOfDepositIfNeeded(db, &clock, student)
+
+	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
+
+	require.True(t, netWorth > 572 && netWorth < 573)
 
 	clock.TickOne(time.Hour * 24 * 16)
 
@@ -1220,39 +1231,31 @@ func TestCDWithTimeChanges(t *testing.T) {
 
 	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 1273 && netWorth < 1274)
+	require.True(t, netWorth > 875 && netWorth < 876)
 
-	clock.TickOne(time.Hour * 24 * 20)
-
-	CertificateOfDepositIfNeeded(db, &clock, student)
-
-	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
-
-	require.True(t, netWorth > 3424 && netWorth < 3425)
-
-	clock.TickOne(time.Hour * 24 * 20)
+	clock.TickOne(time.Hour * 24 * 30)
 
 	CertificateOfDepositIfNeeded(db, &clock, student)
 
 	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 11654 && netWorth < 11655)
+	require.True(t, netWorth > 2032 && netWorth < 2303)
 
-	clock.TickOne(time.Hour * 24 * 20)
+	clock.TickOne(time.Hour * 24 * 30)
 
 	CertificateOfDepositIfNeeded(db, &clock, student)
 
 	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 44632 && netWorth < 44633)
+	require.True(t, netWorth > 8453 && netWorth < 8454)
 
-	clock.TickOne(time.Hour * 24 * 20)
+	clock.TickOne(time.Hour * 24 * 30)
 
 	needed := CertificateOfDepositIfNeeded(db, &clock, student)
 	require.True(t, needed)
 	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 51640 && netWorth < 51641)
+	require.True(t, netWorth > 9606 && netWorth < 9607)
 
 	needed = DailyPayIfNeeded(db, &clock, student)
 	require.True(t, needed)

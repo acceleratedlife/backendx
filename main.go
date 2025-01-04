@@ -172,6 +172,7 @@ func main() {
 	defer db.Close()
 
 	runEveryMinute(db)
+	runEveryDay(db)
 
 	// ***
 

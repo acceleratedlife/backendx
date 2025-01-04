@@ -71,6 +71,7 @@ func TestSearchStudents(t *testing.T) {
 		"http://127.0.0.1:8088/api/users",
 		nil)
 
+	schoolsNetworth(db)
 	resp, err := client.Do(req)
 	require.Nil(t, err)
 	defer resp.Body.Close()

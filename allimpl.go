@@ -165,6 +165,19 @@ func getBuckNameTx(tx *bolt.Tx, id string) (string, error) {
 	return user.LastName + " Buck", nil
 }
 
+func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (ranked int, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		ranked, err = saveRanksTx(tx, students)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+}
+
 func saveRanksTx(tx *bolt.Tx, students []openapi.UserNoHistory) (ranked int, err error) {
 	users := tx.Bucket([]byte(KeyUsers))
 	if users == nil {
@@ -242,30 +255,17 @@ func saveRanksTx(tx *bolt.Tx, students []openapi.UserNoHistory) (ranked int, err
 
 }
 
-func saveRanks(db *bolt.DB, students []openapi.UserNoHistory) (ranked int, err error) {
-	err = db.Update(func(tx *bolt.Tx) error {
-		ranked, err = saveRanksTx(tx, students)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	return
-}
-
 // get all the students from a school, update the rank to the top students
 func getSchoolStudents(db *bolt.DB, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
-		resp, ranked, err = getSchoolStudentsTx(tx, userDetails)
+		resp, ranked, err = getSchoolStudentsRx(tx, userDetails)
 		return err
 	})
 
 	return
 }
 
-func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
+func getSchoolStudentsRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
 	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return
@@ -293,13 +293,12 @@ func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.User
 			continue
 		}
 
-		nWorth, _ := StudentNetWorthTx(tx, student.Name).Float64()
 		nUser := openapi.UserNoHistory{
 			Id:        student.Email,
 			FirstName: student.FirstName,
 			LastName:  student.LastName,
 			Rank:      student.Rank,
-			NetWorth:  float32(nWorth),
+			NetWorth:  student.NetWorth,
 		}
 
 		resp = append(resp, nUser)
@@ -314,12 +313,36 @@ func getSchoolStudentsTx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.User
 		resp[i].Rank = int32(i + 1)
 	}
 
-	ranked, err = saveRanksTx(tx, resp)
+	ranked, err = limitRanks(resp)
 	if err != nil {
 		return resp, ranked, fmt.Errorf("ERROR saving students ranks: %s %v", userDetails.SchoolId, err)
 	}
 
 	return
+}
+
+func limitRanks(students []openapi.UserNoHistory) (ranked int, err error) {
+
+	length := float32(len(students))
+
+	if length <= 60 {
+		return int(.33334 * length), err
+	} else if length <= 150 {
+		return int(.2 * length), err
+	} else if length <= 500 {
+		return int(.15 * length), err
+	} else if length <= 1000 {
+		return int(.1 * length), err
+	} else if length <= 2000 {
+		return int(.0625 * length), err
+	} else if length <= 4000 {
+		return int(.05 * length), err
+	} else if length > 4000 {
+		return int(200), err
+	}
+
+	return ranked, err
+
 }
 
 func userEdit(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestUserEdit) error {
