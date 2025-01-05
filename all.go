@@ -559,19 +559,19 @@ func (a *AllApiServiceImpl) SearchStudents(ctx context.Context) (openapi.ImplRes
 	}
 
 	if userDetails.Role == UserRoleStudent {
-		CertificateOfDepositIfNeeded(a.db, a.clock, userDetails)
-		CollegeIfNeeded(a.db, a.clock, userDetails)
-		CareerIfNeeded(a.db, a.clock, userDetails)
-		DebtIfNeeded(a.db, a.clock, userDetails)
-		DailyPayIfNeeded(a.db, a.clock, userDetails)
-		EventIfNeeded(a.db, a.clock, userDetails)
-		LotteryIfNeeded(a.db, a.clock, userDetails)
+		CertificateOfDepositIfNeeded(a.db, a.clock, userDetails) //grows cds
+		CollegeIfNeeded(a.db, a.clock, userDetails)              //assigns new job after college
+		CareerIfNeeded(a.db, a.clock, userDetails)               //assigns new job
+		DebtIfNeeded(a.db, a.clock, userDetails)                 //grows debt
+		DailyPayIfNeeded(a.db, a.clock, userDetails)             //daily payment
+		EventIfNeeded(a.db, a.clock, userDetails)                //generates event
+		LotteryIfNeeded(a.db, a.clock, userDetails)              //grows lottery
 	}
 
 	var resp []openapi.UserNoHistory
 	var ranked int
-	err = a.db.Update(func(tx *bolt.Tx) error {
-		resp, ranked, err = getSchoolStudentsTx(tx, userDetails)
+	err = a.db.View(func(tx *bolt.Tx) error {
+		resp, ranked, err = getSchoolStudentsRx(tx, userDetails)
 		if err != nil {
 			return err
 		}

@@ -438,6 +438,8 @@ func TestSearchEvents(t *testing.T) {
 
 	clock.TickOne(time.Hour * 240)
 
+	schoolsNetworth(db)
+
 	for _, student := range students {
 		userDetails, err := getUserInLocalStore(db, student)
 		require.Nil(t, err)

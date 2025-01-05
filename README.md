@@ -1,3 +1,5 @@
+# to run spec 
+java -jar .\Downloads\openapi-generator-cli-5.3.0.jar generate -i .\Downloads\al.json -g go-server -o .\Documents\backendx
 # backend
 
 ## to build locally
