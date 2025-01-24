@@ -49,7 +49,10 @@ func runEveryDay(db *bolt.DB) (done chan bool) {
 				return
 			case <-ticker.C:
 				lgr.Printf("INFO running networths")
+				start := time.Now()
 				schoolsNetworth(db)
+				elapsed := time.Since(start)
+				lgr.Printf("INFO schoolsNetworth took %s", elapsed)
 			}
 		}
 	}()
