@@ -856,7 +856,7 @@ func getAllAuctionsRx(tx *bolt.Tx, clock Clock, userDetails UserInfo) (resp []op
 			return resp, err
 		}
 
-		if owner.Role != UserRoleStudent {
+		if owner.Role != UserRoleStudent && auction.Visibility[0] != KeyEntireSchool {
 			continue
 		}
 
@@ -1775,6 +1775,10 @@ func getMeanNetworthRx(tx *bolt.Tx, userDetails UserInfo) (mean decimal.Decimal,
 
 	}
 
+	//an error is occuring here
+	//you can't calculate the mean if there is less than 2 students
+	//you get out of bounds error
+	//need to just return 250 if mean is less than 250 and if there is less than 2 students, maybe less than 1 as well
 	mean = decimal.Avg(netWorths[0], netWorths[1:]...)
 
 	if mean.LessThanOrEqual(decimal.NewFromInt32(250)) {
