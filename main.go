@@ -161,7 +161,7 @@ func (*AppClock) Now() time.Time {
 
 func main() {
 
-	lgr.Printf("server started")
+	lgr.Printf("SB server started")
 
 	config := loadConfig()
 
