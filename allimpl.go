@@ -644,6 +644,12 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 		return err
 	}
 
+	ownerDetails, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
+
+	if userDetails.Role != UserRoleStudent && ownerDetails.Role != UserRoleStudent && userDetails.Email != ownerDetails.Email {
+		return fmt.Errorf("you can't cancel the auction of another staff")
+	}
+
 	if clock.Now().Before(auction.EndDate) {
 		if auction.WinnerId.Id != "" {
 			err = repayLosertx(tx, clock, auction.WinnerId.Id, auction.MaxBid, "Canceled Auction: "+strconv.Itoa(auction.EndDate.Second()))
