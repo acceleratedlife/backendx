@@ -7,7 +7,7 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: AL
-  version: 1.0.1
+  version: 1.0.2
 servers:
 - description: SwaggerHub API Auto Mocking
   url: https://accelerated-life-demo.herokuapp.com/api
@@ -509,6 +509,32 @@ paths:
       summary: searches auctions
       tags:
       - AllSchool
+  /auctions/stream:
+    get:
+      description: |
+        Establishes a **Server-Sent Events (SSE) connection** to provide real-time auction updates.
+        - The client stays connected and listens for updates as auctions change.
+        - The response is a continuous stream of JSON auction objects.
+      operationId: streamAuctionsTeacher
+      responses:
+        "200":
+          content:
+            text/event-stream:
+              example: |
+                event: message
+                data: {"id": "1", "winner": {"firstName": "John", "lastName": "Doe"}, "startDate": "2024-03-05T10:00:00Z", "endDate": "2024-03-06T10:00:00Z", "itemNumber": "A123", "bid": 150.00, "description": "Antique Vase", "visibility": {"name": "Public"}}
+              schema:
+                type: string
+          description: SSE connection established
+        "400":
+          description: Missing or invalid teacher_id
+        "404":
+          description: No auctions found
+        "500":
+          description: Server error
+      summary: Stream real-time auction updates using SSE
+      tags:
+      - Staff
   /auctions:
     get:
       description: a teacher asks for all their auctions. Winner, startdate, enddate,
@@ -555,6 +581,23 @@ paths:
       summary: make a new auction
       tags:
       - All
+  /auctions/all/stream:
+    get:
+      description: all of a schools active auctions will be returned for the staff
+        to observe, reject or confirm
+      operationId: auctionsAllStream
+      responses:
+        "200":
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          description: SSE connection established
+        "400":
+          description: error finding auctions
+      summary: get all auctions for school
+      tags:
+      - Staff
   /auctions/all:
     get:
       description: all of a schools active auctions will be returned for the staff
@@ -610,6 +653,28 @@ paths:
           description: error finding auctions
       tags:
       - Staff
+  /auctions/student/stream:
+    get:
+      description: given a student id find every class that they are a member of.
+        (Then find every auction that has their class in the visibility and The startDate
+        must be less than or equal to the current date). (or the endDate must be greater
+        than the current date and user._id matches the winner id). On the returned
+        document exclude visibility, createdAt, updatedAt and version. Populate owner
+        with lastName. Populate winner with firstName, lastName and _id. Sort by endDate
+        ascending
+      operationId: searchAuctionsStudentStream
+      responses:
+        "200":
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          description: SSE connection established
+        "404":
+          description: No auction found
+      summary: searches auctions
+      tags:
+      - Student
   /auctions/student:
     get:
       description: given a student id find every class that they are a member of.

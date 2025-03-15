@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -80,6 +83,70 @@ func (s *StaffApiServiceImpl) AuctionsAll(ctx context.Context) (openapi.ImplResp
 	}
 
 	return openapi.Response(200, resp), nil
+}
+
+func (s *StaffApiServiceImpl) AuctionsAllStream(ctx context.Context) (openapi.ImplResponse, error) {
+	// Get user details
+	userData, ok := ctx.Value("user").(token.User)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+	if userDetails.Role == UserRoleStudent {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	// Set SSE headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	// Create a flusher to send data immediately
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	// Create a channel to listen for auction updates
+	auctionUpdates := make(chan openapi.Auction)
+
+	// Simulate a function that listens for auction updates in the background
+	go func() {
+		for {
+			// Simulated database polling or event-driven auction update
+			updatedAuctions, err := getAllAuctions(s.db, s.clock, userDetails)
+			if err == nil {
+				for _, auction := range updatedAuctions {
+					auctionUpdates <- auction
+				}
+			}
+			time.Sleep(5 * time.Second) // Simulate polling interval (adjust if needed)
+		}
+	}()
+
+	// Stream auction updates to the client
+	for {
+		select {
+		case <-ctx.Done(): // Handle client disconnect
+			close(auctionUpdates)
+			return
+		case auction := <-auctionUpdates:
+			jsonData, err := json.Marshal(auction)
+			if err != nil {
+				continue
+			}
+			fmt.Fprintf(w, "data: %s\n\n", jsonData)
+			flusher.Flush()
+		}
+	}
 }
 
 func (a *StaffApiServiceImpl) AuctionApprove(ctx context.Context, body openapi.RequestAuctionAction) (openapi.ImplResponse, error) {
