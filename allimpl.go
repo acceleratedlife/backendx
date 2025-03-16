@@ -650,8 +650,8 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 		return fmt.Errorf("you can't cancel the auction of another staff")
 	}
 
-	if clock.Now().Before(auction.EndDate) {
-		if auction.WinnerId.Id != "" {
+	if clock.Now().Before(auction.EndDate) { //auction is not over
+		if auction.WinnerId.Id != "" { //currently a winner
 			err = repayLosertx(tx, clock, auction.WinnerId.Id, auction.MaxBid, "Canceled Auction: "+strconv.Itoa(auction.EndDate.Second()))
 			if err != nil {
 				return err
@@ -663,8 +663,8 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 			return err
 		}
 
-	} else {
-		if auction.WinnerId.Id != "" {
+	} else { // auction is over
+		if auction.WinnerId.Id != "" { //currently a winner
 			if auction.MaxBid > auction.Bid {
 				err = repayLosertx(tx, clock, auction.WinnerId.Id, auction.MaxBid-auction.Bid, "Won auction return: "+strconv.Itoa(auction.EndDate.Minute()))
 				if err != nil {
@@ -683,10 +683,17 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 				return err
 			}
 
-			if userDetails.Role == UserRoleStudent && auction.OwnerId.Id == userDetails.Name {
-				addUbuck2StudentTx(tx, clock, userDetails, decimal.NewFromInt32(auction.Bid).Mul(decimal.NewFromFloat32(.99)), "Auction sold: "+strconv.Itoa(auction.EndDate.Minute()))
+			sellerDetails := userDetails
+			if userDetails.Role != UserRoleStudent {
+				sellerDetails, err = getUserInLocalStoreTx(tx, auction.OwnerId.Id)
+				if err != nil {
+					return err
+				}
 			}
-		} else {
+
+			addUbuck2StudentTx(tx, clock, sellerDetails, decimal.NewFromInt32(auction.Bid).Mul(decimal.NewFromFloat32(.99)), "Auction sold: "+strconv.Itoa(auction.EndDate.Minute()))
+
+		} else { // over and has no winner
 			err = auctionsBucket.Delete([]byte(Id))
 			if err != nil {
 				return err
