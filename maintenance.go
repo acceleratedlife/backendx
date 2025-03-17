@@ -51,6 +51,55 @@ type EventRequest struct {
 	Title       string `json:",omitempty"`
 }
 
+func auctionsAllStream() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		lgr.Printf("in handler!!!")
+		// Set SSE headers.
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+			return
+		}
+
+		// Retrieve school ID from query parameters.
+		schoolID := r.URL.Query().Get("school")
+		if schoolID == "" {
+			http.Error(w, "Missing school parameter", http.StatusBadRequest)
+			return
+		}
+
+		// Subscribe to auction updates for this specific school.
+		sub := auctionBroadcaster.Subscribe(schoolID)
+		defer auctionBroadcaster.Unsubscribe(schoolID, sub)
+
+		// Listen for client disconnect via the request context.
+		ctx := r.Context()
+
+		// Loop and write events.
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case update, ok := <-sub:
+				if !ok {
+					return
+				}
+				jsonData, err := json.Marshal(update)
+				if err != nil {
+					continue
+				}
+				// Write the SSE data in the proper format.
+				fmt.Fprintf(w, "data: %s\n\n", jsonData)
+				flusher.Flush()
+			}
+		}
+	})
+}
+
 func newSchoolHandler(db *bolt.DB, clock Clock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request NewSchoolRequest

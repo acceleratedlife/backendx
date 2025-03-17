@@ -66,7 +66,6 @@ type StaffApiRouter interface {
 	AuctionApprove(http.ResponseWriter, *http.Request)
 	AuctionReject(http.ResponseWriter, *http.Request)
 	AuctionsAll(http.ResponseWriter, *http.Request)
-	AuctionsAllStream(http.ResponseWriter, *http.Request)
 	DeleteMarketItem(http.ResponseWriter, *http.Request)
 	DeleteStudent(http.ResponseWriter, *http.Request)
 	Deleteclass(http.ResponseWriter, *http.Request)
@@ -84,7 +83,6 @@ type StaffApiRouter interface {
 	SearchEvents(http.ResponseWriter, *http.Request)
 	SearchTransactions(http.ResponseWriter, *http.Request)
 	SetSettings(http.ResponseWriter, *http.Request)
-	StreamAuctionsTeacher(http.ResponseWriter, *http.Request)
 }
 // StudentApiRouter defines the required methods for binding the api requests to a responses for the StudentApi
 // The StudentApiRouter implementation should parse necessary information from the http request,
@@ -100,7 +98,6 @@ type StudentApiRouter interface {
 	PreviousLotto(http.ResponseWriter, *http.Request)
 	RefundCD(http.ResponseWriter, *http.Request)
 	SearchAuctionsStudent(http.ResponseWriter, *http.Request)
-	SearchAuctionsStudentStream(http.ResponseWriter, *http.Request)
 	SearchBuck(http.ResponseWriter, *http.Request)
 	SearchBuckTransactions(http.ResponseWriter, *http.Request)
 	SearchCDS(http.ResponseWriter, *http.Request)
@@ -198,7 +195,6 @@ type StaffApiServicer interface {
 	AuctionApprove(context.Context, RequestAuctionAction) (ImplResponse, error)
 	AuctionReject(context.Context, string) (ImplResponse, error)
 	AuctionsAll(context.Context) (ImplResponse, error)
-	AuctionsAllStream(context.Context) (ImplResponse, error)
 	DeleteMarketItem(context.Context, string) (ImplResponse, error)
 	DeleteStudent(context.Context, string) (ImplResponse, error)
 	Deleteclass(context.Context, string) (ImplResponse, error)
@@ -216,7 +212,6 @@ type StaffApiServicer interface {
 	SearchEvents(context.Context) (ImplResponse, error)
 	SearchTransactions(context.Context, string) (ImplResponse, error)
 	SetSettings(context.Context, Settings) (ImplResponse, error)
-	StreamAuctionsTeacher(context.Context) (ImplResponse, error)
 }
 
 
@@ -235,7 +230,6 @@ type StudentApiServicer interface {
 	PreviousLotto(context.Context) (ImplResponse, error)
 	RefundCD(context.Context, RequestUser) (ImplResponse, error)
 	SearchAuctionsStudent(context.Context) (ImplResponse, error)
-	SearchAuctionsStudentStream(context.Context) (ImplResponse, error)
 	SearchBuck(context.Context, string) (ImplResponse, error)
 	SearchBuckTransactions(context.Context) (ImplResponse, error)
 	SearchCDS(context.Context) (ImplResponse, error)

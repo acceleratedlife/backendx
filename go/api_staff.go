@@ -68,12 +68,6 @@ func (c *StaffApiController) Routes() Routes {
 			c.AuctionsAll,
 		},
 		{
-			"AuctionsAllStream",
-			strings.ToUpper("Get"),
-			"/api/auctions/all/stream",
-			c.AuctionsAllStream,
-		},
-		{
 			"DeleteMarketItem",
 			strings.ToUpper("Delete"),
 			"/api/marketItems",
@@ -175,12 +169,6 @@ func (c *StaffApiController) Routes() Routes {
 			"/api/settings",
 			c.SetSettings,
 		},
-		{
-			"StreamAuctionsTeacher",
-			strings.ToUpper("Get"),
-			"/api/auctions/stream",
-			c.StreamAuctionsTeacher,
-		},
 	}
 }
 
@@ -226,19 +214,6 @@ func (c *StaffApiController) AuctionReject(w http.ResponseWriter, r *http.Reques
 // AuctionsAll - get all auctions for school
 func (c *StaffApiController) AuctionsAll(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.AuctionsAll(r.Context())
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// AuctionsAllStream - get all auctions for school
-func (c *StaffApiController) AuctionsAllStream(w http.ResponseWriter, r *http.Request) {
-	result, err := c.service.AuctionsAllStream(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -567,19 +542,6 @@ func (c *StaffApiController) SetSettings(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	result, err := c.service.SetSettings(r.Context(), settingsParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// StreamAuctionsTeacher - Stream real-time auction updates using SSE
-func (c *StaffApiController) StreamAuctionsTeacher(w http.ResponseWriter, r *http.Request) {
-	result, err := c.service.StreamAuctionsTeacher(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

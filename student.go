@@ -667,6 +667,38 @@ func placeBidTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid
 		}
 
 		message = "You have been outbid"
+
+		//for the stream
+		owner, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
+		if err != nil {
+			return message, err
+		}
+		winner, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
+		if err != nil {
+			return message, err
+		}
+
+		auctionBroadcaster.Publish(userDetails.SchoolId, openapi.ResponseAuctionStudent{
+			Id:          auction.Id,
+			Bid:         float32(auction.Bid),
+			Active:      auction.Active,
+			Approved:    auction.Approved,
+			Approver:    auction.Approver,
+			Description: auction.Description,
+			EndDate:     auction.EndDate,
+			StartDate:   auction.StartDate,
+			OwnerId: openapi.ResponseAuctionStudentOwnerId{
+				Id:        auction.OwnerId.Id,
+				FirstName: owner.FirstName,
+				LastName:  owner.LastName,
+			},
+			WinnerId: openapi.ResponseAuctionStudentOwnerId{
+				Id:        auction.WinnerId.Id,
+				FirstName: winner.FirstName,
+				LastName:  winner.LastName,
+			},
+		})
+
 		return message, err
 	}
 
@@ -716,6 +748,37 @@ func placeBidTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid
 	if err != nil {
 		return message, err
 	}
+
+	//for the stream
+	owner, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
+	if err != nil {
+		return message, err
+	}
+	winner, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
+	if err != nil {
+		return message, err
+	}
+
+	auctionBroadcaster.Publish(userDetails.SchoolId, openapi.ResponseAuctionStudent{
+		Id:          auction.Id,
+		Bid:         float32(auction.Bid),
+		Active:      auction.Active,
+		Approved:    auction.Approved,
+		Approver:    auction.Approver,
+		Description: auction.Description,
+		EndDate:     auction.EndDate,
+		StartDate:   auction.StartDate,
+		OwnerId: openapi.ResponseAuctionStudentOwnerId{
+			Id:        auction.OwnerId.Id,
+			FirstName: owner.FirstName,
+			LastName:  owner.LastName,
+		},
+		WinnerId: openapi.ResponseAuctionStudentOwnerId{
+			Id:        auction.WinnerId.Id,
+			FirstName: winner.FirstName,
+			LastName:  winner.LastName,
+		},
+	})
 
 	return
 

@@ -7,6 +7,7 @@ import (
 	"net/smtp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
@@ -25,6 +26,65 @@ type MarketItem struct {
 type Buyer struct {
 	Id     string `json:"id"`
 	Active bool   `json:"active,omitempty"`
+}
+
+// Global broadcaster instance.
+var auctionBroadcaster = NewAuctionBroadcaster()
+
+// Publish broadcasts an auction update to all subscribers.
+func (b *AuctionBroadcaster) Publish(schoolID string, update openapi.ResponseAuctionStudent) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	subs, exists := b.subscribers[schoolID]
+	if !exists {
+		return
+	}
+	for ch := range subs {
+		// Non-blocking send: if the channel is full, skip.
+		select {
+		case ch <- update:
+		default:
+		}
+	}
+}
+
+// AuctionBroadcaster handles broadcasting updates to multiple subscribers.
+type AuctionBroadcaster struct {
+	// The key is a schoolID, and the value is a set of subscriber channels
+	subscribers map[string]map[chan openapi.ResponseAuctionStudent]bool
+	lock        sync.Mutex
+}
+
+// NewAuctionBroadcaster creates a new AuctionBroadcaster.
+func NewAuctionBroadcaster() *AuctionBroadcaster {
+	return &AuctionBroadcaster{
+		subscribers: make(map[string]map[chan openapi.ResponseAuctionStudent]bool),
+	}
+}
+
+// Subscribe returns a new subscription channel for auction updates.
+func (b *AuctionBroadcaster) Subscribe(schoolID string) chan openapi.ResponseAuctionStudent {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	ch := make(chan openapi.ResponseAuctionStudent, 1) // buffered channel
+	if b.subscribers[schoolID] == nil {
+		b.subscribers[schoolID] = make(map[chan openapi.ResponseAuctionStudent]bool)
+	}
+	b.subscribers[schoolID][ch] = true
+	return ch
+}
+
+// Unsubscribe removes a subscriber.
+func (b *AuctionBroadcaster) Unsubscribe(schoolID string, ch chan openapi.ResponseAuctionStudent) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	if subs, exists := b.subscribers[schoolID]; exists {
+		delete(subs, ch)
+		close(ch)
+	}
 }
 
 func getMarketItems(db *bolt.DB, userDetails UserInfo) (items []openapi.ResponseMarketItem, err error) {

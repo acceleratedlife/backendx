@@ -216,6 +216,8 @@ func main() {
 	//reset clock to current time
 	router.Handle("/admin/resetClock", resetClockHandler(clock))
 
+	router.Handle("/auctions/all/stream", auctionsAllStream())
+
 	router.Use(buildAuthMiddleware(m))
 
 	addr := fmt.Sprintf(":%d", config.ServerPort)
