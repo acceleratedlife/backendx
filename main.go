@@ -21,6 +21,9 @@ import (
 	"gopkg.in/yaml.v3"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/dgraph-io/ristretto"
+	"github.com/eko/gocache/lib/v4/cache"
+	ristretto_store "github.com/eko/gocache/store/ristretto/v4"
 	"github.com/go-pkgz/auth"
 	"github.com/go-pkgz/auth/avatar"
 	"github.com/go-pkgz/auth/middleware"
@@ -120,6 +123,25 @@ const (
 
 var build_date string
 
+var cacheManager *cache.Cache[interface{}]
+
+func initCache() *cache.Cache[interface{}] {
+	ristrettoCache, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1000,
+		MaxCost:     100,
+		BufferItems: 32,
+	})
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create Ristretto cache: %v", err))
+	}
+
+	// Wrap Ristretto in a GoCache store
+	ristrettoStore := ristretto_store.NewRistretto(ristrettoCache)
+	cacheManager := cache.New[interface{}](ristrettoStore)
+
+	return cacheManager
+}
+
 type ServerConfig struct {
 	AdminPassword string
 	SecureCookies bool
@@ -162,6 +184,8 @@ func (*AppClock) Now() time.Time {
 func main() {
 
 	lgr.Printf("SB server started")
+
+	cacheManager = initCache()
 
 	config := loadConfig()
 

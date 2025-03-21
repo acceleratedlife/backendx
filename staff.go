@@ -61,6 +61,14 @@ func (s *StaffApiServiceImpl) MarketPurchases(ctx context.Context) (openapi.Impl
 }
 
 func (s *StaffApiServiceImpl) AuctionsAll(ctx context.Context) (openapi.ImplResponse, error) {
+
+	// err := cacheManager.Set(ctx, "my-key", "my-value", store.WithCost(2))
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// value := cacheManager.Get(ctx, "my-key")
+
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
 	if err != nil {
