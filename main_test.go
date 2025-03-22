@@ -61,6 +61,7 @@ func SetTestLoginUser(username string) {
 }
 func InitTestServer(port int, db *bolt.DB, userName string, clock Clock) (teardown func()) {
 	SetTestLoginUser(userName)
+	cacheManager = initCache()
 	mux := createRouterClock(db, clock)
 	mux.Use(func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {

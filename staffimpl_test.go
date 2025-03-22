@@ -134,7 +134,7 @@ func TestAuctionsAll(t *testing.T) {
 
 	require.Equal(t, 1, len(auctions))
 
-	clock.TickOne(time.Hour * 24 * 2)
+	clock.TickOne(time.Hour * 24 * 7)
 
 	auctions, err = getAllAuctions(db, &clock, teacher)
 	require.Nil(t, err)

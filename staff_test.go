@@ -522,6 +522,60 @@ func TestAuctionsAllGet(t *testing.T) {
 
 }
 
+// func TestAuctionsAllCache(t *testing.T) {
+// 	clock := TestClock{}
+// 	db, tearDown := FullStartTestServer("auctionsAllCache", 8088, "")
+// 	defer tearDown()
+
+// 	_, _, teachers, classes, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+// 	SetTestLoginUser(teachers[0])
+
+// 	teacher, err := getUserInLocalStore(db, teachers[0])
+// 	require.Nil(t, err)
+
+// 	client := &http.Client{}
+
+// 	body := openapi.RequestMakeAuction{
+// 		Bid:         4,
+// 		MaxBid:      4,
+// 		Description: "Test Auction",
+// 		EndDate:     clock.Now().Add(time.Minute * 100),
+// 		StartDate:   clock.Now().Add(time.Minute * -10),
+// 		OwnerId:     teachers[0],
+// 		Visibility:  classes,
+// 	}
+
+// 	err = MakeAuctionImpl(db, teacher, body, true)
+// 	require.Nil(t, err)
+
+// 	body = openapi.RequestMakeAuction{
+// 		Bid:         4,
+// 		MaxBid:      4,
+// 		Description: "Test Auction",
+// 		EndDate:     clock.Now().Add(time.Minute * 10),
+// 		StartDate:   clock.Now().Add(time.Minute * -10),
+// 		OwnerId:     students[0],
+// 		Visibility:  classes,
+// 	}
+
+// 	err = MakeAuctionImpl(db, teacher, body, true)
+// 	require.Nil(t, err)
+
+// 	req, _ := http.NewRequest(http.MethodGet,
+// 		"http://127.0.0.1:8088/api/auctions/all",
+// 		nil)
+
+// 	for i := 1; i < 10; i++ {
+// 		resp, err := client.Do(req)
+// 		require.Nil(t, err)
+// 		resp.Body.Close()
+// 		require.NotNil(t, resp)
+// 		assert.Equal(t, 200, resp.StatusCode)
+// 	}
+
+// }
+
 func TestAuctionApprove(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("auctionApprove", 8088, "")

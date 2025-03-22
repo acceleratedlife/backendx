@@ -7,6 +7,7 @@ import (
 	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/eko/gocache/lib/v4/store"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
 	"github.com/shopspring/decimal"
@@ -338,9 +339,25 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 	}
 
 	var resp []openapi.ResponseAuctionStudent
-	auctions, err := getStudentAuctions(a.db, userDetails)
+	var auctions []openapi.Auction
+	value, err := cacheManager.Get(ctx, "searchAuctionsStudent"+userDetails.Email)
 	if err != nil {
-		return openapi.Response(400, err), nil
+		auctions, err = getStudentAuctions(a.db, userDetails)
+		if err != nil {
+			return openapi.Response(400, err), nil
+		}
+		lgr.Printf("miss")
+		err := cacheManager.Set(ctx, "searchAuctionsStudent"+userDetails.Email, resp, store.WithCost(12), store.WithExpiration(7*time.Second))
+		if err != nil {
+			return openapi.Response(400, err), nil
+		}
+	} else {
+		auctionsCache, ok := value.([]openapi.Auction)
+		if !ok {
+			return openapi.Response(400, fmt.Errorf("problems converting cache value")), nil
+		}
+		auctions = auctionsCache
+		lgr.Printf("hit")
 	}
 
 	for _, auction := range auctions {
@@ -367,10 +384,6 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 
 			resp = append(resp, iAuction)
 		}
-	}
-
-	if err != nil {
-		return openapi.Response(400, err), nil
 	}
 
 	return openapi.Response(200, resp), nil

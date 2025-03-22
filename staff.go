@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/eko/gocache/lib/v4/store"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
@@ -62,13 +64,6 @@ func (s *StaffApiServiceImpl) MarketPurchases(ctx context.Context) (openapi.Impl
 
 func (s *StaffApiServiceImpl) AuctionsAll(ctx context.Context) (openapi.ImplResponse, error) {
 
-	// err := cacheManager.Set(ctx, "my-key", "my-value", store.WithCost(2))
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// value := cacheManager.Get(ctx, "my-key")
-
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(s.db, userData.Name)
 	if err != nil {
@@ -81,10 +76,24 @@ func (s *StaffApiServiceImpl) AuctionsAll(ctx context.Context) (openapi.ImplResp
 		return openapi.Response(401, ""), nil
 	}
 
-	resp, err := getAllAuctions(s.db, s.clock, userDetails)
+	var resp []openapi.ResponseAuctionStudent
 
+	value, err := cacheManager.Get(ctx, "auctionsAll"+userDetails.SchoolId)
 	if err != nil {
-		return openapi.Response(400, nil), err
+		resp, err = getAllAuctions(s.db, s.clock, userDetails)
+		if err != nil {
+			return openapi.Response(400, nil), err
+		}
+		err := cacheManager.Set(ctx, "auctionsAll"+userDetails.SchoolId, resp, store.WithCost(11), store.WithExpiration(7*time.Second))
+		if err != nil {
+			return openapi.Response(400, nil), err
+		}
+	} else {
+		auctions, ok := value.([]openapi.ResponseAuctionStudent)
+		if !ok {
+			return openapi.Response(400, nil), fmt.Errorf("problems converting cache value")
+		}
+		resp = auctions
 	}
 
 	return openapi.Response(200, resp), nil
@@ -442,39 +451,72 @@ func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openap
 	}
 
 	if userDetails.Role == UserRoleStudent {
-		auctions, err := getStudentAuctions(s.db, userDetails)
-		if err != nil {
-			return openapi.Response(401, ""), err
-		}
-		var studentAuctions []openapi.Auction
-		for i := range auctions {
-			if auctions[i].OwnerId.Id == userDetails.Name {
-				auctions[i].Visibility = visibilityToSlice(s.db, userDetails, auctions[i].Visibility)
-				studentAuctions = append(studentAuctions, auctions[i])
-			}
-		}
 
-		return openapi.Response(200, studentAuctions), nil
+		value, err := cacheManager.Get(ctx, "SearchAuctionsTeacher"+userDetails.Email)
+		if err != nil {
+			auctions, err := getStudentAuctions(s.db, userDetails)
+			if err != nil {
+				return openapi.Response(401, ""), err
+			}
+			var studentAuctions []openapi.Auction
+			for i := range auctions {
+				if auctions[i].OwnerId.Id == userDetails.Name {
+					auctions[i].Visibility = visibilityToSlice(s.db, userDetails, auctions[i].Visibility)
+					studentAuctions = append(studentAuctions, auctions[i])
+				}
+			}
+
+			err = cacheManager.Set(ctx, "SearchAuctionsTeacher"+userDetails.Email, studentAuctions, store.WithCost(11), store.WithExpiration(7*time.Second))
+			if err != nil {
+				return openapi.Response(400, nil), err
+			}
+
+			return openapi.Response(200, studentAuctions), nil
+		} else {
+			studentAuctions, ok := value.([]openapi.Auction)
+			if !ok {
+				return openapi.Response(400, nil), fmt.Errorf("problems converting cache value")
+			}
+
+			return openapi.Response(200, studentAuctions), nil
+		}
 	}
 
 	var resp []openapi.Auction
-	err = s.db.View(func(tx *bolt.Tx) error {
-		auctionsBucket, err := getAuctionsTx(tx, userDetails)
-		if err != nil {
-			return err
-		}
 
-		resp, err = getTeacherAuctionsRx(tx, auctionsBucket, userDetails)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	value, err := cacheManager.Get(ctx, "SearchAuctionsTeacher"+userDetails.Email)
 	if err != nil {
-		return openapi.Response(400, nil), err
-	}
+		err = s.db.View(func(tx *bolt.Tx) error {
+			auctionsBucket, err := getAuctionsTx(tx, userDetails)
+			if err != nil {
+				return err
+			}
 
-	return openapi.Response(200, resp), nil
+			resp, err = getTeacherAuctionsRx(tx, auctionsBucket, userDetails)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+		if err != nil {
+			return openapi.Response(400, ""), err
+		}
+
+		err = cacheManager.Set(ctx, "SearchAuctionsTeacher"+userDetails.Email, resp, store.WithCost(11), store.WithExpiration(7*time.Second))
+		if err != nil {
+			return openapi.Response(400, nil), err
+		}
+
+		return openapi.Response(200, resp), nil
+
+	} else {
+		resp, ok := value.([]openapi.Auction)
+		if !ok {
+			return openapi.Response(400, nil), fmt.Errorf("problems converting cache value")
+		}
+
+		return openapi.Response(200, resp), nil
+	}
 }
 
 func (s *StaffApiServiceImpl) SearchTransactions(ctx context.Context, teacherId string) (openapi.ImplResponse, error) {
