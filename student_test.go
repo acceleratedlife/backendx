@@ -1418,3 +1418,118 @@ func TestRefundCD(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode, resp)
 
 }
+
+type mockSSEService struct {
+	broadcastCalled bool
+	auctionID       string
+	eventType       string
+	data            interface{}
+}
+
+func (m *mockSSEService) BroadcastAuctionEvent(auctionID string, eventType string, data interface{}) {
+	m.broadcastCalled = true
+	m.auctionID = auctionID
+	m.eventType = eventType
+	m.data = data
+}
+
+func (m *mockSSEService) HandleAuctionEventsSSE(w http.ResponseWriter, r *http.Request) {
+	// No-op for testing
+}
+
+func (m *mockSSEService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// No-op for testing
+}
+
+func TestBroadcastAuctionEvent(t *testing.T) {
+	clock := TestClock{}
+	db, teardown := FullStartTestServer("broadcastTest", 8088, "")
+	defer teardown()
+
+	mockSSE := &mockSSEService{}
+
+	svc := &StudentApiServiceImpl{
+		db:         db,
+		clock:      &clock,
+		sseService: mockSSE,
+	}
+
+	// Create test auction
+	auction := openapi.Auction{
+		Bid:      100,
+		MaxBid:   200,
+		WinnerId: openapi.AuctionWinnerId{Id: "testUser"},
+	}
+
+	// Call the broadcast directly
+	svc.broadcastAuctionEvent("test-auction-id", auction)
+
+	// Verify the broadcast was called with correct parameters
+	require.True(t, mockSSE.broadcastCalled)
+	require.Equal(t, "test-auction-id", mockSSE.auctionID)
+	require.Equal(t, "update", mockSSE.eventType)
+
+	// Verify the auction data was passed correctly
+	auctionData, ok := mockSSE.data.(openapi.Auction)
+	require.True(t, ok)
+	require.Equal(t, int32(100), auctionData.Bid)
+	require.Equal(t, int32(200), auctionData.MaxBid)
+	require.Equal(t, "testUser", auctionData.WinnerId.Id)
+}
+
+// Helper function to create a bid with mock SSE
+func createBid(t *testing.T, db *bolt.DB, clock Clock, userDetails UserInfo, item string, bid int32) (message string, err error) {
+	mockSSE := &mockSSEService{}
+	return placeBid(db, clock, userDetails, item, bid, mockSSE)
+}
+
+// If you want to verify broadcasts in tests, you can use this helper
+func createBidAndVerifyBroadcast(db *bolt.DB, clock Clock, userDetails UserInfo, item string, bid int32) (message string, mockSSE *mockSSEService, err error) {
+	mockSSE = &mockSSEService{}
+	message, err = placeBid(db, clock, userDetails, item, bid, mockSSE)
+	return
+}
+
+// Example test that verifies broadcast
+func TestBidBroadcast(t *testing.T) {
+	clock := TestClock{}
+	db, teardown := FullStartTestServer("bidBroadcast", 8088, "")
+	defer teardown()
+
+	_, _, teachers, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(teachers[0])
+
+	student0, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	teacher, err := getUserInLocalStore(db, teachers[0])
+	require.Nil(t, err)
+
+	err = addUbuck2Student(db, &clock, student0, decimal.NewFromFloat(100), "starter")
+	require.Nil(t, err)
+
+	err = MakeAuctionImpl(db, teacher, openapi.RequestMakeAuction{
+		Bid:         0,
+		MaxBid:      0,
+		Description: "test auction",
+		EndDate:     clock.Now().Add(time.Minute),
+		StartDate:   clock.Now(),
+		OwnerId:     teacher.Name,
+		Visibility:  classes,
+		TrueAuction: false,
+	}, true)
+	require.Nil(t, err)
+
+	auctions, err := getTeacherAuctions(db, teacher)
+	require.Nil(t, err)
+
+	//overdrawn student 0 max 0 bid 0
+	timeId := auctions[0].Id.Format(time.RFC3339Nano)
+
+	_, mockSSE, err := createBidAndVerifyBroadcast(db, &clock, student0, timeId, 5)
+	require.Nil(t, err)
+	require.True(t, mockSSE.broadcastCalled)
+	require.Equal(t, auctions[0].Id.UTC().Format("2006-01-02 15:04:05.000 -0700 MST"), mockSSE.auctionID)
+	require.Equal(t, "update", mockSSE.eventType)
+}
