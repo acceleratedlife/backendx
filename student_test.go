@@ -1455,10 +1455,10 @@ func TestBroadcastAuctionEvent(t *testing.T) {
 	}
 
 	// Create test auction
-	auction := openapi.Auction{
+	auction := openapi.UnifiedAuction{
 		Bid:      100,
 		MaxBid:   200,
-		WinnerId: openapi.AuctionWinnerId{Id: "testUser"},
+		WinnerId: openapi.UnifiedAuctionOwnerId{Id: "testUser"},
 	}
 
 	// Call the broadcast directly
@@ -1470,7 +1470,7 @@ func TestBroadcastAuctionEvent(t *testing.T) {
 	require.Equal(t, "update", mockSSE.eventType)
 
 	// Verify the auction data was passed correctly
-	auctionData, ok := mockSSE.data.(openapi.Auction)
+	auctionData, ok := mockSSE.data.(openapi.UnifiedAuction)
 	require.True(t, ok)
 	require.Equal(t, int32(100), auctionData.Bid)
 	require.Equal(t, int32(200), auctionData.MaxBid)
