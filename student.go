@@ -671,6 +671,7 @@ func (a *StudentApiServiceImpl) placeBidTx(tx *bolt.Tx, clock Clock, userDetails
 
 		message = "You have been outbid"
 		// Trigger a broadcast for this specific auction
+		//On both broadcasts I need to get the owner and winner so I can return a unifiedAuction that has all the details including visibility
 		a.broadcastAuctionEvent(item, auction)
 		return message, err
 	}
