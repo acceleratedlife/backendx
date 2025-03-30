@@ -671,8 +671,40 @@ func (a *StudentApiServiceImpl) placeBidTx(tx *bolt.Tx, clock Clock, userDetails
 
 		message = "You have been outbid"
 		// Trigger a broadcast for this specific auction
-		//On both broadcasts I need to get the owner and winner so I can return a unifiedAuction that has all the details including visibility
-		a.broadcastAuctionEvent(item, auction)
+		ownerDetails, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
+		if err != nil {
+			return message, err
+		}
+
+		winnerDetails, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
+		if err != nil {
+			return message, err
+		}
+
+		toBroadcast := openapi.UnifiedAuction{
+			Id:          auction.Id,
+			Active:      auction.Active,
+			Approved:    auction.Approved,
+			Approver:    auction.Approver,
+			Bid:         float32(auction.Bid),
+			Description: auction.Description,
+			EndDate:     auction.EndDate,
+			StartDate:   auction.StartDate,
+			TrueAuction: auction.TrueAuction,
+			Visibility:  auction.Visibility,
+			OwnerId: openapi.UnifiedAuctionOwnerId{
+				Id:        ownerDetails.Email,
+				FirstName: ownerDetails.FirstName,
+				LastName:  ownerDetails.LastName,
+			},
+			WinnerId: openapi.UnifiedAuctionOwnerId{
+				Id:        winnerDetails.Email,
+				FirstName: winnerDetails.FirstName,
+				LastName:  winnerDetails.LastName,
+			},
+		}
+
+		a.broadcastAuctionEvent(item, toBroadcast)
 		return message, err
 	}
 
@@ -723,13 +755,46 @@ func (a *StudentApiServiceImpl) placeBidTx(tx *bolt.Tx, clock Clock, userDetails
 		return message, err
 	}
 
-	a.broadcastAuctionEvent(item, auction)
+	ownerDetails, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
+	if err != nil {
+		return message, err
+	}
+
+	winnerDetails, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
+	if err != nil {
+		return message, err
+	}
+
+	toBroadcast := openapi.UnifiedAuction{
+		Id:          auction.Id,
+		Active:      auction.Active,
+		Approved:    auction.Approved,
+		Approver:    auction.Approver,
+		Bid:         float32(auction.Bid),
+		Description: auction.Description,
+		EndDate:     auction.EndDate,
+		StartDate:   auction.StartDate,
+		TrueAuction: auction.TrueAuction,
+		Visibility:  auction.Visibility,
+		OwnerId: openapi.UnifiedAuctionOwnerId{
+			Id:        ownerDetails.Email,
+			FirstName: ownerDetails.FirstName,
+			LastName:  ownerDetails.LastName,
+		},
+		WinnerId: openapi.UnifiedAuctionOwnerId{
+			Id:        winnerDetails.Email,
+			FirstName: winnerDetails.FirstName,
+			LastName:  winnerDetails.LastName,
+		},
+	}
+
+	a.broadcastAuctionEvent(item, toBroadcast)
 
 	return
 
 }
 
-func (a *StudentApiServiceImpl) broadcastAuctionEvent(auctionID string, auction openapi.Auction) {
+func (a *StudentApiServiceImpl) broadcastAuctionEvent(auctionID string, auction openapi.UnifiedAuction) {
 	a.sseService.BroadcastAuctionEvent(auctionID, "update", auction)
 }
 
