@@ -72,6 +72,35 @@ func (s *SSEService) BroadcastAuctionEvent(auctionID string, eventType string, d
 
 // HandleAuctionEventsSSE creates a new SSE subscription for specific auctions
 func (s *SSEService) HandleAuctionEventsSSE(w http.ResponseWriter, r *http.Request) {
+	// Clear existing headers
+	for k := range w.Header() {
+		w.Header().Del(k)
+	}
+
+	// Set SSE headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	// Handle allowed origins
+	origin := r.Header.Get("Origin")
+	allowedOrigins := map[string]bool{
+		"https://test.schoolbucks.net": true,
+		"https://www.schoolbucks.net":  true,
+		"https://schoolbucks.net":      true,
+		"http://localhost:3000":        true,
+	}
+
+	if origin != "" && allowedOrigins[origin] {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Methods", "GET")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		lgr.Printf("[SSE] Allowed origin: %s", origin)
+	} else {
+		lgr.Printf("[SSE] Warning: Unknown origin: %s", origin)
+	}
+
 	lgr.Printf("[SSE] New SSE connection request from %s", r.RemoteAddr)
 
 	auctionIDs := r.URL.Query().Get("auction_ids")
