@@ -14,7 +14,7 @@ import (
 type StaffApiServiceImpl struct {
 	db         *bolt.DB
 	clock      Clock
-	sseService *SSEService
+	sseService SSEServiceInterface
 }
 
 func (s *StaffApiServiceImpl) SearchEvents(ctx context.Context) (openapi.ImplResponse, error) {
@@ -632,7 +632,7 @@ func (s *StaffApiServiceImpl) MarketItemRefund(ctx context.Context, body openapi
 }
 
 // NewStaffApiServiceImpl creates a default api service
-func NewStaffApiServiceImpl(db *bolt.DB, clock Clock, sseService *SSEService) openapi.StaffApiServicer {
+func NewStaffApiServiceImpl(db *bolt.DB, clock Clock, sseService SSEServiceInterface) openapi.StaffApiServicer {
 	return &StaffApiServiceImpl{
 		db:         db,
 		clock:      clock,

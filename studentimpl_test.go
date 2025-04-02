@@ -19,15 +19,15 @@ import (
 type NoopSSEService struct{}
 
 func (n *NoopSSEService) BroadcastAuctionEvent(auctionID string, eventType string, data interface{}) {
-	// Do nothing
+	lgr.Printf("[SSE-NOOP] Would broadcast event - Type: %s, Auction ID: %s", eventType, auctionID)
 }
 
 func (n *NoopSSEService) HandleAuctionEventsSSE(w http.ResponseWriter, r *http.Request) {
-	// Do nothing
+	lgr.Printf("[SSE-NOOP] Would handle SSE connection from %s", r.RemoteAddr)
 }
 
 func (n *NoopSSEService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Do nothing
+	lgr.Printf("[SSE-NOOP] Would serve HTTP for %s", r.RemoteAddr)
 }
 
 func Test_ubuckFlow(t *testing.T) {

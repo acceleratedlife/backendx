@@ -811,7 +811,7 @@ func repayLosertx(tx *bolt.Tx, clock Clock, winnerId string, amount int32, messa
 	return
 }
 
-func NewStudentApiServiceImpl(db *bolt.DB, clock Clock, sseService *SSEService) openapi.StudentApiServicer {
+func NewStudentApiServiceImpl(db *bolt.DB, clock Clock, sseService SSEServiceInterface) openapi.StudentApiServicer {
 	return &StudentApiServiceImpl{
 		db:         db,
 		clock:      clock,
