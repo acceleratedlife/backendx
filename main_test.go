@@ -61,7 +61,8 @@ func SetTestLoginUser(username string) {
 }
 func InitTestServer(port int, db *bolt.DB, userName string, clock Clock) (teardown func()) {
 	SetTestLoginUser(userName)
-	mux := createRouterClock(db, clock)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux := createRouterClock(db, clock, sseService)
 	mux.Use(func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			user := token.User{
@@ -235,14 +236,14 @@ func TestSchema(t *testing.T) {
 }
 
 func TestIntegrationAuth(t *testing.T) {
-
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 	clock := TestClock{}
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{})
 
-	mux, _ := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, _ := createRouter(db, sseService)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -287,7 +288,9 @@ func TestIntegrationLoginPage(t *testing.T) {
 	clock := TestClock{}
 
 	InitDefaultAccounts(db, &clock)
-	mux, _ := createRouter(db)
+	sseService := &NoopSSEService{}
+	mux, _ := createRouter(db, sseService)
+
 	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
 	ts := httptest.NewUnstartedServer(mux)
@@ -366,7 +369,8 @@ func TestBackupSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux, _ := createRouter(db)
+	sseService := &NoopSSEService{}
+	mux, _ := createRouter(db, sseService)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -425,7 +429,8 @@ func TestNewSchoolSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux, _ := createRouter(db)
+	sseService := &NoopSSEService{}
+	mux, _ := createRouter(db, sseService)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -480,7 +485,8 @@ func TestResetPasswordSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux, _ := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, _ := createRouter(db, sseService)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -532,7 +538,8 @@ func TestAddJobCollegeSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux, _ := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, _ := createRouter(db, sseService)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -584,7 +591,8 @@ func TestAddJobSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux, _ := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, _ := createRouter(db, sseService)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -636,7 +644,8 @@ func TestAddEventPositiveSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux, _ := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, _ := createRouter(db, sseService)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -688,7 +697,8 @@ func TestAddEventNegativeSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux, _ := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, _ := createRouter(db, sseService)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -740,7 +750,8 @@ func TestAddAdminSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux, _ := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, _ := createRouter(db, sseService)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -796,7 +807,8 @@ func TestSeedDbSecured(t *testing.T) {
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
-	mux, clock2 := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, clock2 := createRouter(db, sseService)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -855,7 +867,8 @@ func TestNewDaySecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	mux, clock := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, clock := createRouter(db, sseService)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
@@ -897,7 +910,8 @@ func TestNewHourSecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	mux, clock := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, clock := createRouter(db, sseService)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
@@ -939,7 +953,8 @@ func TestNewMinutesSecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	mux, clock := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, clock := createRouter(db, sseService)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
@@ -981,7 +996,8 @@ func TestNewCareerSecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	mux, clock := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, clock := createRouter(db, sseService)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
@@ -1023,7 +1039,8 @@ func TestNewCollegeSecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	mux, clock := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, clock := createRouter(db, sseService)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
@@ -1065,7 +1082,8 @@ func TestResetClockSecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
-	mux, clock := createRouter(db)
+	sseService := &NoopSSEService{} // Use NoopSSEService for tests
+	mux, clock := createRouter(db, sseService)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
