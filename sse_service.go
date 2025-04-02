@@ -34,18 +34,15 @@ func (s *SSEService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // BroadcastAuctionEvent sends an event to all clients subscribed to a specific auction
 func (s *SSEService) BroadcastAuctionEvent(auctionID string, eventType string, data interface{}) {
-	lgr.Printf("[SSE] Broadcasting event - Original auctionID: %s", auctionID)
 
 	// Try to parse and normalize the time format
 	if t, err := time.Parse("2006-01-02 15:04:05.999 -0700 MST", auctionID); err == nil {
-		auctionID = t.Format(time.RFC3339)
-		lgr.Printf("[SSE] Normalized auctionID to: %s", auctionID)
+		auctionID = t.Format(time.RFC3339Nano)
 	} else {
 		lgr.Printf("[SSE] Could not parse time format: %v", err)
 	}
 
 	topic := "auction_" + auctionID
-	lgr.Printf("[SSE] Broadcasting to topic: %s", topic)
 
 	// If it's an auction, nil out the maxBid
 	if auction, ok := data.(openapi.Auction); ok {
@@ -58,20 +55,16 @@ func (s *SSEService) BroadcastAuctionEvent(auctionID string, eventType string, d
 		lgr.Printf("[SSE] Error marshaling data: %v", err)
 		return
 	}
-	lgr.Printf("[SSE] Marshaled data: %s", string(jsonData))
 
 	msg := &sse.Message{}
 	msg.Type = sse.Type(eventType)
 	msg.AppendData(string(jsonData))
 
-	lgr.Printf("[SSE] Publishing message - Type: %s, Topic: %s", eventType, topic)
 	s.server.Publish(msg, topic)
-	lgr.Printf("[SSE] Message published")
 }
 
 // HandleAuctionEventsSSE creates a new SSE subscription for specific auctions
 func (s *SSEService) HandleAuctionEventsSSE(w http.ResponseWriter, r *http.Request) {
-	lgr.Printf("[SSE] New connection attempt from %s", r.RemoteAddr)
 
 	auctionIDs := r.URL.Query().Get("auction_ids")
 	if auctionIDs == "" {
@@ -84,20 +77,16 @@ func (s *SSEService) HandleAuctionEventsSSE(w http.ResponseWriter, r *http.Reque
 	rawIds := strings.Split(auctionIDs, ",")
 	topics := make([]string, 0, len(rawIds))
 	for _, id := range rawIds {
-		lgr.Printf("[SSE] Processing auction ID: %s", id)
 		// Try to parse and normalize the time format
-		if t, err := time.Parse(time.RFC3339, id); err == nil {
-			topic := "auction_" + t.Format(time.RFC3339)
+		if t, err := time.Parse(time.RFC3339Nano, id); err == nil {
+			topic := "auction_" + t.Format(time.RFC3339Nano)
 			topics = append(topics, topic)
-			lgr.Printf("[SSE] Normalized topic: %s", topic)
 		} else {
 			topic := "auction_" + id
 			topics = append(topics, topic)
 			lgr.Printf("[SSE] Using raw topic: %s (parse error: %v)", topic, err)
 		}
 	}
-
-	lgr.Printf("[SSE] Attempting to subscribe to topics: %v", topics)
 
 	// Configure the server to handle this session
 	s.server.OnSession = func(sess *sse.Session) (sse.Subscription, bool) {

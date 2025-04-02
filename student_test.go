@@ -1472,7 +1472,7 @@ func TestBroadcastAuctionEvent(t *testing.T) {
 	// Verify the auction data was passed correctly
 	auctionData, ok := mockSSE.data.(openapi.UnifiedAuction)
 	require.True(t, ok)
-	require.Equal(t, int32(100), auctionData.Bid)
+	require.Equal(t, float32(100), auctionData.Bid)
 	require.Equal(t, int32(200), auctionData.MaxBid)
 	require.Equal(t, "testUser", auctionData.WinnerId.Id)
 }
