@@ -222,9 +222,8 @@ func main() {
 
 	router.Use(buildAuthMiddleware(m))
 
-	router.Handle("/events", sseService)
-
 	// Example of how to send events (you can call this from anywhere)
+	// This is an example of how to send events (you can call this from anywhere)
 	// sseService.BroadcastAuctionEvent("update", map[string]interface{}{
 	//     "message": "Something happened!",
 	//     "timestamp": time.Now(),
