@@ -1089,7 +1089,7 @@ func TestDeleteAuction(t *testing.T) {
 	userDetails, _ := getUserInLocalStore(db, students[0])
 	addUbuck2Student(db, &clock, userDetails, decimal.NewFromInt32(100), "loading")
 
-	_, err = placeBid(db, &clock, userDetails, timeId, 20)
+	_, err = placeBid(db, &clock, userDetails, timeId, 20, &NoopSSEService{})
 	require.Nil(t, err)
 
 	q.Set("_id", timeId)
@@ -1109,7 +1109,7 @@ func TestDeleteAuction(t *testing.T) {
 	err = MakeAuctionImpl(db, teacherDetails, body, true)
 	require.Nil(t, err)
 
-	_, err = placeBid(db, &clock, userDetails, timeId, 20)
+	_, err = placeBid(db, &clock, userDetails, timeId, 20, &NoopSSEService{})
 	require.Nil(t, err)
 	clock.TickOne(time.Hour * 1)
 

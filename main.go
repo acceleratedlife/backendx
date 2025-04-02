@@ -218,6 +218,16 @@ func main() {
 
 	router.Use(buildAuthMiddleware(m))
 
+	// Add SSE endpoint
+	sseService := NewSSEService()
+	router.Handle("/events", sseService)
+
+	// Example of how to send events (you can call this from anywhere)
+	// sseService.BroadcastAuctionEvent("update", map[string]interface{}{
+	//     "message": "Something happened!",
+	//     "timestamp": time.Now(),
+	// })
+
 	addr := fmt.Sprintf(":%d", config.ServerPort)
 	log.Fatal(http.ListenAndServe(addr, router))
 
@@ -236,9 +246,12 @@ func createRouter(db *bolt.DB) (*mux.Router, *DemoClock) {
 }
 
 func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
+	// Create SSE service
+	sseService := NewSSEService()
 
-	StudentApiServiceImpl := NewStudentApiServiceImpl(db, clock)
-	StudentApiController := openapi.NewStudentApiController(StudentApiServiceImpl)
+	// Pass sseService to StudentApiServiceImpl
+	studentService := NewStudentApiServiceImpl(db, clock, sseService)
+	StudentApiController := openapi.NewStudentApiController(studentService)
 
 	SchoolAdminApiService := NewSchoolAdminServiceImpl(db, clock)
 	SchoolAdminApiController := openapi.NewSchoolAdminApiController(SchoolAdminApiService)
@@ -256,10 +269,10 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 	allSchoolApiServiceImpl := NewAllSchoolApiServiceImpl(db, clock)
 	schoolApiController := openapi.NewAllSchoolApiController(allSchoolApiServiceImpl)
 
-	staffApiServiceImpl := NewStaffApiServiceImpl(db, clock)
+	staffApiServiceImpl := NewStaffApiServiceImpl(db, clock, sseService)
 	staffApiController := openapi.NewStaffApiController(staffApiServiceImpl)
 
-	return openapi.NewRouter(SchoolAdminApiController,
+	router := openapi.NewRouter(SchoolAdminApiController,
 		allController,
 		sysAdminCtrl,
 		schoolApiController,
@@ -267,6 +280,10 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 		unregisteredApiController,
 		StudentApiController)
 
+	// Add SSE endpoint manually since it needs direct access to ResponseWriter
+	router.HandleFunc("/api/auctions/all/events", sseService.HandleAuctionEventsSSE)
+
+	return router
 }
 
 func InitDefaultAccounts(db *bolt.DB, clock Clock) {

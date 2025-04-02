@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"net/http"
 	"testing"
 	"time"
 
@@ -13,6 +14,21 @@ import (
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 )
+
+// NoopSSEService implements SSEServiceInterface but does nothing
+type NoopSSEService struct{}
+
+func (n *NoopSSEService) BroadcastAuctionEvent(auctionID string, eventType string, data interface{}) {
+	// Do nothing
+}
+
+func (n *NoopSSEService) HandleAuctionEventsSSE(w http.ResponseWriter, r *http.Request) {
+	// Do nothing
+}
+
+func (n *NoopSSEService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Do nothing
+}
 
 func Test_ubuckFlow(t *testing.T) {
 
@@ -761,7 +777,7 @@ func TestTrueAuctionFalse(t *testing.T) {
 
 	clock.TickOne(time.Second * 30)
 
-	_, err = placeBid(db, &clock, student1, timeId, 1)
+	_, err = placeBid(db, &clock, student1, timeId, 1, &NoopSSEService{})
 	require.Nil(t, err)
 
 	auctions, err = getTeacherAuctions(db, teacher)
@@ -815,7 +831,7 @@ func TestTrueAuctionTrue(t *testing.T) {
 
 	clock.TickOne(time.Second * 30)
 
-	_, err = placeBid(db, &clock, student1, timeId, 1)
+	_, err = placeBid(db, &clock, student1, timeId, 1, &NoopSSEService{})
 	require.Nil(t, err)
 
 	auctions, err = getTeacherAuctions(db, teacher)

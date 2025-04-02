@@ -654,6 +654,28 @@ paths:
       summary: auction bid
       tags:
       - Student
+  /auctions/all/events:
+    get:
+      description: Subscribe to SSE events for specific auctions. Client will receive real-time updates about changes to these auctions.
+      operationId: subscribeAuctionEvents
+      parameters:
+        - name: auction_ids
+          in: query
+          description: Comma-separated list of auction IDs to subscribe to
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSE stream established
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          description: Invalid auction IDs
+      tags:
+        - Staff
   /bucks/buck:
     delete:
       description: delete a buck. All accounts with that buck should first have value

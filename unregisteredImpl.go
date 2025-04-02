@@ -157,7 +157,7 @@ func RoleByAddCode(db *bolt.DB, code string, clock Clock) (role int32, pathId Pa
 						}
 
 						if clock.Now().After(endTime) {
-							return fmt.Errorf("Add code expired, ask your teacher to regenerate the add code")
+							return fmt.Errorf("add code expired, ask your teacher to regenerate the add code")
 						}
 						role = UserRoleStudent
 						pathId.schoolId = string(currentSchoolId)
