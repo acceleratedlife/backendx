@@ -7,7 +7,6 @@ on:
     branches: [ release ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -23,7 +22,8 @@ jobs:
         export CGO_ENABLED=0
         export GOOS=linux
         export GOARCH=amd64
-        go build -a -installsuffix cgo -ldflags="-w -s -X main.build_date=$GITHUB_SHA" -o out/backend ./...
+        mkdir -p out
+        go build -a -installsuffix cgo -ldflags="-w -s -X main.build_date=$GITHUB_SHA" -o out/backend .
 
     - name: Test
       run: go test -v ./...
