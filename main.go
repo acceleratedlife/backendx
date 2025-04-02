@@ -160,10 +160,14 @@ func (*AppClock) Now() time.Time {
 }
 
 func main() {
-
-	lgr.Printf("SB server started")
+	lgr.Printf("SB server started. Build: %s", build_date)
 
 	config := loadConfig()
+	lgr.Printf("Running in production mode: %v", config.Production)
+
+	// Add SSE initialization logging
+	sseService := NewSSEService()
+	lgr.Printf("SSE Service initialized")
 
 	db, err := bolt.Open("al.db", 0666, nil)
 	if err != nil {
@@ -218,8 +222,6 @@ func main() {
 
 	router.Use(buildAuthMiddleware(m))
 
-	// Add SSE endpoint
-	sseService := NewSSEService()
 	router.Handle("/events", sseService)
 
 	// Example of how to send events (you can call this from anywhere)
@@ -237,10 +239,12 @@ func main() {
 func createRouter(db *bolt.DB) (*mux.Router, *DemoClock) {
 	serverConfig := loadConfig()
 	if serverConfig.Production {
+		lgr.Printf("Creating production router")
 		clock := &AppClock{}
 		return createRouterClock(db, clock), nil
 	}
 
+	lgr.Printf("Creating development router")
 	clock := &DemoClock{}
 	return createRouterClock(db, clock), clock
 }
@@ -280,7 +284,7 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 		unregisteredApiController,
 		StudentApiController)
 
-	// Add SSE endpoint manually since it needs direct access to ResponseWriter
+	// Only keep the actual SSE endpoint that's being used
 	router.HandleFunc("/api/auctions/all/events", sseService.HandleAuctionEventsSSE)
 
 	return router
