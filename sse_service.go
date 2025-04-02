@@ -59,7 +59,8 @@ func (s *SSEService) BroadcastAuctionEvent(auctionID string, eventType string, d
 		lgr.Printf("[SSE] ERROR marshaling data: %v", err)
 		return
 	}
-	lgr.Printf("[SSE] Marshaled data length: %d bytes", len(jsonData))
+
+	lgr.Printf("[SSE] Raw message data being sent: %s", string(jsonData))
 
 	msg := &sse.Message{}
 	msg.Type = sse.Type(eventType)
