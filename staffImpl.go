@@ -843,7 +843,7 @@ func getAllAuctionsRx(tx *bolt.Tx, clock Clock, userDetails UserInfo) (resp []op
 			return
 		}
 
-		if clock.Now().After(auction.Id.Add(time.Hour * 24 * 2)) {
+		if clock.Now().After(auction.Id.Add(time.Hour * 24 * 7)) {
 			break
 		}
 

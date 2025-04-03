@@ -14,8 +14,9 @@ import (
 )
 
 type StudentApiServiceImpl struct {
-	db    *bolt.DB
-	clock Clock
+	db         *bolt.DB
+	clock      Clock
+	sseService SSEServiceInterface
 }
 
 func (a *StudentApiServiceImpl) BuyCD(ctx context.Context, CD_details openapi.RequestBuyCd) (openapi.ImplResponse, error) {
@@ -250,7 +251,7 @@ func (a *StudentApiServiceImpl) AuctionBid(ctx context.Context, body openapi.Req
 
 	var message string
 	err = a.db.Update(func(tx *bolt.Tx) error {
-		message, err = placeBidTx(tx, a.clock, userDetails, body.Item, int32(body.Bid))
+		message, err = a.placeBidTx(tx, a.clock, userDetails, body.Item, int32(body.Bid))
 		if err != nil {
 			return err
 		}
@@ -367,10 +368,6 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 
 			resp = append(resp, iAuction)
 		}
-	}
-
-	if err != nil {
-		return openapi.Response(400, err), nil
 	}
 
 	return openapi.Response(200, resp), nil
@@ -604,16 +601,22 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 
 }
 
-func placeBid(db *bolt.DB, clock Clock, userDetails UserInfo, item string, bid int32) (message string, err error) {
+func placeBid(db *bolt.DB, clock Clock, userDetails UserInfo, item string, bid int32, sseService SSEServiceInterface) (message string, err error) {
+	svc := &StudentApiServiceImpl{
+		db:         db,
+		clock:      clock,
+		sseService: sseService,
+	}
+
 	err = db.Update(func(tx *bolt.Tx) error {
-		message, err = placeBidTx(tx, clock, userDetails, item, bid)
+		message, err = svc.placeBidTx(tx, clock, userDetails, item, bid)
 		return err
 	})
 
 	return
 }
 
-func placeBidTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid int32) (message string, err error) {
+func (a *StudentApiServiceImpl) placeBidTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid int32) (message string, err error) {
 	school, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return message, err
@@ -667,6 +670,41 @@ func placeBidTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid
 		}
 
 		message = "You have been outbid"
+		// Trigger a broadcast for this specific auction
+		ownerDetails, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
+		if err != nil {
+			return message, err
+		}
+
+		winnerDetails, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
+		if err != nil {
+			return message, err
+		}
+
+		toBroadcast := openapi.UnifiedAuction{
+			Id:          auction.Id,
+			Active:      auction.Active,
+			Approved:    auction.Approved,
+			Approver:    auction.Approver,
+			Bid:         float32(auction.Bid),
+			Description: auction.Description,
+			EndDate:     auction.EndDate,
+			StartDate:   auction.StartDate,
+			TrueAuction: auction.TrueAuction,
+			Visibility:  visibilityToSliceRx(tx, userDetails, auction.Visibility),
+			OwnerId: openapi.UnifiedAuctionOwnerId{
+				Id:        ownerDetails.Email,
+				FirstName: ownerDetails.FirstName,
+				LastName:  ownerDetails.LastName,
+			},
+			WinnerId: openapi.UnifiedAuctionOwnerId{
+				Id:        winnerDetails.Email,
+				FirstName: winnerDetails.FirstName,
+				LastName:  winnerDetails.LastName,
+			},
+		}
+
+		a.broadcastAuctionEvent(item, toBroadcast)
 		return message, err
 	}
 
@@ -717,8 +755,47 @@ func placeBidTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, item string, bid
 		return message, err
 	}
 
+	ownerDetails, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
+	if err != nil {
+		return message, err
+	}
+
+	winnerDetails, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
+	if err != nil {
+		return message, err
+	}
+
+	toBroadcast := openapi.UnifiedAuction{
+		Id:          auction.Id,
+		Active:      auction.Active,
+		Approved:    auction.Approved,
+		Approver:    auction.Approver,
+		Bid:         float32(auction.Bid),
+		Description: auction.Description,
+		EndDate:     auction.EndDate,
+		StartDate:   auction.StartDate,
+		TrueAuction: auction.TrueAuction,
+		Visibility:  visibilityToSliceRx(tx, userDetails, auction.Visibility),
+		OwnerId: openapi.UnifiedAuctionOwnerId{
+			Id:        ownerDetails.Email,
+			FirstName: ownerDetails.FirstName,
+			LastName:  ownerDetails.LastName,
+		},
+		WinnerId: openapi.UnifiedAuctionOwnerId{
+			Id:        winnerDetails.Email,
+			FirstName: winnerDetails.FirstName,
+			LastName:  winnerDetails.LastName,
+		},
+	}
+
+	a.broadcastAuctionEvent(item, toBroadcast)
+
 	return
 
+}
+
+func (a *StudentApiServiceImpl) broadcastAuctionEvent(auctionID string, auction openapi.UnifiedAuction) {
+	a.sseService.BroadcastAuctionEvent(auctionID, "update", auction)
 }
 
 func repayLosertx(tx *bolt.Tx, clock Clock, winnerId string, amount int32, message string) (err error) {
@@ -734,9 +811,10 @@ func repayLosertx(tx *bolt.Tx, clock Clock, winnerId string, amount int32, messa
 	return
 }
 
-func NewStudentApiServiceImpl(db *bolt.DB, clock Clock) openapi.StudentApiServicer {
+func NewStudentApiServiceImpl(db *bolt.DB, clock Clock, sseService SSEServiceInterface) openapi.StudentApiServicer {
 	return &StudentApiServiceImpl{
-		db:    db,
-		clock: clock,
+		db:         db,
+		clock:      clock,
+		sseService: sseService,
 	}
 }

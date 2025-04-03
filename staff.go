@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -11,8 +12,9 @@ import (
 )
 
 type StaffApiServiceImpl struct {
-	db    *bolt.DB
-	clock Clock
+	db         *bolt.DB
+	clock      Clock
+	sseService SSEServiceInterface
 }
 
 func (s *StaffApiServiceImpl) SearchEvents(ctx context.Context) (openapi.ImplResponse, error) {
@@ -630,10 +632,11 @@ func (s *StaffApiServiceImpl) MarketItemRefund(ctx context.Context, body openapi
 }
 
 // NewStaffApiServiceImpl creates a default api service
-func NewStaffApiServiceImpl(db *bolt.DB, clock Clock) openapi.StaffApiServicer {
+func NewStaffApiServiceImpl(db *bolt.DB, clock Clock, sseService SSEServiceInterface) openapi.StaffApiServicer {
 	return &StaffApiServiceImpl{
-		db:    db,
-		clock: clock,
+		db:         db,
+		clock:      clock,
+		sseService: sseService,
 	}
 }
 
@@ -673,4 +676,16 @@ func visibilityToSliceRx(tx *bolt.Tx, userDetails UserInfo, classIds []string) (
 		}
 	}
 	return
+}
+
+// Add the new SSE-related method
+func (s *StaffApiServiceImpl) SubscribeAuctionEvents(ctx context.Context, auctionIDs string) (openapi.ImplResponse, error) {
+	// This will be called by the OpenAPI generated code
+	// We'll need to handle this differently since SSE requires direct access to ResponseWriter
+	return openapi.Response(200, nil), nil
+}
+
+// Add this method to handle SSE directly
+func (s *StaffApiServiceImpl) HandleAuctionEventsSSE(w http.ResponseWriter, r *http.Request) {
+	s.sseService.HandleAuctionEventsSSE(w, r)
 }

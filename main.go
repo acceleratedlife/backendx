@@ -160,10 +160,16 @@ func (*AppClock) Now() time.Time {
 }
 
 func main() {
-
-	lgr.Printf("SB server started")
+	lgr.Printf("SB server started. Build: %s", build_date)
 
 	config := loadConfig()
+	lgr.Printf("Running in production mode: %v", config.Production)
+
+	// Create SSE service once
+	lgr.Printf("[SSE] Initializing SSE service...")
+	sseService := NewSSEService()
+	lgr.Printf("[SSE] SSE Service initialized successfully")
+	lgr.Printf("[SSE] Server configuration: Production=%v, Port=%d", config.Production, config.ServerPort)
 
 	db, err := bolt.Open("al.db", 0666, nil)
 	if err != nil {
@@ -174,14 +180,12 @@ func main() {
 	runEveryMinute(db)
 	runEveryDay(db)
 
-	// ***
-
 	authService := initAuth(db, config)
 	authRoute, _ := authService.Handlers()
 	m := authService.Middleware()
 
 	// *** auth
-	router, clock := createRouter(db)
+	router, clock := createRouter(db, sseService) // Pass sseService to createRouter
 	router.Handle("/auth/al/login", authRoute)
 	router.Handle("/auth/al/logout", authRoute)
 
@@ -218,27 +222,36 @@ func main() {
 
 	router.Use(buildAuthMiddleware(m))
 
+	// Example of how to send events (you can call this from anywhere)
+	// This is an example of how to send events (you can call this from anywhere)
+	// sseService.BroadcastAuctionEvent("update", map[string]interface{}{
+	//     "message": "Something happened!",
+	//     "timestamp": time.Now(),
+	// })
+
 	addr := fmt.Sprintf(":%d", config.ServerPort)
 	log.Fatal(http.ListenAndServe(addr, router))
 
 }
 
 // creates routes for prod
-func createRouter(db *bolt.DB) (*mux.Router, *DemoClock) {
+func createRouter(db *bolt.DB, sseService SSEServiceInterface) (*mux.Router, *DemoClock) {
 	serverConfig := loadConfig()
 	if serverConfig.Production {
+		lgr.Printf("Creating production router")
 		clock := &AppClock{}
-		return createRouterClock(db, clock), nil
+		return createRouterClock(db, clock, sseService), nil
 	}
 
+	lgr.Printf("Creating development router")
 	clock := &DemoClock{}
-	return createRouterClock(db, clock), clock
+	return createRouterClock(db, clock, sseService), clock
 }
 
-func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
-
-	StudentApiServiceImpl := NewStudentApiServiceImpl(db, clock)
-	StudentApiController := openapi.NewStudentApiController(StudentApiServiceImpl)
+func createRouterClock(db *bolt.DB, clock Clock, sseService SSEServiceInterface) *mux.Router {
+	// Pass sseService to StudentApiServiceImpl
+	studentService := NewStudentApiServiceImpl(db, clock, sseService)
+	StudentApiController := openapi.NewStudentApiController(studentService)
 
 	SchoolAdminApiService := NewSchoolAdminServiceImpl(db, clock)
 	SchoolAdminApiController := openapi.NewSchoolAdminApiController(SchoolAdminApiService)
@@ -256,10 +269,10 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 	allSchoolApiServiceImpl := NewAllSchoolApiServiceImpl(db, clock)
 	schoolApiController := openapi.NewAllSchoolApiController(allSchoolApiServiceImpl)
 
-	staffApiServiceImpl := NewStaffApiServiceImpl(db, clock)
+	staffApiServiceImpl := NewStaffApiServiceImpl(db, clock, sseService)
 	staffApiController := openapi.NewStaffApiController(staffApiServiceImpl)
 
-	return openapi.NewRouter(SchoolAdminApiController,
+	router := openapi.NewRouter(SchoolAdminApiController,
 		allController,
 		sysAdminCtrl,
 		schoolApiController,
@@ -267,6 +280,10 @@ func createRouterClock(db *bolt.DB, clock Clock) *mux.Router {
 		unregisteredApiController,
 		StudentApiController)
 
+	// Only keep the actual SSE endpoint that's being used
+	router.HandleFunc("/api/auctions/all/events", sseService.HandleAuctionEventsSSE)
+
+	return router
 }
 
 func InitDefaultAccounts(db *bolt.DB, clock Clock) {

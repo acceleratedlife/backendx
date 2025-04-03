@@ -7,7 +7,6 @@ on:
     branches: [ release ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -16,10 +15,16 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.19
+        go-version: '1.21'
 
     - name: Build
-      run: go build -ldflags "-X main.build_date=$GITHUB_SHA" -o out/ -v ./...
+      run: |
+        export CGO_ENABLED=0
+        export GOOS=linux
+        export GOARCH=amd64
+        mkdir -p out
+        # Add production flag to the build
+        go build -a -installsuffix cgo -ldflags="-w -s -X main.build_date=$GITHUB_SHA -X main.production=true" -o out/backend .
 
     - name: Test
       run: go test -v ./...
@@ -32,8 +37,24 @@ jobs:
         username: ${{ secrets.USER }}
         passphrase: ${{ secrets.PASS }}
         key: ${{ secrets.KEY }}
-        source: "out/backend"
+        source: "out/backend,alcfg.yml"  # Include config file
         target: ${{ secrets.PROD_TARGET }}
+
+    # Add a step to verify deployment
+    - name: verify-deployment
+      if: ${{ github.ref == 'refs/heads/release' }}
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        passphrase: ${{ secrets.PASS }}
+        key: ${{ secrets.KEY }}
+        script: |
+          cd ${{ secrets.PROD_TARGET }}
+          ./backend -version || true
+          ps aux | grep backend
+          # Check logs for SSE initialization
+          tail -n 50 backend.log || true
 
     - name: executing remote ssh commands using ssh key
       if: ${{ github.ref == 'refs/heads/release' }}
