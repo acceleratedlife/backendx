@@ -691,7 +691,7 @@ func (a *StudentApiServiceImpl) placeBidTx(tx *bolt.Tx, clock Clock, userDetails
 			EndDate:     auction.EndDate,
 			StartDate:   auction.StartDate,
 			TrueAuction: auction.TrueAuction,
-			Visibility:  auction.Visibility,
+			Visibility:  visibilityToSliceRx(tx, userDetails, auction.Visibility),
 			OwnerId: openapi.UnifiedAuctionOwnerId{
 				Id:        ownerDetails.Email,
 				FirstName: ownerDetails.FirstName,
@@ -775,7 +775,7 @@ func (a *StudentApiServiceImpl) placeBidTx(tx *bolt.Tx, clock Clock, userDetails
 		EndDate:     auction.EndDate,
 		StartDate:   auction.StartDate,
 		TrueAuction: auction.TrueAuction,
-		Visibility:  auction.Visibility,
+		Visibility:  visibilityToSliceRx(tx, userDetails, auction.Visibility),
 		OwnerId: openapi.UnifiedAuctionOwnerId{
 			Id:        ownerDetails.Email,
 			FirstName: ownerDetails.FirstName,
