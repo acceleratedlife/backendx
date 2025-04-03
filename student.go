@@ -657,94 +657,36 @@ func (a *StudentApiServiceImpl) placeBidTx(tx *bolt.Tx, clock Clock, userDetails
 		return message, fmt.Errorf("failed to outbid, try refreshing")
 	}
 
+	// Handle different bid scenarios
 	if bid < auction.MaxBid {
 		auction.Bid = bid + 1
-		marshal, err := json.Marshal(auction)
-		if err != nil {
-			return message, err
-		}
-
-		err = auctions.Put([]byte(item), marshal)
-		if err != nil {
-			return message, err
-		}
-
 		message = "You have been outbid"
-		// Trigger a broadcast for this specific auction
-		ownerDetails, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
-		if err != nil {
-			return message, err
-		}
-
-		winnerDetails, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
-		if err != nil {
-			return message, err
-		}
-
-		toBroadcast := openapi.UnifiedAuction{
-			Id:          auction.Id,
-			Active:      auction.Active,
-			Approved:    auction.Approved,
-			Approver:    auction.Approver,
-			Bid:         float32(auction.Bid),
-			Description: auction.Description,
-			EndDate:     auction.EndDate,
-			StartDate:   auction.StartDate,
-			TrueAuction: auction.TrueAuction,
-			Visibility:  visibilityToSliceRx(tx, userDetails, auction.Visibility),
-			OwnerId: openapi.UnifiedAuctionOwnerId{
-				Id:        ownerDetails.Email,
-				FirstName: ownerDetails.FirstName,
-				LastName:  ownerDetails.LastName,
-			},
-			WinnerId: openapi.UnifiedAuctionOwnerId{
-				Id:        winnerDetails.Email,
-				FirstName: winnerDetails.FirstName,
-				LastName:  winnerDetails.LastName,
-			},
-		}
-
-		a.broadcastAuctionEvent(item, toBroadcast)
-		return message, err
-	}
-
-	if bid == auction.MaxBid {
+	} else if bid == auction.MaxBid {
 		auction.Bid = auction.MaxBid
-		marshal, err := json.Marshal(auction)
-		if err != nil {
-			return message, err
-		}
-
-		err = auctions.Put([]byte(item), marshal)
-		if err != nil {
-			return message, err
-		}
-
 		message = "You have not outbid the MaxBid"
-		return message, err
-	}
-
-	err = chargeStudentUbuckTx(tx, clock, userDetails, decimal.NewFromInt32(bid), "Auction Bid "+item, true)
-	if err != nil {
-		return message, err
-	}
-
-	if auction.WinnerId.Id != "" {
-		err = repayLosertx(tx, clock, auction.WinnerId.Id, auction.MaxBid, "Auction Refund "+item)
+	} else {
+		err = chargeStudentUbuckTx(tx, clock, userDetails, decimal.NewFromInt32(bid), "Auction Bid "+item, true)
 		if err != nil {
 			return message, err
 		}
 
+		if auction.WinnerId.Id != "" {
+			err = repayLosertx(tx, clock, auction.WinnerId.Id, auction.MaxBid, "Auction Refund "+item)
+			if err != nil {
+				return message, err
+			}
+		}
+
+		auction.Bid = auction.MaxBid + 1
+		auction.MaxBid = int32(bid)
+		auction.WinnerId.Id = userDetails.Name
+
+		if auction.TrueAuction && time.Until(auction.EndDate) < time.Minute {
+			auction.EndDate = auction.EndDate.Add(time.Minute * 2)
+		}
 	}
 
-	auction.Bid = auction.MaxBid + 1
-	auction.MaxBid = int32(bid)
-	auction.WinnerId.Id = userDetails.Name
-
-	if auction.TrueAuction && time.Until(auction.EndDate) < time.Minute {
-		auction.EndDate = auction.EndDate.Add(time.Minute * 2)
-	}
-
+	// Save updated auction
 	marshal, err := json.Marshal(auction)
 	if err != nil {
 		return message, err
@@ -755,6 +697,7 @@ func (a *StudentApiServiceImpl) placeBidTx(tx *bolt.Tx, clock Clock, userDetails
 		return message, err
 	}
 
+	// Broadcast update
 	ownerDetails, err := getUserInLocalStoreTx(tx, auction.OwnerId.Id)
 	if err != nil {
 		return message, err
@@ -791,7 +734,6 @@ func (a *StudentApiServiceImpl) placeBidTx(tx *bolt.Tx, clock Clock, userDetails
 	a.broadcastAuctionEvent(item, toBroadcast)
 
 	return
-
 }
 
 func (a *StudentApiServiceImpl) broadcastAuctionEvent(auctionID string, auction openapi.UnifiedAuction) {
