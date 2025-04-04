@@ -596,13 +596,31 @@ func (a *AllApiServiceImpl) UserEdit(ctx context.Context, body openapi.RequestUs
 		}), nil
 	}
 
+	editDetails, err := getUserInLocalStore(a.db, body.Email)
+	if err != nil {
+		return openapi.Response(404, nil), err
+	}
+
+	if userDetails.Email != body.Email { //someone trying to edit someone else
+		if userDetails.Role == UserRoleStudent { //this must not be a student
+			return openapi.Response(401, ""), fmt.Errorf("students cannot edit other users")
+		}
+		if userDetails.Role == editDetails.Role { //teacher trying to edit other teacher or admin trying to edit other admin
+			return openapi.Response(401, ""), fmt.Errorf("you are staff but you can't edit someone else with your same status")
+		}
+		userDetails, err = getUserInLocalStore(a.db, body.Email)
+		if err != nil {
+			return openapi.Response(404, nil), err
+		}
+	}
+
 	err = userEdit(a.db, a.clock, userDetails, body)
 
 	if err != nil {
 		return openapi.Response(500, nil), err
 	}
 
-	userDetails, err = getUserInLocalStore(a.db, userData.Name)
+	userDetails, err = getUserInLocalStore(a.db, body.Email)
 	if err != nil {
 		return openapi.Response(500, nil), err
 	}
