@@ -574,6 +574,64 @@ func TestAuctionApprove(t *testing.T) {
 
 }
 
+func TestAdminResetTeacherPassword(t *testing.T) {
+	db, tearDown := FullStartTestServer("adminResetTeacherPassword", 8088, "")
+	defer tearDown()
+
+	admins, _, teachers, _, _, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	SetTestLoginUser(admins[0])
+
+	client := &http.Client{}
+	body := openapi.RequestUser{
+		Id: teachers[0],
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8088/api/users/resetPassword",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var data openapi.ResponseResetPassword
+	decoder := json.NewDecoder(resp.Body)
+	_ = decoder.Decode(&data)
+
+	require.GreaterOrEqual(t, len(data.Password), 6)
+}
+
+func TestResetPasswordTeacher(t *testing.T) {
+	db, tearDown := FullStartTestServer("resetPasswordTeacher", 8088, "")
+	defer tearDown()
+
+	_, _, teachers, _, _, _ := CreateTestAccounts(db, 2, 2, 2, 2)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+	body := openapi.RequestUser{
+		Id: teachers[1],
+	}
+
+	marshal, _ := json.Marshal(body)
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"http://127.0.0.1:8088/api/users/resetPassword",
+		bytes.NewBuffer(marshal))
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 401, resp.StatusCode)
+}
+
 func TestAuctionReject(t *testing.T) {
 	clock := TestClock{}
 	db, tearDown := FullStartTestServer("auctionReject", 8088, "")

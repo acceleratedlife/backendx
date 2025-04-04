@@ -404,17 +404,20 @@ func (s *StaffApiServiceImpl) ResetPassword(ctx context.Context, body openapi.Re
 		}), nil
 	}
 	if userDetails.Role == UserRoleStudent {
-		return openapi.Response(401, ""), nil
+		return openapi.Response(401, ""), fmt.Errorf("students cannot reset others passwords")
 	}
 
-	studentDetails, err := getUserInLocalStore(s.db, body.Id)
+	editDetails, err := getUserInLocalStore(s.db, body.Id)
 	if err != nil {
 		return openapi.Response(400, ""), err
+	}
+	if userDetails.Role == editDetails.Role {
+		return openapi.Response(401, ""), fmt.Errorf("you are staff but you can't edit someone else with your same status")
 	}
 
 	var resp openapi.ResponseResetPassword
 	err = s.db.Update(func(tx *bolt.Tx) error {
-		resp, err = resetPasswordTx(tx, studentDetails, 1)
+		resp, err = resetPasswordTx(tx, editDetails, 1)
 		return err
 	})
 
