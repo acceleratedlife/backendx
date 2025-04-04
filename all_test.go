@@ -176,6 +176,7 @@ func TestUserEdit(t *testing.T) {
 		FirstName:        "test",
 		LastName:         "user",
 		Password:         "123qwe",
+		Email:            students[0],
 		College:          true,
 		CareerTransition: true,
 	}
@@ -218,6 +219,7 @@ func TestUserEditStaff(t *testing.T) {
 		FirstName:        "test",
 		LastName:         "user",
 		Password:         "123qwe",
+		Email:            teachers[0],
 		College:          false,
 		CareerTransition: false,
 	}
@@ -240,6 +242,96 @@ func TestUserEditStaff(t *testing.T) {
 	assert.Equal(t, body.College, v.College)
 	assert.Equal(t, body.CareerTransition, v.CareerTransition)
 }
+func TestStudentEditOtherStudent(t *testing.T) {
+	db, tearDown := FullStartTestServer("studentEditOtherStudent", 8088, "test@admin.com")
+	defer tearDown()
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+
+	body := openapi.RequestUserEdit{
+		FirstName:        "test",
+		LastName:         "user",
+		Password:         "123qwe",
+		Email:            students[1],
+		College:          true,
+		CareerTransition: true,
+	}
+
+	marshal, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/users/user", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 401, resp.StatusCode, "Expected forbidden status code")
+}
+
+func TestAdminEditTeacher(t *testing.T) {
+	db, tearDown := FullStartTestServer("adminEditTeacher", 8088, "test@admin.com")
+	defer tearDown()
+	admins, _, teachers, _, _, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(admins[0])
+
+	client := &http.Client{}
+
+	body := openapi.RequestUserEdit{
+		FirstName: "edited",
+		LastName:  "teacher",
+		Email:     teachers[0],
+	}
+
+	marshal, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/users/user", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+	var v openapi.User
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&v)
+	require.Nil(t, err)
+
+	assert.Equal(t, body.FirstName, v.FirstName)
+	assert.Equal(t, body.LastName, v.LastName)
+	assert.Equal(t, body.College, v.College)
+	assert.Equal(t, body.CareerTransition, v.CareerTransition)
+}
+
+func TestTeacherEditOtherTeacher(t *testing.T) {
+	db, tearDown := FullStartTestServer("teacherEditOtherTeacher", 8088, "test@admin.com")
+	defer tearDown()
+	_, _, teachers, _, _, err := CreateTestAccounts(db, 1, 2, 2, 2)
+	require.Nil(t, err)
+
+	SetTestLoginUser(teachers[0])
+
+	client := &http.Client{}
+
+	body := openapi.RequestUserEdit{
+		FirstName:        "test",
+		LastName:         "user",
+		Password:         "123qwe",
+		Email:            teachers[1],
+		College:          true,
+		CareerTransition: true,
+	}
+
+	marshal, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/users/user", bytes.NewBuffer(marshal))
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 401, resp.StatusCode, "Expected forbidden status code")
+}
 
 func TestUserEditNegative(t *testing.T) {
 	db, tearDown := FullStartTestServer("userEditNegative", 8088, "test@admin.com")
@@ -257,6 +349,7 @@ func TestUserEditNegative(t *testing.T) {
 		FirstName:        "test",
 		LastName:         "user",
 		Password:         "123qwe",
+		Email:            students[0],
 		College:          true,
 		CareerTransition: false,
 	}
