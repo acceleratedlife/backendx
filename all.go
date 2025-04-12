@@ -305,7 +305,7 @@ func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.Req
 		}
 
 		if body.Amount > 0 {
-			err = garnishHelper(s.db, s.clock, body, false)
+			_, err = garnishHelper(s.db, s.clock, body, false)
 			if err != nil {
 				return openapi.Response(400, ""), err
 			}
@@ -316,7 +316,7 @@ func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.Req
 			return openapi.Response(400, ""), err
 		}
 		if body.Amount > 0 {
-			err = garnishHelper(s.db, s.clock, body, true)
+			_, err = garnishHelper(s.db, s.clock, body, true)
 			if err != nil {
 				return openapi.Response(400, ""), err
 			}
@@ -328,7 +328,7 @@ func (s *AllApiServiceImpl) PayTransaction(ctx context.Context, body openapi.Req
 			return openapi.Response(400, ""), err
 		}
 		if body.Amount > 0 {
-			err = garnishHelper(s.db, s.clock, body, true)
+			_, err = garnishHelper(s.db, s.clock, body, true)
 			if err != nil {
 				return openapi.Response(400, ""), err
 			}
