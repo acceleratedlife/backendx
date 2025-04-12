@@ -1057,7 +1057,7 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 			}
 
 			if change.IsZero() {
-				return fmt.Errorf("The event returned zero. schoolsNetworth() has probably never ran")
+				return fmt.Errorf("the event returned zero. schoolsNetworth() has probably never ran")
 			}
 
 			if change.IsPositive() {
@@ -1070,15 +1070,26 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 					Student: userDetails.Name,
 					Amount:  float32(change.InexactFloat64()),
 				}
-				err = garnishHelperTx(tx, clock, garnishBody, false)
+				garnish, err := garnishHelperTx(tx, clock, garnishBody, false)
+				if err != nil {
+					return err
+				}
+
+				err = modifyNetWorthTx(tx, clock, userDetails, change.Sub(garnish))
+				if err != nil {
+					return err
+				}
 			} else {
 				err = chargeStudentUbuckTx(tx, clock, userDetails, change.Abs(), "Event: "+getEventIdRx(tx, KeyNEvents), false)
-			}
+				if err != nil {
+					return err
+				}
 
-			if err != nil {
-				return err
+				err = modifyNetWorthTx(tx, clock, userDetails, change)
+				if err != nil {
+					return err
+				}
 			}
-
 		}
 
 		return err
@@ -1090,6 +1101,35 @@ func EventIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo) bool {
 		return false
 	}
 	return needToAdd
+}
+
+func modifyNetWorthTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, change decimal.Decimal) error {
+	usersBucket := tx.Bucket([]byte(KeyUsers))
+	if usersBucket == nil {
+		return fmt.Errorf("cannot find users bucket")
+	}
+
+	userData := usersBucket.Get([]byte(userDetails.Name))
+	if userData == nil {
+		return fmt.Errorf("cannot find user")
+	}
+
+	var user UserInfo
+	err := json.Unmarshal(userData, &user)
+	if err != nil {
+		return err
+	}
+
+	user.NetWorth = float32(decimal.NewFromFloat32(user.NetWorth).Add(change).InexactFloat64())
+	marshal, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+
+	err = usersBucket.Put([]byte(userDetails.Name), marshal)
+
+	return err
+
 }
 
 func getEventDescription(db *bolt.DB, typeKey string, idKey string) (description string) {
@@ -2358,7 +2398,7 @@ func cryptoToUbuck(tx *bolt.Tx, clock Clock, userInfo UserInfo, amount decimal.D
 		Student: userInfo.Name,
 	}
 
-	err = garnishHelperTx(tx, clock, garnishBody, false)
+	_, err = garnishHelperTx(tx, clock, garnishBody, false)
 
 	return
 }
@@ -2549,7 +2589,7 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 					Student: studentDetails.Name,
 				}
 
-				err = garnishHelperTx(tx, clock, garnishBody, false)
+				_, err = garnishHelperTx(tx, clock, garnishBody, false)
 				if err != nil {
 					return err
 				}
