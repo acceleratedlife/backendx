@@ -380,7 +380,7 @@ func (s *StaffApiServiceImpl) PayTransactions(ctx context.Context, body openapi.
 				Amount:  body.Amount,
 				Student: student,
 			}
-			err = garnishHelper(s.db, s.clock, garnishBody, true)
+			_, err = garnishHelper(s.db, s.clock, garnishBody, true)
 			if err != nil {
 				errors = append(errors, openapi.ResponsePayTransactions{
 					Message: student + " had a garnish error: " + err.Error(),

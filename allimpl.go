@@ -448,13 +448,16 @@ func executeTransaction(db *bolt.DB, clock Clock, value float32, student, owner,
 	return nil
 }
 
-func garnishHelper(db *bolt.DB, clock Clock, body openapi.RequestPayTransaction, isStaff bool) (err error) {
-	return db.Update(func(tx *bolt.Tx) error {
-		return garnishHelperTx(tx, clock, body, isStaff)
+func garnishHelper(db *bolt.DB, clock Clock, body openapi.RequestPayTransaction, isStaff bool) (garnish decimal.Decimal, err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		garnish, err = garnishHelperTx(tx, clock, body, isStaff)
+		return err
 	})
+
+	return
 }
 
-func garnishHelperTx(tx *bolt.Tx, clock Clock, body openapi.RequestPayTransaction, isStaff bool) (err error) {
+func garnishHelperTx(tx *bolt.Tx, clock Clock, body openapi.RequestPayTransaction, isStaff bool) (garnish decimal.Decimal, err error) {
 	student, err := getStudentBucketTx(tx, body.Student)
 	if err != nil {
 		return
@@ -466,10 +469,10 @@ func garnishHelperTx(tx *bolt.Tx, clock Clock, body openapi.RequestPayTransactio
 	}
 
 	if !balance.GreaterThan(decimal.Zero) {
-		return nil
+		return
 	}
 
-	garnish := decimal.NewFromFloat32(body.Amount).Mul(decimal.NewFromFloat32(KeyGarnish))
+	garnish = decimal.NewFromFloat32(body.Amount).Mul(decimal.NewFromFloat32(KeyGarnish))
 	userDetails, err := getUserInLocalStoreTx(tx, body.Student)
 	if err != nil {
 		return
