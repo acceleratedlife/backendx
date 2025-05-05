@@ -115,7 +115,7 @@ const (
 	KeyTax5                 = .35
 	KeyTax6                 = .37
 	Key_lower_percentile    = .05
-	KeyGarnish              = .5
+	KeyGarnish              = .75
 )
 
 var build_date string
