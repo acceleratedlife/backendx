@@ -1172,7 +1172,7 @@ func TestRefundCDWithDebtGreaterThan(t *testing.T) {
 	ubucksPost, err := getStudentUbuck(db, student)
 	require.Nil(t, err)
 	//this line will have to change for next term when I make it garnish 100% of a CD
-	require.Equal(t, float32(45), ubucksPost.Value-ubucksPre.Value)
+	require.Equal(t, float32(body.PrinInv)*.90*(1-KeyGarnish), ubucksPost.Value-ubucksPre.Value)
 
 }
 
