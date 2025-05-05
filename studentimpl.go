@@ -2978,9 +2978,9 @@ func refundCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, CD_id string) (err 
 	//in this case you will not have enough to eliminate debt so you just subtract cd value from debt
 	//starting here is temportary request
 	//delete starting from here
-	half := CD.RefundValue.Mul(decimal.NewFromFloat32(KeyGarnish))
-	transaction.AmountSource = half
-	transaction.AmountDest = half
+	remainder := CD.RefundValue.Mul(decimal.NewFromFloat32(1 - KeyGarnish))
+	transaction.AmountSource = remainder
+	transaction.AmountDest = remainder
 	err = refundCDHelperTx(student, cb, transaction, OperationCredit, CD, CD_id)
 	if err != nil {
 		return
@@ -2988,8 +2988,8 @@ func refundCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, CD_id string) (err 
 	//temp request, delete all the way to here
 
 	transaction.CurrencyDest = KeyDebt
-	transaction.AmountDest = transaction.AmountDest.Neg()
-	transaction.Reference += ": garnished"
+	transaction.AmountDest = CD.RefundValue.Mul(decimal.NewFromFloat32(KeyGarnish)).Neg()
+	transaction.Reference += ": garnished " + strconv.Itoa(KeyGarnish*100) + "%"
 
 	err = refundCDHelperTx(student, cb, transaction, OperationCredit, CD, CD_id)
 

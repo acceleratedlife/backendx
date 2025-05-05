@@ -694,7 +694,22 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 				}
 			}
 
-			addUbuck2StudentTx(tx, clock, sellerDetails, decimal.NewFromInt32(auction.Bid).Mul(decimal.NewFromFloat32(.99)), "Auction sold: "+strconv.Itoa(auction.EndDate.Minute()))
+			if sellerDetails.Role == UserRoleStudent {
+				garnish, err := garnishHelperTx(tx, clock, openapi.RequestPayTransaction{
+					Amount:  float32(auction.Bid),
+					Student: sellerDetails.Name,
+				}, false)
+
+				if err != nil {
+					return err
+				}
+
+				err = addUbuck2StudentTx(tx, clock, sellerDetails, decimal.NewFromInt32(auction.Bid).Sub(garnish).Mul(decimal.NewFromFloat32(.99)), "Auction sold: "+strconv.Itoa(auction.EndDate.Minute()))
+
+				if err != nil {
+					return err
+				}
+			}
 
 		} else { // over and has no winner
 			err = auctionsBucket.Delete([]byte(Id))
