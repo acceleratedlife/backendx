@@ -3039,7 +3039,7 @@ func CDSumTx(tx *bolt.Tx, account *bolt.Bucket) (sum decimal.Decimal) {
 		_ = json.Unmarshal(v, &deposit)
 
 		if deposit.Active {
-			sum = sum.Add(deposit.RefundValue)
+			sum = sum.Add(deposit.RefundValue) //I may consider this to use current value instead, the kids abuse the growth rate vs interest rate on debt
 		}
 
 	}

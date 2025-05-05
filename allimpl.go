@@ -695,8 +695,14 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 			}
 
 			if sellerDetails.Role == UserRoleStudent {
-				garnish, err := garnishHelperTx(tx, clock, openapi.RequestPayTransaction{
-					Amount:  float32(auction.Bid),
+				err = addUbuck2StudentTx(tx, clock, sellerDetails, decimal.NewFromInt32(auction.Bid).Mul(decimal.NewFromFloat32(.99)), "Auction sold: "+strconv.Itoa(auction.EndDate.Minute()))
+
+				if err != nil {
+					return err
+				}
+
+				_, err := garnishHelperTx(tx, clock, openapi.RequestPayTransaction{
+					Amount:  float32(auction.Bid) * .99,
 					Student: sellerDetails.Name,
 				}, false)
 
@@ -704,11 +710,6 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 					return err
 				}
 
-				err = addUbuck2StudentTx(tx, clock, sellerDetails, decimal.NewFromInt32(auction.Bid).Sub(garnish).Mul(decimal.NewFromFloat32(.99)), "Auction sold: "+strconv.Itoa(auction.EndDate.Minute()))
-
-				if err != nil {
-					return err
-				}
 			}
 
 		} else { // over and has no winner
