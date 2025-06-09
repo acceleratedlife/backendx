@@ -507,7 +507,7 @@ func executeStudentTransaction(db *bolt.DB, clock Clock, value float32, student 
 		return err
 	}
 
-	if decimal.NewFromFloat32(ubucks.Value).LessThan(amount.Mul(decimal.NewFromFloat32(1.01))) {
+	if decimal.NewFromFloat32(ubucks.Value).LessThan(amount.Mul(decimal.NewFromFloat32(keyCharge))) {
 		return fmt.Errorf("hey kid you don't have that much Ubucks, don't forget about 1%% charge")
 	}
 
@@ -546,7 +546,7 @@ func studentPayStudentTx(tx *bolt.Tx, clock Clock, amount decimal.Decimal, recie
 		Destination:    reciever.Name,
 		CurrencySource: CurrencyUBuck,
 		CurrencyDest:   CurrencyUBuck,
-		AmountSource:   amount.Mul(decimal.NewFromFloat32(1.01)),
+		AmountSource:   amount.Mul(decimal.NewFromFloat32(keyCharge)),
 		AmountDest:     amount,
 		XRate:          decimal.NewFromFloat32(1.0),
 		Reference:      description,

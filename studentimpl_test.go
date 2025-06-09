@@ -1075,7 +1075,7 @@ func TestRefundCDFunction(t *testing.T) {
 
 	netWorth := StudentNetWorth(db, student.Email)
 
-	require.True(t, netWorth.Equal(decimal.NewFromInt32(450)))
+	require.True(t, netWorth.Equal(decimal.NewFromInt32(500*.75))) //.75 is early refund rate
 
 }
 
@@ -1172,7 +1172,7 @@ func TestRefundCDWithDebtGreaterThan(t *testing.T) {
 	ubucksPost, err := getStudentUbuck(db, student)
 	require.Nil(t, err)
 	//this line will have to change for next term when I make it garnish 100% of a CD
-	require.Equal(t, float32(body.PrinInv)*.90*(1-KeyGarnish), ubucksPost.Value-ubucksPre.Value)
+	require.Equal(t, float32(body.PrinInv)*.75*(1-KeyGarnish), ubucksPost.Value-ubucksPre.Value) //.75 is early refund rate
 
 }
 
@@ -1231,7 +1231,7 @@ func TestCDWithTimeChanges(t *testing.T) {
 
 	netWorth := StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 477 && netWorth < 478)
+	require.True(t, netWorth > 386 && netWorth < 387)
 
 	clock.TickOne(time.Hour * 24 * 7)
 
@@ -1239,7 +1239,7 @@ func TestCDWithTimeChanges(t *testing.T) {
 
 	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 572 && netWorth < 573)
+	require.True(t, netWorth > 444 && netWorth < 445)
 
 	clock.TickOne(time.Hour * 24 * 16)
 
@@ -1247,7 +1247,7 @@ func TestCDWithTimeChanges(t *testing.T) {
 
 	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 875 && netWorth < 876)
+	require.True(t, netWorth > 618 && netWorth < 619)
 
 	clock.TickOne(time.Hour * 24 * 30)
 
@@ -1255,7 +1255,7 @@ func TestCDWithTimeChanges(t *testing.T) {
 
 	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 2032 && netWorth < 2303)
+	require.True(t, netWorth > 1257 && netWorth < 1258)
 
 	clock.TickOne(time.Hour * 24 * 30)
 
@@ -1263,7 +1263,7 @@ func TestCDWithTimeChanges(t *testing.T) {
 
 	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 8453 && netWorth < 8454)
+	require.True(t, netWorth > 3449 && netWorth < 3450)
 
 	clock.TickOne(time.Hour * 24 * 30)
 
@@ -1271,7 +1271,7 @@ func TestCDWithTimeChanges(t *testing.T) {
 	require.True(t, needed)
 	netWorth = StudentNetWorth(db, student.Email).InexactFloat64()
 
-	require.True(t, netWorth > 9606 && netWorth < 9607)
+	require.True(t, netWorth > 4400 && netWorth < 4401)
 
 	needed = DailyPayIfNeeded(db, &clock, student)
 	require.True(t, needed)

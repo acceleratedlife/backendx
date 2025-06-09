@@ -93,7 +93,7 @@ const (
 	KeyPayFrequency         = "payFrequency"
 	KeyRegEnd               = "regEnd"
 	KeyCoins                = "ethereum,cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba-inu,dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
-	LoanRate                = 1.015
+	LoanRate                = 1.0175
 	KeyMarket               = "market"
 	KeyMarketData           = "marketData"
 	KeyBuyers               = "buyers"
@@ -116,6 +116,12 @@ const (
 	KeyTax6                 = .37
 	Key_lower_percentile    = .05
 	KeyGarnish              = .75
+	KeyInterest7            = 1.005
+	KeyInterest14           = 1.01
+	KeyInterest30           = 1.02
+	KeyInterest60           = 1.03
+	KeyInterest90           = 1.04
+	KeyEarlyRefund          = .75
 )
 
 var build_date string

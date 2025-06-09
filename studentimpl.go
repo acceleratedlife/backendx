@@ -572,15 +572,15 @@ func CertificateOfDepositIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo
 				continue
 			}
 
-			if deposit.Maturity.Before(clock.Now()) {
+			if deposit.Maturity.Before(clock.Now()) { //CD has reached full maturity
 				deposit.CurrentValue = decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(deposit.Interest).Pow(decimal.NewFromInt(InterestToTime(deposit.Interest))))
 				deposit.RefundValue = deposit.CurrentValue
-			} else {
+			} else { // CD has not reached full maturity
 				diff := clock.Now().Sub(deposit.Ts)
 				days := math.Floor(diff.Hours() / 24)
 				deposit.CurrentValue = decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(deposit.Interest).Pow(decimal.NewFromFloat(days)))
 				interest := timeToInterest(int32(days))
-				deposit.RefundValue = (decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(interest).Pow(decimal.NewFromFloat(days)))).Mul(decimal.NewFromFloat32(.9))
+				deposit.RefundValue = (decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(interest).Pow(decimal.NewFromFloat(days)))).Mul(decimal.NewFromFloat32(KeyEarlyRefund))
 			}
 
 			data, err := json.Marshal(deposit)
@@ -2641,18 +2641,18 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 
 func timeToInterest(time int32) float32 {
 	if time <= 7 {
-		return 1.01
+		return KeyInterest7
 	}
 	if time <= 14 {
-		return 1.02
+		return KeyInterest14
 	}
 	if time <= 30 {
-		return 1.03
+		return KeyInterest30
 	}
 	if time <= 60 {
-		return 1.04
+		return KeyInterest60
 	}
-	return 1.05
+	return KeyInterest90
 }
 
 func buyCD(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestBuyCd) (err error) {
@@ -2694,7 +2694,7 @@ func buyCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, body openapi.RequestBu
 		Ts:           ts,
 		Principal:    body.PrinInv,
 		CurrentValue: prinInv,
-		RefundValue:  prinInv.Mul(decimal.NewFromFloat32(.9)),
+		RefundValue:  prinInv.Mul(decimal.NewFromFloat32(KeyEarlyRefund)),
 		Interest:     timeToInterest(body.Time),
 		Maturity:     mature,
 		Active:       true,
@@ -2856,16 +2856,16 @@ func getCDTransactionsRx(tx *bolt.Tx, userInfo UserInfo) (resp []openapi.Respons
 }
 
 func InterestToTime(interest float32) int64 {
-	if interest == 1.01 {
+	if interest == KeyInterest7 {
 		return 7
 	}
-	if interest == 1.02 {
+	if interest == KeyInterest14 {
 		return 14
 	}
-	if interest == 1.03 {
+	if interest == KeyInterest30 {
 		return 30
 	}
-	if interest == 1.04 {
+	if interest == KeyInterest60 {
 		return 60
 	}
 	return 90
