@@ -67,7 +67,7 @@ func TestStudentAddClass_Teachers(t *testing.T) {
 	var classAddCode string
 
 	_ = db.View(func(tx *bolt.Tx) error {
-		school, _ := SchoolByIdTx(tx, schools[0])
+		school, _ := schoolByIdTx(tx, schools[0])
 		teachersBucket := school.Bucket([]byte(KeyTeachers))
 		teacher := teachersBucket.Bucket([]byte(teachers[0]))
 		classesBucket := teacher.Bucket([]byte(KeyClasses))
@@ -107,7 +107,7 @@ func TestStudentAddClass_Schools(t *testing.T) {
 	var freshmanAddCode string
 
 	_ = db.View(func(tx *bolt.Tx) error {
-		school, _ := SchoolByIdTx(tx, schools[0])
+		school, _ := schoolByIdTx(tx, schools[0])
 		classes := school.Bucket([]byte(KeyClasses))
 		c := classes.Cursor()
 		k, _ := c.First()

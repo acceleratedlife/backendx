@@ -219,7 +219,7 @@ func NewAllSchoolApiServiceImpl(db *bolt.DB, clock Clock) openapi.AllSchoolApiSe
 func classesWithOwnerDetails(db *bolt.DB, schoolID, userId string) ([]openapi.ResponseMemberClass, error) {
 	classes := make([]openapi.ResponseMemberClass, 0)
 	err := db.View(func(tx *bolt.Tx) error {
-		school, err := SchoolByIdTx(tx, schoolID)
+		school, err := schoolByIdTx(tx, schoolID)
 		if err != nil {
 			return err
 		}

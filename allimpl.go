@@ -16,7 +16,7 @@ import (
 
 func getClassAtSchoolTx(tx *bolt.Tx, schoolId, classId string) (classBucket *bolt.Bucket, parentBucket *bolt.Bucket, err error) {
 
-	school, err := SchoolByIdTx(tx, schoolId)
+	school, err := schoolByIdTx(tx, schoolId)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -266,7 +266,7 @@ func getSchoolStudents(db *bolt.DB, userDetails UserInfo) (resp []openapi.UserNo
 }
 
 func getSchoolStudentsRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
-	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+	school, err := schoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return
 	}
@@ -614,7 +614,7 @@ func getJobRx(tx *bolt.Tx, key string, jobId string) (job openapi.UserNoHistoryJ
 	return job
 }
 
-func deleteAuction(db *bolt.DB, userDetails UserInfo, clock Clock, Id string) (err error) {
+func deleteAuction(db *bolt.DB, userDetails UserInfo, clock Clock, Id time.Time) (err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
 		return deleteAuctionTx(tx, userDetails, clock, Id)
 	})
@@ -622,21 +622,16 @@ func deleteAuction(db *bolt.DB, userDetails UserInfo, clock Clock, Id string) (e
 	return
 }
 
-func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) (err error) {
+func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id time.Time) (err error) {
 
-	newTime, err := time.Parse(time.RFC3339, Id)
-	if err != nil {
-		return err
-	}
-
-	Id = newTime.Truncate(time.Millisecond).String()
+	newId := Id.Truncate(time.Millisecond).String()
 
 	schoolBucket, err := getSchoolBucketRx(tx, userDetails)
 	if err != nil {
 		return err
 	}
 
-	auctionsBucket, auctionData, err := getAuctionBucketTx(tx, schoolBucket, Id)
+	auctionsBucket, auctionData, err := getAuctionBucketTx(tx, schoolBucket, newId)
 	if err != nil {
 		return err
 	}
@@ -661,7 +656,7 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 			}
 		}
 
-		err = auctionsBucket.Delete([]byte(Id))
+		err = auctionsBucket.Delete([]byte(newId))
 		if err != nil {
 			return err
 		}
@@ -681,7 +676,7 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 				return err
 			}
 
-			err = auctionsBucket.Put([]byte(Id), marshal)
+			err = auctionsBucket.Put([]byte(newId), marshal)
 			if err != nil {
 				return err
 			}
@@ -713,7 +708,7 @@ func deleteAuctionTx(tx *bolt.Tx, userDetails UserInfo, clock Clock, Id string) 
 			}
 
 		} else { // over and has no winner
-			err = auctionsBucket.Delete([]byte(Id))
+			err = auctionsBucket.Delete([]byte(newId))
 			if err != nil {
 				return err
 			}
