@@ -142,7 +142,14 @@ func createTeacher(db *bolt.DB, newUser UserInfo) (err error) {
 }
 
 func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
-	jobDetails := getJob(db, KeyJobs, newUser.Job)
+	err = db.Update(func(tx *bolt.Tx) error {
+		return createStudentTx(tx, newUser, pathId)
+	})
+	return
+}
+
+func createStudentTx(tx *bolt.Tx, newUser UserInfo, pathId PathId) (err error) {
+	jobDetails := getJobRx(tx, KeyJobs, newUser.Job)
 	max := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(192))
 	min := decimal.NewFromInt32(jobDetails.Pay).Div(decimal.NewFromInt32(250))
 	diff := max.Sub(min)
@@ -151,83 +158,80 @@ func createStudent(db *bolt.DB, newUser UserInfo, pathId PathId) (err error) {
 	newUser.Income = float32(random.Mul(diff).Add(min).Floor().InexactFloat64())
 
 	newUser.CareerTransition = false
-	err = db.Update(func(tx *bolt.Tx) error {
-		err = AddUserTx(tx, newUser)
-		if err != nil {
-			// AddUser can fail if new user exists in the table as a student
-			users := tx.Bucket([]byte(KeyUsers))
-			if users == nil {
-				return err
-			}
-			user := users.Get(userNameToB(newUser.Email))
-			if user == nil {
-				return err
-			}
-			var existingUser UserInfo
-
-			err = json.Unmarshal(user, &existingUser)
-			if err != nil {
-				return err
-			}
-			if existingUser.Role != UserRoleStudent {
-				return fmt.Errorf("you cannot add existing user with the role %d as a student to a class", existingUser.Role)
-			}
+	err = AddUserTx(tx, newUser)
+	if err != nil {
+		// AddUser can fail if new user exists in the table as a student
+		users := tx.Bucket([]byte(KeyUsers))
+		if users == nil {
+			return err
 		}
+		user := users.Get(userNameToB(newUser.Email))
+		if user == nil {
+			return err
+		}
+		var existingUser UserInfo
 
-		schools, err := tx.CreateBucketIfNotExists([]byte(KeySchools))
+		err = json.Unmarshal(user, &existingUser)
 		if err != nil {
 			return err
 		}
+		if existingUser.Role != UserRoleStudent {
+			return fmt.Errorf("you cannot add existing user with the role %d as a student to a class", existingUser.Role)
+		}
+	}
 
-		school := schools.Bucket([]byte(newUser.SchoolId))
+	schools, err := tx.CreateBucketIfNotExists([]byte(KeySchools))
+	if err != nil {
+		return err
+	}
 
-		if school == nil {
-			return fmt.Errorf("school not found")
-		}
-		schoolStudentsBucket, err := school.CreateBucketIfNotExists([]byte(KeyStudents))
-		if err != nil {
-			return err
-		}
-		schoolStudentBucket, err := schoolStudentsBucket.CreateBucketIfNotExists([]byte(newUser.Email))
-		if err != nil {
-			return err
-		}
-		history := []openapi.History{}
-		row1 := openapi.History{
-			Date:     time.Now(),
-			NetWorth: 0.0,
-		}
-		history = append(history, row1)
-		marshal, _ := json.Marshal(history)
-		schoolStudentBucket.Put([]byte(KeyHistory), marshal)
-		teachers, err := school.CreateBucketIfNotExists([]byte(KeyTeachers))
-		if err != nil {
-			return err
-		}
+	school := schools.Bucket([]byte(newUser.SchoolId))
 
-		teacher := teachers.Bucket([]byte(pathId.teacherId))
-		if teacher == nil {
-			return fmt.Errorf("teacher not found")
-		}
-		classes := teacher.Bucket([]byte(KeyClasses))
-		if classes == nil {
-			return fmt.Errorf("classes not found")
-		}
-		class := classes.Bucket([]byte(pathId.classId))
-		if class == nil {
-			return fmt.Errorf("class not found")
-		}
-		students, err := class.CreateBucketIfNotExists([]byte(KeyStudents))
-		if err != nil {
-			return err
-		}
-		student := students.Get([]byte(newUser.Email))
-		if student != nil {
-			return fmt.Errorf("student is already in the class")
-		}
-		return students.Put([]byte(newUser.Email), []byte(""))
-	})
-	return err
+	if school == nil {
+		return fmt.Errorf("school not found")
+	}
+	schoolStudentsBucket, err := school.CreateBucketIfNotExists([]byte(KeyStudents))
+	if err != nil {
+		return err
+	}
+	schoolStudentBucket, err := schoolStudentsBucket.CreateBucketIfNotExists([]byte(newUser.Email))
+	if err != nil {
+		return err
+	}
+	history := []openapi.History{}
+	row1 := openapi.History{
+		Date:     time.Now(),
+		NetWorth: 0.0,
+	}
+	history = append(history, row1)
+	marshal, _ := json.Marshal(history)
+	schoolStudentBucket.Put([]byte(KeyHistory), marshal)
+	teachers, err := school.CreateBucketIfNotExists([]byte(KeyTeachers))
+	if err != nil {
+		return err
+	}
+
+	teacher := teachers.Bucket([]byte(pathId.teacherId))
+	if teacher == nil {
+		return fmt.Errorf("teacher not found")
+	}
+	classes := teacher.Bucket([]byte(KeyClasses))
+	if classes == nil {
+		return fmt.Errorf("classes not found")
+	}
+	class := classes.Bucket([]byte(pathId.classId))
+	if class == nil {
+		return fmt.Errorf("class not found")
+	}
+	students, err := class.CreateBucketIfNotExists([]byte(KeyStudents))
+	if err != nil {
+		return err
+	}
+	student := students.Get([]byte(newUser.Email))
+	if student != nil {
+		return fmt.Errorf("student is already in the class")
+	}
+	return students.Put([]byte(newUser.Email), []byte(""))
 }
 
 func taxSchool(db *bolt.DB, clock Clock, userDetails UserInfo, taxRate int32) error {
@@ -237,7 +241,7 @@ func taxSchool(db *bolt.DB, clock Clock, userDetails UserInfo, taxRate int32) er
 }
 
 func taxSchoolTx(tx *bolt.Tx, clock Clock, userDetails UserInfo, taxRate int32) error {
-	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+	school, err := schoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return err
 	}
@@ -494,7 +498,7 @@ func getTaxSlice(db *bolt.DB, userDetails UserInfo) (taxes []decimal.Decimal, er
 }
 
 func getTaxSliceRx(tx *bolt.Tx, userDetails UserInfo) (taxes []decimal.Decimal, err error) {
-	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+	school, err := schoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return
 	}

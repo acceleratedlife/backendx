@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -103,7 +104,11 @@ func (a *AllApiServiceImpl) DeleteAuction(ctx context.Context, Id string) (opena
 		}), nil
 	}
 
-	err = deleteAuction(a.db, userDetails, a.clock, Id)
+	newTime, err := time.Parse(time.RFC3339, Id)
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+	err = deleteAuction(a.db, userDetails, a.clock, newTime)
 
 	if err != nil {
 		lgr.Printf("ERROR cannot delete auction from the school: %s %v", userDetails.SchoolId, err)

@@ -67,7 +67,7 @@ func (u *UnregisteredApiServiceImpl) Register(ctx context.Context, register open
 			}), nil
 	}
 
-	role, pathId, err := RoleByAddCode(u.db, register.AddCode, u.clock)
+	role, pathId, err := roleByAddCode(u.db, register.AddCode, u.clock)
 	if err != nil {
 		return openapi.Response(404,
 			openapi.ResponseRegister4{
