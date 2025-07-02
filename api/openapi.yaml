@@ -29,18 +29,8 @@ tags:
 paths:
   /schools:
     get:
-      description: |
-        By passing in a zipcode you can find all school with that zipcode in ascending order
-      operationId: searchSchools
-      parameters:
-      - description: pass the zip to be searched
-        explode: true
-        in: query
-        name: zip
-        required: false
-        schema:
-          type: integer
-        style: form
+      description: returns all schools
+      operationId: getSchools
       responses:
         "200":
           content:
@@ -54,7 +44,36 @@ paths:
           description: That is not a zip code
         "404":
           description: No schools found
-      summary: searches schools
+      summary: return all schools
+      tags:
+      - SysAdmin
+  /schools/users:
+    get:
+      description: returns all users of a school
+      operationId: getSchoolsUsers
+      parameters:
+      - description: pass the _id of the school
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UserNoHistory'
+                type: array
+          description: users of the school
+        "400":
+          description: thats not a school
+        "404":
+          description: No schools found
+      summary: return all users of school
       tags:
       - SysAdmin
   /schools/school:
@@ -654,54 +673,7 @@ paths:
       summary: auction bid
       tags:
       - Student
-  /auctions/all/events:
-    get:
-      description: Subscribe to SSE events for specific auctions. Client will receive real-time updates about changes to these auctions.
-      operationId: subscribeAuctionEvents
-      parameters:
-        - name: auction_ids
-          in: query
-          description: Comma-separated list of auction IDs to subscribe to
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: SSE stream established
-          content:
-            text/event-stream:
-              schema:
-                type: string
-        "400":
-          description: Invalid auction IDs
-      tags:
-        - Staff
   /bucks/buck:
-    delete:
-      description: delete a buck. All accounts with that buck should first have value
-        converted to UBucks and then deleted.
-      operationId: deleteBuck
-      parameters:
-      - description: pass the _id to be deleted
-        explode: true
-        in: query
-        name: _id
-        required: true
-        schema:
-          type: string
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Buck'
-          description: Buck record is edited
-        "404":
-          description: Buck cannot be edited with that data
-      summary: delete buck
-      tags:
-      - SysAdmin
     get:
       description: by passing in a buck ID that buck is returned
       operationId: searchBuck
@@ -726,26 +698,6 @@ paths:
       summary: returns how much the student holds of this buck
       tags:
       - Student
-    post:
-      description: create a buck
-      operationId: createBuck
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/bucks_buck_body_1'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Buck'
-          description: Buck record is created
-        "404":
-          description: Buck cannot be created with that data
-      summary: create buck
-      tags:
-      - SysAdmin
     put:
       description: edit a buck
       operationId: editBuck
@@ -1243,24 +1195,6 @@ paths:
       summary: all the teachers that are at the same school of the user
       tags:
       - All
-  /sysAdmin/users:
-    get:
-      description: returns students, teacher and admins
-      operationId: getAllUsers
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ResponseAllUsers'
-                type: array
-          description: users of the site
-        "401":
-          description: unauthorized
-      summary: get all users excluding sysAdmins
-      tags:
-      - SysAdmin
   /transactions:
     get:
       description: By passing in the staffs _id you can find a transactions that they
@@ -1291,56 +1225,6 @@ paths:
         descending
       tags:
       - Staff
-  /transactions/transaction:
-    delete:
-      description: delete a transaction
-      operationId: deletetransaction
-      parameters:
-      - description: pass the _id to be deleted
-        explode: true
-        in: query
-        name: _id
-        required: true
-        schema:
-          type: string
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                example: Transaction deleted
-                type: string
-          description: transaction Deleted
-        "404":
-          description: transaction cannot be deleted with that data
-      summary: delete transaction
-      tags:
-      - SysAdmin
-    get:
-      description: By passing in a _id you can find a transaction.
-      operationId: searchTransaction
-      parameters:
-      - description: pass the _id to be searched
-        explode: true
-        in: query
-        name: _id
-        required: true
-        schema:
-          type: string
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Transaction'
-          description: transaction matching criteria
-        "404":
-          description: No transaction found
-      summary: searches for a transaction
-      tags:
-      - SysAdmin
   /transactions/buckTransactions:
     get:
       description: query account kind by Buck and owner by _id. Then query transaction
@@ -2676,6 +2560,8 @@ components:
         zip:
           type: integer
         students:
+          type: integer
+        staff:
           type: integer
       type: object
     ResponseSearchStudentUbuck:

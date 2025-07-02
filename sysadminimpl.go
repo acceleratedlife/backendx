@@ -178,3 +178,61 @@ func schoolsByZip(db *bolt.DB, zip int32) ([]openapi.ResponseSchoolsInner, error
 
 	return res, err
 }
+
+// opens a db.view to pass to getSchoolsRx
+func getSchools(db *bolt.DB) (resp []openapi.ResponseSchools, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getSchoolsRx(tx)
+		return err
+	})
+
+	return
+}
+
+// opens a db.view to pass to getSchoolsRx
+func getSchoolsRx(tx *bolt.Tx) (resp []openapi.ResponseSchools, err error) {
+	schools := tx.Bucket([]byte("schools"))
+	if schools == nil {
+		return nil, fmt.Errorf("no schools available")
+	}
+
+	c := schools.Cursor()
+
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v != nil {
+			continue
+		}
+
+		school := schools.Bucket(k)
+
+		item := openapi.ResponseSchools{
+			Id:   string(k),
+			Name: string(school.Get([]byte(KeyName))),
+			City: string(school.Get([]byte(KeyCity))),
+			Zip:  btoi32(school.Get([]byte(KeyZip))),
+		}
+
+		//loop through each bucket and count how many keys are in each
+		adminsBucket := school.Bucket([]byte(KeyAdmins))
+		c := adminsBucket.Cursor()
+
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			item.Staff++
+		}
+
+		teacherBucket := school.Bucket([]byte(KeyTeachers))
+		c = teacherBucket.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			item.Staff++
+		}
+
+		studentsBucket := school.Bucket([]byte(KeyStudents))
+		c = studentsBucket.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			item.Students++
+		}
+
+		resp = append(resp, item)
+	}
+	return
+}

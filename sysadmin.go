@@ -4,6 +4,7 @@ import (
 	"context"
 
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/go-pkgz/auth/token"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -11,27 +12,12 @@ type SysAdminApiServiceImpl struct {
 	db *bolt.DB
 }
 
-func (s SysAdminApiServiceImpl) CreateBuck(ctx context.Context, body1 openapi.BucksBuckBody1) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (s SysAdminApiServiceImpl) DeleteAccount(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s SysAdminApiServiceImpl) DeleteBuck(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (s SysAdminApiServiceImpl) DeleteSchool(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s SysAdminApiServiceImpl) Deletetransaction(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -61,27 +47,30 @@ func (s SysAdminApiServiceImpl) MakeSchool(ctx context.Context, body1 openapi.Sc
 	panic("implement me")
 }
 
-func (s SysAdminApiServiceImpl) SearchAllBucks(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *SysAdminApiServiceImpl) SearchSchools(ctx context.Context, zip int32) (openapi.ImplResponse, error) {
-
-	res, err := schoolsByZip(s.db, zip)
-
-	if res != nil {
-		return openapi.Response(500, nil), err
+func (a SysAdminApiServiceImpl) GetSchools(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
 	}
-	return openapi.Response(200, res), nil
+
+	if userDetails.Role != UserRoleSysAdmin {
+		return openapi.Response(401, ""), nil
+	}
+
+	resp, err := getSchools(a.db)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, resp), nil
 }
 
-func (s SysAdminApiServiceImpl) SearchTransaction(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s SysAdminApiServiceImpl) GetAllUsers(ctx context.Context) (openapi.ImplResponse, error) {
+func (s SysAdminApiServiceImpl) GetSchoolsUsers(ctx context.Context, schoolId string) (openapi.ImplResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }

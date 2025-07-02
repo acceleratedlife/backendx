@@ -112,19 +112,15 @@ type StudentApiRouter interface {
 // The SysAdminApiRouter implementation should parse necessary information from the http request,
 // pass the data to a SysAdminApiServicer to perform the required actions, then write the service results to the http response.
 type SysAdminApiRouter interface { 
-	CreateBuck(http.ResponseWriter, *http.Request)
 	DeleteAccount(http.ResponseWriter, *http.Request)
-	DeleteBuck(http.ResponseWriter, *http.Request)
 	DeleteSchool(http.ResponseWriter, *http.Request)
-	Deletetransaction(http.ResponseWriter, *http.Request)
 	EditAccount(http.ResponseWriter, *http.Request)
 	EditBuck(http.ResponseWriter, *http.Request)
 	EditSchool(http.ResponseWriter, *http.Request)
-	GetAllUsers(http.ResponseWriter, *http.Request)
+	GetSchools(http.ResponseWriter, *http.Request)
+	GetSchoolsUsers(http.ResponseWriter, *http.Request)
 	MakeAccount(http.ResponseWriter, *http.Request)
 	MakeSchool(http.ResponseWriter, *http.Request)
-	SearchSchools(http.ResponseWriter, *http.Request)
-	SearchTransaction(http.ResponseWriter, *http.Request)
 }
 // UnregisteredApiRouter defines the required methods for binding the api requests to a responses for the UnregisteredApi
 // The UnregisteredApiRouter implementation should parse necessary information from the http request,
@@ -247,19 +243,15 @@ type StudentApiServicer interface {
 // while the service implementation can ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type SysAdminApiServicer interface { 
-	CreateBuck(context.Context, BucksBuckBody1) (ImplResponse, error)
 	DeleteAccount(context.Context, string) (ImplResponse, error)
-	DeleteBuck(context.Context, string) (ImplResponse, error)
 	DeleteSchool(context.Context, string) (ImplResponse, error)
-	Deletetransaction(context.Context, string) (ImplResponse, error)
 	EditAccount(context.Context, AccountsAccountBody) (ImplResponse, error)
 	EditBuck(context.Context, BucksBuckBody) (ImplResponse, error)
 	EditSchool(context.Context, SchoolsSchoolBody) (ImplResponse, error)
-	GetAllUsers(context.Context) (ImplResponse, error)
+	GetSchools(context.Context) (ImplResponse, error)
+	GetSchoolsUsers(context.Context, string) (ImplResponse, error)
 	MakeAccount(context.Context, AccountsAccountBody1) (ImplResponse, error)
 	MakeSchool(context.Context, SchoolsSchoolBody1) (ImplResponse, error)
-	SearchSchools(context.Context, int32) (ImplResponse, error)
-	SearchTransaction(context.Context, string) (ImplResponse, error)
 }
 
 
