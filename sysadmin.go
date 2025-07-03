@@ -70,9 +70,27 @@ func (a SysAdminApiServiceImpl) GetSchools(ctx context.Context) (openapi.ImplRes
 	return openapi.Response(200, resp), nil
 }
 
-func (s SysAdminApiServiceImpl) GetSchoolsUsers(ctx context.Context, schoolId string) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (a SysAdminApiServiceImpl) GetSchoolsUsers(ctx context.Context, schoolId string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleSysAdmin {
+		return openapi.Response(401, ""), nil
+	}
+
+	resp, err := getSchoolUsers(a.db, schoolId)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, resp), nil
 }
 
 func NewSysAdminApiServiceImpl(db *bolt.DB) openapi.SysAdminApiServicer {

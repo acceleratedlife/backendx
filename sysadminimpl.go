@@ -179,6 +179,74 @@ func schoolsByZip(db *bolt.DB, zip int32) ([]openapi.ResponseSchoolsInner, error
 	return res, err
 }
 
+// opens a db.view to pass to getSchoolUsersRx
+func getSchoolUsers(db *bolt.DB, schoolId string) (resp []openapi.UserNoHistory, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getSchoolUsersRx(tx, schoolId)
+		return err
+	})
+
+	return
+}
+
+// gets all the users in a school
+func getSchoolUsersRx(tx *bolt.Tx, schoolId string) (resp []openapi.UserNoHistory, err error) {
+	school, err := schoolByIdTx(tx, schoolId)
+	if err != nil {
+		return
+	}
+
+	users := make([]string, 0)
+
+	adminsBucket := school.Bucket([]byte(KeyAdmins))
+	c := adminsBucket.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		users = append(users, string(k))
+	}
+
+	teacherBucket := school.Bucket([]byte(KeyTeachers))
+	c = teacherBucket.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		users = append(users, string(k))
+	}
+
+	studentsBucket := school.Bucket([]byte(KeyStudents))
+	c = studentsBucket.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		users = append(users, string(k))
+	}
+
+	//get all the users in the school
+	for _, user := range users {
+		userInfo, err := getUserInLocalStoreTx(tx, user)
+		if err != nil {
+			continue
+		}
+
+		rank := userInfo.Rank
+		if rank == 0 {
+			rank = 99999 // put zero-ranked users at the end
+		}
+
+		resp = append(resp, openapi.UserNoHistory{
+			Id:            userInfo.Name,
+			FirstName:     userInfo.FirstName,
+			LastName:      userInfo.LastName,
+			Role:          userInfo.Role,
+			Rank:          rank, //if rank is 0 set it to 99999 so it is at the bottom of the list, this is to fix the sorting issue
+			TaxableIncome: userInfo.TaxableIncome,
+			Income:        userInfo.Income,
+			College:       userInfo.College,
+			NetWorth:      userInfo.NetWorth,
+			LottoWin:      userInfo.LottoWin,
+			LottoPlay:     userInfo.LottoPlay,
+		})
+	}
+
+	return
+
+}
+
 // opens a db.view to pass to getSchoolsRx
 func getSchools(db *bolt.DB) (resp []openapi.ResponseSchools, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
