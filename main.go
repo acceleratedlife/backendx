@@ -191,7 +191,7 @@ func main() {
 	m := authService.Middleware()
 
 	// *** auth
-	router, clock := createRouter(db, sseService) // Pass sseService to createRouter
+	router, clock := createRouter(db, sseService, authService.TokenService()) // Pass sseService to createRouter
 	router.Handle("/auth/al/login", authRoute)
 	router.Handle("/auth/al/logout", authRoute)
 
@@ -241,20 +241,20 @@ func main() {
 }
 
 // creates routes for prod
-func createRouter(db *bolt.DB, sseService SSEServiceInterface) (*mux.Router, *DemoClock) {
+func createRouter(db *bolt.DB, sseService SSEServiceInterface, jwtService *token.Service) (*mux.Router, *DemoClock) {
 	serverConfig := loadConfig()
 	if serverConfig.Production {
 		lgr.Printf("Creating production router")
 		clock := &AppClock{}
-		return createRouterClock(db, clock, sseService), nil
+		return createRouterClock(db, clock, sseService, jwtService), nil
 	}
 
 	lgr.Printf("Creating development router")
 	clock := &DemoClock{}
-	return createRouterClock(db, clock, sseService), clock
+	return createRouterClock(db, clock, sseService, jwtService), clock
 }
 
-func createRouterClock(db *bolt.DB, clock Clock, sseService SSEServiceInterface) *mux.Router {
+func createRouterClock(db *bolt.DB, clock Clock, sseService SSEServiceInterface, jwtService *token.Service) *mux.Router {
 	// Pass sseService to StudentApiServiceImpl
 	studentService := NewStudentApiServiceImpl(db, clock, sseService)
 	StudentApiController := openapi.NewStudentApiController(studentService)
@@ -265,7 +265,7 @@ func createRouterClock(db *bolt.DB, clock Clock, sseService SSEServiceInterface)
 	allService := NewAllApiServiceImpl(db, clock)
 	allController := openapi.NewAllApiController(allService)
 
-	sysAdminApiServiceImpl := NewSysAdminApiServiceImpl(db)
+	sysAdminApiServiceImpl := NewSysAdminApiServiceImpl(db, jwtService)
 	sysAdminCtrl := openapi.NewSysAdminApiController(sysAdminApiServiceImpl)
 
 	unregisteredServiceImpl := NewUnregisteredApiServiceImpl(db, clock)

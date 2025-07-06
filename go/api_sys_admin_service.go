@@ -97,6 +97,23 @@ func (s *SysAdminApiService) EditSchool(ctx context.Context, schoolsSchoolBody S
 	return Response(http.StatusNotImplemented, nil), errors.New("EditSchool method not implemented")
 }
 
+// GetSchoolUsers - return all users of school
+func (s *SysAdminApiService) GetSchoolUsers(ctx context.Context, id string) (ImplResponse, error) {
+	// TODO - update GetSchoolUsers with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []UserNoHistory{}) or use other options such as http.Ok ...
+	//return Response(200, []UserNoHistory{}), nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("GetSchoolUsers method not implemented")
+}
+
 // GetSchools - return all schools
 func (s *SysAdminApiService) GetSchools(ctx context.Context) (ImplResponse, error) {
 	// TODO - update GetSchools with the required logic for this service method.
@@ -114,21 +131,27 @@ func (s *SysAdminApiService) GetSchools(ctx context.Context) (ImplResponse, erro
 	return Response(http.StatusNotImplemented, nil), errors.New("GetSchools method not implemented")
 }
 
-// GetSchoolsUsers - return all users of school
-func (s *SysAdminApiService) GetSchoolsUsers(ctx context.Context, id string) (ImplResponse, error) {
-	// TODO - update GetSchoolsUsers with the required logic for this service method.
+// ImpersonateUser - Issue a short-lived JWT (and XSRF token) for user impersonation
+func (s *SysAdminApiService) ImpersonateUser(ctx context.Context, requestImpersonate RequestImpersonate) (ImplResponse, error) {
+	// TODO - update ImpersonateUser with the required logic for this service method.
 	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []UserNoHistory{}) or use other options such as http.Ok ...
-	//return Response(200, []UserNoHistory{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []ResponseImpersonate{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseImpersonate{}), nil
 
-	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
-	//return Response(400, nil),nil
+	//TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
+	//return Response(401, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(403, {}) or use other options such as http.Ok ...
+	//return Response(403, nil),nil
 
 	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
 	//return Response(404, nil),nil
 
-	return Response(http.StatusNotImplemented, nil), errors.New("GetSchoolsUsers method not implemented")
+	//TODO: Uncomment the next line to return response Response(500, {}) or use other options such as http.Ok ...
+	//return Response(500, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("ImpersonateUser method not implemented")
 }
 
 // MakeAccount - make account

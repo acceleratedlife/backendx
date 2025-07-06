@@ -80,16 +80,22 @@ func (c *SysAdminApiController) Routes() Routes {
 			c.EditSchool,
 		},
 		{
+			"GetSchoolUsers",
+			strings.ToUpper("Get"),
+			"/api/schools/users",
+			c.GetSchoolUsers,
+		},
+		{
 			"GetSchools",
 			strings.ToUpper("Get"),
 			"/api/schools",
 			c.GetSchools,
 		},
 		{
-			"GetSchoolsUsers",
-			strings.ToUpper("Get"),
-			"/api/schools/users",
-			c.GetSchoolsUsers,
+			"ImpersonateUser",
+			strings.ToUpper("Post"),
+			"/api/impersonate",
+			c.ImpersonateUser,
 		},
 		{
 			"MakeAccount",
@@ -208,6 +214,21 @@ func (c *SysAdminApiController) EditSchool(w http.ResponseWriter, r *http.Reques
 
 }
 
+// GetSchoolUsers - return all users of school
+func (c *SysAdminApiController) GetSchoolUsers(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.GetSchoolUsers(r.Context(), idParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
 // GetSchools - return all schools
 func (c *SysAdminApiController) GetSchools(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.GetSchools(r.Context())
@@ -221,11 +242,20 @@ func (c *SysAdminApiController) GetSchools(w http.ResponseWriter, r *http.Reques
 
 }
 
-// GetSchoolsUsers - return all users of school
-func (c *SysAdminApiController) GetSchoolsUsers(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.GetSchoolsUsers(r.Context(), idParam)
+// ImpersonateUser - Issue a short-lived JWT (and XSRF token) for user impersonation
+func (c *SysAdminApiController) ImpersonateUser(w http.ResponseWriter, r *http.Request) {
+	requestImpersonateParam := RequestImpersonate{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestImpersonateParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestImpersonateRequired(requestImpersonateParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.ImpersonateUser(r.Context(), requestImpersonateParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

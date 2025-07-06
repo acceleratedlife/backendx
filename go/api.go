@@ -117,8 +117,9 @@ type SysAdminApiRouter interface {
 	EditAccount(http.ResponseWriter, *http.Request)
 	EditBuck(http.ResponseWriter, *http.Request)
 	EditSchool(http.ResponseWriter, *http.Request)
+	GetSchoolUsers(http.ResponseWriter, *http.Request)
 	GetSchools(http.ResponseWriter, *http.Request)
-	GetSchoolsUsers(http.ResponseWriter, *http.Request)
+	ImpersonateUser(http.ResponseWriter, *http.Request)
 	MakeAccount(http.ResponseWriter, *http.Request)
 	MakeSchool(http.ResponseWriter, *http.Request)
 }
@@ -248,8 +249,9 @@ type SysAdminApiServicer interface {
 	EditAccount(context.Context, AccountsAccountBody) (ImplResponse, error)
 	EditBuck(context.Context, BucksBuckBody) (ImplResponse, error)
 	EditSchool(context.Context, SchoolsSchoolBody) (ImplResponse, error)
+	GetSchoolUsers(context.Context, string) (ImplResponse, error)
 	GetSchools(context.Context) (ImplResponse, error)
-	GetSchoolsUsers(context.Context, string) (ImplResponse, error)
+	ImpersonateUser(context.Context, RequestImpersonate) (ImplResponse, error)
 	MakeAccount(context.Context, AccountsAccountBody1) (ImplResponse, error)
 	MakeSchool(context.Context, SchoolsSchoolBody1) (ImplResponse, error)
 }

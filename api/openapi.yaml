@@ -27,6 +27,37 @@ tags:
 - description: all users that work at school
   name: Staff
 paths:
+  /impersonate:
+    post:
+      description: |
+        Accepts the ID of a user an authenticated **sys-admin** wants to impersonate.   Returns a new JWT along with a matching XSRF token.   The frontend writes both cookies and opens the user-facing app so the admin can act as that user.
+      operationId: impersonateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestImpersonate'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseImpersonate'
+                type: array
+          description: Impersonation token issued
+        "401":
+          description: Not authenticated or not a sys-admin
+        "403":
+          description: Authenticated but lacking permission to impersonate
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: Issue a short-lived JWT (and XSRF token) for user impersonation
+      tags:
+      - SysAdmin
   /schools:
     get:
       description: returns all schools
@@ -50,7 +81,7 @@ paths:
   /schools/users:
     get:
       description: returns all users of a school
-      operationId: getSchoolsUsers
+      operationId: getSchoolUsers
       parameters:
       - description: pass the _id of the school
         explode: true
@@ -2724,6 +2755,16 @@ components:
           example: 613eab19e58cc511801af657
           type: string
       type: object
+    RequestImpersonate:
+      example:
+        userId: userId
+      properties:
+        userId:
+          description: The _id of the user to impersonate
+          type: string
+      required:
+      - userId
+      type: object
     RequestMakeAuction:
       example:
         visibility:
@@ -3436,6 +3477,18 @@ components:
         pay:
           type: integer
         description:
+          type: string
+      type: object
+    ResponseImpersonate:
+      example:
+        xsrf: xsrf
+        token: token
+      properties:
+        token:
+          description: Short-lived JWT for the selected user
+          type: string
+        xsrf:
+          description: Matching XSRF token (double-submit cookie pattern)
           type: string
       type: object
     inline_response_200_1_transaction_assetID:

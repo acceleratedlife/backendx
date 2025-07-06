@@ -9,7 +9,8 @@ import (
 )
 
 type SysAdminApiServiceImpl struct {
-	db *bolt.DB
+	db         *bolt.DB
+	jwtService *token.Service
 }
 
 func (s SysAdminApiServiceImpl) DeleteAccount(ctx context.Context, s2 string) (openapi.ImplResponse, error) {
@@ -70,7 +71,7 @@ func (a SysAdminApiServiceImpl) GetSchools(ctx context.Context) (openapi.ImplRes
 	return openapi.Response(200, resp), nil
 }
 
-func (a SysAdminApiServiceImpl) GetSchoolsUsers(ctx context.Context, schoolId string) (openapi.ImplResponse, error) {
+func (a SysAdminApiServiceImpl) GetSchoolUsers(ctx context.Context, schoolId string) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
 	if err != nil {
@@ -93,8 +94,40 @@ func (a SysAdminApiServiceImpl) GetSchoolsUsers(ctx context.Context, schoolId st
 	return openapi.Response(200, resp), nil
 }
 
-func NewSysAdminApiServiceImpl(db *bolt.DB) openapi.SysAdminApiServicer {
+func (a SysAdminApiServiceImpl) ImpersonateUser(ctx context.Context, user openapi.RequestImpersonate) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleSysAdmin {
+		return openapi.Response(401, ""), nil
+	}
+
+	tgt, err := getUserInLocalStore(a.db, user.UserId)
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	jwtStr, xsrf, err := makeToken(a.jwtService, tgt)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, openapi.ResponseImpersonate{
+		Token: jwtStr,
+		Xsrf:  xsrf,
+	}), nil
+}
+
+func NewSysAdminApiServiceImpl(db *bolt.DB, jwt *token.Service) openapi.SysAdminApiServicer {
 	return &SysAdminApiServiceImpl{
-		db: db,
+		db:         db,
+		jwtService: jwt,
 	}
 }

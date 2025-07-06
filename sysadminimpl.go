@@ -1,11 +1,16 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	crand "crypto/rand"
+
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/go-pkgz/auth/token"
+	"github.com/golang-jwt/jwt"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -187,6 +192,37 @@ func getSchoolUsers(db *bolt.DB, schoolId string) (resp []openapi.UserNoHistory,
 	})
 
 	return
+}
+
+func makeToken(jwtSvc *token.Service, target UserInfo) (string, string, error) {
+
+	tgt := token.User{
+		Name: target.Name,
+	}
+
+	const ttl = 15 * time.Minute
+
+	// XSRF = random 32-byte URL-safe string
+	xsrfBytes := make([]byte, 32)
+	if _, err := crand.Read(xsrfBytes); err != nil {
+		return "", "", err
+	}
+	xsrf := base64.RawURLEncoding.EncodeToString(xsrfBytes)
+
+	claims := token.Claims{
+		StandardClaims: jwt.StandardClaims{
+			Id:        xsrf,                       // XSRF token goes into jti / id
+			ExpiresAt: time.Now().Add(ttl).Unix(), // custom TTL, e.g. 15 min
+			Issuer:    jwtSvc.Opts.Issuer,         // keep same issuer
+		},
+		User: &tgt,
+	}
+
+	jwtStr, err := jwtSvc.Token(claims) // sign only, no cookies written
+	if err != nil {
+		return "", "", err
+	}
+	return jwtStr, xsrf, nil
 }
 
 // gets all the users in a school
