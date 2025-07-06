@@ -10,8 +10,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
+	"image/png"
 	"log"
 	"net/http"
 	"os"
@@ -27,7 +30,10 @@ import (
 	"github.com/go-pkgz/auth/provider"
 	"github.com/go-pkgz/auth/token"
 	"github.com/go-pkgz/lgr"
+	"github.com/go-pkgz/rest"
 	"github.com/gorilla/mux"
+	"github.com/pquerna/otp"
+	"github.com/pquerna/otp/totp"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -183,6 +189,8 @@ func main() {
 	}
 	defer db.Close()
 
+	totpStore := totpBoltStore{db}
+
 	runEveryMinute(db)
 	runEveryDay(db)
 
@@ -201,6 +209,12 @@ func main() {
 		writer.Header().Set("Content-Type", "application/octet-stream")
 		writer.Write([]byte(build_date))
 	})
+
+	router.Handle("/auth/totp/setup",
+		makeTOTPSetup(totpStore)).Methods("POST")
+
+	router.Handle("/auth/totp/verify",
+		makeTOTPVerify(totpStore, authService.TokenService())).Methods("POST")
 	//new school
 	router.Handle("/admin/new-school", newSchoolHandler(db, &AppClock{}))
 	//reset staff password
@@ -353,6 +367,78 @@ func createNewSchool(db *bolt.DB, clock Clock, newSchoolRequest NewSchoolRequest
 	return nil
 }
 
+type totpBoltStore struct{ db *bolt.DB }
+
+func (s totpBoltStore) Get(user string) (string, error) {
+	var sec string
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("totp"))
+		if b == nil {
+			return nil
+		}
+		v := b.Get([]byte(user))
+		if v != nil {
+			sec = string(v)
+		}
+		return nil
+	})
+	return sec, err
+}
+
+func (s totpBoltStore) Set(user, secret string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b, _ := tx.CreateBucketIfNotExists([]byte("totp"))
+		return b.Put([]byte(user), []byte(secret))
+	})
+}
+
+// ── Factory: returns a handler with store & jwtService wired in ──────────────
+func makeTOTPSetup(store totpBoltStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		admin := r.FormValue("user") // e.g. “cc@cc.com”
+
+		key, err := totp.Generate(totp.GenerateOpts{
+			Issuer:      "AL-Admin",
+			AccountName: admin,
+			Period:      30,
+			Digits:      otp.DigitsSix,
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_ = store.Set(admin, key.Secret())
+
+		img, _ := key.Image(200, 200)
+		buf := new(bytes.Buffer)
+		_ = png.Encode(buf, img)
+
+		rest.RenderJSON(w, rest.JSON{
+			"secret": key.Secret(),
+			"qr_png": "data:image/png;base64," +
+				base64.StdEncoding.EncodeToString(buf.Bytes()),
+		})
+	}
+}
+
+func makeTOTPVerify(store totpBoltStore, jwtSvc *token.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		admin := r.FormValue("user")
+		code := r.FormValue("code")
+
+		secret, _ := store.Get(admin)
+		if secret == "" || !totp.Validate(code, secret) {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		claims := token.Claims{
+			User: &token.User{Name: admin, Role: "3"},
+		}
+		_, _ = jwtSvc.Set(w, claims) // sets ADMIN_JWT + XSRF cookies
+	}
+}
+
 func initAuth(db *bolt.DB, config ServerConfig) *auth.Service {
 	options := auth.Opts{
 		SecretReader: token.SecretFunc(func(id string) (string, error) { // secret key for JWT
@@ -379,6 +465,7 @@ func initAuth(db *bolt.DB, config ServerConfig) *auth.Service {
 		ok, err = checkUserInLocalStore(db, user, password)
 		return
 	}))
+
 	return service
 }
 
