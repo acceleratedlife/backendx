@@ -5,6 +5,7 @@ import (
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
+	"github.com/go-pkgz/lgr"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -118,6 +119,8 @@ func (a SysAdminApiServiceImpl) ImpersonateUser(ctx context.Context, user openap
 	if err != nil {
 		return openapi.Response(400, nil), err
 	}
+
+	lgr.Printf("INFO %s is impersonating %s", userDetails.Name, tgt.Name)
 
 	return openapi.Response(200, openapi.ResponseImpersonate{
 		Token: jwtStr,

@@ -189,11 +189,21 @@ func main() {
 	authService := initAuth(db, config)
 	authRoute, _ := authService.Handlers()
 	m := authService.Middleware()
+	totpStore := NewMemTOTPStore()
+
+	// TEMP: hard-code aa@aa.com secret so Authenticator produces codes
+	totpStore.data["aa@aa.com"] = "JBSWY3DPEHPK3PXP" // base-32 secret
 
 	// *** auth
 	router, clock := createRouter(db, sseService, authService.TokenService()) // Pass sseService to createRouter
 	router.Handle("/auth/al/login", authRoute)
 	router.Handle("/auth/al/logout", authRoute)
+
+	// sys-admin users (JWT carries "sys_admin")
+	router.Handle("/auth/sysadmin/al/login",
+		adminLoginStartHandler(authService, db, totpStore))
+	router.Handle("/auth/sysadmin/al/totp",
+		adminLoginVerifyHandler(authService, db, totpStore))
 
 	// backup
 	router.Handle("/admin/backup", backUpHandler(db))
@@ -406,7 +416,6 @@ func buildAuthMiddleware(m middleware.Authenticator) func(http.Handler) http.Han
 				}))
 				h.ServeHTTP(w, r)
 			}
-			return
 		})
 	}
 }

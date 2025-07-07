@@ -7,7 +7,9 @@ toolchain go1.23.3
 require (
 	github.com/go-pkgz/auth v1.20.0
 	github.com/go-pkgz/lgr v0.12.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/mux v1.8.0
+	github.com/pquerna/otp v1.5.0
 	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tmaxmax/go-sse v0.10.0
@@ -19,12 +21,12 @@ require (
 	cloud.google.com/go/compute v1.18.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
+	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dghubble/oauth1 v0.7.1 // indirect
 	github.com/go-oauth2/oauth2/v4 v4.5.1 // indirect
 	github.com/go-pkgz/repeater v1.1.3 // indirect
 	github.com/go-pkgz/rest v1.16.0 // indirect
-	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
