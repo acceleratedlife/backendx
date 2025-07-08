@@ -37,6 +37,41 @@ func validateUserData(body UserInfo) (bool, error) {
 	return true, nil
 }
 
+// make this open update for testing creatsysadmintx
+func CreateSysAdmin(db *bolt.DB, email, passwordSha, firstName, lastName string) (err error) {
+
+	err = db.Update(func(tx *bolt.Tx) error {
+
+		err := createSysAdminTx(tx, email, passwordSha, firstName, lastName)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return
+}
+
+// make createSysAdminTx
+func createSysAdminTx(tx *bolt.Tx, email, passwordSha, firstName, lastName string) (err error) {
+	newUser := UserInfo{
+		FirstName:   firstName,
+		LastName:    lastName,
+		Email:       email,
+		Confirmed:   true,
+		PasswordSha: passwordSha,
+		Role:        UserRoleSysAdmin,
+	}
+
+	err = AddUserTx(tx, newUser)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func CreateSchoolAdmin(db *bolt.DB, body UserInfo) (openapi.ImplResponse, error) {
 
 	_, err := validateUserData(body)

@@ -127,15 +127,21 @@ const (
 var build_date string
 
 type ServerConfig struct {
-	AdminPassword string
-	SecureCookies bool
-	EnableXSRF    bool
-	SecretKey     string
-	ServerPort    int
-	SeedPassword  string
-	EmailSMTP     string
-	PasswordSMTP  string
-	Production    bool
+	AdminPassword  string
+	SecureCookies  bool
+	EnableXSRF     bool
+	SecretKey      string
+	ServerPort     int
+	SeedPassword   string
+	EmailSMTP      string
+	PasswordSMTP   string
+	Production     bool
+	CookieDomain   string
+	TLSCertFile    string
+	TLSKeyFile     string
+	TokenDuration  time.Duration `yaml:"token_duration"`
+	CookieDuration time.Duration `yaml:"cookie_duration"`
+	TOTPIssuer     string        `yaml:"totp_issuer"`
 }
 
 type Clock interface {
@@ -189,10 +195,7 @@ func main() {
 	authService := initAuth(db, config)
 	authRoute, _ := authService.Handlers()
 	m := authService.Middleware()
-	totpStore := NewMemTOTPStore()
-
-	// TEMP: hard-code aa@aa.com secret so Authenticator produces codes
-	totpStore.data["aa@aa.com"] = "JBSWY3DPEHPK3PXP" // base-32 secret
+	totpStore := NewBoltTOTPStore(db)
 
 	// *** auth
 	router, clock := createRouter(db, sseService, authService.TokenService()) // Pass sseService to createRouter
@@ -203,7 +206,7 @@ func main() {
 	router.Handle("/auth/sysadmin/al/login",
 		adminLoginStartHandler(authService, db, totpStore))
 	router.Handle("/auth/sysadmin/al/totp",
-		adminLoginVerifyHandler(authService, db, totpStore))
+		adminLoginVerifyHandler(authService, totpStore))
 
 	// backup
 	router.Handle("/admin/backup", backUpHandler(db))
@@ -211,6 +214,11 @@ func main() {
 		writer.Header().Set("Content-Type", "application/octet-stream")
 		writer.Write([]byte(build_date))
 	})
+
+	//new sysAdmin
+	if allowNewSysAdmin(db) {
+		router.Handle("/admin/new-sysadmin", newSysAdminHandler(db, config, totpStore))
+	}
 	//new school
 	router.Handle("/admin/new-school", newSchoolHandler(db, &AppClock{}))
 	//reset staff password
@@ -426,13 +434,18 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error, result *ope
 
 func loadConfig() ServerConfig {
 	config := ServerConfig{
-		SecretKey:     "secret",
-		AdminPassword: "admin",
-		ServerPort:    5000,
-		SeedPassword:  "123qwe",
-		EmailSMTP:     "qq@qq.com",
-		PasswordSMTP:  "123qwe",
-		Production:    false,
+		SecretKey:      "secret",
+		AdminPassword:  "admin",
+		ServerPort:     5000,
+		SeedPassword:   "123qwe",
+		EmailSMTP:      "qq@qq.com",
+		PasswordSMTP:   "123qwe",
+		Production:     false,
+		TokenDuration:  15 * time.Minute,
+		CookieDuration: 7 * 24 * time.Hour,
+		SecureCookies:  true,
+		EnableXSRF:     true,
+		TOTPIssuer:     "AL",
 	}
 
 	yamlFile, err := os.ReadFile("./alcfg.yml")
@@ -492,4 +505,30 @@ func seedDb(db *bolt.DB, clock Clock, eventRequests []EventRequest, jobRequests 
 
 	return
 
+}
+
+func allowNewSysAdmin(db *bolt.DB) bool {
+	allow := false
+	_ = db.Update(func(tx *bolt.Tx) error {
+		systemSettingsBucket, err := tx.CreateBucketIfNotExists([]byte("systemSettings"))
+		if err != nil {
+			return err
+		}
+
+		allowSysAdmin := systemSettingsBucket.Get([]byte("addSysAdmin"))
+		//if allowsysadmin is nil then set it to false
+		if allowSysAdmin == nil {
+			err = systemSettingsBucket.Put([]byte("addSysAdmin"), []byte("false"))
+			if err != nil {
+				return err
+			}
+		}
+
+		allow = allowSysAdmin == nil || string(allowSysAdmin) == "true"
+
+		return nil
+
+	})
+
+	return allow
 }
