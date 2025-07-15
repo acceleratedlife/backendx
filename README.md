@@ -1,3 +1,46 @@
+
+## Quick Start
+
+Follow these steps to get the project up and running:
+
+1.  **Fork and Clone:** Start by forking this repository and then cloning it to your local machine.
+2.  **Install Go:** Ensure you have Go installed. You can find installation instructions here:
+    [https://go.dev/doc/install](https://go.dev/doc/install)
+3.  **Navigate to Project:** Change directory into the main project folder:
+    ```bash
+    cd your-project-folder
+    ```
+    (Replace `your-project-folder` with the actual name of your cloned directory)
+4.  **Manage Dependencies:** Initialize and tidy up the Go modules:
+    ```bash
+    go mod tidy
+    ```
+5.  **Configuration File:** You may need an `alfcg.yml` file in the project's root directory with content similar to this:
+    ```yaml
+    adminpassword: qweasd
+    serverport: 5000
+    seedpassword: qweasd
+    emailsmtp: qq@aa.com
+    passwordsmtp: qweawd
+    production: false
+    ```
+6.  **Build Executable:** Compile the Go application:
+    ```bash
+    go build
+    ```
+7.  **Run Application:** You should now see an executable file (e.g., `backend.exe` on Windows, or `backend` on Linux/macOS). Run it:
+    ```bash
+    .\backend.exe # On Windows
+    ./backend     # On Linux/macOS
+    ```
+
+### To Test
+
+To run the project's tests, use the following command:
+
+```bash
+go test
+
 # to run spec 
 java -jar .\Downloads\openapi-generator-cli-5.3.0.jar generate -i .\Downloads\al.json -g go-server -o .\Documents\backendx
 # backend
