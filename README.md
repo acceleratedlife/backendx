@@ -15,7 +15,7 @@ Follow these steps to get the project up and running:
     ```bash
     go mod tidy
     ```
-5.  **Configuration File:** You may need an `alfcg.yml` file in the project's root directory with content similar to this:
+5.  **Configuration File:** You may need an `alcfg.yml` file in the project's root directory with content similar to this:
     ```yaml
     adminpassword: qweasd
     serverport: 5000
