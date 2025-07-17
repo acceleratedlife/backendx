@@ -33,6 +33,9 @@ Follow these steps to get the project up and running:
     .\backend.exe # On Windows
     ./backend     # On Linux/macOS
     ```
+8. **Request db file** You can start from blank but it is easier if you have some stuff to work with.
+
+worry about the stuff below later.
 
 ### To Test
 
