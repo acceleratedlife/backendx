@@ -91,6 +91,8 @@ const (
 	KeyMMA                  = "MMA"
 	KeyModMMA               = "modMMA"
 	KeyPayFrequency         = "payFrequency"
+	KeySystemSettings       = "systemSettings"
+	KeyAddSysAdmin          = "addSysAdmin"
 	KeyRegEnd               = "regEnd"
 	KeyCoins                = "ethereum,cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba-inu,dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
 	LoanRate                = 1.0175
@@ -510,15 +512,15 @@ func seedDb(db *bolt.DB, clock Clock, eventRequests []EventRequest, jobRequests 
 func allowNewSysAdmin(db *bolt.DB) bool {
 	allow := false
 	_ = db.Update(func(tx *bolt.Tx) error {
-		systemSettingsBucket, err := tx.CreateBucketIfNotExists([]byte("systemSettings"))
+		systemSettingsBucket, err := tx.CreateBucketIfNotExists([]byte(KeySystemSettings))
 		if err != nil {
 			return err
 		}
 
-		allowSysAdmin := systemSettingsBucket.Get([]byte("addSysAdmin"))
+		allowSysAdmin := systemSettingsBucket.Get([]byte(KeyAddSysAdmin))
 		//if allowsysadmin is nil then set it to false
 		if allowSysAdmin == nil {
-			err = systemSettingsBucket.Put([]byte("addSysAdmin"), []byte("false"))
+			err = systemSettingsBucket.Put([]byte(KeyAddSysAdmin), []byte("false"))
 			if err != nil {
 				return err
 			}
