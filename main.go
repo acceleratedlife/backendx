@@ -91,6 +91,8 @@ const (
 	KeyMMA                  = "MMA"
 	KeyModMMA               = "modMMA"
 	KeyPayFrequency         = "payFrequency"
+	KeySystemSettings       = "systemSettings"
+	KeyAddSysAdmin          = "addSysAdmin"
 	KeyRegEnd               = "regEnd"
 	KeyCoins                = "ethereum,cardano,bitcoin,chainlink,bnb,xrp,solana,dogecoin,polkadot,shiba-inu,dai,polygon,tron,avalanche,okb,litecoin,ftx,cronos,monery,uniswap,stellar,algorand,chain,flow,vechain,filecoin,frax,apecoin,hedera,eos,decentraland,tezos,quant,elrond,chillz,aave,kucoin,zcash,helium,fantom"
 	LoanRate                = 1.0175
@@ -127,15 +129,21 @@ const (
 var build_date string
 
 type ServerConfig struct {
-	AdminPassword string
-	SecureCookies bool
-	EnableXSRF    bool
-	SecretKey     string
-	ServerPort    int
-	SeedPassword  string
-	EmailSMTP     string
-	PasswordSMTP  string
-	Production    bool
+	AdminPassword  string
+	SecureCookies  bool
+	EnableXSRF     bool
+	SecretKey      string
+	ServerPort     int
+	SeedPassword   string
+	EmailSMTP      string
+	PasswordSMTP   string
+	Production     bool
+	CookieDomain   string
+	TLSCertFile    string
+	TLSKeyFile     string
+	TokenDuration  time.Duration `yaml:"token_duration"`
+	CookieDuration time.Duration `yaml:"cookie_duration"`
+	TOTPIssuer     string        `yaml:"totp_issuer"`
 }
 
 type Clock interface {
@@ -189,11 +197,18 @@ func main() {
 	authService := initAuth(db, config)
 	authRoute, _ := authService.Handlers()
 	m := authService.Middleware()
+	totpStore := NewBoltTOTPStore(db)
 
 	// *** auth
-	router, clock := createRouter(db, sseService) // Pass sseService to createRouter
+	router, clock := createRouter(db, sseService, authService.TokenService()) // Pass sseService to createRouter
 	router.Handle("/auth/al/login", authRoute)
 	router.Handle("/auth/al/logout", authRoute)
+
+	// sys-admin users (JWT carries "sys_admin")
+	router.Handle("/auth/sysadmin/al/login",
+		adminLoginStartHandler(authService, db, totpStore))
+	router.Handle("/auth/sysadmin/al/totp",
+		adminLoginVerifyHandler(authService, totpStore))
 
 	// backup
 	router.Handle("/admin/backup", backUpHandler(db))
@@ -201,6 +216,11 @@ func main() {
 		writer.Header().Set("Content-Type", "application/octet-stream")
 		writer.Write([]byte(build_date))
 	})
+
+	//new sysAdmin
+	if allowNewSysAdmin(db) {
+		router.Handle("/admin/new-sysadmin", newSysAdminHandler(db, config, totpStore))
+	}
 	//new school
 	router.Handle("/admin/new-school", newSchoolHandler(db, &AppClock{}))
 	//reset staff password
@@ -241,20 +261,20 @@ func main() {
 }
 
 // creates routes for prod
-func createRouter(db *bolt.DB, sseService SSEServiceInterface) (*mux.Router, *DemoClock) {
+func createRouter(db *bolt.DB, sseService SSEServiceInterface, jwtService *token.Service) (*mux.Router, *DemoClock) {
 	serverConfig := loadConfig()
 	if serverConfig.Production {
 		lgr.Printf("Creating production router")
 		clock := &AppClock{}
-		return createRouterClock(db, clock, sseService), nil
+		return createRouterClock(db, clock, sseService, jwtService), nil
 	}
 
 	lgr.Printf("Creating development router")
 	clock := &DemoClock{}
-	return createRouterClock(db, clock, sseService), clock
+	return createRouterClock(db, clock, sseService, jwtService), clock
 }
 
-func createRouterClock(db *bolt.DB, clock Clock, sseService SSEServiceInterface) *mux.Router {
+func createRouterClock(db *bolt.DB, clock Clock, sseService SSEServiceInterface, jwtService *token.Service) *mux.Router {
 	// Pass sseService to StudentApiServiceImpl
 	studentService := NewStudentApiServiceImpl(db, clock, sseService)
 	StudentApiController := openapi.NewStudentApiController(studentService)
@@ -265,7 +285,7 @@ func createRouterClock(db *bolt.DB, clock Clock, sseService SSEServiceInterface)
 	allService := NewAllApiServiceImpl(db, clock)
 	allController := openapi.NewAllApiController(allService)
 
-	sysAdminApiServiceImpl := NewSysAdminApiServiceImpl(db)
+	sysAdminApiServiceImpl := NewSysAdminApiServiceImpl(db, jwtService)
 	sysAdminCtrl := openapi.NewSysAdminApiController(sysAdminApiServiceImpl)
 
 	unregisteredServiceImpl := NewUnregisteredApiServiceImpl(db, clock)
@@ -406,7 +426,6 @@ func buildAuthMiddleware(m middleware.Authenticator) func(http.Handler) http.Han
 				}))
 				h.ServeHTTP(w, r)
 			}
-			return
 		})
 	}
 }
@@ -417,13 +436,18 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err error, result *ope
 
 func loadConfig() ServerConfig {
 	config := ServerConfig{
-		SecretKey:     "secret",
-		AdminPassword: "admin",
-		ServerPort:    5000,
-		SeedPassword:  "123qwe",
-		EmailSMTP:     "qq@qq.com",
-		PasswordSMTP:  "123qwe",
-		Production:    false,
+		SecretKey:      "secret",
+		AdminPassword:  "admin",
+		ServerPort:     5000,
+		SeedPassword:   "123qwe",
+		EmailSMTP:      "qq@qq.com",
+		PasswordSMTP:   "123qwe",
+		Production:     false,
+		TokenDuration:  15 * time.Minute,
+		CookieDuration: 7 * 24 * time.Hour,
+		SecureCookies:  true,
+		EnableXSRF:     true,
+		TOTPIssuer:     "AL",
 	}
 
 	yamlFile, err := os.ReadFile("./alcfg.yml")
@@ -483,4 +507,30 @@ func seedDb(db *bolt.DB, clock Clock, eventRequests []EventRequest, jobRequests 
 
 	return
 
+}
+
+func allowNewSysAdmin(db *bolt.DB) bool {
+	allow := false
+	_ = db.Update(func(tx *bolt.Tx) error {
+		systemSettingsBucket, err := tx.CreateBucketIfNotExists([]byte(KeySystemSettings))
+		if err != nil {
+			return err
+		}
+
+		allowSysAdmin := systemSettingsBucket.Get([]byte(KeyAddSysAdmin))
+		//if allowsysadmin is nil then set it to false
+		if allowSysAdmin == nil {
+			err = systemSettingsBucket.Put([]byte(KeyAddSysAdmin), []byte("false"))
+			if err != nil {
+				return err
+			}
+		}
+
+		allow = allowSysAdmin == nil || string(allowSysAdmin) == "true"
+
+		return nil
+
+	})
+
+	return allow
 }

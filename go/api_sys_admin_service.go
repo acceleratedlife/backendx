@@ -27,20 +27,6 @@ func NewSysAdminApiService() SysAdminApiServicer {
 	return &SysAdminApiService{}
 }
 
-// CreateBuck - create buck
-func (s *SysAdminApiService) CreateBuck(ctx context.Context, bucksBuckBody1 BucksBuckBody1) (ImplResponse, error) {
-	// TODO - update CreateBuck with the required logic for this service method.
-	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, Buck{}) or use other options such as http.Ok ...
-	//return Response(200, Buck{}), nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("CreateBuck method not implemented")
-}
-
 // DeleteAccount - delete school
 func (s *SysAdminApiService) DeleteAccount(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update DeleteAccount with the required logic for this service method.
@@ -55,20 +41,6 @@ func (s *SysAdminApiService) DeleteAccount(ctx context.Context, id string) (Impl
 	return Response(http.StatusNotImplemented, nil), errors.New("DeleteAccount method not implemented")
 }
 
-// DeleteBuck - delete buck
-func (s *SysAdminApiService) DeleteBuck(ctx context.Context, id string) (ImplResponse, error) {
-	// TODO - update DeleteBuck with the required logic for this service method.
-	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, Buck{}) or use other options such as http.Ok ...
-	//return Response(200, Buck{}), nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("DeleteBuck method not implemented")
-}
-
 // DeleteSchool - delete school
 func (s *SysAdminApiService) DeleteSchool(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update DeleteSchool with the required logic for this service method.
@@ -81,20 +53,6 @@ func (s *SysAdminApiService) DeleteSchool(ctx context.Context, id string) (ImplR
 	//return Response(400, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("DeleteSchool method not implemented")
-}
-
-// Deletetransaction - delete transaction
-func (s *SysAdminApiService) Deletetransaction(ctx context.Context, id string) (ImplResponse, error) {
-	// TODO - update Deletetransaction with the required logic for this service method.
-	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, string{}) or use other options such as http.Ok ...
-	//return Response(200, string{}), nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("Deletetransaction method not implemented")
 }
 
 // EditAccount - edit account
@@ -139,18 +97,61 @@ func (s *SysAdminApiService) EditSchool(ctx context.Context, schoolsSchoolBody S
 	return Response(http.StatusNotImplemented, nil), errors.New("EditSchool method not implemented")
 }
 
-// GetAllUsers - get all users excluding sysAdmins
-func (s *SysAdminApiService) GetAllUsers(ctx context.Context) (ImplResponse, error) {
-	// TODO - update GetAllUsers with the required logic for this service method.
+// GetSchoolUsers - return all users of school
+func (s *SysAdminApiService) GetSchoolUsers(ctx context.Context, id string) (ImplResponse, error) {
+	// TODO - update GetSchoolUsers with the required logic for this service method.
 	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, []ResponseAllUsers{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseAllUsers{}), nil
+	//TODO: Uncomment the next line to return response Response(200, []UserNoHistory{}) or use other options such as http.Ok ...
+	//return Response(200, []UserNoHistory{}), nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("GetSchoolUsers method not implemented")
+}
+
+// GetSchools - return all schools
+func (s *SysAdminApiService) GetSchools(ctx context.Context) (ImplResponse, error) {
+	// TODO - update GetSchools with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []ResponseSchools{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseSchools{}), nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("GetSchools method not implemented")
+}
+
+// ImpersonateUser - Issue a short-lived JWT (and XSRF token) for user impersonation
+func (s *SysAdminApiService) ImpersonateUser(ctx context.Context, requestImpersonate RequestImpersonate) (ImplResponse, error) {
+	// TODO - update ImpersonateUser with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, []ResponseImpersonate{}) or use other options such as http.Ok ...
+	//return Response(200, []ResponseImpersonate{}), nil
 
 	//TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
 	//return Response(401, nil),nil
 
-	return Response(http.StatusNotImplemented, nil), errors.New("GetAllUsers method not implemented")
+	//TODO: Uncomment the next line to return response Response(403, {}) or use other options such as http.Ok ...
+	//return Response(403, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(500, {}) or use other options such as http.Ok ...
+	//return Response(500, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("ImpersonateUser method not implemented")
 }
 
 // MakeAccount - make account
@@ -179,35 +180,4 @@ func (s *SysAdminApiService) MakeSchool(ctx context.Context, schoolsSchoolBody1 
 	//return Response(400, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("MakeSchool method not implemented")
-}
-
-// SearchSchools - searches schools
-func (s *SysAdminApiService) SearchSchools(ctx context.Context, zip int32) (ImplResponse, error) {
-	// TODO - update SearchSchools with the required logic for this service method.
-	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, []ResponseSchools{}) or use other options such as http.Ok ...
-	//return Response(200, []ResponseSchools{}), nil
-
-	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
-	//return Response(400, nil),nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("SearchSchools method not implemented")
-}
-
-// SearchTransaction - searches for a transaction
-func (s *SysAdminApiService) SearchTransaction(ctx context.Context, id string) (ImplResponse, error) {
-	// TODO - update SearchTransaction with the required logic for this service method.
-	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, Transaction{}) or use other options such as http.Ok ...
-	//return Response(200, Transaction{}), nil
-
-	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	//return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("SearchTransaction method not implemented")
 }

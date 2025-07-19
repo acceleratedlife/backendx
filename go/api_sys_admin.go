@@ -50,34 +50,16 @@ func NewSysAdminApiController(s SysAdminApiServicer, opts ...SysAdminApiOption) 
 func (c *SysAdminApiController) Routes() Routes {
 	return Routes{
 		{
-			"CreateBuck",
-			strings.ToUpper("Post"),
-			"/api/bucks/buck",
-			c.CreateBuck,
-		},
-		{
 			"DeleteAccount",
 			strings.ToUpper("Delete"),
 			"/api/accounts/account",
 			c.DeleteAccount,
 		},
 		{
-			"DeleteBuck",
-			strings.ToUpper("Delete"),
-			"/api/bucks/buck",
-			c.DeleteBuck,
-		},
-		{
 			"DeleteSchool",
 			strings.ToUpper("Delete"),
 			"/api/schools/school",
 			c.DeleteSchool,
-		},
-		{
-			"Deletetransaction",
-			strings.ToUpper("Delete"),
-			"/api/transactions/transaction",
-			c.Deletetransaction,
 		},
 		{
 			"EditAccount",
@@ -98,10 +80,22 @@ func (c *SysAdminApiController) Routes() Routes {
 			c.EditSchool,
 		},
 		{
-			"GetAllUsers",
+			"GetSchoolUsers",
 			strings.ToUpper("Get"),
-			"/api/sysAdmin/users",
-			c.GetAllUsers,
+			"/api/schools/users",
+			c.GetSchoolUsers,
+		},
+		{
+			"GetSchools",
+			strings.ToUpper("Get"),
+			"/api/schools",
+			c.GetSchools,
+		},
+		{
+			"ImpersonateUser",
+			strings.ToUpper("Post"),
+			"/api/impersonate",
+			c.ImpersonateUser,
 		},
 		{
 			"MakeAccount",
@@ -115,43 +109,7 @@ func (c *SysAdminApiController) Routes() Routes {
 			"/api/schools/school",
 			c.MakeSchool,
 		},
-		{
-			"SearchSchools",
-			strings.ToUpper("Get"),
-			"/api/schools",
-			c.SearchSchools,
-		},
-		{
-			"SearchTransaction",
-			strings.ToUpper("Get"),
-			"/api/transactions/transaction",
-			c.SearchTransaction,
-		},
 	}
-}
-
-// CreateBuck - create buck
-func (c *SysAdminApiController) CreateBuck(w http.ResponseWriter, r *http.Request) {
-	bucksBuckBody1Param := BucksBuckBody1{}
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(&bucksBuckBody1Param); err != nil {
-		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-		return
-	}
-	if err := AssertBucksBuckBody1Required(bucksBuckBody1Param); err != nil {
-		c.errorHandler(w, r, err, nil)
-		return
-	}
-	result, err := c.service.CreateBuck(r.Context(), bucksBuckBody1Param)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
 }
 
 // DeleteAccount - delete school
@@ -169,41 +127,11 @@ func (c *SysAdminApiController) DeleteAccount(w http.ResponseWriter, r *http.Req
 
 }
 
-// DeleteBuck - delete buck
-func (c *SysAdminApiController) DeleteBuck(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.DeleteBuck(r.Context(), idParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
 // DeleteSchool - delete school
 func (c *SysAdminApiController) DeleteSchool(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := query.Get("_id")
 	result, err := c.service.DeleteSchool(r.Context(), idParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// Deletetransaction - delete transaction
-func (c *SysAdminApiController) Deletetransaction(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.Deletetransaction(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -286,9 +214,48 @@ func (c *SysAdminApiController) EditSchool(w http.ResponseWriter, r *http.Reques
 
 }
 
-// GetAllUsers - get all users excluding sysAdmins
-func (c *SysAdminApiController) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	result, err := c.service.GetAllUsers(r.Context())
+// GetSchoolUsers - return all users of school
+func (c *SysAdminApiController) GetSchoolUsers(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.GetSchoolUsers(r.Context(), idParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// GetSchools - return all schools
+func (c *SysAdminApiController) GetSchools(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.GetSchools(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// ImpersonateUser - Issue a short-lived JWT (and XSRF token) for user impersonation
+func (c *SysAdminApiController) ImpersonateUser(w http.ResponseWriter, r *http.Request) {
+	requestImpersonateParam := RequestImpersonate{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestImpersonateParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestImpersonateRequired(requestImpersonateParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.ImpersonateUser(r.Context(), requestImpersonateParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -337,40 +304,6 @@ func (c *SysAdminApiController) MakeSchool(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	result, err := c.service.MakeSchool(r.Context(), schoolsSchoolBody1Param)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// SearchSchools - searches schools
-func (c *SysAdminApiController) SearchSchools(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	zipParam, err := parseInt32Parameter(query.Get("zip"), false)
-	if err != nil {
-		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-		return
-	}
-	result, err := c.service.SearchSchools(r.Context(), zipParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// SearchTransaction - searches for a transaction
-func (c *SysAdminApiController) SearchTransaction(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.SearchTransaction(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

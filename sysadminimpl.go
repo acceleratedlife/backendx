@@ -1,11 +1,16 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	crand "crypto/rand"
+
 	openapi "github.com/acceleratedlife/backend/go"
+	"github.com/go-pkgz/auth/token"
+	"github.com/golang-jwt/jwt"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -177,4 +182,161 @@ func schoolsByZip(db *bolt.DB, zip int32) ([]openapi.ResponseSchoolsInner, error
 	})
 
 	return res, err
+}
+
+// opens a db.view to pass to getSchoolUsersRx
+func getSchoolUsers(db *bolt.DB, schoolId string) (resp []openapi.UserNoHistory, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getSchoolUsersRx(tx, schoolId)
+		return err
+	})
+
+	return
+}
+
+func makeToken(jwtSvc *token.Service, target UserInfo) (string, string, error) {
+
+	tgt := token.User{
+		Name: target.Name,
+	}
+
+	const ttl = 15 * time.Minute
+
+	// XSRF = random 32-byte URL-safe string
+	xsrfBytes := make([]byte, 32)
+	if _, err := crand.Read(xsrfBytes); err != nil {
+		return "", "", err
+	}
+	xsrf := base64.RawURLEncoding.EncodeToString(xsrfBytes)
+
+	claims := token.Claims{
+		StandardClaims: jwt.StandardClaims{
+			Id:        xsrf,                       // XSRF token goes into jti / id
+			ExpiresAt: time.Now().Add(ttl).Unix(), // custom TTL, e.g. 15 min
+			Issuer:    jwtSvc.Opts.Issuer,         // keep same issuer
+		},
+		User: &tgt,
+	}
+
+	jwtStr, err := jwtSvc.Token(claims) // sign only, no cookies written
+	if err != nil {
+		return "", "", err
+	}
+	return jwtStr, xsrf, nil
+}
+
+// gets all the users in a school
+func getSchoolUsersRx(tx *bolt.Tx, schoolId string) (resp []openapi.UserNoHistory, err error) {
+	school, err := schoolByIdTx(tx, schoolId)
+	if err != nil {
+		return
+	}
+
+	users := make([]string, 0)
+
+	adminsBucket := school.Bucket([]byte(KeyAdmins))
+	c := adminsBucket.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		users = append(users, string(k))
+	}
+
+	teacherBucket := school.Bucket([]byte(KeyTeachers))
+	c = teacherBucket.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		users = append(users, string(k))
+	}
+
+	studentsBucket := school.Bucket([]byte(KeyStudents))
+	c = studentsBucket.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		users = append(users, string(k))
+	}
+
+	//get all the users in the school
+	for _, user := range users {
+		userInfo, err := getUserInLocalStoreTx(tx, user)
+		if err != nil {
+			continue
+		}
+
+		rank := userInfo.Rank
+		if rank == 0 {
+			rank = 99999 // put zero-ranked users at the end
+		}
+
+		resp = append(resp, openapi.UserNoHistory{
+			Id:            userInfo.Name,
+			FirstName:     userInfo.FirstName,
+			LastName:      userInfo.LastName,
+			Role:          userInfo.Role,
+			Rank:          rank, //if rank is 0 set it to 99999 so it is at the bottom of the list, this is to fix the sorting issue
+			TaxableIncome: userInfo.TaxableIncome,
+			Income:        userInfo.Income,
+			College:       userInfo.College,
+			NetWorth:      userInfo.NetWorth,
+			LottoWin:      userInfo.LottoWin,
+			LottoPlay:     userInfo.LottoPlay,
+		})
+	}
+
+	return
+
+}
+
+// opens a db.view to pass to getSchoolsRx
+func getSchools(db *bolt.DB) (resp []openapi.ResponseSchools, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		resp, err = getSchoolsRx(tx)
+		return err
+	})
+
+	return
+}
+
+// opens a db.view to pass to getSchoolsRx
+func getSchoolsRx(tx *bolt.Tx) (resp []openapi.ResponseSchools, err error) {
+	schools := tx.Bucket([]byte("schools"))
+	if schools == nil {
+		return nil, fmt.Errorf("no schools available")
+	}
+
+	c := schools.Cursor()
+
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		if v != nil {
+			continue
+		}
+
+		school := schools.Bucket(k)
+
+		item := openapi.ResponseSchools{
+			Id:   string(k),
+			Name: string(school.Get([]byte(KeyName))),
+			City: string(school.Get([]byte(KeyCity))),
+			Zip:  btoi32(school.Get([]byte(KeyZip))),
+		}
+
+		//loop through each bucket and count how many keys are in each
+		adminsBucket := school.Bucket([]byte(KeyAdmins))
+		c := adminsBucket.Cursor()
+
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			item.Staff++
+		}
+
+		teacherBucket := school.Bucket([]byte(KeyTeachers))
+		c = teacherBucket.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			item.Staff++
+		}
+
+		studentsBucket := school.Bucket([]byte(KeyStudents))
+		c = studentsBucket.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			item.Students++
+		}
+
+		resp = append(resp, item)
+	}
+	return
 }
