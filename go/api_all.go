@@ -80,6 +80,12 @@ func (c *AllApiController) Routes() Routes {
 			c.ExchangeRate,
 		},
 		{
+			"IsPaused",
+			strings.ToUpper("Get"),
+			"/api/school/paused",
+			c.IsPaused,
+		},
+		{
 			"Login",
 			strings.ToUpper("Post"),
 			"/api/users/login",
@@ -234,6 +240,21 @@ func (c *AllApiController) ExchangeRate(w http.ResponseWriter, r *http.Request) 
 	sellCurrencyParam := query.Get("sellCurrency")
 	buyCurrencyParam := query.Get("buyCurrency")
 	result, err := c.service.ExchangeRate(r.Context(), sellCurrencyParam, buyCurrencyParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// IsPaused -
+func (c *AllApiController) IsPaused(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.IsPaused(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

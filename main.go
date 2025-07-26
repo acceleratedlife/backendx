@@ -44,6 +44,7 @@ const (
 	KeyAuctions             = "auctions"
 	KeyCB                   = "cb"
 	KeyUsers                = "users"
+	KeyPaused               = "paused"
 	KeyAccounts             = "accounts"
 	KeyCryptos              = "cryptos"
 	KeyConversion           = "conversion"

@@ -74,12 +74,6 @@ func (c *SysAdminApiController) Routes() Routes {
 			c.EditBuck,
 		},
 		{
-			"EditSchool",
-			strings.ToUpper("Put"),
-			"/api/schools/school",
-			c.EditSchool,
-		},
-		{
 			"GetSchoolUsers",
 			strings.ToUpper("Get"),
 			"/api/schools/users",
@@ -150,6 +144,12 @@ func (c *SysAdminApiController) Routes() Routes {
 			strings.ToUpper("Post"),
 			"/api/message/user",
 			c.MessageUser,
+		},
+		{
+			"SchoolPauseToggle",
+			strings.ToUpper("Put"),
+			"/api/schools/school",
+			c.SchoolPauseToggle,
 		},
 	}
 }
@@ -222,30 +222,6 @@ func (c *SysAdminApiController) EditBuck(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	result, err := c.service.EditBuck(r.Context(), bucksBuckBodyParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// EditSchool - edit school
-func (c *SysAdminApiController) EditSchool(w http.ResponseWriter, r *http.Request) {
-	schoolsSchoolBodyParam := SchoolsSchoolBody{}
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(&schoolsSchoolBodyParam); err != nil {
-		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-		return
-	}
-	if err := AssertSchoolsSchoolBodyRequired(schoolsSchoolBodyParam); err != nil {
-		c.errorHandler(w, r, err, nil)
-		return
-	}
-	result, err := c.service.EditSchool(r.Context(), schoolsSchoolBodyParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -514,6 +490,21 @@ func (c *SysAdminApiController) MessageUser(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	result, err := c.service.MessageUser(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SchoolPauseToggle - pause school
+func (c *SysAdminApiController) SchoolPauseToggle(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.SchoolPauseToggle(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

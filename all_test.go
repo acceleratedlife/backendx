@@ -1280,3 +1280,27 @@ func TestSearchMarketItems(t *testing.T) {
 	require.Equal(t, 1, len(data))
 	require.Equal(t, "Candy", data[0].Title)
 }
+
+func TestIsPaused(t *testing.T) {
+	clock := TestClock{}
+	db, tearDown := FullStartTestServerClock("isPaused", 8088, "", &clock)
+	defer tearDown()
+
+	_, schools, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+	u, _ := url.ParseRequestURI("http://127.0.0.1:8088/api/school/paused")
+	q := u.Query()
+	q.Set("_id", schools[0])
+	u.RawQuery = q.Encode()
+
+	req, _ := http.NewRequest(http.MethodGet, u.String(), nil)
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+}

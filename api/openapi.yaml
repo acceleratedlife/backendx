@@ -205,6 +205,28 @@ paths:
       summary: Issue a short-lived JWT (and XSRF token) for user impersonation
       tags:
       - SysAdmin
+  /school/paused:
+    get:
+      description: isSchoolPaused
+      operationId: isPaused
+      parameters:
+      - description: pass the _id of the school
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          description: not paused
+        "201":
+          description: paused
+        "400":
+          description: problem finding paused
+      tags:
+      - All
   /schools:
     get:
       description: returns all schools
@@ -323,25 +345,23 @@ paths:
       tags:
       - SysAdmin
     put:
-      description: edit a school
-      operationId: editSchool
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/schools_school_body'
+      description: pause a school
+      operationId: schoolPauseToggle
+      parameters:
+      - description: pass the school _id to be paused
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/School'
-                type: array
-          description: school record is made
+          description: school pause has been toggled
         "400":
-          description: School cannot be edited with that data
-      summary: edit school
+          description: failed to toggle pause
+      summary: pause school
       tags:
       - SysAdmin
   /schools/school/count:
@@ -2756,6 +2776,8 @@ components:
           type: integer
         staff:
           type: integer
+        isPaused:
+          type: boolean
       type: object
     ResponseSearchStudentUbuck:
       example:

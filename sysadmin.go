@@ -53,9 +53,28 @@ func (s SysAdminApiServiceImpl) EditBuck(ctx context.Context, body openapi.Bucks
 	panic("implement me")
 }
 
-func (s SysAdminApiServiceImpl) EditSchool(ctx context.Context, body openapi.SchoolsSchoolBody) (openapi.ImplResponse, error) {
-	//TODO implement me
-	panic("implement me")
+func (s SysAdminApiServiceImpl) SchoolPauseToggle(ctx context.Context, school_id string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(s.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	if userDetails.Role != UserRoleSysAdmin {
+		return openapi.Response(401, ""), nil
+	}
+
+	lgr.Printf("Toggling pause for school %s", school_id)
+	err = togglePause(s.db, school_id)
+
+	if err != nil {
+		return openapi.Response(500, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
 }
 
 func (s SysAdminApiServiceImpl) MakeAccount(ctx context.Context, body1 openapi.AccountsAccountBody1) (openapi.ImplResponse, error) {

@@ -97,6 +97,23 @@ func (s *AllApiService) ExchangeRate(ctx context.Context, sellCurrency string, b
 	return Response(http.StatusNotImplemented, nil), errors.New("ExchangeRate method not implemented")
 }
 
+// IsPaused - 
+func (s *AllApiService) IsPaused(ctx context.Context, id string) (ImplResponse, error) {
+	// TODO - update IsPaused with the required logic for this service method.
+	// Add api_all_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(201, {}) or use other options such as http.Ok ...
+	//return Response(201, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("IsPaused method not implemented")
+}
+
 // Login - logging in
 func (s *AllApiService) Login(ctx context.Context, requestLogin RequestLogin) (ImplResponse, error) {
 	// TODO - update Login with the required logic for this service method.

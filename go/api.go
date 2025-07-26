@@ -26,6 +26,7 @@ type AllApiRouter interface {
 	ConfirmEmail(http.ResponseWriter, *http.Request)
 	DeleteAuction(http.ResponseWriter, *http.Request)
 	ExchangeRate(http.ResponseWriter, *http.Request)
+	IsPaused(http.ResponseWriter, *http.Request)
 	Login(http.ResponseWriter, *http.Request)
 	Logout(http.ResponseWriter, *http.Request)
 	MakeAuction(http.ResponseWriter, *http.Request)
@@ -117,7 +118,6 @@ type SysAdminApiRouter interface {
 	DeleteSchool(http.ResponseWriter, *http.Request)
 	EditAccount(http.ResponseWriter, *http.Request)
 	EditBuck(http.ResponseWriter, *http.Request)
-	EditSchool(http.ResponseWriter, *http.Request)
 	GetSchoolUsers(http.ResponseWriter, *http.Request)
 	GetSchools(http.ResponseWriter, *http.Request)
 	ImpersonateUser(http.ResponseWriter, *http.Request)
@@ -130,6 +130,7 @@ type SysAdminApiRouter interface {
 	MessageAllStaff(http.ResponseWriter, *http.Request)
 	MessageAllStudents(http.ResponseWriter, *http.Request)
 	MessageUser(http.ResponseWriter, *http.Request)
+	SchoolPauseToggle(http.ResponseWriter, *http.Request)
 }
 // UnregisteredApiRouter defines the required methods for binding the api requests to a responses for the UnregisteredApi
 // The UnregisteredApiRouter implementation should parse necessary information from the http request,
@@ -151,6 +152,7 @@ type AllApiServicer interface {
 	ConfirmEmail(context.Context, string) (ImplResponse, error)
 	DeleteAuction(context.Context, string) (ImplResponse, error)
 	ExchangeRate(context.Context, string, string) (ImplResponse, error)
+	IsPaused(context.Context, string) (ImplResponse, error)
 	Login(context.Context, RequestLogin) (ImplResponse, error)
 	Logout(context.Context, string) (ImplResponse, error)
 	MakeAuction(context.Context, RequestMakeAuction) (ImplResponse, error)
@@ -257,7 +259,6 @@ type SysAdminApiServicer interface {
 	DeleteSchool(context.Context, string) (ImplResponse, error)
 	EditAccount(context.Context, AccountsAccountBody) (ImplResponse, error)
 	EditBuck(context.Context, BucksBuckBody) (ImplResponse, error)
-	EditSchool(context.Context, SchoolsSchoolBody) (ImplResponse, error)
 	GetSchoolUsers(context.Context, string) (ImplResponse, error)
 	GetSchools(context.Context) (ImplResponse, error)
 	ImpersonateUser(context.Context, RequestImpersonate) (ImplResponse, error)
@@ -270,6 +271,7 @@ type SysAdminApiServicer interface {
 	MessageAllStaff(context.Context, RequestMessage) (ImplResponse, error)
 	MessageAllStudents(context.Context, RequestMessage) (ImplResponse, error)
 	MessageUser(context.Context, RequestMessage) (ImplResponse, error)
+	SchoolPauseToggle(context.Context, string) (ImplResponse, error)
 }
 
 

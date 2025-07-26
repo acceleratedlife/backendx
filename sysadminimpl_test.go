@@ -407,3 +407,25 @@ func TestDeleteSchool(t *testing.T) {
 	_, err = getUserInLocalStore(db, users[0].Id)
 	require.Error(t, err)
 }
+
+func TestTogglePause(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	_, schools, _, _, _, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.NoError(t, err)
+
+	err = togglePause(db, schools[0])
+	require.NoError(t, err)
+
+	isPaused, err := isSchoolPaused(db, schools[0])
+	require.NoError(t, err)
+	assert.True(t, isPaused)
+
+	err = togglePause(db, schools[0])
+	require.NoError(t, err)
+
+	isPaused, err = isSchoolPaused(db, schools[0])
+	require.NoError(t, err)
+	assert.False(t, isPaused)
+}

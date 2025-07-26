@@ -83,20 +83,6 @@ func (s *SysAdminApiService) EditBuck(ctx context.Context, bucksBuckBody BucksBu
 	return Response(http.StatusNotImplemented, nil), errors.New("EditBuck method not implemented")
 }
 
-// EditSchool - edit school
-func (s *SysAdminApiService) EditSchool(ctx context.Context, schoolsSchoolBody SchoolsSchoolBody) (ImplResponse, error) {
-	// TODO - update EditSchool with the required logic for this service method.
-	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, []School{}) or use other options such as http.Ok ...
-	//return Response(200, []School{}), nil
-
-	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
-	//return Response(400, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("EditSchool method not implemented")
-}
-
 // GetSchoolUsers - return all users of school
 func (s *SysAdminApiService) GetSchoolUsers(ctx context.Context, id string) (ImplResponse, error) {
 	// TODO - update GetSchoolUsers with the required logic for this service method.
@@ -320,4 +306,18 @@ func (s *SysAdminApiService) MessageUser(ctx context.Context, requestMessage Req
 	//return Response(500, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("MessageUser method not implemented")
+}
+
+// SchoolPauseToggle - pause school
+func (s *SysAdminApiService) SchoolPauseToggle(ctx context.Context, id string) (ImplResponse, error) {
+	// TODO - update SchoolPauseToggle with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
+	//return Response(400, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("SchoolPauseToggle method not implemented")
 }

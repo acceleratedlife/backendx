@@ -309,12 +309,14 @@ func getSchoolsRx(tx *bolt.Tx) (resp []openapi.ResponseSchools, err error) {
 		}
 
 		school := schools.Bucket(k)
+		isPaused := school.Get([]byte(KeyPaused))
 
 		item := openapi.ResponseSchools{
-			Id:   string(k),
-			Name: string(school.Get([]byte(KeyName))),
-			City: string(school.Get([]byte(KeyCity))),
-			Zip:  btoi32(school.Get([]byte(KeyZip))),
+			Id:       string(k),
+			Name:     string(school.Get([]byte(KeyName))),
+			City:     string(school.Get([]byte(KeyCity))),
+			Zip:      btoi32(school.Get([]byte(KeyZip))),
+			IsPaused: isPaused != nil,
 		}
 
 		//loop through each bucket and count how many keys are in each
@@ -661,4 +663,57 @@ func deleteSchoolTx(tx *bolt.Tx, schoolId string) error {
 	}
 
 	return nil
+}
+
+func togglePause(db *bolt.DB, schoolId string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		return togglePauseTx(tx, schoolId)
+	})
+}
+
+func togglePauseTx(tx *bolt.Tx, schoolId string) (err error) {
+	schools := tx.Bucket([]byte("schools"))
+	if schools == nil {
+		return fmt.Errorf("schools not found")
+	}
+
+	schoolBucket := schools.Bucket([]byte(schoolId))
+	if schoolBucket == nil {
+		return fmt.Errorf("school not found")
+	}
+
+	paused := schoolBucket.Get([]byte(KeyPaused))
+	if paused == nil {
+		err = schoolBucket.Put([]byte(KeyPaused), []byte("true"))
+	} else {
+		err = schoolBucket.Delete([]byte(KeyPaused))
+	}
+
+	return
+}
+
+func isSchoolPaused(db *bolt.DB, schoolId string) (isPaused bool, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		isPaused, err = isSchoolPausedTx(tx, schoolId)
+		return err
+	})
+	return isPaused, err
+}
+
+func isSchoolPausedTx(tx *bolt.Tx, schoolId string) (isPaused bool, err error) {
+	schools := tx.Bucket([]byte("schools"))
+	if schools == nil {
+		return false, fmt.Errorf("schools not found")
+	}
+
+	schoolBucket := schools.Bucket([]byte(schoolId))
+	if schoolBucket == nil {
+		return false, fmt.Errorf("school not found")
+	}
+
+	paused := schoolBucket.Get([]byte(KeyPaused))
+	if paused == nil {
+		return false, nil
+	}
+	return true, nil
 }

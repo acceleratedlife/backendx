@@ -389,3 +389,26 @@ func TestSysAdmin_MakeSchool(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&ok))
 	assert.NotEmpty(t, ok.Password)
 }
+
+func TestSchoolPauseToggle(t *testing.T) {
+	db, tearDown := FullStartTestServer("SchoolPauseToggle", 8088, "")
+	defer tearDown()
+
+	// 1 school, 1 teacher, 1 classes, 4 students
+	_, schools, _, _, _, err := CreateTestAccounts(db, 1, 1, 1, 4)
+	require.NoError(t, err)
+
+	admin := "admin@example.com"
+	seedSysAdmin(t, db, admin)
+	SetTestLoginUser(admin)
+
+	client := &http.Client{Timeout: 2 * time.Second}
+
+	// happy path
+	req, _ := http.NewRequest(http.MethodPut, "http://127.0.0.1:8088/api/schools/school?_id="+schools[0], nil)
+
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, 200, resp.StatusCode)
+}
