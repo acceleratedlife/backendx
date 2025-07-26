@@ -36,6 +36,7 @@ type UserInfo struct {
 	LottoPlay        int32           `json:",omitempty"`
 	LottoWin         int32           `json:",omitempty"`
 	TaxableIncome    int32
+	Messages         []string `json:",omitempty"`
 }
 
 type TeacherSettings struct {

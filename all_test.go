@@ -17,6 +17,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestClearMessages(t *testing.T) {
+	db, tearDown := FullStartTestServer("clearMessages", 8088, "")
+	defer tearDown()
+	_, _, _, _, students, _ := CreateTestAccounts(db, 1, 1, 1, 1)
+
+	SetTestLoginUser(students[0])
+
+	client := &http.Client{}
+
+	req, _ := http.NewRequest(http.MethodPut,
+		"http://127.0.0.1:8088/api/clearMessages",
+		nil)
+
+	resp, err := client.Do(req)
+	require.Nil(t, err)
+	defer resp.Body.Close()
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.StatusCode)
+
+}
+
 func TestAuth(t *testing.T) {
 	_, tearDown := FullStartTestServer("auth", 8088, "test@admin.com")
 	defer tearDown()

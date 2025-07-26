@@ -169,15 +169,155 @@ func (s *SysAdminApiService) MakeAccount(ctx context.Context, accountsAccountBod
 }
 
 // MakeSchool - make a new school
-func (s *SysAdminApiService) MakeSchool(ctx context.Context, schoolsSchoolBody1 SchoolsSchoolBody1) (ImplResponse, error) {
+func (s *SysAdminApiService) MakeSchool(ctx context.Context, requestMakeSchool RequestMakeSchool) (ImplResponse, error) {
 	// TODO - update MakeSchool with the required logic for this service method.
 	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	//TODO: Uncomment the next line to return response Response(200, InlineResponse200{}) or use other options such as http.Ok ...
-	//return Response(200, InlineResponse200{}), nil
+	//TODO: Uncomment the next line to return response Response(200, ResponseResetPassword{}) or use other options such as http.Ok ...
+	//return Response(200, ResponseResetPassword{}), nil
 
 	//TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
 	//return Response(400, nil),nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("MakeSchool method not implemented")
+}
+
+// MessageAll - send a message to all users
+func (s *SysAdminApiService) MessageAll(ctx context.Context, requestMessage RequestMessage) (ImplResponse, error) {
+	// TODO - update MessageAll with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
+	//return Response(401, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(500, {}) or use other options such as http.Ok ...
+	//return Response(500, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MessageAll method not implemented")
+}
+
+// MessageAllSchool - send a message to all users of a school
+func (s *SysAdminApiService) MessageAllSchool(ctx context.Context, requestMessage RequestMessage) (ImplResponse, error) {
+	// TODO - update MessageAllSchool with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
+	//return Response(401, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(500, {}) or use other options such as http.Ok ...
+	//return Response(500, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MessageAllSchool method not implemented")
+}
+
+// MessageAllSchoolStaff - send a message to all staff of a school
+func (s *SysAdminApiService) MessageAllSchoolStaff(ctx context.Context, requestMessage RequestMessage) (ImplResponse, error) {
+	// TODO - update MessageAllSchoolStaff with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
+	//return Response(401, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(500, {}) or use other options such as http.Ok ...
+	//return Response(500, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MessageAllSchoolStaff method not implemented")
+}
+
+// MessageAllSchoolStudents - send a message to all school students
+func (s *SysAdminApiService) MessageAllSchoolStudents(ctx context.Context, requestMessage RequestMessage) (ImplResponse, error) {
+	// TODO - update MessageAllSchoolStudents with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
+	//return Response(401, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(500, {}) or use other options such as http.Ok ...
+	//return Response(500, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MessageAllSchoolStudents method not implemented")
+}
+
+// MessageAllStaff - send a message to all staff
+func (s *SysAdminApiService) MessageAllStaff(ctx context.Context, requestMessage RequestMessage) (ImplResponse, error) {
+	// TODO - update MessageAllStaff with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
+	//return Response(401, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(500, {}) or use other options such as http.Ok ...
+	//return Response(500, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MessageAllStaff method not implemented")
+}
+
+// MessageAllStudents - send a message to all students
+func (s *SysAdminApiService) MessageAllStudents(ctx context.Context, requestMessage RequestMessage) (ImplResponse, error) {
+	// TODO - update MessageAllStudents with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
+	//return Response(401, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(500, {}) or use other options such as http.Ok ...
+	//return Response(500, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MessageAllStudents method not implemented")
+}
+
+// MessageUser - send a message to one user
+func (s *SysAdminApiService) MessageUser(ctx context.Context, requestMessage RequestMessage) (ImplResponse, error) {
+	// TODO - update MessageUser with the required logic for this service method.
+	// Add api_sys_admin_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	//TODO: Uncomment the next line to return response Response(200, {}) or use other options such as http.Ok ...
+	//return Response(200, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(401, {}) or use other options such as http.Ok ...
+	//return Response(401, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
+	//return Response(404, nil),nil
+
+	//TODO: Uncomment the next line to return response Response(500, {}) or use other options such as http.Ok ...
+	//return Response(500, nil),nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("MessageUser method not implemented")
 }

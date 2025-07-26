@@ -151,3 +151,259 @@ func TestGetSchools_NoBucket(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, "no schools available", err.Error())
 }
+
+func TestMessageEmptyImpl(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	_, _, _, _, _, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.NoError(t, err)
+
+	err = message(db, nil, nil, nil, false, false)
+	require.Error(t, err)
+	assert.Equal(t, "no message sent", err.Error())
+}
+
+func TestMessageUserImpl(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.NoError(t, err)
+
+	theMessage := "Hello World"
+	err = message(db, &theMessage, &students[0], nil, false, false)
+	require.NoError(t, err)
+
+	user, err := getUserInLocalStore(db, students[0])
+	require.NoError(t, err)
+	assert.Len(t, user.Messages, 1)
+	assert.Equal(t, theMessage, user.Messages[0])
+}
+
+func TestMessageAllImpl(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	admins, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 5)
+	require.NoError(t, err)
+
+	theMessage := "Hello World"
+	err = message(db, &theMessage, nil, nil, true, true)
+	require.NoError(t, err)
+
+	users := append(admins, teachers...)
+	users = append(users, students...)
+
+	for _, id := range users {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		assert.Len(t, user.Messages, 1)
+		assert.Equal(t, theMessage, user.Messages[0])
+	}
+}
+
+func TestMessageAllStaffImpl(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	admins, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 5)
+	require.NoError(t, err)
+
+	theMessage := "Hello World"
+	err = message(db, &theMessage, nil, nil, false, true)
+	require.NoError(t, err)
+
+	for _, id := range admins {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		assert.Len(t, user.Messages, 1)
+		assert.Equal(t, theMessage, user.Messages[0])
+	}
+
+	for _, id := range teachers {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		assert.Len(t, user.Messages, 1)
+		assert.Equal(t, theMessage, user.Messages[0])
+	}
+
+	for _, id := range students {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		assert.Len(t, user.Messages, 0)
+	}
+}
+
+func TestMessageAllStudentsImpl(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	admins, _, teachers, _, students, err := CreateTestAccounts(db, 1, 1, 1, 5)
+	require.NoError(t, err)
+
+	theMessage := "Hello World"
+	err = message(db, &theMessage, nil, nil, true, false)
+	require.NoError(t, err)
+
+	for _, id := range admins {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		assert.Len(t, user.Messages, 0)
+	}
+
+	for _, id := range teachers {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		assert.Len(t, user.Messages, 0)
+	}
+
+	for _, id := range students {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		assert.Len(t, user.Messages, 1)
+		assert.Equal(t, theMessage, user.Messages[0])
+	}
+}
+
+func TestMessageSchoolImpl(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	admins, schools, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 1, 5)
+	require.NoError(t, err)
+
+	theMessage := "Hello World"
+	err = message(db, &theMessage, nil, &schools[0], true, true)
+	require.NoError(t, err)
+
+	for _, id := range admins {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		if user.SchoolId == schools[0] {
+			assert.Len(t, user.Messages, 1)
+			assert.Equal(t, theMessage, user.Messages[0])
+		} else {
+			assert.Len(t, user.Messages, 0)
+		}
+	}
+
+	for _, id := range teachers {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		if user.SchoolId == schools[0] {
+			assert.Len(t, user.Messages, 1)
+			assert.Equal(t, theMessage, user.Messages[0])
+		} else {
+			assert.Len(t, user.Messages, 0)
+		}
+	}
+
+	for _, id := range students {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		if user.SchoolId == schools[0] {
+			assert.Len(t, user.Messages, 1)
+			assert.Equal(t, theMessage, user.Messages[0])
+		} else {
+			assert.Len(t, user.Messages, 0)
+		}
+	}
+}
+
+func TestMessageSchoolStaffImpl(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	admins, schools, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 1, 5)
+	require.NoError(t, err)
+
+	theMessage := "Hello World"
+	err = message(db, &theMessage, nil, &schools[0], false, true)
+	require.NoError(t, err)
+
+	for _, id := range admins {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		if user.SchoolId == schools[0] {
+			assert.Len(t, user.Messages, 1)
+			assert.Equal(t, theMessage, user.Messages[0])
+		} else {
+			assert.Len(t, user.Messages, 0)
+		}
+	}
+
+	for _, id := range teachers {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		if user.SchoolId == schools[0] {
+			assert.Len(t, user.Messages, 1)
+			assert.Equal(t, theMessage, user.Messages[0])
+		} else {
+			assert.Len(t, user.Messages, 0)
+		}
+	}
+
+	for _, id := range students {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		assert.Len(t, user.Messages, 0)
+	}
+}
+
+func TestMessageSchoolStudentsImpl(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	admins, schools, teachers, _, students, err := CreateTestAccounts(db, 1, 2, 1, 5)
+	require.NoError(t, err)
+
+	theMessage := "Hello World"
+	err = message(db, &theMessage, nil, &schools[0], true, false)
+	require.NoError(t, err)
+
+	for _, id := range admins {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		assert.Len(t, user.Messages, 0)
+	}
+
+	for _, id := range teachers {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		assert.Len(t, user.Messages, 0)
+	}
+
+	for _, id := range students {
+		user, err := getUserInLocalStore(db, id)
+		require.NoError(t, err)
+		if user.SchoolId == schools[0] {
+			assert.Len(t, user.Messages, 1)
+			assert.Equal(t, theMessage, user.Messages[0])
+		} else {
+			assert.Len(t, user.Messages, 0)
+		}
+	}
+}
+
+func TestDeleteSchool(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	_, schools, _, _, _, err := CreateTestAccounts(db, 3, 1, 1, 1)
+	require.NoError(t, err)
+
+	users, err := getSchoolUsers(db, schools[0])
+	require.NoError(t, err)
+	err = deleteSchool(db, schools[0])
+	require.NoError(t, err)
+
+	//verify that there are only 2 schools left
+	remainingSchools, err := getSchools(db)
+	require.NoError(t, err)
+	assert.Len(t, remainingSchools, 2)
+	//verify that the admin and their teacher account is gone
+
+	_, err = getUserInLocalStore(db, users[0].Id)
+	require.Error(t, err)
+}

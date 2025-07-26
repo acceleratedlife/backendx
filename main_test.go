@@ -459,7 +459,7 @@ func TestNewSchoolSecured(t *testing.T) {
 
 	client := &http.Client{}
 
-	body := NewSchoolRequest{
+	body := openapi.RequestMakeSchool{
 		School:    "THS",
 		FirstName: "Admin",
 		LastName:  "Super",

@@ -27,6 +27,153 @@ tags:
 - description: all users that work at school
   name: Staff
 paths:
+  /message:
+    post:
+      operationId: messageAll
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all users
+      tags:
+      - SysAdmin
+  /message/staff:
+    post:
+      operationId: messageAllStaff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all staff
+      tags:
+      - SysAdmin
+  /message/students:
+    post:
+      operationId: messageAllStudents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all students
+      tags:
+      - SysAdmin
+  /message/school:
+    post:
+      operationId: messageAllSchool
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all users of a school
+      tags:
+      - SysAdmin
+  /message/school/staff:
+    post:
+      operationId: messageAllSchoolStaff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all staff of a school
+      tags:
+      - SysAdmin
+  /message/school/students:
+    post:
+      operationId: messageAllSchoolStudents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all school students
+      tags:
+      - SysAdmin
+  /message/user:
+    post:
+      operationId: messageUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to one user
+      tags:
+      - SysAdmin
   /impersonate:
     post:
       description: |
@@ -162,13 +309,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/schools_school_body_1'
+              $ref: '#/components/schemas/RequestMakeSchool'
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/ResponseResetPassword'
           description: school record is made
         "400":
           description: School cannot be made with that data
@@ -1458,6 +1605,17 @@ paths:
       summary: return all students from a school
       tags:
       - All
+  /clearMessages:
+    put:
+      description: removes messasge from a user after viewed
+      operationId: clearMessages
+      responses:
+        "200":
+          description: messages Deleted
+        "404":
+          description: There is no user with that email
+      tags:
+      - All
   /users/user:
     delete:
       description: Delete a student.
@@ -2218,6 +2376,10 @@ components:
           type: integer
         lottoWin:
           type: integer
+        messages:
+          items:
+            type: string
+          type: array
       required:
       - isAdmin
       - isAuth
@@ -2865,6 +3027,50 @@ components:
           example: Pa$$w0rd
           type: string
       type: object
+    RequestMakeSchool:
+      example:
+        zip: 94557
+        firstName: Tom
+        lastName: Cat
+        school: East High
+        city: Dublin
+        email: email
+      properties:
+        school:
+          example: East High
+          type: string
+        firstName:
+          example: Tom
+          type: string
+        lastName:
+          example: Cat
+          type: string
+        city:
+          example: Dublin
+          type: string
+        zip:
+          example: 94557
+          type: integer
+        email:
+          type: string
+      type: object
+    RequestMessage:
+      example:
+        school_id: school_id
+        user_id: ss@ss.com
+        message: server down tomorrow
+      properties:
+        message:
+          example: server down tomorrow
+          type: string
+        user_id:
+          example: ss@ss.com
+          type: string
+        school_id:
+          type: string
+      required:
+      - message
+      type: object
     RequestPayTransaction:
       example:
         amount: 123.45
@@ -3213,18 +3419,6 @@ components:
       - tokenExp
       type: object
     schools_school_body:
-      properties:
-        name:
-          example: East High
-          type: string
-        city:
-          example: Dublin
-          type: string
-        zip:
-          example: 94557
-          type: integer
-      type: object
-    schools_school_body_1:
       properties:
         name:
           example: East High

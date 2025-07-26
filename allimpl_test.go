@@ -28,3 +28,28 @@ func Test_student2student(t *testing.T) {
 	balance = StudentNetWorth(db, students[1])
 	require.Equal(t, float64(75), balance.InexactFloat64())
 }
+
+func TestClearMessagesImpl(t *testing.T) {
+	db, closeDB := OpenTestDB("")
+	defer closeDB()
+
+	_, _, _, _, students, err := CreateTestAccounts(db, 1, 1, 1, 1)
+	require.NoError(t, err)
+
+	theMessage := "Hello World"
+	err = message(db, &theMessage, &students[0], nil, false, false)
+	require.NoError(t, err)
+
+	user, err := getUserInLocalStore(db, students[0])
+	require.NoError(t, err)
+	require.Len(t, user.Messages, 1)
+	require.Equal(t, theMessage, user.Messages[0])
+
+	err = clearMessages(db, user)
+	require.NoError(t, err)
+
+	user, err = getUserInLocalStore(db, students[0])
+	require.NoError(t, err)
+	require.Len(t, user.Messages, 0)
+
+}

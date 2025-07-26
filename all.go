@@ -23,6 +23,26 @@ func (a *AllApiServiceImpl) Login(ctx context.Context, login openapi.RequestLogi
 	panic("implement me")
 }
 
+func (a AllApiServiceImpl) ClearMessages(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	err = clearMessages(a.db, userDetails)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
+
+}
+
 func (a AllApiServiceImpl) SearchTeachers(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
@@ -86,6 +106,7 @@ func (a *AllApiServiceImpl) AuthUser(ctx context.Context) (user openapi.ImplResp
 			Id:        userDetails.Name,
 			LottoPlay: userDetails.LottoPlay,
 			LottoWin:  userDetails.LottoWin,
+			Messages:  userDetails.Messages,
 		}), nil
 }
 

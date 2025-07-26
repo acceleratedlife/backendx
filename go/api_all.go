@@ -56,6 +56,12 @@ func (c *AllApiController) Routes() Routes {
 			c.AuthUser,
 		},
 		{
+			"ClearMessages",
+			strings.ToUpper("Put"),
+			"/api/clearMessages",
+			c.ClearMessages,
+		},
+		{
 			"ConfirmEmail",
 			strings.ToUpper("Get"),
 			"/api/users/confirmEmail",
@@ -169,6 +175,19 @@ func (c *AllApiController) Routes() Routes {
 // AuthUser - return authenticated user details
 func (c *AllApiController) AuthUser(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.AuthUser(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// ClearMessages -
+func (c *AllApiController) ClearMessages(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.ClearMessages(r.Context())
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

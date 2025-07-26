@@ -109,6 +109,48 @@ func (c *SysAdminApiController) Routes() Routes {
 			"/api/schools/school",
 			c.MakeSchool,
 		},
+		{
+			"MessageAll",
+			strings.ToUpper("Post"),
+			"/api/message",
+			c.MessageAll,
+		},
+		{
+			"MessageAllSchool",
+			strings.ToUpper("Post"),
+			"/api/message/school",
+			c.MessageAllSchool,
+		},
+		{
+			"MessageAllSchoolStaff",
+			strings.ToUpper("Post"),
+			"/api/message/school/staff",
+			c.MessageAllSchoolStaff,
+		},
+		{
+			"MessageAllSchoolStudents",
+			strings.ToUpper("Post"),
+			"/api/message/school/students",
+			c.MessageAllSchoolStudents,
+		},
+		{
+			"MessageAllStaff",
+			strings.ToUpper("Post"),
+			"/api/message/staff",
+			c.MessageAllStaff,
+		},
+		{
+			"MessageAllStudents",
+			strings.ToUpper("Post"),
+			"/api/message/students",
+			c.MessageAllStudents,
+		},
+		{
+			"MessageUser",
+			strings.ToUpper("Post"),
+			"/api/message/user",
+			c.MessageUser,
+		},
 	}
 }
 
@@ -292,18 +334,186 @@ func (c *SysAdminApiController) MakeAccount(w http.ResponseWriter, r *http.Reque
 
 // MakeSchool - make a new school
 func (c *SysAdminApiController) MakeSchool(w http.ResponseWriter, r *http.Request) {
-	schoolsSchoolBody1Param := SchoolsSchoolBody1{}
+	requestMakeSchoolParam := RequestMakeSchool{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&schoolsSchoolBody1Param); err != nil {
+	if err := d.Decode(&requestMakeSchoolParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertSchoolsSchoolBody1Required(schoolsSchoolBody1Param); err != nil {
+	if err := AssertRequestMakeSchoolRequired(requestMakeSchoolParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.MakeSchool(r.Context(), schoolsSchoolBody1Param)
+	result, err := c.service.MakeSchool(r.Context(), requestMakeSchoolParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageAll - send a message to all users
+func (c *SysAdminApiController) MessageAll(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAll(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageAllSchool - send a message to all users of a school
+func (c *SysAdminApiController) MessageAllSchool(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAllSchool(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageAllSchoolStaff - send a message to all staff of a school
+func (c *SysAdminApiController) MessageAllSchoolStaff(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAllSchoolStaff(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageAllSchoolStudents - send a message to all school students
+func (c *SysAdminApiController) MessageAllSchoolStudents(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAllSchoolStudents(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageAllStaff - send a message to all staff
+func (c *SysAdminApiController) MessageAllStaff(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAllStaff(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageAllStudents - send a message to all students
+func (c *SysAdminApiController) MessageAllStudents(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAllStudents(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageUser - send a message to one user
+func (c *SysAdminApiController) MessageUser(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageUser(r.Context(), requestMessageParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
