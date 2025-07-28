@@ -44,6 +44,7 @@ const (
 	KeyAuctions             = "auctions"
 	KeyCB                   = "cb"
 	KeyUsers                = "users"
+	KeyPaused               = "paused"
 	KeyAccounts             = "accounts"
 	KeyCryptos              = "cryptos"
 	KeyConversion           = "conversion"
@@ -285,7 +286,7 @@ func createRouterClock(db *bolt.DB, clock Clock, sseService SSEServiceInterface,
 	allService := NewAllApiServiceImpl(db, clock)
 	allController := openapi.NewAllApiController(allService)
 
-	sysAdminApiServiceImpl := NewSysAdminApiServiceImpl(db, jwtService)
+	sysAdminApiServiceImpl := NewSysAdminApiServiceImpl(db, clock, jwtService)
 	sysAdminCtrl := openapi.NewSysAdminApiController(sysAdminApiServiceImpl)
 
 	unregisteredServiceImpl := NewUnregisteredApiServiceImpl(db, clock)
@@ -313,7 +314,7 @@ func createRouterClock(db *bolt.DB, clock Clock, sseService SSEServiceInterface,
 }
 
 func InitDefaultAccounts(db *bolt.DB, clock Clock) {
-	newSchoolRequest := NewSchoolRequest{
+	newSchoolRequest := openapi.RequestMakeSchool{
 		School:    "test school",
 		FirstName: "test",
 		LastName:  "admin",
@@ -324,9 +325,9 @@ func InitDefaultAccounts(db *bolt.DB, clock Clock) {
 	_ = createNewSchool(db, clock, newSchoolRequest, "123qwe")
 }
 
-func createNewSchool(db *bolt.DB, clock Clock, newSchoolRequest NewSchoolRequest, adminPassword string) error {
+func createNewSchool(db *bolt.DB, clock Clock, newSchoolRequest openapi.RequestMakeSchool, adminPassword string) error {
 
-	schoolId, err := FindOrCreateSchool(db, clock, newSchoolRequest.School, newSchoolRequest.City, newSchoolRequest.Zip)
+	schoolId, err := FindOrCreateSchool(db, clock, newSchoolRequest.School, newSchoolRequest.City, int(newSchoolRequest.Zip))
 	if err != nil {
 		lgr.Printf("ERROR school does not exist: %v", err)
 	}
@@ -468,7 +469,7 @@ func seedDb(db *bolt.DB, clock Clock, eventRequests []EventRequest, jobRequests 
 
 	config := loadConfig()
 
-	school := NewSchoolRequest{
+	school := openapi.RequestMakeSchool{
 		School:    "JHS",
 		FirstName: "Tom",
 		LastName:  "Jones",

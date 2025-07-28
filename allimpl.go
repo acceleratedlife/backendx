@@ -265,6 +265,59 @@ func getSchoolStudents(db *bolt.DB, userDetails UserInfo) (resp []openapi.UserNo
 	return
 }
 
+func clearMessages(db *bolt.DB, userDetails UserInfo) (err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		return clearMessagesTx(tx, userDetails)
+	})
+
+	return
+}
+
+func clearMessagesTx(tx *bolt.Tx, userDetails UserInfo) (err error) {
+	users := tx.Bucket([]byte(KeyUsers))
+	if users == nil {
+		return fmt.Errorf("users not found")
+	}
+
+	clearMessagesForUser := func(username string) error {
+		userData := users.Get([]byte(username))
+		if userData == nil {
+			return fmt.Errorf("user %s not found", username)
+		}
+
+		var user UserInfo
+		if err := json.Unmarshal(userData, &user); err != nil {
+			return err
+		}
+
+		user.Messages = nil
+		updatedData, err := json.Marshal(user)
+		if err != nil {
+			return err
+		}
+
+		return users.Put([]byte(username), updatedData)
+	}
+
+	// Clear messages for admin or any user
+	if err := clearMessagesForUser(userDetails.Name); err != nil {
+		return err
+	}
+
+	// If user is admin, also clear messages for associated teacher account
+	if userDetails.Role == UserRoleAdmin {
+		if len(userDetails.Name) < 2 {
+			return fmt.Errorf("invalid admin username for teacher account generation")
+		}
+		teacherEmail := userDetails.Name[:1] + "." + userDetails.Name[1:]
+		if err := clearMessagesForUser(teacherEmail); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func getSchoolStudentsRx(tx *bolt.Tx, userDetails UserInfo) (resp []openapi.UserNoHistory, ranked int, err error) {
 	school, err := schoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {

@@ -23,6 +23,8 @@ type ResponseSchools struct {
 	Students int32 `json:"students,omitempty"`
 
 	Staff int32 `json:"staff,omitempty"`
+
+	IsPaused bool `json:"isPaused,omitempty"`
 }
 
 // AssertResponseSchoolsRequired checks if the required fields are not zero-ed

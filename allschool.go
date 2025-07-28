@@ -202,7 +202,7 @@ func (a *AllSchoolApiServiceImpl) SearchMyClasses(ctx context.Context, Id string
 	}
 
 	if err != nil {
-		return openapi.Response(500, "{}"), nil
+		return openapi.Response(500, "{}"), err
 	}
 
 	return openapi.Response(200, resp), nil

@@ -55,7 +55,9 @@ go/model_request_login.go
 go/model_request_make_auction.go
 go/model_request_make_class.go
 go/model_request_make_market_item.go
+go/model_request_make_school.go
 go/model_request_market_refund.go
+go/model_request_message.go
 go/model_request_pay_transaction.go
 go/model_request_pay_transactions.go
 go/model_request_register.go
@@ -97,7 +99,6 @@ go/model_response_teachers.go
 go/model_response_transactions.go
 go/model_school.go
 go/model_schools_school_body.go
-go/model_schools_school_body_1.go
 go/model_settings.go
 go/model_transaction.go
 go/model_user.go

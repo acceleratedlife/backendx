@@ -10,6 +10,7 @@ import (
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
+	"github.com/go-pkgz/lgr"
 	"github.com/golang-jwt/jwt"
 	bolt "go.etcd.io/bbolt"
 )
@@ -308,12 +309,14 @@ func getSchoolsRx(tx *bolt.Tx) (resp []openapi.ResponseSchools, err error) {
 		}
 
 		school := schools.Bucket(k)
+		isPaused := school.Get([]byte(KeyPaused))
 
 		item := openapi.ResponseSchools{
-			Id:   string(k),
-			Name: string(school.Get([]byte(KeyName))),
-			City: string(school.Get([]byte(KeyCity))),
-			Zip:  btoi32(school.Get([]byte(KeyZip))),
+			Id:       string(k),
+			Name:     string(school.Get([]byte(KeyName))),
+			City:     string(school.Get([]byte(KeyCity))),
+			Zip:      btoi32(school.Get([]byte(KeyZip))),
+			IsPaused: isPaused != nil,
 		}
 
 		//loop through each bucket and count how many keys are in each
@@ -339,4 +342,378 @@ func getSchoolsRx(tx *bolt.Tx) (resp []openapi.ResponseSchools, err error) {
 		resp = append(resp, item)
 	}
 	return
+}
+
+func message(db *bolt.DB, message, userId, schoolId *string, students, staff bool) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		return messageTx(tx, message, userId, schoolId, students, staff)
+	})
+}
+
+func messageTx(tx *bolt.Tx, message, userId, schoolId *string, students, staff bool) error {
+	users := tx.Bucket([]byte(KeyUsers))
+	if users == nil {
+		return fmt.Errorf("users not found")
+	}
+
+	//a message to a single user
+	if userId != nil {
+		userData := users.Get([]byte(*userId))
+		if userData == nil {
+			return fmt.Errorf("user not found")
+		}
+		var user UserInfo
+		err := json.Unmarshal(userData, &user)
+		if err != nil {
+			return err
+		}
+
+		user.Messages = append(user.Messages, *message)
+		marshal, err := json.Marshal(user)
+		if err != nil {
+			return err
+		}
+
+		err = users.Put([]byte(*userId), marshal)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	c := users.Cursor()
+
+	if schoolId == nil {
+
+		//a message to all users
+		if students && staff {
+
+			for k, _ := c.First(); k != nil; k, _ = c.Next() {
+				userData := users.Get([]byte(k))
+				var user UserInfo
+				err := json.Unmarshal(userData, &user)
+				if err != nil {
+					lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+					continue
+				}
+
+				if user.Role == UserRoleSysAdmin {
+					continue
+				}
+
+				//I might need to prevent admin teacher accounts from getting messages here
+
+				user.Messages = append(user.Messages, *message)
+				marshal, err := json.Marshal(user)
+				if err != nil {
+					return err
+				}
+
+				err = users.Put([]byte(k), marshal)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		//a message to all students
+		if students {
+
+			for k, _ := c.First(); k != nil; k, _ = c.Next() {
+				userData := users.Get([]byte(k))
+				var user UserInfo
+				err := json.Unmarshal(userData, &user)
+				if err != nil {
+					lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+					continue
+				}
+
+				if user.Role != UserRoleStudent {
+					continue
+				}
+
+				user.Messages = append(user.Messages, *message)
+				marshal, err := json.Marshal(user)
+				if err != nil {
+					return err
+				}
+
+				err = users.Put([]byte(k), marshal)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		//a message to all staff
+		if staff {
+
+			for k, _ := c.First(); k != nil; k, _ = c.Next() {
+				userData := users.Get([]byte(k))
+				var user UserInfo
+				err := json.Unmarshal(userData, &user)
+				if err != nil {
+					lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+					continue
+				}
+
+				if user.Role == UserRoleSysAdmin {
+					continue
+				}
+
+				if user.Role == UserRoleStudent {
+					continue
+				}
+
+				user.Messages = append(user.Messages, *message)
+				marshal, err := json.Marshal(user)
+				if err != nil {
+					return err
+				}
+
+				err = users.Put([]byte(k), marshal)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+
+	//a message to all users of a school
+	if students && staff {
+
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			userData := users.Get([]byte(k))
+			var user UserInfo
+			err := json.Unmarshal(userData, &user)
+			if err != nil {
+				lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+				continue
+			}
+
+			if user.Role == UserRoleSysAdmin {
+				continue
+			}
+
+			if user.SchoolId != *schoolId {
+				continue
+			}
+
+			user.Messages = append(user.Messages, *message)
+			marshal, err := json.Marshal(user)
+			if err != nil {
+				return err
+			}
+
+			err = users.Put([]byte(k), marshal)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	//a message to all students of a school
+	if students {
+
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			userData := users.Get([]byte(k))
+			var user UserInfo
+			err := json.Unmarshal(userData, &user)
+			if err != nil {
+				lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+				continue
+			}
+
+			if user.Role == UserRoleSysAdmin {
+				continue
+			}
+
+			if user.SchoolId != *schoolId {
+				continue
+			}
+
+			if user.Role != UserRoleStudent {
+				continue
+			}
+
+			user.Messages = append(user.Messages, *message)
+			marshal, err := json.Marshal(user)
+			if err != nil {
+				return err
+			}
+
+			err = users.Put([]byte(k), marshal)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	//a message to all staff of a school
+	if staff {
+
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			userData := users.Get([]byte(k))
+			var user UserInfo
+			err := json.Unmarshal(userData, &user)
+			if err != nil {
+				lgr.Printf("ERROR cannot unmarshal userInfo for %s", k)
+				continue
+			}
+
+			if user.Role == UserRoleSysAdmin {
+				continue
+			}
+
+			if user.SchoolId != *schoolId {
+				continue
+			}
+
+			if user.Role == UserRoleStudent {
+				continue
+			}
+
+			user.Messages = append(user.Messages, *message)
+			marshal, err := json.Marshal(user)
+			if err != nil {
+				return err
+			}
+
+			err = users.Put([]byte(k), marshal)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return fmt.Errorf("no message sent")
+}
+
+func deleteSchool(db *bolt.DB, schoolId string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		return deleteSchoolTx(tx, schoolId)
+	})
+}
+
+func deleteSchoolTx(tx *bolt.Tx, schoolId string) error {
+	schools := tx.Bucket([]byte("schools"))
+	if schools == nil {
+		return fmt.Errorf("schools not found")
+	}
+
+	schoolBucket := schools.Bucket([]byte(schoolId))
+	if schoolBucket == nil {
+		return fmt.Errorf("school not found")
+	}
+
+	adminsBucket := schoolBucket.Bucket([]byte(KeyAdmins))
+	if adminsBucket == nil {
+		return fmt.Errorf("admins not found")
+	}
+
+	users := make([]string, 0)
+
+	c := adminsBucket.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		users = append(users, string(k))
+	}
+
+	teachersBucket := schoolBucket.Bucket([]byte(KeyTeachers))
+	if teachersBucket == nil {
+		return fmt.Errorf("teachers not found")
+	}
+
+	c = teachersBucket.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		users = append(users, string(k))
+	}
+
+	studentsBucket := schoolBucket.Bucket([]byte(KeyStudents))
+	if studentsBucket == nil {
+		return fmt.Errorf("students not found")
+	}
+
+	c = studentsBucket.Cursor()
+	for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		users = append(users, string(k))
+	}
+
+	usersBucket := tx.Bucket([]byte(KeyUsers))
+	if usersBucket == nil {
+		return fmt.Errorf("users not found")
+	}
+
+	for _, user := range users {
+		err := usersBucket.Delete([]byte(user))
+		if err != nil {
+			return err
+		}
+	}
+
+	err := schools.DeleteBucket([]byte(schoolId))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func togglePause(db *bolt.DB, schoolId string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		return togglePauseTx(tx, schoolId)
+	})
+}
+
+func togglePauseTx(tx *bolt.Tx, schoolId string) (err error) {
+	schools := tx.Bucket([]byte("schools"))
+	if schools == nil {
+		return fmt.Errorf("schools not found")
+	}
+
+	schoolBucket := schools.Bucket([]byte(schoolId))
+	if schoolBucket == nil {
+		return fmt.Errorf("school not found")
+	}
+
+	paused := schoolBucket.Get([]byte(KeyPaused))
+	if paused == nil {
+		err = schoolBucket.Put([]byte(KeyPaused), []byte("true"))
+	} else {
+		err = schoolBucket.Delete([]byte(KeyPaused))
+	}
+
+	return
+}
+
+func isSchoolPaused(db *bolt.DB, schoolId string) (isPaused bool, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		isPaused, err = isSchoolPausedTx(tx, schoolId)
+		return err
+	})
+	return isPaused, err
+}
+
+func isSchoolPausedTx(tx *bolt.Tx, schoolId string) (isPaused bool, err error) {
+	schools := tx.Bucket([]byte("schools"))
+	if schools == nil {
+		return false, fmt.Errorf("schools not found")
+	}
+
+	schoolBucket := schools.Bucket([]byte(schoolId))
+	if schoolBucket == nil {
+		return false, fmt.Errorf("school not found")
+	}
+
+	paused := schoolBucket.Get([]byte(KeyPaused))
+	if paused == nil {
+		return false, nil
+	}
+	return true, nil
 }

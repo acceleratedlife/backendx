@@ -22,9 +22,11 @@ import (
 // pass the data to a AllApiServicer to perform the required actions, then write the service results to the http response.
 type AllApiRouter interface { 
 	AuthUser(http.ResponseWriter, *http.Request)
+	ClearMessages(http.ResponseWriter, *http.Request)
 	ConfirmEmail(http.ResponseWriter, *http.Request)
 	DeleteAuction(http.ResponseWriter, *http.Request)
 	ExchangeRate(http.ResponseWriter, *http.Request)
+	IsPaused(http.ResponseWriter, *http.Request)
 	Login(http.ResponseWriter, *http.Request)
 	Logout(http.ResponseWriter, *http.Request)
 	MakeAuction(http.ResponseWriter, *http.Request)
@@ -116,12 +118,19 @@ type SysAdminApiRouter interface {
 	DeleteSchool(http.ResponseWriter, *http.Request)
 	EditAccount(http.ResponseWriter, *http.Request)
 	EditBuck(http.ResponseWriter, *http.Request)
-	EditSchool(http.ResponseWriter, *http.Request)
 	GetSchoolUsers(http.ResponseWriter, *http.Request)
 	GetSchools(http.ResponseWriter, *http.Request)
 	ImpersonateUser(http.ResponseWriter, *http.Request)
 	MakeAccount(http.ResponseWriter, *http.Request)
 	MakeSchool(http.ResponseWriter, *http.Request)
+	MessageAll(http.ResponseWriter, *http.Request)
+	MessageAllSchool(http.ResponseWriter, *http.Request)
+	MessageAllSchoolStaff(http.ResponseWriter, *http.Request)
+	MessageAllSchoolStudents(http.ResponseWriter, *http.Request)
+	MessageAllStaff(http.ResponseWriter, *http.Request)
+	MessageAllStudents(http.ResponseWriter, *http.Request)
+	MessageUser(http.ResponseWriter, *http.Request)
+	SchoolPauseToggle(http.ResponseWriter, *http.Request)
 }
 // UnregisteredApiRouter defines the required methods for binding the api requests to a responses for the UnregisteredApi
 // The UnregisteredApiRouter implementation should parse necessary information from the http request,
@@ -139,9 +148,11 @@ type UnregisteredApiRouter interface {
 // and updated with the logic required for the API.
 type AllApiServicer interface { 
 	AuthUser(context.Context) (ImplResponse, error)
+	ClearMessages(context.Context) (ImplResponse, error)
 	ConfirmEmail(context.Context, string) (ImplResponse, error)
 	DeleteAuction(context.Context, string) (ImplResponse, error)
 	ExchangeRate(context.Context, string, string) (ImplResponse, error)
+	IsPaused(context.Context, string) (ImplResponse, error)
 	Login(context.Context, RequestLogin) (ImplResponse, error)
 	Logout(context.Context, string) (ImplResponse, error)
 	MakeAuction(context.Context, RequestMakeAuction) (ImplResponse, error)
@@ -248,12 +259,19 @@ type SysAdminApiServicer interface {
 	DeleteSchool(context.Context, string) (ImplResponse, error)
 	EditAccount(context.Context, AccountsAccountBody) (ImplResponse, error)
 	EditBuck(context.Context, BucksBuckBody) (ImplResponse, error)
-	EditSchool(context.Context, SchoolsSchoolBody) (ImplResponse, error)
 	GetSchoolUsers(context.Context, string) (ImplResponse, error)
 	GetSchools(context.Context) (ImplResponse, error)
 	ImpersonateUser(context.Context, RequestImpersonate) (ImplResponse, error)
 	MakeAccount(context.Context, AccountsAccountBody1) (ImplResponse, error)
-	MakeSchool(context.Context, SchoolsSchoolBody1) (ImplResponse, error)
+	MakeSchool(context.Context, RequestMakeSchool) (ImplResponse, error)
+	MessageAll(context.Context, RequestMessage) (ImplResponse, error)
+	MessageAllSchool(context.Context, RequestMessage) (ImplResponse, error)
+	MessageAllSchoolStaff(context.Context, RequestMessage) (ImplResponse, error)
+	MessageAllSchoolStudents(context.Context, RequestMessage) (ImplResponse, error)
+	MessageAllStaff(context.Context, RequestMessage) (ImplResponse, error)
+	MessageAllStudents(context.Context, RequestMessage) (ImplResponse, error)
+	MessageUser(context.Context, RequestMessage) (ImplResponse, error)
+	SchoolPauseToggle(context.Context, string) (ImplResponse, error)
 }
 
 

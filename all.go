@@ -23,6 +23,26 @@ func (a *AllApiServiceImpl) Login(ctx context.Context, login openapi.RequestLogi
 	panic("implement me")
 }
 
+func (a AllApiServiceImpl) ClearMessages(ctx context.Context) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	userDetails, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	err = clearMessages(a.db, userDetails)
+
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	return openapi.Response(200, nil), nil
+
+}
+
 func (a AllApiServiceImpl) SearchTeachers(ctx context.Context) (openapi.ImplResponse, error) {
 	userData := ctx.Value("user").(token.User)
 	userDetails, err := getUserInLocalStore(a.db, userData.Name)
@@ -64,6 +84,27 @@ func (a AllApiServiceImpl) SearchMarketItems(ctx context.Context, teacherId stri
 	return openapi.Response(200, items), nil
 }
 
+func (a AllApiServiceImpl) IsPaused(ctx context.Context, id string) (openapi.ImplResponse, error) {
+	userData := ctx.Value("user").(token.User)
+	_, err := getUserInLocalStore(a.db, userData.Name)
+	if err != nil {
+		return openapi.Response(404, openapi.ResponseAuth{
+			IsAuth: false,
+			Error:  true,
+		}), nil
+	}
+
+	isPaused, err := isSchoolPaused(a.db, id)
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	if isPaused {
+		return openapi.Response(201, nil), nil
+	}
+	return openapi.Response(200, nil), nil
+}
+
 func (a *AllApiServiceImpl) AuthUser(ctx context.Context) (user openapi.ImplResponse, err error) {
 
 	userData := ctx.Value("user").(token.User)
@@ -74,6 +115,19 @@ func (a *AllApiServiceImpl) AuthUser(ctx context.Context) (user openapi.ImplResp
 			Error:  true,
 		}), nil
 	}
+
+	if userDetails.Role != UserRoleSysAdmin {
+		isPaused, err := isSchoolPaused(a.db, userDetails.SchoolId)
+		if err != nil {
+			return openapi.Response(400, nil), err
+		}
+		if isPaused {
+			return openapi.Response(400, map[string]string{
+				"message": "your school is having an error. We are working on it and will have it back ASAP. Please try again later",
+			}), nil
+		}
+	}
+
 	return openapi.Response(200,
 		openapi.ResponseAuth2{
 			Email:     userDetails.Email,
@@ -86,6 +140,7 @@ func (a *AllApiServiceImpl) AuthUser(ctx context.Context) (user openapi.ImplResp
 			Id:        userDetails.Name,
 			LottoPlay: userDetails.LottoPlay,
 			LottoWin:  userDetails.LottoWin,
+			Messages:  userDetails.Messages,
 		}), nil
 }
 
