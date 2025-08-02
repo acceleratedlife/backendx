@@ -572,15 +572,15 @@ func CertificateOfDepositIfNeeded(db *bolt.DB, clock Clock, userDetails UserInfo
 				continue
 			}
 
-			if deposit.Maturity.Before(clock.Now()) {
+			if deposit.Maturity.Before(clock.Now()) { //CD has reached full maturity
 				deposit.CurrentValue = decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(deposit.Interest).Pow(decimal.NewFromInt(InterestToTime(deposit.Interest))))
 				deposit.RefundValue = deposit.CurrentValue
-			} else {
+			} else { // CD has not reached full maturity
 				diff := clock.Now().Sub(deposit.Ts)
 				days := math.Floor(diff.Hours() / 24)
 				deposit.CurrentValue = decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(deposit.Interest).Pow(decimal.NewFromFloat(days)))
 				interest := timeToInterest(int32(days))
-				deposit.RefundValue = (decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(interest).Pow(decimal.NewFromFloat(days)))).Mul(decimal.NewFromFloat32(.9))
+				deposit.RefundValue = (decimal.NewFromInt32(deposit.Principal).Mul(decimal.NewFromFloat32(interest).Pow(decimal.NewFromFloat(days)))).Mul(decimal.NewFromFloat32(KeyEarlyRefund))
 			}
 
 			data, err := json.Marshal(deposit)
@@ -1252,7 +1252,7 @@ func IsEventNeeded(student *bolt.Bucket, clock Clock, tx bool) (bool, int, error
 }
 
 func getCbTx(tx *bolt.Tx, schoolId string) (cb *bolt.Bucket, err error) {
-	school, err := SchoolByIdTx(tx, schoolId)
+	school, err := schoolByIdTx(tx, schoolId)
 	if err != nil {
 		return nil, err
 	}
@@ -1260,7 +1260,7 @@ func getCbTx(tx *bolt.Tx, schoolId string) (cb *bolt.Bucket, err error) {
 }
 
 func getCbRx(tx *bolt.Tx, schoolId string) (cb *bolt.Bucket, err error) {
-	school, err := SchoolByIdTx(tx, schoolId)
+	school, err := schoolByIdTx(tx, schoolId)
 	if err != nil {
 		return nil, err
 	}
@@ -1638,9 +1638,9 @@ func getStudentBuckRx(tx *bolt.Tx, userDetails UserInfo, teacherId string) (resp
 	return
 }
 
-func getStudentAuctions(db *bolt.DB, userDetails UserInfo) (auctions []openapi.Auction, err error) {
+func getStudentAuctions(db *bolt.DB, clock Clock, userDetails UserInfo) (auctions []openapi.Auction, err error) {
 	err = db.View(func(tx *bolt.Tx) error {
-		auctions, err = getStudentAuctionsRx(tx, userDetails)
+		auctions, err = getStudentAuctionsRx(tx, clock, userDetails)
 		if err != nil {
 			return err
 		}
@@ -1651,10 +1651,15 @@ func getStudentAuctions(db *bolt.DB, userDetails UserInfo) (auctions []openapi.A
 	return
 }
 
-func getStudentAuctionsRx(tx *bolt.Tx, userDetails UserInfo) (auctions []openapi.Auction, err error) {
+func getStudentAuctionsRx(tx *bolt.Tx, clock Clock, userDetails UserInfo) (auctions []openapi.Auction, err error) {
 	auctionsBucket, err := getAuctionsTx(tx, userDetails)
 	if err != nil {
 		return
+	}
+
+	classes, err := getStudentClassesRx(tx, userDetails)
+	if err != nil {
+		return auctions, fmt.Errorf("cannot get student classes %s: %v", userDetails.Name, err)
 	}
 
 	c := auctionsBucket.Cursor()
@@ -1669,15 +1674,22 @@ func getStudentAuctionsRx(tx *bolt.Tx, userDetails UserInfo) (auctions []openapi
 			return auctions, fmt.Errorf("cannot find auction bucket")
 		}
 
-		var auction openapi.Auction
-		err := json.Unmarshal(auctionData, &auction)
+		keyStr := string(k)
+		auctionTime, err := time.Parse(KeyTime, keyStr)
 		if err != nil {
+			lgr.Printf("Invalid auction key format: %s (skipping)", keyStr)
 			return nil, err
 		}
 
-		classes, err := getStudentClassesRx(tx, userDetails)
+		//if the key is older than 1 month break, this is to avoid loading all auctions
+		if clock.Now().Sub(auctionTime) > time.Hour*24*30 {
+			break
+		}
+
+		var auction openapi.Auction
+		err = json.Unmarshal(auctionData, &auction)
 		if err != nil {
-			return auctions, fmt.Errorf("cannot get student classes %s: %v", userDetails.Name, err)
+			return nil, err
 		}
 
 		for _, k := range auction.Visibility {
@@ -1694,19 +1706,30 @@ func getStudentAuctionsRx(tx *bolt.Tx, userDetails UserInfo) (auctions []openapi
 						Id:       ownerDetails.Name,
 					}
 
-					winnerDetails, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
-					if err != nil {
+					if auction.WinnerId.Id == "" {
 						auction.WinnerId = openapi.AuctionWinnerId{
 							FirstName: "nil",
 							LastName:  "nil",
 							Id:        "nil",
 						}
-					} else {
-						auction.WinnerId = openapi.AuctionWinnerId{
-							FirstName: winnerDetails.FirstName,
-							LastName:  winnerDetails.LastName,
-							Id:        winnerDetails.Name,
-						}
+
+						auctions = append(auctions, auction)
+						break
+					}
+
+					// if auction.WinnerId.Id == "@fleonardo" {
+					// 	lgr.Printf("%+v\n", auction)
+					// }
+
+					winnerDetails, err := getUserInLocalStoreTx(tx, auction.WinnerId.Id)
+					if err != nil {
+						return nil, err
+					}
+
+					auction.WinnerId = openapi.AuctionWinnerId{
+						FirstName: winnerDetails.FirstName,
+						LastName:  winnerDetails.LastName,
+						Id:        winnerDetails.Name,
 					}
 
 					auctions = append(auctions, auction)
@@ -2641,18 +2664,18 @@ func purchaseLotto(db *bolt.DB, clock Clock, studentDetails UserInfo, tickets in
 
 func timeToInterest(time int32) float32 {
 	if time <= 7 {
-		return 1.01
+		return KeyInterest7
 	}
 	if time <= 14 {
-		return 1.02
+		return KeyInterest14
 	}
 	if time <= 30 {
-		return 1.03
+		return KeyInterest30
 	}
 	if time <= 60 {
-		return 1.04
+		return KeyInterest60
 	}
-	return 1.05
+	return KeyInterest90
 }
 
 func buyCD(db *bolt.DB, clock Clock, userDetails UserInfo, body openapi.RequestBuyCd) (err error) {
@@ -2694,7 +2717,7 @@ func buyCDTx(tx *bolt.Tx, clock Clock, userInfo UserInfo, body openapi.RequestBu
 		Ts:           ts,
 		Principal:    body.PrinInv,
 		CurrentValue: prinInv,
-		RefundValue:  prinInv.Mul(decimal.NewFromFloat32(.9)),
+		RefundValue:  prinInv.Mul(decimal.NewFromFloat32(KeyEarlyRefund)),
 		Interest:     timeToInterest(body.Time),
 		Maturity:     mature,
 		Active:       true,
@@ -2856,16 +2879,16 @@ func getCDTransactionsRx(tx *bolt.Tx, userInfo UserInfo) (resp []openapi.Respons
 }
 
 func InterestToTime(interest float32) int64 {
-	if interest == 1.01 {
+	if interest == KeyInterest7 {
 		return 7
 	}
-	if interest == 1.02 {
+	if interest == KeyInterest14 {
 		return 14
 	}
-	if interest == 1.03 {
+	if interest == KeyInterest30 {
 		return 30
 	}
-	if interest == 1.04 {
+	if interest == KeyInterest60 {
 		return 60
 	}
 	return 90

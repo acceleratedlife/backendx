@@ -28,15 +28,6 @@ func backUpHandler(db *bolt.DB) http.Handler {
 	})
 }
 
-type NewSchoolRequest struct {
-	School    string
-	FirstName string
-	LastName  string
-	Email     string
-	City      string
-	Zip       int
-}
-
 type NewSchoolResponse struct {
 	AdminPassword string
 }
@@ -53,7 +44,7 @@ type EventRequest struct {
 
 func newSchoolHandler(db *bolt.DB, clock Clock) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var request NewSchoolRequest
+		var request openapi.RequestMakeSchool
 		defer r.Body.Close()
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&request)

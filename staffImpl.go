@@ -261,34 +261,42 @@ func makeMarketItem(db *bolt.DB, clock Clock, userDetails UserInfo, request open
 	return
 }
 
-func deleteStudent(db *bolt.DB, studentId string) (err error) {
+func deleteStudent(db *bolt.DB, clock Clock, studentId string) (err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
-		return deleteStudentTx(tx, studentId)
+		return deleteStudentTx(tx, clock, studentId)
 	})
 
 	return
 }
 
-func deleteStudentTx(tx *bolt.Tx, studentId string) (err error) {
+func deleteStudentTx(tx *bolt.Tx, clock Clock, studentId string) (err error) {
 	studentInfo, err := getUserInLocalStoreTx(tx, studentId)
 	if err != nil {
 		return err
 	}
 
-	auctionsBucket, err := getAuctionsTx(tx, studentInfo)
+	studentAuctions, err := getStudentAuctionsRx(tx, clock, studentInfo)
 	if err != nil {
 		return err
 	}
 
-	auctions, err := getStudentAuctionsRx(tx, studentInfo)
+	for _, c := range studentAuctions {
+		if c.OwnerId.Id == studentInfo.Name {
+			err = deleteAuctionTx(tx, studentInfo, clock, c.Id)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	auctions, err := getAllAuctionsRx(tx, clock, studentInfo)
 	if err != nil {
 		return err
 	}
 
 	for _, c := range auctions {
-		if c.OwnerId.Id == studentInfo.Name {
-			// repayAuctionLoser()
-			err := auctionsBucket.DeleteBucket([]byte(c.Id.String()))
+		if c.WinnerId.Id == studentInfo.Name {
+			err = deleteAuctionTx(tx, studentInfo, clock, c.Id)
 			if err != nil {
 				return err
 			}
@@ -318,10 +326,9 @@ func deleteStudentTx(tx *bolt.Tx, studentId string) (err error) {
 		return fmt.Errorf("cannot get users bucket")
 	}
 
-	users.Delete([]byte(studentId))
-	user := users.Get([]byte(studentId))
-	if user != nil {
-		return fmt.Errorf("failed to delete user")
+	err = users.Delete([]byte(studentId))
+	if err != nil {
+		return err
 	}
 
 	school, err := getSchoolBucketRx(tx, studentInfo)
@@ -338,13 +345,105 @@ func deleteStudentTx(tx *bolt.Tx, studentId string) (err error) {
 		return err
 	}
 
+	_, pwds := constSlice()
+	password := randomWords(1, 10, pwds)
+
+	newUser := UserInfo{
+		Name:          studentId,
+		FirstName:     "deleted",
+		LastName:      "deleted",
+		Email:         studentInfo.Email,
+		Confirmed:     false,
+		PasswordSha:   EncodePassword(password),
+		SchoolId:      studentInfo.SchoolId,
+		Role:          UserRoleStudent,
+		Job:           getJobIdRx(tx, KeyJobs),
+		TaxableIncome: 0,
+	}
+
+	schoolBucket, err := getSchoolBucketRx(tx, studentInfo)
+	if err != nil {
+		return err
+	}
+
+	teachers := schoolBucket.Bucket([]byte(KeyTeachers))
+	if teachers == nil {
+		return fmt.Errorf("cannot get teachers bucket")
+	}
+
+	var teacherId string
+
+	t := teachers.Cursor()
+	for k, v := t.First(); k != nil; k, v = t.Next() {
+		if v != nil {
+			continue
+		}
+
+		teacherBucket := teachers.Bucket(k)
+		if teacherBucket == nil {
+			return fmt.Errorf("cannot get teacher %s: %v", studentInfo.Name, err)
+		}
+
+		classesBucket := teacherBucket.Bucket([]byte(KeyClasses))
+		if classesBucket == nil {
+			continue
+		}
+
+		classBucket := classesBucket.Bucket([]byte(classes[0].Id))
+		if classBucket == nil {
+			continue
+		}
+
+		teacherId = string(k)
+		break
+	}
+
+	err = createStudentTx(tx, newUser, PathId{
+		schoolId:  studentInfo.SchoolId,
+		teacherId: teacherId,
+		classId:   classes[0].Id,
+	})
+	if err != nil {
+		return err
+	}
+
+	kickClassTx(tx, studentInfo, openapi.RequestKickClass{
+		KickId: studentId,
+		Id:     classes[0].Id,
+	})
+
 	return
 
 }
 
+func kickClass(db *bolt.DB, userDetails UserInfo, body openapi.RequestKickClass) (err error) {
+	err = db.Update(func(tx *bolt.Tx) error {
+		return kickClassTx(tx, userDetails, body)
+	})
+	return
+}
+
+func kickClassTx(tx *bolt.Tx, userDetails UserInfo, body openapi.RequestKickClass) (err error) {
+	classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
+	if err != nil {
+		return err
+	}
+
+	studentsBucket := classBucket.Bucket([]byte(KeyStudents))
+	if studentsBucket == nil {
+		return fmt.Errorf("can't find students bucket")
+	}
+
+	err = studentsBucket.Delete([]byte(body.KickId))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func getSchoolClasses(db *bolt.DB, schoolId string) (res []openapi.Class) {
 	_ = db.View(func(tx *bolt.Tx) error {
-		school, err := SchoolByIdTx(tx, schoolId)
+		school, err := schoolByIdTx(tx, schoolId)
 		if err != nil {
 			return err
 		}
@@ -363,7 +462,7 @@ func getSchoolClasses(db *bolt.DB, schoolId string) (res []openapi.Class) {
 
 func getTeacherClasses(db *bolt.DB, schoolId, teacherId string) (res []openapi.Class) {
 	_ = db.View(func(tx *bolt.Tx) error {
-		school, err := SchoolByIdTx(tx, schoolId)
+		school, err := schoolByIdTx(tx, schoolId)
 		if err != nil {
 			return err
 		}
@@ -386,7 +485,7 @@ func getTeacherClasses(db *bolt.DB, schoolId, teacherId string) (res []openapi.C
 }
 
 func getTeacherBucketTx(tx *bolt.Tx, schoolId, teacherId string) (teacher *bolt.Bucket, err error) {
-	school, err := SchoolByIdTx(tx, schoolId)
+	school, err := schoolByIdTx(tx, schoolId)
 	if err != nil {
 		return teacher, fmt.Errorf("cannot find school")
 	}
@@ -425,7 +524,7 @@ func getClassesTx(classesBucket *bolt.Bucket) []openapi.Class {
 }
 
 func getAuctionsTx(tx *bolt.Tx, userDetails UserInfo) (auctionsBucket *bolt.Bucket, err error) {
-	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+	school, err := schoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return auctionsBucket, err
 	}
@@ -611,7 +710,7 @@ func (s *StaffApiServiceImpl) MakeClassImpl(userDetails UserInfo, clock Clock, r
 
 func CreateClass(db *bolt.DB, clock Clock, schoolId, teacherId, className string, period int) (classId string, classes []openapi.Class, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
-		school, err := SchoolByIdTx(tx, schoolId)
+		school, err := schoolByIdTx(tx, schoolId)
 		if err != nil {
 			return err
 		}
@@ -652,7 +751,7 @@ func MakeAuctionImpl(db *bolt.DB, userDetails UserInfo, request openapi.RequestM
 
 func CreateAuction(db *bolt.DB, userDetails UserInfo, request openapi.RequestMakeAuction, isStaff bool) (auctionId time.Time, err error) {
 	err = db.Update(func(tx *bolt.Tx) error {
-		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+		school, err := schoolByIdTx(tx, userDetails.SchoolId)
 		if err != nil {
 			return fmt.Errorf("problem finding auctions bucket: %v", err)
 		}
@@ -1714,7 +1813,7 @@ func getStudentCount(db *bolt.DB, schoolId string) (count int32, err error) {
 }
 
 func getStudentCountRx(tx *bolt.Tx, schoolId string) (count int32, err error) {
-	school, err := SchoolByIdTx(tx, schoolId)
+	school, err := schoolByIdTx(tx, schoolId)
 	if err != nil {
 		return
 	}
@@ -1742,7 +1841,7 @@ func getMeanNetworth(db *bolt.DB, userDetails UserInfo) (mean decimal.Decimal, e
 }
 
 func getMeanNetworthRx(tx *bolt.Tx, userDetails UserInfo) (mean decimal.Decimal, err error) {
-	school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+	school, err := schoolByIdTx(tx, userDetails.SchoolId)
 	if err != nil {
 		return
 	}

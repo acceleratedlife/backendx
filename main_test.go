@@ -40,6 +40,16 @@ func (t *TestClock) TickOne(d time.Duration) {
 	t.Current = t.Current.Add(d)
 }
 
+func testJWTService() *token.Service {
+	return token.NewService(token.Opts{
+		SecretReader: token.SecretFunc(func(string) (string, error) {
+			return "test-secret", nil // constant HMAC key
+		}),
+		DisableXSRF:   true, // easier for unit tests
+		TokenDuration: time.Minute,
+	})
+}
+
 func OpenTestDB(suffix string) (db *bolt.DB, teardown func()) {
 	_ = os.Mkdir("testdata", 0755)
 	ldb, err := bolt.Open("testdata/db"+suffix+".db", 0666, nil)
@@ -61,8 +71,9 @@ func SetTestLoginUser(username string) {
 }
 func InitTestServer(port int, db *bolt.DB, userName string, clock Clock) (teardown func()) {
 	SetTestLoginUser(userName)
+	jwt := testJWTService()
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux := createRouterClock(db, clock, sseService)
+	mux := createRouterClock(db, clock, sseService, jwt)
 	mux.Use(func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			user := token.User{
@@ -241,9 +252,9 @@ func TestIntegrationAuth(t *testing.T) {
 	clock := TestClock{}
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{})
-
+	jwt := testJWTService()
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, _ := createRouter(db, sseService)
+	mux, _ := createRouter(db, sseService, jwt)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -286,10 +297,10 @@ func TestIntegrationLoginPage(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 	clock := TestClock{}
-
+	jwt := testJWTService()
 	InitDefaultAccounts(db, &clock)
 	sseService := &NoopSSEService{}
-	mux, _ := createRouter(db, sseService)
+	mux, _ := createRouter(db, sseService, jwt)
 
 	l, _ := net.Listen("tcp", "127.0.0.1:8088")
 
@@ -364,13 +375,13 @@ func TestBackupSecured(t *testing.T) {
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
 	sseService := &NoopSSEService{}
-	mux, _ := createRouter(db, sseService)
+	mux, _ := createRouter(db, sseService, jwt)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -424,13 +435,13 @@ func TestNewSchoolSecured(t *testing.T) {
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
 	sseService := &NoopSSEService{}
-	mux, _ := createRouter(db, sseService)
+	mux, _ := createRouter(db, sseService, jwt)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -448,7 +459,7 @@ func TestNewSchoolSecured(t *testing.T) {
 
 	client := &http.Client{}
 
-	body := NewSchoolRequest{
+	body := openapi.RequestMakeSchool{
 		School:    "THS",
 		FirstName: "Admin",
 		LastName:  "Super",
@@ -480,13 +491,13 @@ func TestResetPasswordSecured(t *testing.T) {
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, _ := createRouter(db, sseService)
+	mux, _ := createRouter(db, sseService, jwt)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -533,13 +544,13 @@ func TestAddJobCollegeSecured(t *testing.T) {
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, _ := createRouter(db, sseService)
+	mux, _ := createRouter(db, sseService, jwt)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -586,13 +597,13 @@ func TestAddJobSecured(t *testing.T) {
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, _ := createRouter(db, sseService)
+	mux, _ := createRouter(db, sseService, jwt)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -639,13 +650,13 @@ func TestAddEventPositiveSecured(t *testing.T) {
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, _ := createRouter(db, sseService)
+	mux, _ := createRouter(db, sseService, jwt)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -692,13 +703,13 @@ func TestAddEventNegativeSecured(t *testing.T) {
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, _ := createRouter(db, sseService)
+	mux, _ := createRouter(db, sseService, jwt)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -745,13 +756,13 @@ func TestAddAdminSecured(t *testing.T) {
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, _ := createRouter(db, sseService)
+	mux, _ := createRouter(db, sseService, jwt)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -802,13 +813,13 @@ func TestSeedDbSecured(t *testing.T) {
 	clock := TestClock{}
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	InitDefaultAccounts(db, &clock)
 	auth := initAuth(db, ServerConfig{
 		AdminPassword: "test1",
 	})
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, clock2 := createRouter(db, sseService)
+	mux, clock2 := createRouter(db, sseService, jwt)
 
 	m := auth.Middleware()
 	mux.Use(buildAuthMiddleware(m))
@@ -866,9 +877,9 @@ func TestSeedDbSecured(t *testing.T) {
 func TestNewDaySecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, clock := createRouter(db, sseService)
+	mux, clock := createRouter(db, sseService, jwt)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
@@ -909,9 +920,9 @@ func TestNewDaySecured(t *testing.T) {
 func TestNewHourSecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, clock := createRouter(db, sseService)
+	mux, clock := createRouter(db, sseService, jwt)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
@@ -952,9 +963,9 @@ func TestNewHourSecured(t *testing.T) {
 func TestNewMinutesSecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, clock := createRouter(db, sseService)
+	mux, clock := createRouter(db, sseService, jwt)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
@@ -995,9 +1006,9 @@ func TestNewMinutesSecured(t *testing.T) {
 func TestNewCareerSecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, clock := createRouter(db, sseService)
+	mux, clock := createRouter(db, sseService, jwt)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
@@ -1038,9 +1049,9 @@ func TestNewCareerSecured(t *testing.T) {
 func TestNewCollegeSecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
-
+	jwt := testJWTService()
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, clock := createRouter(db, sseService)
+	mux, clock := createRouter(db, sseService, jwt)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{
@@ -1082,8 +1093,9 @@ func TestResetClockSecured(t *testing.T) {
 	db, teardown := OpenTestDB("-integration")
 	defer teardown()
 
+	jwt := testJWTService()
 	sseService := &NoopSSEService{} // Use NoopSSEService for tests
-	mux, clock := createRouter(db, sseService)
+	mux, clock := createRouter(db, sseService, jwt)
 
 	InitDefaultAccounts(db, clock)
 	auth := initAuth(db, ServerConfig{

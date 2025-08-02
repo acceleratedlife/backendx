@@ -27,20 +27,210 @@ tags:
 - description: all users that work at school
   name: Staff
 paths:
-  /schools:
-    get:
+  /message:
+    post:
+      operationId: messageAll
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all users
+      tags:
+      - SysAdmin
+  /message/staff:
+    post:
+      operationId: messageAllStaff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all staff
+      tags:
+      - SysAdmin
+  /message/students:
+    post:
+      operationId: messageAllStudents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all students
+      tags:
+      - SysAdmin
+  /message/school:
+    post:
+      operationId: messageAllSchool
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all users of a school
+      tags:
+      - SysAdmin
+  /message/school/staff:
+    post:
+      operationId: messageAllSchoolStaff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all staff of a school
+      tags:
+      - SysAdmin
+  /message/school/students:
+    post:
+      operationId: messageAllSchoolStudents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to all school students
+      tags:
+      - SysAdmin
+  /message/user:
+    post:
+      operationId: messageUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestMessage'
+        required: true
+      responses:
+        "200":
+          description: message sent
+        "401":
+          description: Not authenticated or not a sys-admin
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: send a message to one user
+      tags:
+      - SysAdmin
+  /impersonate:
+    post:
       description: |
-        By passing in a zipcode you can find all school with that zipcode in ascending order
-      operationId: searchSchools
+        Accepts the ID of a user an authenticated **sys-admin** wants to impersonate.   Returns a new JWT along with a matching XSRF token.   The frontend writes both cookies and opens the user-facing app so the admin can act as that user.
+      operationId: impersonateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestImpersonate'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ResponseImpersonate'
+                type: array
+          description: Impersonation token issued
+        "401":
+          description: Not authenticated or not a sys-admin
+        "403":
+          description: Authenticated but lacking permission to impersonate
+        "404":
+          description: User with the given ID not found
+        "500":
+          description: Server error
+      summary: Issue a short-lived JWT (and XSRF token) for user impersonation
+      tags:
+      - SysAdmin
+  /school/paused:
+    get:
+      description: isSchoolPaused
+      operationId: isPaused
       parameters:
-      - description: pass the zip to be searched
+      - description: pass the _id of the school
         explode: true
         in: query
-        name: zip
-        required: false
+        name: _id
+        required: true
         schema:
-          type: integer
+          type: string
         style: form
+      responses:
+        "200":
+          description: not paused
+        "201":
+          description: paused
+        "400":
+          description: problem finding paused
+      tags:
+      - All
+  /schools:
+    get:
+      description: returns all schools
+      operationId: getSchools
       responses:
         "200":
           content:
@@ -54,7 +244,36 @@ paths:
           description: That is not a zip code
         "404":
           description: No schools found
-      summary: searches schools
+      summary: return all schools
+      tags:
+      - SysAdmin
+  /schools/users:
+    get:
+      description: returns all users of a school
+      operationId: getSchoolUsers
+      parameters:
+      - description: pass the _id of the school
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UserNoHistory'
+                type: array
+          description: users of the school
+        "400":
+          description: thats not a school
+        "404":
+          description: No schools found
+      summary: return all users of school
       tags:
       - SysAdmin
   /schools/school:
@@ -112,13 +331,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/schools_school_body_1'
+              $ref: '#/components/schemas/RequestMakeSchool'
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/inline_response_200'
+                $ref: '#/components/schemas/ResponseResetPassword'
           description: school record is made
         "400":
           description: School cannot be made with that data
@@ -126,25 +345,23 @@ paths:
       tags:
       - SysAdmin
     put:
-      description: edit a school
-      operationId: editSchool
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/schools_school_body'
+      description: pause a school
+      operationId: schoolPauseToggle
+      parameters:
+      - description: pass the school _id to be paused
+        explode: true
+        in: query
+        name: _id
+        required: true
+        schema:
+          type: string
+        style: form
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/School'
-                type: array
-          description: school record is made
+          description: school pause has been toggled
         "400":
-          description: School cannot be edited with that data
-      summary: edit school
+          description: failed to toggle pause
+      summary: pause school
       tags:
       - SysAdmin
   /schools/school/count:
@@ -654,54 +871,7 @@ paths:
       summary: auction bid
       tags:
       - Student
-  /auctions/all/events:
-    get:
-      description: Subscribe to SSE events for specific auctions. Client will receive real-time updates about changes to these auctions.
-      operationId: subscribeAuctionEvents
-      parameters:
-        - name: auction_ids
-          in: query
-          description: Comma-separated list of auction IDs to subscribe to
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: SSE stream established
-          content:
-            text/event-stream:
-              schema:
-                type: string
-        "400":
-          description: Invalid auction IDs
-      tags:
-        - Staff
   /bucks/buck:
-    delete:
-      description: delete a buck. All accounts with that buck should first have value
-        converted to UBucks and then deleted.
-      operationId: deleteBuck
-      parameters:
-      - description: pass the _id to be deleted
-        explode: true
-        in: query
-        name: _id
-        required: true
-        schema:
-          type: string
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Buck'
-          description: Buck record is edited
-        "404":
-          description: Buck cannot be edited with that data
-      summary: delete buck
-      tags:
-      - SysAdmin
     get:
       description: by passing in a buck ID that buck is returned
       operationId: searchBuck
@@ -726,26 +896,6 @@ paths:
       summary: returns how much the student holds of this buck
       tags:
       - Student
-    post:
-      description: create a buck
-      operationId: createBuck
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/bucks_buck_body_1'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Buck'
-          description: Buck record is created
-        "404":
-          description: Buck cannot be created with that data
-      summary: create buck
-      tags:
-      - SysAdmin
     put:
       description: edit a buck
       operationId: editBuck
@@ -1243,24 +1393,6 @@ paths:
       summary: all the teachers that are at the same school of the user
       tags:
       - All
-  /sysAdmin/users:
-    get:
-      description: returns students, teacher and admins
-      operationId: getAllUsers
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ResponseAllUsers'
-                type: array
-          description: users of the site
-        "401":
-          description: unauthorized
-      summary: get all users excluding sysAdmins
-      tags:
-      - SysAdmin
   /transactions:
     get:
       description: By passing in the staffs _id you can find a transactions that they
@@ -1291,56 +1423,6 @@ paths:
         descending
       tags:
       - Staff
-  /transactions/transaction:
-    delete:
-      description: delete a transaction
-      operationId: deletetransaction
-      parameters:
-      - description: pass the _id to be deleted
-        explode: true
-        in: query
-        name: _id
-        required: true
-        schema:
-          type: string
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                example: Transaction deleted
-                type: string
-          description: transaction Deleted
-        "404":
-          description: transaction cannot be deleted with that data
-      summary: delete transaction
-      tags:
-      - SysAdmin
-    get:
-      description: By passing in a _id you can find a transaction.
-      operationId: searchTransaction
-      parameters:
-      - description: pass the _id to be searched
-        explode: true
-        in: query
-        name: _id
-        required: true
-        schema:
-          type: string
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Transaction'
-          description: transaction matching criteria
-        "404":
-          description: No transaction found
-      summary: searches for a transaction
-      tags:
-      - SysAdmin
   /transactions/buckTransactions:
     get:
       description: query account kind by Buck and owner by _id. Then query transaction
@@ -1541,6 +1623,17 @@ paths:
         "404":
           description: No users found with that data
       summary: return all students from a school
+      tags:
+      - All
+  /clearMessages:
+    put:
+      description: removes messasge from a user after viewed
+      operationId: clearMessages
+      responses:
+        "200":
+          description: messages Deleted
+        "404":
+          description: There is no user with that email
       tags:
       - All
   /users/user:
@@ -2303,6 +2396,10 @@ components:
           type: integer
         lottoWin:
           type: integer
+        messages:
+          items:
+            type: string
+          type: array
       required:
       - isAdmin
       - isAuth
@@ -2677,6 +2774,10 @@ components:
           type: integer
         students:
           type: integer
+        staff:
+          type: integer
+        isPaused:
+          type: boolean
       type: object
     ResponseSearchStudentUbuck:
       example:
@@ -2838,6 +2939,16 @@ components:
           example: 613eab19e58cc511801af657
           type: string
       type: object
+    RequestImpersonate:
+      example:
+        userId: userId
+      properties:
+        userId:
+          description: The _id of the user to impersonate
+          type: string
+      required:
+      - userId
+      type: object
     RequestMakeAuction:
       example:
         visibility:
@@ -2937,6 +3048,50 @@ components:
         password:
           example: Pa$$w0rd
           type: string
+      type: object
+    RequestMakeSchool:
+      example:
+        zip: 94557
+        firstName: Tom
+        lastName: Cat
+        school: East High
+        city: Dublin
+        email: email
+      properties:
+        school:
+          example: East High
+          type: string
+        firstName:
+          example: Tom
+          type: string
+        lastName:
+          example: Cat
+          type: string
+        city:
+          example: Dublin
+          type: string
+        zip:
+          example: 94557
+          type: integer
+        email:
+          type: string
+      type: object
+    RequestMessage:
+      example:
+        school_id: school_id
+        user_id: ss@ss.com
+        message: server down tomorrow
+      properties:
+        message:
+          example: server down tomorrow
+          type: string
+        user_id:
+          example: ss@ss.com
+          type: string
+        school_id:
+          type: string
+      required:
+      - message
       type: object
     RequestPayTransaction:
       example:
@@ -3297,18 +3452,6 @@ components:
           example: 94557
           type: integer
       type: object
-    schools_school_body_1:
-      properties:
-        name:
-          example: East High
-          type: string
-        city:
-          example: Dublin
-          type: string
-        zip:
-          example: 94557
-          type: integer
-      type: object
     inline_response_200:
       example:
         success: true
@@ -3550,6 +3693,18 @@ components:
         pay:
           type: integer
         description:
+          type: string
+      type: object
+    ResponseImpersonate:
+      example:
+        xsrf: xsrf
+        token: token
+      properties:
+        token:
+          description: Short-lived JWT for the selected user
+          type: string
+        xsrf:
+          description: Matching XSRF token (double-submit cookie pattern)
           type: string
       type: object
     inline_response_200_1_transaction_assetID:

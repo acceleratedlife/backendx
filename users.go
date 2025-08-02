@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	UserRoleStudent = int32(0)
-	UserRoleTeacher = int32(1)
-	UserRoleAdmin   = int32(2)
+	UserRoleStudent  = int32(0)
+	UserRoleTeacher  = int32(1)
+	UserRoleAdmin    = int32(2)
+	UserRoleSysAdmin = int32(3)
 )
 
 type UserInfo struct {
@@ -35,6 +36,7 @@ type UserInfo struct {
 	LottoPlay        int32           `json:",omitempty"`
 	LottoWin         int32           `json:",omitempty"`
 	TaxableIncome    int32
+	Messages         []string `json:",omitempty"`
 }
 
 type TeacherSettings struct {

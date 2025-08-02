@@ -34,7 +34,7 @@ func TestAddTeacher(t *testing.T) {
 	schoolId, _ := FindOrCreateSchool(db, &clock, "test school", "no city", 0)
 
 	err := db.Update(func(tx *bolt.Tx) error {
-		school, _ := SchoolByIdTx(tx, schoolId)
+		school, _ := schoolByIdTx(tx, schoolId)
 		return school.Put([]byte(KeyAddCode), []byte("123123"))
 	})
 
@@ -92,7 +92,7 @@ func TestAddTeacherBadEmail(t *testing.T) {
 	schoolId, _ := FindOrCreateSchool(db, &clock, "test school", "no city", 0)
 
 	err := db.Update(func(tx *bolt.Tx) error {
-		school, _ := SchoolByIdTx(tx, schoolId)
+		school, _ := schoolByIdTx(tx, schoolId)
 		return school.Put([]byte(KeyAddCode), []byte("123123"))
 	})
 
@@ -127,7 +127,7 @@ func TestAddStudent(t *testing.T) {
 
 	schoolId, _ := FindOrCreateSchool(db, &clock, "test school", "no city", 0)
 	_ = db.Update(func(tx *bolt.Tx) error {
-		school, _ := SchoolByIdTx(tx, schoolId)
+		school, _ := schoolByIdTx(tx, schoolId)
 		return school.Put([]byte(KeyAddCode), []byte("123123"))
 	})
 	s := UnregisteredApiServiceImpl{
@@ -270,7 +270,7 @@ func TestAddStudentBadUserName(t *testing.T) {
 
 	schoolId, _ := FindOrCreateSchool(db, &clock, "test school", "no city", 0)
 	_ = db.Update(func(tx *bolt.Tx) error {
-		school, _ := SchoolByIdTx(tx, schoolId)
+		school, _ := schoolByIdTx(tx, schoolId)
 		return school.Put([]byte(KeyAddCode), []byte("123123"))
 	})
 	s := UnregisteredApiServiceImpl{

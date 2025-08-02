@@ -29,7 +29,7 @@ func (s *SchoolAdminServiceImpl) SearchAdminTeacherClass(ctx context.Context, Id
 	}
 
 	_ = s.db.View(func(tx *bolt.Tx) error {
-		school, err := SchoolByIdTx(tx, userDetails.SchoolId)
+		school, err := schoolByIdTx(tx, userDetails.SchoolId)
 		if err != nil {
 			return err
 		}

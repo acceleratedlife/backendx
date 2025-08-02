@@ -56,6 +56,12 @@ func (c *AllApiController) Routes() Routes {
 			c.AuthUser,
 		},
 		{
+			"ClearMessages",
+			strings.ToUpper("Put"),
+			"/api/clearMessages",
+			c.ClearMessages,
+		},
+		{
 			"ConfirmEmail",
 			strings.ToUpper("Get"),
 			"/api/users/confirmEmail",
@@ -72,6 +78,12 @@ func (c *AllApiController) Routes() Routes {
 			strings.ToUpper("Get"),
 			"/api/accounts/exchangeRate",
 			c.ExchangeRate,
+		},
+		{
+			"IsPaused",
+			strings.ToUpper("Get"),
+			"/api/school/paused",
+			c.IsPaused,
 		},
 		{
 			"Login",
@@ -179,6 +191,19 @@ func (c *AllApiController) AuthUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// ClearMessages -
+func (c *AllApiController) ClearMessages(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.ClearMessages(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
 // ConfirmEmail - confirm email
 func (c *AllApiController) ConfirmEmail(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
@@ -215,6 +240,21 @@ func (c *AllApiController) ExchangeRate(w http.ResponseWriter, r *http.Request) 
 	sellCurrencyParam := query.Get("sellCurrency")
 	buyCurrencyParam := query.Get("buyCurrency")
 	result, err := c.service.ExchangeRate(r.Context(), sellCurrencyParam, buyCurrencyParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// IsPaused -
+func (c *AllApiController) IsPaused(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.IsPaused(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

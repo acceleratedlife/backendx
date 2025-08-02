@@ -934,3 +934,177 @@ func TestLotteryGarnish(t *testing.T) {
 	require.Nil(t, err)
 
 }
+
+func TestDeleteStudentWithAuctionPreBid(t *testing.T) {
+
+	lgr.Printf("INFO TestDeleteStudentWithAuctionPreBid")
+	t.Log("INFO TestDeleteStudentWithAuctionPreBid")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("DeleteStudentWithAuctionPreBid")
+	defer dbTearDown()
+	_, _, _, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 3)
+	require.Nil(t, err)
+
+	buyer, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	seller, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, buyer, decimal.NewFromFloat(100), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	request := openapi.RequestMakeAuction{
+		Bid:         0,
+		MaxBid:      0,
+		Description: "test auc",
+		EndDate:     clock.Now().Add(time.Minute),
+		StartDate:   clock.Now(),
+		OwnerId:     seller.Name,
+		Visibility:  classes,
+		TrueAuction: false,
+	}
+
+	err = MakeAuctionImpl(db, seller, request, false)
+	require.Nil(t, err)
+
+	err = deleteStudent(db, &clock, seller.Name)
+	require.Nil(t, err)
+
+	auctions, err := getStudentAuctions(db, &clock, seller)
+	require.Nil(t, err)
+	require.Equal(t, 0, len(auctions))
+
+}
+
+func TestDeleteStudentWithAuctionPostBid(t *testing.T) {
+	//the student holds the auction and another student has bid on it
+	//make sure that it repays the current winner and deletes the auction
+	lgr.Printf("INFO TestDeleteStudentWithAuctionPostBid")
+	t.Log("INFO TestDeleteStudentWithAuctionPostBid")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("DeleteStudentWithAuctionPostBid")
+	defer dbTearDown()
+	_, _, _, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 3)
+	require.Nil(t, err)
+
+	buyer, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	seller, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+	otherStudent, err := getUserInLocalStore(db, students[2])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, buyer, decimal.NewFromFloat(100), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	request := openapi.RequestMakeAuction{
+		Bid:         0,
+		MaxBid:      0,
+		Description: "test auc",
+		EndDate:     clock.Now().Add(time.Minute),
+		StartDate:   clock.Now(),
+		OwnerId:     otherStudent.Name,
+		Visibility:  classes,
+		TrueAuction: false,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = MakeAuctionImpl(db, otherStudent, request, false)
+		require.Nil(t, err)
+		clock.TickOne(time.Second)
+		request.EndDate = clock.Now().Add(time.Minute)
+	}
+
+	clock.TickOne(time.Second)
+	request.OwnerId = seller.Name
+	request.EndDate = clock.Now().Add(time.Minute)
+
+	err = MakeAuctionImpl(db, seller, request, false)
+	require.Nil(t, err)
+
+	auctions, err := getStudentAuctions(db, &clock, seller)
+	require.Nil(t, err)
+	require.Equal(t, 6, len(auctions))
+
+	_, err = placeBid(db, &clock, buyer, auctions[0].Id.Format(time.RFC3339Nano), 10, &NoopSSEService{})
+	require.Nil(t, err)
+
+	ubucks, err := getStudentUbuck(db, buyer)
+	require.Nil(t, err)
+	require.Greater(t, float32(100), ubucks.Value)
+
+	err = deleteStudent(db, &clock, seller.Name)
+	require.Nil(t, err)
+
+	auctions, err = getStudentAuctions(db, &clock, buyer)
+	require.Nil(t, err)
+	require.Equal(t, 5, len(auctions))
+
+	ubucks, err = getStudentUbuck(db, buyer)
+	require.Nil(t, err)
+	require.Equal(t, float32(100), ubucks.Value)
+
+}
+
+func TestDeleteStudentWithAuctionPostBidderDelete(t *testing.T) {
+	//someone has created an auction and student A has bid on it
+	//student A is deleted and the auction is deleted
+	lgr.Printf("INFO TestDeleteStudentWithAuctionPostBidderDelete")
+	t.Log("INFO TestDeleteStudentWithAuctionPostBidderDelete")
+	clock := TestClock{}
+	db, dbTearDown := OpenTestDB("DeleteStudentWithAuctionPostBidderDelete")
+	defer dbTearDown()
+	_, _, _, classes, students, err := CreateTestAccounts(db, 1, 1, 1, 3)
+	require.Nil(t, err)
+
+	buyer, err := getUserInLocalStore(db, students[0])
+	require.Nil(t, err)
+	seller, err := getUserInLocalStore(db, students[1])
+	require.Nil(t, err)
+	otherStudent, err := getUserInLocalStore(db, students[2])
+	require.Nil(t, err)
+
+	err = pay2Student(db, &clock, buyer, decimal.NewFromFloat(100), CurrencyUBuck, "pre load")
+	require.Nil(t, err)
+
+	request := openapi.RequestMakeAuction{
+		Bid:         0,
+		MaxBid:      0,
+		Description: "test auc",
+		EndDate:     clock.Now().Add(time.Minute),
+		StartDate:   clock.Now(),
+		OwnerId:     otherStudent.Name,
+		Visibility:  classes,
+		TrueAuction: false,
+	}
+
+	for i := 0; i < 5; i++ {
+		err = MakeAuctionImpl(db, otherStudent, request, false)
+		require.Nil(t, err)
+		clock.TickOne(time.Second)
+		request.EndDate = clock.Now().Add(time.Minute)
+	}
+
+	clock.TickOne(time.Second)
+	request.OwnerId = seller.Name
+	request.EndDate = clock.Now().Add(time.Minute)
+
+	err = MakeAuctionImpl(db, seller, request, false)
+	require.Nil(t, err)
+
+	auctions, err := getStudentAuctions(db, &clock, seller)
+	require.Nil(t, err)
+	require.Equal(t, 6, len(auctions)) // 5 auctions + 1 auction
+
+	_, err = placeBid(db, &clock, buyer, auctions[0].Id.Format(time.RFC3339Nano), 10, &NoopSSEService{})
+	require.Nil(t, err)
+
+	err = deleteStudent(db, &clock, buyer.Name)
+	require.Nil(t, err)
+
+	resp, err := getStudentAuctions(db, &clock, seller)
+	require.Nil(t, err)
+	//if the lead bidder is deleted then just delete the auction
+	require.Equal(t, 5, len(resp))
+
+}

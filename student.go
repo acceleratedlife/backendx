@@ -339,9 +339,9 @@ func (a *StudentApiServiceImpl) SearchAuctionsStudent(ctx context.Context) (open
 	}
 
 	var resp []openapi.ResponseAuctionStudent
-	auctions, err := getStudentAuctions(a.db, userDetails)
+	auctions, err := getStudentAuctions(a.db, a.clock, userDetails)
 	if err != nil {
-		return openapi.Response(400, err), nil
+		return openapi.Response(400, ""), err
 	}
 
 	for _, auction := range auctions {
@@ -528,7 +528,7 @@ func (a *StudentApiServiceImpl) StudentAddClass(ctx context.Context, body openap
 		return openapi.Response(401, ""), nil
 	}
 
-	_, pathId, err := RoleByAddCode(a.db, body.AddCode, a.clock)
+	_, pathId, err := roleByAddCode(a.db, body.AddCode, a.clock)
 	if err != nil {
 		return openapi.Response(404,
 			openapi.ResponseRegister4{

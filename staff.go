@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	openapi "github.com/acceleratedlife/backend/go"
 	"github.com/go-pkgz/auth/token"
@@ -119,7 +120,12 @@ func (a *StaffApiServiceImpl) AuctionReject(ctx context.Context, query string) (
 		return openapi.Response(401, ""), nil
 	}
 
-	err = deleteAuction(a.db, userDetails, a.clock, query)
+	newTime, err := time.Parse(time.RFC3339, query)
+	if err != nil {
+		return openapi.Response(400, nil), err
+	}
+
+	err = deleteAuction(a.db, userDetails, a.clock, newTime)
 
 	if err != nil {
 		return openapi.Response(400, nil), err
@@ -205,7 +211,7 @@ func (s *StaffApiServiceImpl) DeleteStudent(ctx context.Context, query string) (
 		return openapi.Response(401, ""), nil
 	}
 
-	err = deleteStudent(s.db, query)
+	err = deleteStudent(s.db, s.clock, query)
 
 	if err != nil {
 		return openapi.Response(400, nil), err
@@ -279,26 +285,11 @@ func (a *StaffApiServiceImpl) KickClass(ctx context.Context, body openapi.Reques
 		return openapi.Response(401, ""), nil
 	}
 
-	err = a.db.Update(func(tx *bolt.Tx) error {
-		classBucket, _, err := getClassAtSchoolTx(tx, userDetails.SchoolId, body.Id)
-		if err != nil {
-			return err
-		}
+	err = kickClass(a.db, userDetails, body)
 
-		studentsBucket := classBucket.Bucket([]byte(KeyStudents))
-		if studentsBucket == nil {
-			return fmt.Errorf("can't find students bucket")
-		}
-
-		err = studentsBucket.Delete([]byte(body.KickId))
-		if err != nil {
-			return err
-		}
-		return nil
-	})
 	if err != nil {
-		lgr.Printf("ERROR cannot collect classes from the school: %s %v", userDetails.SchoolId, err)
-		return openapi.Response(500, "{}"), nil
+		lgr.Printf("ERROR problem removing user from class: %v", err)
+		return openapi.Response(500, "{}"), err
 	}
 	return openapi.Response(200, nil), nil
 }
@@ -439,7 +430,7 @@ func (s *StaffApiServiceImpl) SearchAuctionsTeacher(ctx context.Context) (openap
 	}
 
 	if userDetails.Role == UserRoleStudent {
-		auctions, err := getStudentAuctions(s.db, userDetails)
+		auctions, err := getStudentAuctions(s.db, s.clock, userDetails)
 		if err != nil {
 			return openapi.Response(401, ""), err
 		}

@@ -50,34 +50,16 @@ func NewSysAdminApiController(s SysAdminApiServicer, opts ...SysAdminApiOption) 
 func (c *SysAdminApiController) Routes() Routes {
 	return Routes{
 		{
-			"CreateBuck",
-			strings.ToUpper("Post"),
-			"/api/bucks/buck",
-			c.CreateBuck,
-		},
-		{
 			"DeleteAccount",
 			strings.ToUpper("Delete"),
 			"/api/accounts/account",
 			c.DeleteAccount,
 		},
 		{
-			"DeleteBuck",
-			strings.ToUpper("Delete"),
-			"/api/bucks/buck",
-			c.DeleteBuck,
-		},
-		{
 			"DeleteSchool",
 			strings.ToUpper("Delete"),
 			"/api/schools/school",
 			c.DeleteSchool,
-		},
-		{
-			"Deletetransaction",
-			strings.ToUpper("Delete"),
-			"/api/transactions/transaction",
-			c.Deletetransaction,
 		},
 		{
 			"EditAccount",
@@ -92,16 +74,22 @@ func (c *SysAdminApiController) Routes() Routes {
 			c.EditBuck,
 		},
 		{
-			"EditSchool",
-			strings.ToUpper("Put"),
-			"/api/schools/school",
-			c.EditSchool,
+			"GetSchoolUsers",
+			strings.ToUpper("Get"),
+			"/api/schools/users",
+			c.GetSchoolUsers,
 		},
 		{
-			"GetAllUsers",
+			"GetSchools",
 			strings.ToUpper("Get"),
-			"/api/sysAdmin/users",
-			c.GetAllUsers,
+			"/api/schools",
+			c.GetSchools,
+		},
+		{
+			"ImpersonateUser",
+			strings.ToUpper("Post"),
+			"/api/impersonate",
+			c.ImpersonateUser,
 		},
 		{
 			"MakeAccount",
@@ -116,42 +104,54 @@ func (c *SysAdminApiController) Routes() Routes {
 			c.MakeSchool,
 		},
 		{
-			"SearchSchools",
-			strings.ToUpper("Get"),
-			"/api/schools",
-			c.SearchSchools,
+			"MessageAll",
+			strings.ToUpper("Post"),
+			"/api/message",
+			c.MessageAll,
 		},
 		{
-			"SearchTransaction",
-			strings.ToUpper("Get"),
-			"/api/transactions/transaction",
-			c.SearchTransaction,
+			"MessageAllSchool",
+			strings.ToUpper("Post"),
+			"/api/message/school",
+			c.MessageAllSchool,
+		},
+		{
+			"MessageAllSchoolStaff",
+			strings.ToUpper("Post"),
+			"/api/message/school/staff",
+			c.MessageAllSchoolStaff,
+		},
+		{
+			"MessageAllSchoolStudents",
+			strings.ToUpper("Post"),
+			"/api/message/school/students",
+			c.MessageAllSchoolStudents,
+		},
+		{
+			"MessageAllStaff",
+			strings.ToUpper("Post"),
+			"/api/message/staff",
+			c.MessageAllStaff,
+		},
+		{
+			"MessageAllStudents",
+			strings.ToUpper("Post"),
+			"/api/message/students",
+			c.MessageAllStudents,
+		},
+		{
+			"MessageUser",
+			strings.ToUpper("Post"),
+			"/api/message/user",
+			c.MessageUser,
+		},
+		{
+			"SchoolPauseToggle",
+			strings.ToUpper("Put"),
+			"/api/schools/school",
+			c.SchoolPauseToggle,
 		},
 	}
-}
-
-// CreateBuck - create buck
-func (c *SysAdminApiController) CreateBuck(w http.ResponseWriter, r *http.Request) {
-	bucksBuckBody1Param := BucksBuckBody1{}
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(&bucksBuckBody1Param); err != nil {
-		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-		return
-	}
-	if err := AssertBucksBuckBody1Required(bucksBuckBody1Param); err != nil {
-		c.errorHandler(w, r, err, nil)
-		return
-	}
-	result, err := c.service.CreateBuck(r.Context(), bucksBuckBody1Param)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
 }
 
 // DeleteAccount - delete school
@@ -169,41 +169,11 @@ func (c *SysAdminApiController) DeleteAccount(w http.ResponseWriter, r *http.Req
 
 }
 
-// DeleteBuck - delete buck
-func (c *SysAdminApiController) DeleteBuck(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.DeleteBuck(r.Context(), idParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
 // DeleteSchool - delete school
 func (c *SysAdminApiController) DeleteSchool(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := query.Get("_id")
 	result, err := c.service.DeleteSchool(r.Context(), idParam)
-	// If an error occurred, encode the error with the status code
-	if err != nil {
-		c.errorHandler(w, r, err, &result)
-		return
-	}
-	// If no error, encode the body and the result code
-	EncodeJSONResponse(result.Body, &result.Code, w)
-
-}
-
-// Deletetransaction - delete transaction
-func (c *SysAdminApiController) Deletetransaction(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	idParam := query.Get("_id")
-	result, err := c.service.Deletetransaction(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -262,20 +232,11 @@ func (c *SysAdminApiController) EditBuck(w http.ResponseWriter, r *http.Request)
 
 }
 
-// EditSchool - edit school
-func (c *SysAdminApiController) EditSchool(w http.ResponseWriter, r *http.Request) {
-	schoolsSchoolBodyParam := SchoolsSchoolBody{}
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(&schoolsSchoolBodyParam); err != nil {
-		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-		return
-	}
-	if err := AssertSchoolsSchoolBodyRequired(schoolsSchoolBodyParam); err != nil {
-		c.errorHandler(w, r, err, nil)
-		return
-	}
-	result, err := c.service.EditSchool(r.Context(), schoolsSchoolBodyParam)
+// GetSchoolUsers - return all users of school
+func (c *SysAdminApiController) GetSchoolUsers(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("_id")
+	result, err := c.service.GetSchoolUsers(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -286,9 +247,33 @@ func (c *SysAdminApiController) EditSchool(w http.ResponseWriter, r *http.Reques
 
 }
 
-// GetAllUsers - get all users excluding sysAdmins
-func (c *SysAdminApiController) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	result, err := c.service.GetAllUsers(r.Context())
+// GetSchools - return all schools
+func (c *SysAdminApiController) GetSchools(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.GetSchools(r.Context())
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// ImpersonateUser - Issue a short-lived JWT (and XSRF token) for user impersonation
+func (c *SysAdminApiController) ImpersonateUser(w http.ResponseWriter, r *http.Request) {
+	requestImpersonateParam := RequestImpersonate{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestImpersonateParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestImpersonateRequired(requestImpersonateParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.ImpersonateUser(r.Context(), requestImpersonateParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -325,18 +310,18 @@ func (c *SysAdminApiController) MakeAccount(w http.ResponseWriter, r *http.Reque
 
 // MakeSchool - make a new school
 func (c *SysAdminApiController) MakeSchool(w http.ResponseWriter, r *http.Request) {
-	schoolsSchoolBody1Param := SchoolsSchoolBody1{}
+	requestMakeSchoolParam := RequestMakeSchool{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&schoolsSchoolBody1Param); err != nil {
+	if err := d.Decode(&requestMakeSchoolParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertSchoolsSchoolBody1Required(schoolsSchoolBody1Param); err != nil {
+	if err := AssertRequestMakeSchoolRequired(requestMakeSchoolParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.MakeSchool(r.Context(), schoolsSchoolBody1Param)
+	result, err := c.service.MakeSchool(r.Context(), requestMakeSchoolParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -347,15 +332,20 @@ func (c *SysAdminApiController) MakeSchool(w http.ResponseWriter, r *http.Reques
 
 }
 
-// SearchSchools - searches schools
-func (c *SysAdminApiController) SearchSchools(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	zipParam, err := parseInt32Parameter(query.Get("zip"), false)
-	if err != nil {
+// MessageAll - send a message to all users
+func (c *SysAdminApiController) MessageAll(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	result, err := c.service.SearchSchools(r.Context(), zipParam)
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAll(r.Context(), requestMessageParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -366,11 +356,155 @@ func (c *SysAdminApiController) SearchSchools(w http.ResponseWriter, r *http.Req
 
 }
 
-// SearchTransaction - searches for a transaction
-func (c *SysAdminApiController) SearchTransaction(w http.ResponseWriter, r *http.Request) {
+// MessageAllSchool - send a message to all users of a school
+func (c *SysAdminApiController) MessageAllSchool(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAllSchool(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageAllSchoolStaff - send a message to all staff of a school
+func (c *SysAdminApiController) MessageAllSchoolStaff(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAllSchoolStaff(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageAllSchoolStudents - send a message to all school students
+func (c *SysAdminApiController) MessageAllSchoolStudents(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAllSchoolStudents(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageAllStaff - send a message to all staff
+func (c *SysAdminApiController) MessageAllStaff(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAllStaff(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageAllStudents - send a message to all students
+func (c *SysAdminApiController) MessageAllStudents(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageAllStudents(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// MessageUser - send a message to one user
+func (c *SysAdminApiController) MessageUser(w http.ResponseWriter, r *http.Request) {
+	requestMessageParam := RequestMessage{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&requestMessageParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertRequestMessageRequired(requestMessageParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.MessageUser(r.Context(), requestMessageParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+
+}
+
+// SchoolPauseToggle - pause school
+func (c *SysAdminApiController) SchoolPauseToggle(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := query.Get("_id")
-	result, err := c.service.SearchTransaction(r.Context(), idParam)
+	result, err := c.service.SchoolPauseToggle(r.Context(), idParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
